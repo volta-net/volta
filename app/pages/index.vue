@@ -2,8 +2,6 @@
 import { computed, ref, watch } from 'vue'
 import { breakpointsTailwind } from '@vueuse/core'
 
-const { user } = useUserSession()
-
 const tabItems = [{
   label: 'All',
   value: 'all'
@@ -13,29 +11,9 @@ const tabItems = [{
 }]
 const selectedTab = ref('all')
 
-// const { data: notifications } = await useFetch<GitHubNotification[]>('/api/notifications', { default: () => [] })
-const { data: notifications } = await useFetch<GitHubNotification[]>('https://api.github.com/notifications', {
-  query: {
-    all: 'true'
-  },
-  headers: {
-    Authorization: `Bearer ${user.value!.accessToken}`
-  },
-  transform: data => data.map(notification => ({
-    id: notification.id,
-    unread: notification.unread,
-    reason: notification.reason,
-    updatedAt: notification.updated_at,
-    lastReadAt: notification.last_read_at,
-    subject: notification.subject,
-    repository: {
-      owner: notification.repository.owner.login,
-      name: notification.repository.name,
-      avatar: notification.repository.owner.avatar_url
-    }
-  })),
-  default: () => []
-})
+const store = useStore()
+
+const { data: notifications } = await store.notifications.query(q => q.many({ fetchPolicy: 'cache-and-fetch' }))
 
 // Filter mails based on the selected tab
 const filteredNotifications = computed(() => {
@@ -46,7 +24,7 @@ const filteredNotifications = computed(() => {
   return notifications.value
 })
 
-const selectedNotification = ref<GitHubNotification | null>()
+const selectedNotification = ref<Notification | null>()
 
 const isPanelOpen = computed({
   get() {

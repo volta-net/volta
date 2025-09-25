@@ -5,7 +5,8 @@ export default defineNuxtConfig({
     '@nuxt/eslint',
     '@nuxt/ui',
     'nuxt-auth-utils',
-    '@vueuse/nuxt'
+    '@vueuse/nuxt',
+    '@rstore/nuxt'
   ],
   ssr: false,
 
