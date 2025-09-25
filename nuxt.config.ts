@@ -1,6 +1,5 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-  ssr: false,
 
   modules: [
     '@nuxt/eslint',
@@ -8,10 +7,7 @@ export default defineNuxtConfig({
     'nuxt-auth-utils',
     '@vueuse/nuxt'
   ],
-
-  auth: {
-    loadStrategy: 'client-only'
-  },
+  ssr: false,
 
   devtools: {
     enabled: true
@@ -24,6 +20,10 @@ export default defineNuxtConfig({
   },
 
   compatibilityDate: '2025-01-15',
+
+  auth: {
+    loadStrategy: 'client-only'
+  },
 
   eslint: {
     config: {

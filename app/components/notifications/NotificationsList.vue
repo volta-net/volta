@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { format, isToday } from 'date-fns'
-
 const props = defineProps<{
   notifications: GitHubNotification[]
 }>()

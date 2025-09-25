@@ -16,7 +16,6 @@
     "@nuxt/ui": "^4.0.0",
     "@vueuse/core": "^13.9.0",
     "@vueuse/nuxt": "^13.9.0",
-    "date-fns": "^4.1.0",
     "nuxt": "^4.1.2",
     "nuxt-auth-utils": "^0.5.25"
   },

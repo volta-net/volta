@@ -1,13 +1,13 @@
 export default defineEventHandler(async (event) => {
-  const { user, secure } = await requireUserSession(event)
+  const { secure } = await requireUserSession(event)
 
   const data = await $fetch<any[]>('https://api.github.com/notifications', {
     query: {
       all: 'true'
     },
     headers: {
-      Authorization: `Bearer ${secure!.accessToken}`,
-    },
+      Authorization: `Bearer ${secure!.accessToken}`
+    }
   })
 
   const notifications = data.map((notification: any) => ({
@@ -20,10 +20,9 @@ export default defineEventHandler(async (event) => {
     repository: {
       owner: notification.repository.owner.login,
       name: notification.repository.name,
-      avatar: notification.repository.owner.avatar_url,
+      avatar: notification.repository.owner.avatar_url
     }
   }))
-
 
   return notifications
 })

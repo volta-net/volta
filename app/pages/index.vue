@@ -21,7 +21,7 @@ const { data: notifications } = await useFetch<GitHubNotification[]>('https://ap
   headers: {
     Authorization: `Bearer ${user.value!.accessToken}`
   },
-  transform: data => data.map((notification: any) => ({
+  transform: data => data.map(notification => ({
     id: notification.id,
     unread: notification.unread,
     reason: notification.reason,
