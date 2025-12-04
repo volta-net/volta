@@ -1,30 +1,19 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
-import { breakpointsTailwind } from '@vueuse/core'
+import { breakpointsTailwind, useWindowFocus } from '@vueuse/core'
+import type { Notification } from '~~/shared/types/notification'
 
-const tabItems = [{
-  label: 'All',
-  value: 'all'
-}, {
-  label: 'Unread',
-  value: 'unread'
-}]
-const selectedTab = ref('all')
-
-const store = useStore()
-
-const { data: notifications } = await store.notifications.query(q => q.many({ fetchPolicy: 'cache-and-fetch' }))
-
-// Filter mails based on the selected tab
-const filteredNotifications = computed(() => {
-  if (selectedTab.value === 'unread') {
-    return notifications.value.filter(notification => !!notification.unread)
-  }
-
-  return notifications.value
-})
+const { data: notifications, refresh } = await useFetch<Notification[]>('/api/notifications')
 
 const selectedNotification = ref<Notification | null>()
+const unreadNotifications = computed(() => notifications.value?.filter(notification => !notification.read) ?? [])
+
+// Refetch notifications when window regains focus
+const focused = useWindowFocus()
+watch(focused, (isFocused) => {
+  if (isFocused) {
+    refresh()
+  }
+})
 
 const isPanelOpen = computed({
   get() {
@@ -37,15 +26,27 @@ const isPanelOpen = computed({
   }
 })
 
-// Reset selected notification if it's not in the filtered notifications
-watch(filteredNotifications, () => {
-  if (!filteredNotifications.value.find(notification => notification.id === selectedNotification.value?.id)) {
-    selectedNotification.value = null
-  }
-})
-
 const breakpoints = useBreakpoints(breakpointsTailwind)
 const isMobile = breakpoints.smaller('lg')
+
+async function markAllAsRead() {
+  await $fetch('/api/notifications/read-all', { method: 'POST' })
+  await refresh()
+}
+
+async function deleteAll() {
+  await $fetch('/api/notifications', { method: 'DELETE' })
+  selectedNotification.value = null
+  await refresh()
+}
+
+async function deleteAllRead() {
+  await $fetch('/api/notifications/read', { method: 'DELETE' })
+  if (selectedNotification.value?.read) {
+    selectedNotification.value = null
+  }
+  await refresh()
+}
 </script>
 
 <template>
@@ -58,43 +59,75 @@ const isMobile = breakpoints.smaller('lg')
   >
     <UDashboardNavbar title="Inbox">
       <template #trailing>
-        <UBadge
-          :label="filteredNotifications.length"
-          variant="subtle"
-          color="neutral"
+        <UDropdownMenu
+          :content="{ align: 'start' }"
           size="sm"
-        />
-      </template>
-
-      <template #right>
-        <UTabs
-          v-model="selectedTab"
-          :items="tabItems"
-          :content="false"
-          size="xs"
-          color="neutral"
-        />
+          :items="[[{
+            label: 'Mark all as read',
+            icon: 'i-lucide-check-circle',
+            onSelect: markAllAsRead
+          }], [{
+            label: 'Delete all',
+            icon: 'i-lucide-trash-2',
+            onSelect: deleteAll
+          }, {
+            label: 'Delete all read',
+            icon: 'i-lucide-trash-2',
+            onSelect: deleteAllRead
+          }]]"
+        >
+          <UButton
+            variant="ghost"
+            color="neutral"
+            size="sm"
+            trailing-icon="i-lucide-ellipsis"
+          />
+        </UDropdownMenu>
       </template>
     </UDashboardNavbar>
+
     <NotificationsList
       v-model="selectedNotification"
-      :notifications="filteredNotifications"
+      :notifications="notifications ?? []"
     />
   </UDashboardPanel>
 
-  <!-- <NotificationView
-    v-if="selectedNotification"
-    :notification="selectedNotification"
-    @close="selectedNotification = null"
-  /> -->
-  <div
-    class="hidden lg:flex flex-1 items-center justify-center"
-  >
-    <UIcon
-      name="i-lucide-inbox"
-      class="size-32 text-dimmed"
-    />
-  </div>
+  <UDashboardPanel v-if="selectedNotification">
+    <template #header>
+      <UDashboardNavbar>
+        <template #title>
+          <template v-if="selectedNotification.issue">
+            #{{ selectedNotification.issue.number }} {{ selectedNotification.issue.title }}
+          </template>
+        </template>
+      </UDashboardNavbar>
+    </template>
+    <template #content>
+      <div class="flex flex-col gap-4 p-4">
+        <p v-if="selectedNotification?.body" class="text-muted text-sm">
+          {{ selectedNotification.body }}
+        </p>
+        <p v-else class="text-dimmed text-sm">
+          No additional details
+        </p>
+      </div>
+    </template>
+  </UDashboardPanel>
+
+  <UDashboardPanel v-else>
+    <div class="flex-1 flex flex-col items-center justify-center gap-4">
+      <UIcon name="i-lucide-inbox" class="size-20 text-dimmed" />
+
+      <p class="text-muted text-sm">
+        <template v-if="unreadNotifications.length > 0">
+          {{ unreadNotifications.length }} unread notification(s)
+        </template>
+        <template v-else>
+          No notifications yet
+        </template>
+      </p>
+    </div>
+  </UDashboardPanel>
 
   <ClientOnly>
     <USlideover

@@ -4,9 +4,10 @@ export default defineNuxtConfig({
   modules: [
     '@nuxt/eslint',
     '@nuxt/ui',
+    '@nuxthub/core',
     'nuxt-auth-utils',
     '@vueuse/nuxt',
-    '@rstore/nuxt'
+    'workflow/nuxt'
   ],
   ssr: false,
 
@@ -16,11 +17,23 @@ export default defineNuxtConfig({
 
   css: ['~/assets/css/main.css'],
 
+  runtimeConfig: {
+    github: {
+      appId: '',
+      privateKey: '',
+      webhookSecret: ''
+    }
+  },
+
   routeRules: {
     '/': { prerender: true }
   },
 
   compatibilityDate: '2025-01-15',
+
+  hub: {
+    db: 'postgresql'
+  },
 
   auth: {
     loadStrategy: 'client-only'

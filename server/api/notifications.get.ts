@@ -1,28 +1,29 @@
-export default defineEventHandler(async (event) => {
-  const { secure } = await requireUserSession(event)
+import { eq, desc, and } from 'drizzle-orm'
+import { db, schema } from 'hub:db'
 
-  const data = await $fetch<any[]>('https://api.github.com/notifications', {
-    query: {
-      all: 'true'
-    },
-    headers: {
-      Authorization: `Bearer ${secure!.accessToken}`
+export default defineEventHandler(async (event) => {
+  const { user } = await requireUserSession(event)
+
+  const query = getQuery(event)
+  const unreadOnly = query.unread === 'true'
+
+  // Build query conditions
+  const conditions = [eq(schema.notifications.userId, user!.id)]
+  if (unreadOnly) {
+    conditions.push(eq(schema.notifications.read, false))
+  }
+
+  // Use query API with relations to populate nested objects
+  const notifications = await db.query.notifications.findMany({
+    where: and(...conditions),
+    orderBy: desc(schema.notifications.createdAt),
+    limit: 50,
+    with: {
+      repository: true,
+      issue: true,
+      actor: true
     }
   })
-
-  const notifications = data.map((notification: any) => ({
-    id: notification.id,
-    unread: notification.unread,
-    reason: notification.reason,
-    updatedAt: notification.updated_at,
-    lastReadAt: notification.last_read_at,
-    subject: notification.subject,
-    repository: {
-      owner: notification.repository.owner.login,
-      name: notification.repository.name,
-      avatar: notification.repository.owner.avatar_url
-    }
-  }))
 
   return notifications
 })

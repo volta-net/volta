@@ -1,0 +1,104 @@
+# Volta
+
+Volta is a **Linear clone built entirely on GitHub**. It provides a modern, fast project management experience while keeping all data synced with GitHub Issues, Pull Requests, Labels, and Milestones.
+
+## Vision
+
+- Replace Linear/Jira for teams already using GitHub
+- Issues = Tasks, Labels = Tags, Milestones = Cycles/Projects
+- Real-time sync via GitHub App webhooks
+- Beautiful, keyboard-first UI inspired by Linear
+
+## Tech Stack
+
+- **Framework**: Nuxt 4 with Vue 3 Composition API
+- **UI**: Nuxt UI v4 + Tailwind CSS
+- **Auth**: nuxt-auth-utils with GitHub App OAuth
+- **GitHub API**: Octokit with @octokit/auth-app
+- **Database**: NuxtHub with Drizzle ORM (PostgreSQL)
+
+## Architecture
+
+### GitHub App Integration
+
+- OAuth flow for user authentication (`/auth/github`)
+- Webhook endpoint (`/webhook`) receives all GitHub events
+- Installation API (`/api/installations`) lists repos the user has access to
+- Sync API (`/api/repositories/[owner]/[name]/sync`) triggers full repo sync
+- Server utilities in `server/utils/octokit.ts` for GitHub API calls
+
+### Webhook Events
+
+We subscribe to these GitHub events to keep Volta in sync:
+- `issues`, `issue_comment` - Task management
+- `pull_request`, `pull_request_review`, `pull_request_review_comment`, `pull_request_review_thread` - PR tracking
+- `label`, `milestone` - Organization (tags, cycles)
+- `repository` - Repo changes (archived, renamed, etc.)
+- `push`, `release` - Activity feed
+- `installation`, `installation_repositories`, `installation_target`, `meta` - App lifecycle
+
+### Webhook Handlers
+
+Webhook handlers in `server/utils/webhooks.ts` update the database:
+- `handleIssueEvent()` - Creates/updates/deletes issues
+- `handlePullRequestEvent()` - Creates/updates PRs
+- `handleLabelEvent()` - Creates/updates/deletes labels
+- `handleMilestoneEvent()` - Creates/updates/deletes milestones
+- `handleRepositoryEvent()` - Updates repo info (archived, renamed, etc.)
+- `handleInstallationEvent()` - Manages app installations
+
+### Key Directories
+
+- `app/pages/` - Vue pages (index, settings)
+- `app/components/` - Reusable UI components
+- `app/composables/` - Client-side composables
+- `server/api/` - API routes (notifications, installations, sync)
+- `server/db/` - Database schema and migrations (Drizzle ORM)
+- `server/routes/` - Auth and webhook handlers
+- `server/utils/` - Server utilities (Octokit, webhooks, sync)
+- `shared/types/` - Shared TypeScript types
+
+## Database
+
+The database schema matches GitHub's API format with `id` as the primary key (GitHub's ID).
+
+**Tables:**
+- `installations` - GitHub App installations (user/org)
+- `repositories` - Synced repositories
+- `labels` - Repository labels
+- `milestones` - Repository milestones
+- `issues` - Issues (not PRs)
+- `pull_requests` - Pull requests
+
+**Drizzle Workflow:**
+1. Modify schema in `server/db/schema.ts`
+2. Run `npx nuxt db generate` to generate migration
+3. Run `npx nuxt dev` to apply migration during development
+
+**Access the database:** Use `db` and `schema` from `hub:db`
+
+```ts
+import { eq } from 'drizzle-orm'
+import { db, schema } from 'hub:db'
+
+const [issue] = await db.select().from(schema.issues).where(eq(schema.issues.id, issueId))
+```
+
+## Conventions
+
+- Use `<script setup lang="ts">` for all components
+- Prefer `useFetch` for SSR-compatible data fetching, `$fetch` for client-only
+- Use Nuxt UI components (UButton, UCard, UAccordion, etc.)
+- All GitHub API calls go through `useOctokitWithToken()` on server
+- Database IDs match GitHub IDs (bigint primary keys)
+
+## Environment Variables
+
+```
+NUXT_SESSION_PASSWORD        # Session encryption (32+ chars)
+NUXT_OAUTH_GITHUB_CLIENT_ID  # GitHub App Client ID
+NUXT_OAUTH_GITHUB_CLIENT_SECRET # GitHub App Client Secret
+NUXT_GITHUB_APP_ID           # GitHub App ID
+NUXT_GITHUB_PRIVATE_KEY      # GitHub App Private Key
+NUXT_GITHUB_WEBHOOK_SECRET   # Webhook signature verification
+```

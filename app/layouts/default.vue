@@ -5,10 +5,14 @@ const links = [[{
   label: 'Inbox',
   icon: 'i-lucide-inbox',
   to: '/'
+}, {
+  label: 'Settings',
+  icon: 'i-lucide-settings',
+  to: '/settings'
 }], [{
   label: 'Feedback',
   icon: 'i-lucide-message-circle',
-  to: 'https://github.com/volta-net/inbox',
+  to: 'https://github.com/volta-net/volta',
   target: '_blank'
 }]] satisfies NavigationMenuItem[][]
 </script>
@@ -18,8 +22,7 @@ const links = [[{
     <UDashboardSidebar
       id="default"
       collapsed
-      class="bg-elevated/25"
-      :ui="{ footer: 'lg:border-t lg:border-default' }"
+      class="border-r-0 py-4"
     >
       <template #header>
         <AppIcon class="mx-auto h-5" />
@@ -48,6 +51,10 @@ const links = [[{
       </template>
     </UDashboardSidebar>
 
-    <slot />
+    <div class="flex-1 flex m-4 ml-0 rounded-md ring ring-default bg-default/75 shadow">
+      <slot />
+    </div>
+
+    <UDashboardSearch />
   </UDashboardGroup>
 </template>

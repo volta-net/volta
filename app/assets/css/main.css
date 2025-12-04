@@ -7,8 +7,15 @@
 
 :root {
   --ui-primary: black;
+  --ui-header-height: 3rem;
 }
 
 .dark {
   --ui-primary: white;
+}
+
+@layer base {
+  body {
+    @apply bg-neutral-100 dark:bg-neutral-950;
+  }
 }

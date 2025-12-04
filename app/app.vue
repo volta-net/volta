@@ -29,22 +29,28 @@ useSeoMeta({
 
 <template>
   <UApp>
+    <NuxtLoadingIndicator color="var(--ui-primary)" :height="2" />
+
     <NuxtLayout v-if="user">
       <NuxtPage />
     </NuxtLayout>
-    <div v-else class="flex flex-col items-center justify-center h-screen gap-6">
-      <AppLogo class="mx-auto h-12 text-highlighted" />
-      <h1 class="text-xl font-semibold text-toned">
-        A better GitHub inbox for busy maintainers.
-      </h1>
-      <UButton
-        label="Continue with GitHub"
-        icon="i-simple-icons-github"
-        to="/auth/github"
-        external
-        color="neutral"
-        size="lg"
-      />
+
+    <div v-else class="flex flex-col h-screen">
+      <div class="flex-1 flex flex-col items-center justify-center gap-8 rounded-md ring ring-default bg-default/75 shadow m-4">
+        <AppLogo class="mx-auto h-12 text-highlighted" />
+
+        <h1 class="text-lg font-medium text-toned">
+          A better GitHub inbox for busy maintainers.
+        </h1>
+        <UButton
+          label="Continue with GitHub"
+          icon="i-simple-icons-github"
+          to="/auth/github"
+          external
+          color="neutral"
+          size="lg"
+        />
+      </div>
     </div>
   </UApp>
 </template>
