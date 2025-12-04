@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { breakpointsTailwind, useWindowFocus } from '@vueuse/core'
+import { breakpointsTailwind } from '@vueuse/core'
 import type { Notification } from '~~/shared/types/notification'
 
 const { data: notifications, refresh } = await useFetch<Notification[]>('/api/notifications')
@@ -89,6 +89,7 @@ async function deleteAllRead() {
     <NotificationsList
       v-model="selectedNotification"
       :notifications="notifications ?? []"
+      @refresh="refresh"
     />
   </UDashboardPanel>
 
@@ -102,6 +103,7 @@ async function deleteAllRead() {
         </template>
       </UDashboardNavbar>
     </template>
+
     <template #content>
       <div class="flex flex-col gap-4 p-4">
         <p v-if="selectedNotification?.body" class="text-muted text-sm">

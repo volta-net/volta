@@ -46,6 +46,13 @@ export default defineEventHandler(async (event) => {
             payload.installation?.id
           )
         }
+        if (payload.action === 'closed') {
+          await notifyIssueClosed(
+            payload.issue,
+            payload.repository,
+            payload.sender
+          )
+        }
         if (payload.action === 'assigned' && payload.assignee) {
           await notifyIssueAssigned(
             payload.issue,

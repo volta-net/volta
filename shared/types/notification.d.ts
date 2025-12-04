@@ -24,6 +24,9 @@ export interface Notification {
     number: number
     title: string
     state: string
+    stateReason: string | null
+    draft: boolean | null
+    merged: boolean | null
     htmlUrl: string | null
   } | null
   actor: {

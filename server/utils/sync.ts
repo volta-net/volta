@@ -1,6 +1,7 @@
 import { eq } from 'drizzle-orm'
 import { db, schema } from 'hub:db'
 import { Octokit } from 'octokit'
+import { ensureUser } from './users'
 
 export async function syncRepositoryInfo(accessToken: string, owner: string, repo: string) {
   const octokit = new Octokit({ auth: accessToken })
@@ -28,7 +29,6 @@ export async function syncRepositoryInfo(accessToken: string, owner: string, rep
   if (!repository) {
     [repository] = await db.insert(schema.repositories).values({
       id: repoData.id,
-      nodeId: repoData.node_id,
       installationId: installation!.id,
       name: repoData.name,
       fullName: repoData.full_name,
@@ -67,7 +67,6 @@ export async function syncLabels(accessToken: string, owner: string, repo: strin
     } else {
       await db.insert(schema.labels).values({
         id: label.id,
-        nodeId: label.node_id,
         repositoryId,
         name: label.name,
         color: label.color,
@@ -108,7 +107,6 @@ export async function syncMilestones(accessToken: string, owner: string, repo: s
     } else {
       await db.insert(schema.milestones).values({
         id: milestone.id,
-        nodeId: milestone.node_id,
         repositoryId,
         number: milestone.number,
         title: milestone.title,
@@ -145,24 +143,24 @@ export async function syncIssues(accessToken: string, owner: string, repo: strin
     if (issue.pull_request) continue
     issueCount++
 
+    // Ensure author exists as shadow user
+    if (issue.user) {
+      await ensureUser({
+        id: issue.user.id,
+        login: issue.user.login,
+        avatar_url: issue.user.avatar_url
+      })
+    }
+
     const [existingIssue] = await db.select().from(schema.issues).where(eq(schema.issues.id, issue.id))
 
     const milestoneId = issue.milestone?.id ?? null
-
-    const labels = issue.labels
-      .filter((l): l is { id: number, name: string, color: string } => typeof l === 'object' && 'id' in l)
-      .map(l => ({ id: l.id, name: l.name, color: l.color }))
-
-    const assignees = issue.assignees?.map(a => ({
-      login: a.login,
-      id: a.id,
-      avatar_url: a.avatar_url
-    })) || []
 
     const issueData = {
       type: 'issue' as const,
       repositoryId,
       milestoneId,
+      userId: issue.user?.id,
       number: issue.number,
       title: issue.title,
       body: issue.body,
@@ -170,12 +168,6 @@ export async function syncIssues(accessToken: string, owner: string, repo: strin
       stateReason: issue.state_reason,
       htmlUrl: issue.html_url,
       locked: issue.locked,
-      comments: issue.comments,
-      userLogin: issue.user?.login,
-      userId: issue.user?.id,
-      userAvatarUrl: issue.user?.avatar_url,
-      assignees,
-      labels,
       closedAt: issue.closed_at ? new Date(issue.closed_at) : null,
       updatedAt: new Date()
     }
@@ -185,10 +177,18 @@ export async function syncIssues(accessToken: string, owner: string, repo: strin
     } else {
       await db.insert(schema.issues).values({
         id: issue.id,
-        nodeId: issue.node_id,
         ...issueData
       })
     }
+
+    // Sync assignees
+    await syncIssueAssignees(issue.id, issue.assignees || [])
+
+    // Sync labels
+    const labelIds = issue.labels
+      .filter((l): l is { id: number } => typeof l === 'object' && 'id' in l)
+      .map(l => l.id)
+    await syncIssueLabels(issue.id, labelIds)
   }
 
   // Sync pull requests
@@ -202,36 +202,30 @@ export async function syncIssues(accessToken: string, owner: string, repo: strin
   for (const pr of prsData) {
     prCount++
 
+    // Ensure author exists as shadow user
+    if (pr.user) {
+      await ensureUser({
+        id: pr.user.id,
+        login: pr.user.login,
+        avatar_url: pr.user.avatar_url
+      })
+    }
+
     const [existingPR] = await db.select().from(schema.issues).where(eq(schema.issues.id, pr.id))
 
     const milestoneId = pr.milestone?.id ?? null
-    const labels = pr.labels.map(l => ({ id: l.id, name: l.name, color: l.color }))
-    const assignees = pr.assignees?.map(a => ({
-      login: a.login,
-      id: a.id,
-      avatar_url: a.avatar_url
-    })) || []
-    const requestedReviewers = (pr.requested_reviewers as any[])?.map(r => ({
-      login: r.login || r.name,
-      id: r.id,
-      avatar_url: r.avatar_url || ''
-    })) || []
 
     const prData = {
       type: 'pull_request' as const,
       repositoryId,
       milestoneId,
+      userId: pr.user?.id,
       number: pr.number,
       title: pr.title,
       body: pr.body,
       state: pr.state,
       htmlUrl: pr.html_url,
       locked: pr.locked,
-      userLogin: pr.user?.login,
-      userId: pr.user?.id,
-      userAvatarUrl: pr.user?.avatar_url,
-      assignees,
-      labels,
       // PR-specific fields
       draft: pr.draft,
       merged: pr.merged_at !== null,
@@ -239,7 +233,6 @@ export async function syncIssues(accessToken: string, owner: string, repo: strin
       headSha: pr.head.sha,
       baseRef: pr.base.ref,
       baseSha: pr.base.sha,
-      requestedReviewers,
       mergedAt: pr.merged_at ? new Date(pr.merged_at) : null,
       closedAt: pr.closed_at ? new Date(pr.closed_at) : null,
       updatedAt: new Date()
@@ -250,13 +243,74 @@ export async function syncIssues(accessToken: string, owner: string, repo: strin
     } else {
       await db.insert(schema.issues).values({
         id: pr.id,
-        nodeId: pr.node_id,
         ...prData
       })
     }
+
+    // Sync assignees
+    await syncIssueAssignees(pr.id, pr.assignees || [])
+
+    // Sync labels
+    await syncIssueLabels(pr.id, pr.labels.map(l => l.id))
+
+    // Sync requested reviewers
+    const reviewers = (pr.requested_reviewers as any[])?.filter(r => r.id) || []
+    await syncIssueRequestedReviewers(pr.id, reviewers)
   }
 
   return { issues: issueCount, pullRequests: prCount }
+}
+
+// Helper: sync issue assignees
+async function syncIssueAssignees(issueId: number, assignees: { id: number, login: string, avatar_url: string }[]) {
+  // Delete existing assignees
+  await db.delete(schema.issueAssignees).where(eq(schema.issueAssignees.issueId, issueId))
+
+  // Insert new assignees
+  for (const assignee of assignees) {
+    await ensureUser({
+      id: assignee.id,
+      login: assignee.login,
+      avatar_url: assignee.avatar_url
+    })
+    await db.insert(schema.issueAssignees).values({
+      issueId,
+      userId: assignee.id
+    })
+  }
+}
+
+// Helper: sync issue labels
+async function syncIssueLabels(issueId: number, labelIds: number[]) {
+  // Delete existing labels
+  await db.delete(schema.issueLabels).where(eq(schema.issueLabels.issueId, issueId))
+
+  // Insert new labels
+  for (const labelId of labelIds) {
+    await db.insert(schema.issueLabels).values({
+      issueId,
+      labelId
+    })
+  }
+}
+
+// Helper: sync issue requested reviewers
+async function syncIssueRequestedReviewers(issueId: number, reviewers: { id: number, login: string, avatar_url?: string }[]) {
+  // Delete existing reviewers
+  await db.delete(schema.issueRequestedReviewers).where(eq(schema.issueRequestedReviewers.issueId, issueId))
+
+  // Insert new reviewers
+  for (const reviewer of reviewers) {
+    await ensureUser({
+      id: reviewer.id,
+      login: reviewer.login,
+      avatar_url: reviewer.avatar_url
+    })
+    await db.insert(schema.issueRequestedReviewers).values({
+      issueId,
+      userId: reviewer.id
+    })
+  }
 }
 
 export async function updateRepositoryLastSynced(repositoryId: number) {

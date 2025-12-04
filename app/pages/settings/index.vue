@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { useTimeAgo, useWindowFocus } from '@vueuse/core'
 import type { Installation } from '~~/shared/types/installation'
 
 const toast = useToast()

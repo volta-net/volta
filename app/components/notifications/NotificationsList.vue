@@ -5,9 +5,17 @@ const props = defineProps<{
   notifications: Notification[]
 }>()
 
-const notificationsRefs = ref<Record<string, Element>>({})
+const emit = defineEmits<{
+  refresh: []
+}>()
 
+const toast = useToast()
+const notificationsRefs = ref<Record<string, Element>>({})
 const selectedNotification = defineModel<Notification | null>()
+
+// Undo state
+const deletedNotification = ref<Notification | null>(null)
+const undoTimeout = ref<ReturnType<typeof setTimeout> | null>(null)
 
 watch(selectedNotification, () => {
   if (!selectedNotification.value) {
@@ -18,6 +26,111 @@ watch(selectedNotification, () => {
     ref.scrollIntoView({ block: 'nearest' })
   }
 })
+
+// Keep selectedNotification in sync with notifications array after refresh
+watch(() => props.notifications, (newNotifications) => {
+  if (selectedNotification.value) {
+    const updated = newNotifications.find(n => n.id === selectedNotification.value!.id)
+    if (updated) {
+      selectedNotification.value = updated
+    }
+  }
+}, { deep: true })
+
+// Toggle read/unread
+async function toggleRead() {
+  if (!selectedNotification.value) return
+
+  const notification = selectedNotification.value
+  const newReadState = !notification.read
+
+  // Optimistic update
+  notification.read = newReadState
+
+  await $fetch(`/api/notifications/${notification.id}`, {
+    method: 'PATCH',
+    body: { read: newReadState }
+  })
+  emit('refresh')
+}
+
+// Delete notification
+async function deleteNotification() {
+  if (!selectedNotification.value) return
+
+  const notification = selectedNotification.value
+
+  // Store for undo
+  deletedNotification.value = notification
+
+  // Clear any existing undo timeout
+  if (undoTimeout.value) {
+    clearTimeout(undoTimeout.value)
+  }
+
+  // Move selection to next notification before deleting
+  const index = props.notifications.findIndex(n => n.id === notification.id)
+  if (index < props.notifications.length - 1) {
+    selectedNotification.value = props.notifications[index + 1]
+  } else if (index > 0) {
+    selectedNotification.value = props.notifications[index - 1]
+  } else {
+    selectedNotification.value = null
+  }
+
+  // Delete from server
+  await $fetch(`/api/notifications/${notification.id}`, { method: 'DELETE' })
+  emit('refresh')
+
+  // Show toast
+  toast.add({
+    title: 'Notification deleted',
+    description: 'Press Z to undo',
+    icon: 'i-lucide-trash-2',
+    duration: 5000
+  })
+
+  // Clear undo state after 5 seconds
+  undoTimeout.value = setTimeout(() => {
+    deletedNotification.value = null
+    undoTimeout.value = null
+  }, 5000)
+}
+
+// Undo delete
+async function undoDelete() {
+  if (!deletedNotification.value) return
+
+  const notification = deletedNotification.value
+
+  // Clear timeout
+  if (undoTimeout.value) {
+    clearTimeout(undoTimeout.value)
+    undoTimeout.value = null
+  }
+
+  // Recreate notification on server
+  await $fetch('/api/notifications', {
+    method: 'POST',
+    body: {
+      type: notification.type,
+      body: notification.body,
+      repositoryId: notification.repositoryId,
+      issueId: notification.issueId,
+      actorId: notification.actorId,
+      read: notification.read
+    }
+  })
+
+  deletedNotification.value = null
+  emit('refresh')
+
+  toast.add({
+    title: 'Notification restored',
+    icon: 'i-lucide-undo-2',
+    duration: 2000
+  })
+}
 
 defineShortcuts({
   arrowdown: () => {
@@ -37,64 +150,121 @@ defineShortcuts({
     } else if (index > 0) {
       selectedNotification.value = props.notifications[index - 1]
     }
-  }
+  },
+  u: toggleRead,
+  d: deleteNotification,
+  z: undoDelete
 })
 
-function getTypeIcon(type: Notification['type']) {
-  switch (type) {
-    case 'issue_opened':
-    case 'issue_assigned':
-    case 'issue_mentioned':
-    case 'issue_comment':
-      return 'i-lucide-circle-dot'
-    case 'pr_review_requested':
-    case 'pr_review_submitted':
-    case 'pr_comment':
-      return 'i-lucide-git-pull-request'
-    case 'pr_merged':
-      return 'i-lucide-git-merge'
-    case 'pr_closed':
-      return 'i-lucide-git-pull-request-closed'
-    default:
-      return 'i-lucide-bell'
-  }
+// Icons based on issue/PR state (using octicon icons)
+const issueStateIcons: Record<string, string> = {
+  // Issues (state_reason: completed, not_planned, duplicate, reopened, null)
+  open: 'i-octicon-issue-opened-24',
+  completed: 'i-octicon-issue-closed-24',
+  not_planned: 'i-octicon-skip-24',
+  duplicate: 'i-octicon-duplicate-24',
+  reopened: 'i-octicon-issue-reopened-24',
+  // Pull Requests
+  draft: 'i-octicon-git-pull-request-draft-24',
+  merged: 'i-octicon-git-merge-24',
+  open_pr: 'i-octicon-git-pull-request-24',
+  closed_pr: 'i-octicon-git-pull-request-closed-24'
 }
 
-function getTypeColor(type: Notification['type']) {
-  switch (type) {
-    case 'issue_opened':
-      return 'text-success'
-    case 'pr_merged':
-      return 'text-purple-500'
-    case 'pr_closed':
-      return 'text-error'
-    default:
-      return 'text-success'
+// Colors based on issue/PR state
+const issueStateColors: Record<string, string> = {
+  // Issues (state_reason: completed, not_planned, duplicate, reopened, null)
+  open: 'text-emerald-400',
+  completed: 'text-purple-400',
+  not_planned: 'text-gray-400',
+  duplicate: 'text-gray-400',
+  reopened: 'text-emerald-400',
+  // Pull Requests
+  draft: 'text-gray-400',
+  merged: 'text-purple-400',
+  open_pr: 'text-emerald-400',
+  closed_pr: 'text-red-400'
+}
+
+function getIssueIcon(issue: Notification['issue']) {
+  if (!issue) return 'i-octicon-bell-24'
+
+  if (issue.type === 'pull_request') {
+    if (issue.draft) return issueStateIcons.draft
+    if (issue.merged) return issueStateIcons.merged
+    if (issue.state === 'closed') return issueStateIcons.closed_pr
+    return issueStateIcons.open_pr
   }
+
+  // Issue - use stateReason directly
+  if (issue.state === 'open') return issueStateIcons.open
+  return issueStateIcons[issue.stateReason || 'completed'] || issueStateIcons.completed
+}
+
+function getIssueColor(issue: Notification['issue']) {
+  if (!issue) return 'text-muted'
+
+  if (issue.type === 'pull_request') {
+    if (issue.draft) return issueStateColors.draft
+    if (issue.merged) return issueStateColors.merged
+    if (issue.state === 'closed') return issueStateColors.closed_pr
+    return issueStateColors.open_pr
+  }
+
+  // Issue - use stateReason directly
+  if (issue.state === 'open') return issueStateColors.open
+  return issueStateColors[issue.stateReason || 'completed'] || issueStateColors.completed
 }
 
 function getReasonLabel(type: Notification['type']) {
   switch (type) {
     case 'issue_opened':
       return 'Opened'
+    case 'issue_closed':
+      return 'Closed'
     case 'issue_assigned':
       return 'Assigned'
     case 'issue_mentioned':
       return 'Mentioned'
     case 'issue_comment':
-      return 'Commented'
-    case 'pr_review_requested':
-      return 'Review Requested'
-    case 'pr_review_submitted':
-      return 'Reviewed'
     case 'pr_comment':
       return 'Commented'
+    case 'pr_review_requested':
+      return 'Review requested'
+    case 'pr_review_submitted':
+      return 'Reviewed'
     case 'pr_merged':
       return 'Merged'
     case 'pr_closed':
       return 'Closed'
     default:
       return null
+  }
+}
+
+function getReasonIcon(type: Notification['type']) {
+  switch (type) {
+    case 'issue_opened':
+      return 'i-octicon-issue-opened-16'
+    case 'issue_closed':
+      return 'i-octicon-issue-closed-16'
+    case 'issue_assigned':
+      return 'i-octicon-person-16'
+    case 'issue_mentioned':
+      return 'i-octicon-mention-16'
+    case 'issue_comment':
+    case 'pr_comment':
+      return 'i-octicon-comment-16'
+    case 'pr_review_requested':
+      return 'i-octicon-eye-16'
+    case 'pr_review_submitted':
+      return 'i-octicon-check-circle-16'
+    case 'pr_merged':
+      return 'i-octicon-git-merge-16'
+    case 'pr_closed':
+      return 'i-octicon-git-pull-request-closed-16'
+    default:
+      return 'i-octicon-bell-16'
   }
 }
 
@@ -144,8 +314,8 @@ function getTitle(notification: Notification) {
         <!-- Title row -->
         <div class="flex items-center gap-2">
           <UIcon
-            :name="getTypeIcon(notification.type)"
-            :class="getTypeColor(notification.type)"
+            :name="getIssueIcon(notification.issue)"
+            :class="getIssueColor(notification.issue)"
             class="size-4 shrink-0"
           />
           <p class="font-medium truncate flex-1" :class="[notification.read && 'opacity-70']">
@@ -183,7 +353,7 @@ function getTitle(notification: Notification) {
           <UBadge
             v-if="getReasonLabel(notification.type)"
             :label="getReasonLabel(notification.type)!"
-            :icon="getTypeIcon(notification.type)"
+            :icon="getReasonIcon(notification.type)"
             variant="outline"
             color="neutral"
             size="sm"

@@ -59,11 +59,15 @@ export default defineEventHandler(async (event): Promise<Installation[]> => {
           fullName: repo.full_name,
           private: repo.private,
           description: repo.description,
-          url: repo.html_url,
+          htmlUrl: repo.html_url,
           defaultBranch: repo.default_branch,
+          archived: repo.archived,
+          disabled: repo.disabled,
+          syncEnabled: null,
+          lastSyncedAt: syncedRepoMap.get(repo.id)?.toISOString() ?? null,
+          createdAt: repo.created_at,
           updatedAt: repo.updated_at,
-          synced: syncedRepoMap.has(repo.id),
-          lastSyncedAt: syncedRepoMap.get(repo.id)?.toISOString() ?? null
+          synced: syncedRepoMap.has(repo.id)
         }))
       }
     })

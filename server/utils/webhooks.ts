@@ -1,5 +1,6 @@
 import { eq } from 'drizzle-orm'
 import { db, schema } from 'hub:db'
+import { ensureUser } from './users'
 
 // ============================================================================
 // Issues
@@ -75,34 +76,26 @@ export async function handlePullRequestEvent(action: string, pullRequest: any, r
 // ============================================================================
 
 async function upsertIssue(item: any, repositoryId: number, type: 'issue' | 'pull_request') {
-  const labels = item.labels?.map((l: any) => ({
-    id: l.id,
-    name: l.name,
-    color: l.color
-  })) || []
-
-  const assignees = item.assignees?.map((a: any) => ({
-    login: a.login,
-    id: a.id,
-    avatar_url: a.avatar_url
-  })) || []
+  // Ensure author exists as shadow user
+  if (item.user) {
+    await ensureUser({
+      id: item.user.id,
+      login: item.user.login,
+      avatar_url: item.user.avatar_url
+    })
+  }
 
   const itemData: any = {
     type,
     repositoryId,
     milestoneId: item.milestone?.id ?? null,
+    userId: item.user?.id,
     number: item.number,
     title: item.title,
     body: item.body,
     state: item.state,
     htmlUrl: item.html_url,
     locked: item.locked,
-    comments: item.comments,
-    userLogin: item.user?.login,
-    userId: item.user?.id,
-    userAvatarUrl: item.user?.avatar_url,
-    assignees,
-    labels,
     closedAt: item.closed_at ? new Date(item.closed_at) : null,
     updatedAt: new Date()
   }
@@ -116,7 +109,6 @@ async function upsertIssue(item: any, repositoryId: number, type: 'issue' | 'pul
   if (type === 'pull_request') {
     itemData.draft = item.draft
     itemData.merged = item.merged_at !== null || item.merged === true
-    itemData.reviewComments = item.review_comments
     itemData.commits = item.commits
     itemData.additions = item.additions
     itemData.deletions = item.deletions
@@ -125,11 +117,6 @@ async function upsertIssue(item: any, repositoryId: number, type: 'issue' | 'pul
     itemData.headSha = item.head?.sha
     itemData.baseRef = item.base?.ref
     itemData.baseSha = item.base?.sha
-    itemData.requestedReviewers = item.requested_reviewers?.map((r: any) => ({
-      login: r.login || r.name,
-      id: r.id,
-      avatar_url: r.avatar_url || ''
-    })) || []
     itemData.mergedAt = item.merged_at ? new Date(item.merged_at) : null
   }
 
@@ -140,8 +127,76 @@ async function upsertIssue(item: any, repositoryId: number, type: 'issue' | 'pul
   } else {
     await db.insert(schema.issues).values({
       id: item.id,
-      nodeId: item.node_id,
       ...itemData
+    })
+  }
+
+  // Sync assignees
+  await syncIssueAssignees(item.id, item.assignees || [])
+
+  // Sync labels
+  const labelIds = item.labels?.map((l: any) => l.id).filter(Boolean) || []
+  await syncIssueLabels(item.id, labelIds)
+
+  // Sync requested reviewers (PRs only)
+  if (type === 'pull_request') {
+    const reviewers = item.requested_reviewers?.filter((r: any) => r.id) || []
+    await syncIssueRequestedReviewers(item.id, reviewers)
+  }
+}
+
+// Helper: sync issue assignees
+async function syncIssueAssignees(issueId: number, assignees: { id: number, login: string, avatar_url: string }[]) {
+  // Delete existing assignees
+  await db.delete(schema.issueAssignees).where(eq(schema.issueAssignees.issueId, issueId))
+
+  // Insert new assignees
+  for (const assignee of assignees) {
+    await ensureUser({
+      id: assignee.id,
+      login: assignee.login,
+      avatar_url: assignee.avatar_url
+    })
+    await db.insert(schema.issueAssignees).values({
+      issueId,
+      userId: assignee.id
+    })
+  }
+}
+
+// Helper: sync issue labels
+async function syncIssueLabels(issueId: number, labelIds: number[]) {
+  // Delete existing labels
+  await db.delete(schema.issueLabels).where(eq(schema.issueLabels.issueId, issueId))
+
+  // Insert new labels (only if label exists in our DB)
+  for (const labelId of labelIds) {
+    try {
+      await db.insert(schema.issueLabels).values({
+        issueId,
+        labelId
+      })
+    } catch {
+      // Label may not exist in our DB yet - skip
+    }
+  }
+}
+
+// Helper: sync issue requested reviewers
+async function syncIssueRequestedReviewers(issueId: number, reviewers: { id: number, login: string, avatar_url?: string }[]) {
+  // Delete existing reviewers
+  await db.delete(schema.issueRequestedReviewers).where(eq(schema.issueRequestedReviewers.issueId, issueId))
+
+  // Insert new reviewers
+  for (const reviewer of reviewers) {
+    await ensureUser({
+      id: reviewer.id,
+      login: reviewer.login,
+      avatar_url: reviewer.avatar_url
+    })
+    await db.insert(schema.issueRequestedReviewers).values({
+      issueId,
+      userId: reviewer.id
     })
   }
 }
@@ -186,7 +241,6 @@ async function upsertLabel(label: any, repositoryId: number) {
   } else {
     await db.insert(schema.labels).values({
       id: label.id,
-      nodeId: label.node_id,
       ...labelData
     })
   }
@@ -239,7 +293,6 @@ async function upsertMilestone(milestone: any, repositoryId: number) {
   } else {
     await db.insert(schema.milestones).values({
       id: milestone.id,
-      nodeId: milestone.node_id,
       ...milestoneData
     })
   }
@@ -355,7 +408,6 @@ async function createInstallation(installation: any, repositories: any[]) {
     if (!existingRepo) {
       await db.insert(schema.repositories).values({
         id: repo.id,
-        nodeId: repo.node_id,
         installationId: installation.id,
         name: repo.name,
         fullName: repo.full_name,
@@ -376,7 +428,6 @@ export async function handleInstallationRepositoriesEvent(action: string, instal
         if (!existing) {
           await db.insert(schema.repositories).values({
             id: repo.id,
-            nodeId: repo.node_id,
             installationId: installation.id,
             name: repo.name,
             fullName: repo.full_name,

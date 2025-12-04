@@ -124,6 +124,23 @@ export async function notifyIssueAssigned(
   })
 }
 
+export async function notifyIssueClosed(
+  issue: any,
+  repository: any,
+  actor: any
+) {
+  // Notify issue author if they didn't close it themselves - except in dev
+  if (issue.user && !shouldSkipSelfNotification(actor.id, issue.user.id)) {
+    await createNotification({
+      userId: issue.user.id,
+      type: 'issue_closed',
+      repositoryId: repository.id,
+      issueId: issue.id,
+      actor
+    })
+  }
+}
+
 export async function notifyIssueComment(
   issue: any,
   comment: any,
