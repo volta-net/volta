@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Installation } from '~~/shared/types/installation'
+import type { Installation } from '#shared/types/installation'
 
 const toast = useToast()
 const { data: installations, refresh } = await useFetch<Installation[]>('/api/installations')
@@ -103,7 +103,7 @@ function getInstallUrl() {
 </script>
 
 <template>
-  <div class="flex flex-col flex-1">
+  <div class="flex flex-col flex-1 min-h-0">
     <UPageCard
       title="Connected organizations"
       description="Install the GitHub App on your account or organization to get started."
@@ -116,15 +116,15 @@ function getInstallUrl() {
         icon="i-lucide-plus"
         variant="ghost"
         color="neutral"
+        size="sm"
         :to="getInstallUrl()"
         target="_blank"
-        class="me-4.5"
+        class="me-4"
       />
     </UPageCard>
 
     <UCard
-      variant="subtle"
-      class="flex-1"
+      class="max-h-full overflow-y-auto"
       :ui="{
         body: 'p-0 sm:p-0'
       }"
@@ -133,8 +133,10 @@ function getInstallUrl() {
         v-if="installations?.length"
         :items="accordionItems"
         :ui="{
-          trigger: 'px-4 sm:px-6 gap-3',
-          body: 'pb-0 border-t border-default divide-y divide-default'
+          item: 'group',
+          header: 'sticky top-0 bg-elevated/25 hover:bg-elevated/50 backdrop-blur-xl z-1 transition-colors',
+          trigger: 'px-4 gap-3',
+          body: 'pb-0 divide-y divide-default border-t border-default'
         }"
       >
         <template #leading="{ item }">
@@ -171,6 +173,13 @@ function getInstallUrl() {
 
         <template #trailing="{ item, open, ui }">
           <div class="flex items-center gap-2 ms-auto">
+            <UIcon
+              name="i-lucide-chevron-down"
+              data-slot="trailingIcon"
+              class="transition-transform"
+              :class="[ui.trailingIcon(), open ? 'rotate-180' : '']"
+            />
+
             <UDropdownMenu
               :content="{ align: 'start' }"
               :items="[
@@ -188,20 +197,13 @@ function getInstallUrl() {
               ]"
             >
               <UButton
-                variant="ghost"
                 color="neutral"
+                variant="ghost"
                 size="sm"
-                trailing-icon="i-lucide-ellipsis-vertical"
+                icon="i-lucide-ellipsis-vertical"
                 @click.stop
               />
             </UDropdownMenu>
-
-            <UIcon
-              name="i-lucide-chevron-down"
-              data-slot="trailingIcon"
-              class="transition-transform"
-              :class="[ui.trailingIcon(), open ? 'rotate-180' : '']"
-            />
           </div>
         </template>
 
@@ -209,7 +211,7 @@ function getInstallUrl() {
           <div
             v-for="repo in item.installation.repositories"
             :key="repo.id"
-            class="flex items-center justify-between py-3 px-4 sm:px-6 bg-default"
+            class="flex items-center justify-between py-3 px-4 bg-default"
           >
             <div class="flex items-center gap-3 min-w-0">
               <UAvatar :icon="repo.private ? 'i-lucide-lock' : 'i-lucide-book'" />
@@ -254,8 +256,9 @@ function getInstallUrl() {
               ]"
             >
               <UButton
-                variant="subtle"
                 color="neutral"
+                variant="ghost"
+                size="sm"
                 trailing-icon="i-lucide-ellipsis-vertical"
                 :loading="syncing === repo.fullName || deleting === repo.fullName"
               />
@@ -264,8 +267,9 @@ function getInstallUrl() {
             <UButton
               v-else
               icon="i-lucide-download"
-              variant="subtle"
               color="neutral"
+              variant="outline"
+              size="sm"
               :loading="syncing === repo.fullName"
               @click="syncRepository(repo.fullName)"
             >

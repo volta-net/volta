@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Notification } from '~~/shared/types/notification'
+import type { Notification } from '#shared/types/notification'
 
 const props = defineProps<{
   notifications: Notification[]
@@ -219,8 +219,13 @@ function getIssueColor(issue: Notification['issue']) {
 function getReasonLabel(type: Notification['type']) {
   switch (type) {
     case 'issue_opened':
+    case 'pr_opened':
       return 'Opened'
+    case 'issue_reopened':
+    case 'pr_reopened':
+      return 'Reopened'
     case 'issue_closed':
+    case 'pr_closed':
       return 'Closed'
     case 'issue_assigned':
       return 'Assigned'
@@ -235,8 +240,6 @@ function getReasonLabel(type: Notification['type']) {
       return 'Reviewed'
     case 'pr_merged':
       return 'Merged'
-    case 'pr_closed':
-      return 'Closed'
     default:
       return null
   }
@@ -246,6 +249,8 @@ function getReasonIcon(type: Notification['type']) {
   switch (type) {
     case 'issue_opened':
       return 'i-octicon-issue-opened-16'
+    case 'issue_reopened':
+      return 'i-octicon-issue-reopened-16'
     case 'issue_closed':
       return 'i-octicon-issue-closed-16'
     case 'issue_assigned':
@@ -255,6 +260,10 @@ function getReasonIcon(type: Notification['type']) {
     case 'issue_comment':
     case 'pr_comment':
       return 'i-octicon-comment-16'
+    case 'pr_opened':
+      return 'i-octicon-git-pull-request-16'
+    case 'pr_reopened':
+      return 'i-octicon-git-pull-request-16'
     case 'pr_review_requested':
       return 'i-octicon-eye-16'
     case 'pr_review_submitted':

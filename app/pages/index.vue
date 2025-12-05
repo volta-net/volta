@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { breakpointsTailwind } from '@vueuse/core'
-import type { Notification } from '~~/shared/types/notification'
+import type { Notification } from '#shared/types/notification'
 
 const { data: notifications, refresh } = await useFetch<Notification[]>('/api/notifications')
 
