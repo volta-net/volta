@@ -25,7 +25,9 @@ const links = [[{
       class="border-r-0 py-4"
     >
       <template #header>
-        <AppIcon class="mx-auto h-5" />
+        <NuxtLink to="/" class="mx-auto">
+          <AppIcon class="size-6" />
+        </NuxtLink>
       </template>
 
       <template #default="{ collapsed }">
@@ -51,7 +53,7 @@ const links = [[{
       </template>
     </UDashboardSidebar>
 
-    <div class="flex-1 flex m-4 ml-0 rounded-md ring ring-default bg-default/75 shadow">
+    <div class="flex-1 flex m-4 lg:ml-0 rounded-md ring ring-default bg-default/75 shadow">
       <slot />
     </div>
 

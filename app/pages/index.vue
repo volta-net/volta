@@ -93,7 +93,7 @@ async function deleteAllRead() {
     />
   </UDashboardPanel>
 
-  <UDashboardPanel v-if="selectedNotification">
+  <UDashboardPanel v-if="selectedNotification" id="inbox-2">
     <template #header>
       <UDashboardNavbar>
         <template #title>
@@ -116,7 +116,7 @@ async function deleteAllRead() {
     </template>
   </UDashboardPanel>
 
-  <UDashboardPanel v-else>
+  <UDashboardPanel v-else id="inbox-2" class="hidden lg:flex">
     <div class="flex-1 flex flex-col items-center justify-center gap-4">
       <UIcon name="i-lucide-inbox" class="size-20 text-dimmed" />
 
@@ -135,6 +135,7 @@ async function deleteAllRead() {
     <USlideover
       v-if="isMobile"
       v-model:open="isPanelOpen"
+      :title="`#${selectedNotification?.issue?.number} ${selectedNotification?.issue?.title}`"
     >
       <template #content>
         <!-- <InboxNotification

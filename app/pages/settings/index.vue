@@ -110,12 +110,12 @@ function getInstallUrl() {
       variant="naked"
       orientation="horizontal"
       class="mb-4"
-      :ui="{ container: 'lg:flex lg:flex-row' }"
+      :ui="{ title: 'leading-7', container: 'flex! flex-row! gap-0! items-start!' }"
     >
       <UButton
         icon="i-lucide-plus"
-        variant="ghost"
         color="neutral"
+        variant="soft"
         size="sm"
         :to="getInstallUrl()"
         target="_blank"
@@ -171,40 +171,32 @@ function getInstallUrl() {
           </div>
         </template>
 
-        <template #trailing="{ item, open, ui }">
-          <div class="flex items-center gap-2 ms-auto">
-            <UIcon
-              name="i-lucide-chevron-down"
-              data-slot="trailingIcon"
-              class="transition-transform"
-              :class="[ui.trailingIcon(), open ? 'rotate-180' : '']"
+        <template #trailing="{ item }">
+          <UDropdownMenu
+            :content="{ align: 'start' }"
+            :items="[
+              [{
+                label: 'Configure',
+                icon: 'i-lucide-external-link',
+                to: getGitHubConfigUrl(item.installation),
+                target: '_blank'
+              }],
+              [{
+                label: 'Disconnect...',
+                icon: 'i-lucide-unplug',
+                color: 'error' as const
+              }]
+            ]"
+          >
+            <UButton
+              color="neutral"
+              variant="soft"
+              size="sm"
+              icon="i-lucide-ellipsis-vertical"
+              class="ms-auto"
+              @click.stop
             />
-
-            <UDropdownMenu
-              :content="{ align: 'start' }"
-              :items="[
-                [{
-                  label: 'Configure',
-                  icon: 'i-lucide-external-link',
-                  to: getGitHubConfigUrl(item.installation),
-                  target: '_blank'
-                }],
-                [{
-                  label: 'Disconnect...',
-                  icon: 'i-lucide-unplug',
-                  color: 'error' as const
-                }]
-              ]"
-            >
-              <UButton
-                color="neutral"
-                variant="ghost"
-                size="sm"
-                icon="i-lucide-ellipsis-vertical"
-                @click.stop
-              />
-            </UDropdownMenu>
-          </div>
+          </UDropdownMenu>
         </template>
 
         <template #body="{ item }">
@@ -217,7 +209,7 @@ function getInstallUrl() {
               <UAvatar :icon="repo.private ? 'i-lucide-lock' : 'i-lucide-book'" />
               <div class="min-w-0">
                 <p class="font-medium truncate flex items-center gap-2">
-                  {{ repo.name }}
+                  <NuxtLink :to="`https://github.com/${repo.fullName}`" target="_blank">{{ repo.name }}</NuxtLink>
                   <UBadge
                     v-if="repo.synced"
                     color="success"
@@ -257,7 +249,7 @@ function getInstallUrl() {
             >
               <UButton
                 color="neutral"
-                variant="ghost"
+                variant="soft"
                 size="sm"
                 trailing-icon="i-lucide-ellipsis-vertical"
                 :loading="syncing === repo.fullName || deleting === repo.fullName"
@@ -268,7 +260,7 @@ function getInstallUrl() {
               v-else
               icon="i-lucide-download"
               color="neutral"
-              variant="outline"
+              variant="soft"
               size="sm"
               :loading="syncing === repo.fullName"
               @click="syncRepository(repo.fullName)"

@@ -61,19 +61,18 @@ const items = computed<DropdownMenuItem[][]>(() => ([[{
 <template>
   <UDropdownMenu
     :items="items"
-    :content="{ align: 'center', collisionPadding: 12 }"
-    :ui="{ content: collapsed ? 'w-48' : 'w-(--reka-dropdown-menu-trigger-width)' }"
+    :content="{ align: 'start', collisionPadding: 12 }"
   >
     <UButton
       :avatar="{
         src: user?.avatar,
         alt: user?.username
       }"
+      :label="user?.username"
       color="neutral"
       variant="ghost"
-      block
-      square
-      class="data-[state=open]:bg-elevated"
+      class="data-[state=open]:bg-elevated px-2.5 lg:px-1.5"
+      :ui="{ label: 'lg:hidden' }"
     />
   </UDropdownMenu>
 </template>

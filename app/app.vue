@@ -42,6 +42,7 @@ useSeoMeta({
         <h1 class="text-lg font-medium text-toned">
           A better GitHub inbox for busy maintainers.
         </h1>
+
         <UButton
           label="Continue with GitHub"
           icon="i-simple-icons-github"
