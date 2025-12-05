@@ -46,6 +46,13 @@ export default defineEventHandler(async (event) => {
             payload.installation?.id
           )
         }
+        if (payload.action === 'reopened') {
+          await notifyIssueReopened(
+            payload.issue,
+            payload.repository,
+            payload.sender
+          )
+        }
         if (payload.action === 'closed') {
           await notifyIssueClosed(
             payload.issue,
@@ -63,21 +70,47 @@ export default defineEventHandler(async (event) => {
         }
         break
 
-      case 'issue_comment':
-        // Update issue comment count
+      case 'issue_comment': {
+        // Note: GitHub sends issue_comment for both issues and PRs
+        // Check if this is a PR comment (issue.pull_request exists)
+        const isPRComment = !!payload.issue?.pull_request
         if (payload.issue) {
-          await handleIssueEvent('edited', payload.issue, payload.repository)
+          if (isPRComment) {
+            await handlePullRequestEvent('edited', payload.issue, payload.repository)
+          } else {
+            await handleIssueEvent('edited', payload.issue, payload.repository)
+          }
+        }
+        // Sync the comment to our database
+        if (payload.comment) {
+          await handleCommentEvent(
+            payload.action,
+            payload.comment,
+            payload.issue,
+            payload.repository,
+            payload.installation?.id
+          )
         }
         // Create notification for comment
         if (payload.action === 'created' && payload.comment) {
-          await notifyIssueComment(
-            payload.issue,
-            payload.comment,
-            payload.repository,
-            payload.sender
-          )
+          if (isPRComment) {
+            await notifyPRComment(
+              payload.issue,
+              payload.comment,
+              payload.repository,
+              payload.sender
+            )
+          } else {
+            await notifyIssueComment(
+              payload.issue,
+              payload.comment,
+              payload.repository,
+              payload.sender
+            )
+          }
         }
         break
+      }
 
       // Label events
       case 'label':
@@ -93,6 +126,20 @@ export default defineEventHandler(async (event) => {
       case 'pull_request':
         await handlePullRequestEvent(payload.action, payload.pull_request, payload.repository)
         // Create notifications
+        if (payload.action === 'opened') {
+          await notifyPROpened(
+            payload.pull_request,
+            payload.repository,
+            payload.sender
+          )
+        }
+        if (payload.action === 'reopened') {
+          await notifyPRReopened(
+            payload.pull_request,
+            payload.repository,
+            payload.sender
+          )
+        }
         if (payload.action === 'review_requested' && payload.requested_reviewer) {
           await notifyPRReviewRequested(
             payload.pull_request,
@@ -123,6 +170,16 @@ export default defineEventHandler(async (event) => {
         if (payload.pull_request) {
           await handlePullRequestEvent('edited', payload.pull_request, payload.repository)
         }
+        // Sync the review to our database
+        if (payload.review) {
+          await handleReviewEvent(
+            payload.action,
+            payload.review,
+            payload.pull_request,
+            payload.repository,
+            payload.installation?.id
+          )
+        }
         // Create notification for review
         if (payload.action === 'submitted' && payload.review) {
           await notifyPRReviewSubmitted(
@@ -138,6 +195,16 @@ export default defineEventHandler(async (event) => {
         // Update PR on review activity
         if (payload.pull_request) {
           await handlePullRequestEvent('edited', payload.pull_request, payload.repository)
+        }
+        // Sync the review comment to our database
+        if (payload.comment) {
+          await handleReviewCommentEvent(
+            payload.action,
+            payload.comment,
+            payload.pull_request,
+            payload.repository,
+            payload.installation?.id
+          )
         }
         // Create notification for comment
         if (payload.action === 'created' && payload.comment) {

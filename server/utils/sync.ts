@@ -47,7 +47,7 @@ export async function syncRepositoryInfo(accessToken: string, owner: string, rep
 export async function syncLabels(accessToken: string, owner: string, repo: string, repositoryId: number) {
   const octokit = new Octokit({ auth: accessToken })
 
-  const { data: labelsData } = await octokit.rest.issues.listLabelsForRepo({
+  const labelsData = await octokit.paginate(octokit.rest.issues.listLabelsForRepo, {
     owner,
     repo,
     per_page: 100
@@ -82,7 +82,7 @@ export async function syncLabels(accessToken: string, owner: string, repo: strin
 export async function syncMilestones(accessToken: string, owner: string, repo: string, repositoryId: number) {
   const octokit = new Octokit({ auth: accessToken })
 
-  const { data: milestonesData } = await octokit.rest.issues.listMilestones({
+  const milestonesData = await octokit.paginate(octokit.rest.issues.listMilestones, {
     owner,
     repo,
     state: 'all',
@@ -131,7 +131,7 @@ export async function syncIssues(accessToken: string, owner: string, repo: strin
   let prCount = 0
 
   // Sync issues (GitHub API returns issues without PRs when filtering)
-  const { data: issuesData } = await octokit.rest.issues.listForRepo({
+  const issuesData = await octokit.paginate(octokit.rest.issues.listForRepo, {
     owner,
     repo,
     state: 'all',
@@ -192,7 +192,7 @@ export async function syncIssues(accessToken: string, owner: string, repo: strin
   }
 
   // Sync pull requests
-  const { data: prsData } = await octokit.rest.pulls.list({
+  const prsData = await octokit.paginate(octokit.rest.pulls.list, {
     owner,
     repo,
     state: 'all',

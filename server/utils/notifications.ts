@@ -129,16 +129,35 @@ export async function notifyIssueClosed(
   repository: any,
   actor: any
 ) {
-  // Notify issue author if they didn't close it themselves - except in dev
-  if (issue.user && !shouldSkipSelfNotification(actor.id, issue.user.id)) {
-    await createNotification({
-      userId: issue.user.id,
-      type: 'issue_closed',
-      repositoryId: repository.id,
-      issueId: issue.id,
-      actor
-    })
-  }
+  // Don't notify if no author or closed by author - except in dev
+  if (!issue.user) return
+  if (shouldSkipSelfNotification(actor.id, issue.user.id)) return
+
+  await createNotification({
+    userId: issue.user.id,
+    type: 'issue_closed',
+    repositoryId: repository.id,
+    issueId: issue.id,
+    actor
+  })
+}
+
+export async function notifyIssueReopened(
+  issue: any,
+  repository: any,
+  actor: any
+) {
+  // Don't notify if no author or reopened by author - except in dev
+  if (!issue.user) return
+  if (shouldSkipSelfNotification(actor.id, issue.user.id)) return
+
+  await createNotification({
+    userId: issue.user.id,
+    type: 'issue_reopened',
+    repositoryId: repository.id,
+    issueId: issue.id,
+    actor
+  })
 }
 
 export async function notifyIssueComment(
@@ -159,8 +178,8 @@ export async function notifyIssueComment(
     })
   }
 
-  // Notify assignees (except commenter and author already notified)
-  const notifiedIds = new Set(isDev ? [issue.user?.id] : [actor.id, issue.user?.id])
+  // Notify assignees (except issue author already notified above)
+  const notifiedIds = new Set([issue.user?.id])
   for (const assignee of issue.assignees || []) {
     if (!notifiedIds.has(assignee.id) && !shouldSkipSelfNotification(actor.id, assignee.id)) {
       notifiedIds.add(assignee.id)
@@ -179,6 +198,46 @@ export async function notifyIssueComment(
 // ============================================================================
 // Pull Request Notifications
 // ============================================================================
+
+export async function notifyPROpened(
+  pullRequest: any,
+  repository: any,
+  actor: any
+) {
+  // Get subscribers who want PR notifications from our database
+  const subscribers = await getSubscribers(repository.id, 'pullRequests')
+
+  for (const subscriber of subscribers) {
+    // Don't notify the actor (person who opened the PR) - except in dev
+    if (shouldSkipSelfNotification(actor.id, subscriber.userId)) continue
+
+    await createNotification({
+      userId: subscriber.userId,
+      type: 'pr_opened',
+      repositoryId: repository.id,
+      issueId: pullRequest.id,
+      actor
+    })
+  }
+}
+
+export async function notifyPRReopened(
+  pullRequest: any,
+  repository: any,
+  actor: any
+) {
+  // Don't notify if no author or reopened by author - except in dev
+  if (!pullRequest.user) return
+  if (shouldSkipSelfNotification(actor.id, pullRequest.user.id)) return
+
+  await createNotification({
+    userId: pullRequest.user.id,
+    type: 'pr_reopened',
+    repositoryId: repository.id,
+    issueId: pullRequest.id,
+    actor
+  })
+}
 
 export async function notifyPRReviewRequested(
   pullRequest: any,
@@ -235,8 +294,8 @@ export async function notifyPRComment(
     })
   }
 
-  // Notify assignees
-  const notifiedIds = new Set(isDev ? [pullRequest.user?.id] : [actor.id, pullRequest.user?.id])
+  // Notify assignees (except PR author already notified above)
+  const notifiedIds = new Set([pullRequest.user?.id])
   for (const assignee of pullRequest.assignees || []) {
     if (!notifiedIds.has(assignee.id) && !shouldSkipSelfNotification(actor.id, assignee.id)) {
       notifiedIds.add(assignee.id)
@@ -274,9 +333,10 @@ export async function notifyPRClosed(
   repository: any,
   actor: any
 ) {
-  // Don't notify if merged (separate notification) or closed by author - except in dev
+  // Don't notify if merged (separate notification) or no author or closed by author - except in dev
   if (pullRequest.merged) return
-  if (pullRequest.user && shouldSkipSelfNotification(actor.id, pullRequest.user.id)) return
+  if (!pullRequest.user) return
+  if (shouldSkipSelfNotification(actor.id, pullRequest.user.id)) return
 
   await createNotification({
     userId: pullRequest.user.id,

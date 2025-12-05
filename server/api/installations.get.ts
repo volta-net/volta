@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm'
 import { db, schema } from 'hub:db'
-import type { Installation } from '~~/shared/types/installation'
+import type { Installation } from '#shared/types/installation'
 
 export default defineEventHandler(async (event): Promise<Installation[]> => {
   const { secure } = await requireUserSession(event)

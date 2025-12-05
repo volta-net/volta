@@ -12,6 +12,9 @@ export default defineEventHandler(async (event) => {
   }
 
   const issueId = parseInt(id)
+  if (isNaN(issueId)) {
+    throw createError({ statusCode: 400, message: 'Invalid issue ID' })
+  }
 
   // Fetch issue with relations
   const issue = await db.query.issues.findFirst({
@@ -40,12 +43,34 @@ export default defineEventHandler(async (event) => {
           user: true
         },
         orderBy: (comments, { asc }) => [asc(comments.createdAt)]
+      },
+      reviews: {
+        with: {
+          user: true
+        },
+        orderBy: (reviews, { asc }) => [asc(reviews.submittedAt)]
+      },
+      reviewComments: {
+        with: {
+          user: true,
+          review: true
+        },
+        orderBy: (reviewComments, { asc }) => [asc(reviewComments.createdAt)]
       }
     }
   })
 
   if (!issue) {
     throw createError({ statusCode: 404, message: 'Issue not found' })
+  }
+
+  // Verify user has access to the repository on GitHub
+  const octokit = new Octokit({ auth: secure!.accessToken })
+  const [owner, repo] = issue.repository!.fullName.split('/')
+  try {
+    await octokit.rest.repos.get({ owner, repo })
+  } catch {
+    throw createError({ statusCode: 403, message: 'You do not have access to this issue' })
   }
 
   // Mark related notification as read (if exists)
@@ -61,12 +86,54 @@ export default defineEventHandler(async (event) => {
       eq(schema.notifications.read, false)
     ))
 
-  // Re-sync issue from GitHub in the background
+  // Always sync in background for freshness
   syncIssueFromGitHub(secure!.accessToken, issue).catch((err) => {
     console.warn('[issues] Failed to re-sync issue from GitHub:', err)
   })
 
-  // Transform the data for the response
+  // If issue hasn't been fully synced yet (comments, reactions, etc.), await the sync
+  if (!issue.synced) {
+    try {
+      await syncIssueFromGitHub(secure!.accessToken, issue)
+
+      // Re-fetch issue with fresh data
+      const freshIssue = await db.query.issues.findFirst({
+        where: eq(schema.issues.id, issueId),
+        with: {
+          repository: true,
+          milestone: true,
+          user: true,
+          assignees: { with: { user: true } },
+          labels: { with: { label: true } },
+          requestedReviewers: { with: { user: true } },
+          comments: {
+            with: { user: true },
+            orderBy: (comments, { asc }) => [asc(comments.createdAt)]
+          },
+          reviews: {
+            with: { user: true },
+            orderBy: (reviews, { asc }) => [asc(reviews.submittedAt)]
+          },
+          reviewComments: {
+            with: { user: true, review: true },
+            orderBy: (reviewComments, { asc }) => [asc(reviewComments.createdAt)]
+          }
+        }
+      })
+
+      return {
+        ...freshIssue,
+        assignees: freshIssue!.assignees.map(a => a.user),
+        labels: freshIssue!.labels.map(l => l.label),
+        requestedReviewers: freshIssue!.requestedReviewers.map(r => r.user)
+      }
+    } catch (err) {
+      console.warn('[issues] Failed to sync issue from GitHub:', err)
+      // Fall through to return cached data
+    }
+  }
+
+  // Return cached data
   return {
     ...issue,
     assignees: issue.assignees.map(a => a.user),
@@ -130,8 +197,15 @@ async function syncIssueFromGitHub(accessToken: string, issue: any) {
     const reviewers = (ghPr.requested_reviewers as any[])?.filter(r => r.id) || []
     await syncRequestedReviewers(issue.id, reviewers)
 
-    // Sync comments
+    // Sync comments (general PR comments)
     await syncComments(accessToken, owner, repo, issue.number, issue.id)
+
+    // Sync PR reviews and review comments
+    await syncReviews(accessToken, owner, repo, issue.number, issue.id)
+    await syncReviewComments(accessToken, owner, repo, issue.number, issue.id)
+
+    // Mark as fully synced
+    await db.update(schema.issues).set({ synced: true }).where(eq(schema.issues.id, issue.id))
   } else {
     const { data: ghIssue } = await octokit.rest.issues.get({
       owner,
@@ -170,6 +244,9 @@ async function syncIssueFromGitHub(accessToken: string, issue: any) {
 
     // Sync comments
     await syncComments(accessToken, owner, repo, issue.number, issue.id)
+
+    // Mark as fully synced
+    await db.update(schema.issues).set({ synced: true }).where(eq(schema.issues.id, issue.id))
   }
 }
 
@@ -247,6 +324,81 @@ async function syncComments(accessToken: string, owner: string, repo: string, is
       issueId,
       userId: comment.user?.id,
       body: comment.body || '',
+      htmlUrl: comment.html_url,
+      createdAt: new Date(comment.created_at),
+      updatedAt: new Date(comment.updated_at)
+    })
+  }
+}
+
+async function syncReviews(accessToken: string, owner: string, repo: string, prNumber: number, issueId: number) {
+  const octokit = new Octokit({ auth: accessToken })
+
+  const { data: reviews } = await octokit.rest.pulls.listReviews({
+    owner,
+    repo,
+    pull_number: prNumber,
+    per_page: 100
+  })
+
+  // Delete existing reviews and re-insert
+  await db.delete(schema.issueReviews).where(eq(schema.issueReviews.issueId, issueId))
+
+  for (const review of reviews) {
+    if (review.user) {
+      await ensureUser({
+        id: review.user.id,
+        login: review.user.login,
+        avatar_url: review.user.avatar_url
+      })
+    }
+
+    await db.insert(schema.issueReviews).values({
+      id: review.id,
+      issueId,
+      userId: review.user?.id,
+      body: review.body,
+      state: review.state as any,
+      htmlUrl: review.html_url,
+      commitId: review.commit_id,
+      submittedAt: review.submitted_at ? new Date(review.submitted_at) : null
+    })
+  }
+}
+
+async function syncReviewComments(accessToken: string, owner: string, repo: string, prNumber: number, issueId: number) {
+  const octokit = new Octokit({ auth: accessToken })
+
+  const { data: comments } = await octokit.rest.pulls.listReviewComments({
+    owner,
+    repo,
+    pull_number: prNumber,
+    per_page: 100
+  })
+
+  // Delete existing review comments and re-insert
+  await db.delete(schema.issueReviewComments).where(eq(schema.issueReviewComments.issueId, issueId))
+
+  for (const comment of comments) {
+    if (comment.user) {
+      await ensureUser({
+        id: comment.user.id,
+        login: comment.user.login,
+        avatar_url: comment.user.avatar_url
+      })
+    }
+
+    await db.insert(schema.issueReviewComments).values({
+      id: comment.id,
+      issueId,
+      reviewId: comment.pull_request_review_id,
+      userId: comment.user?.id,
+      body: comment.body,
+      path: comment.path,
+      line: comment.line,
+      side: comment.side,
+      commitId: comment.commit_id,
+      diffHunk: comment.diff_hunk,
       htmlUrl: comment.html_url,
       createdAt: new Date(comment.created_at),
       updatedAt: new Date(comment.updated_at)

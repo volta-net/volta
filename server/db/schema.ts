@@ -15,7 +15,9 @@ export const users = pgTable('users', {
 })
 
 // Notification types
-export type NotificationType = 'issue_opened' | 'issue_closed' | 'issue_assigned' | 'issue_mentioned' | 'issue_comment' | 'pr_review_requested' | 'pr_review_submitted' | 'pr_comment' | 'pr_merged' | 'pr_closed'
+export type NotificationType
+  = | 'issue_opened' | 'issue_reopened' | 'issue_closed' | 'issue_assigned' | 'issue_mentioned' | 'issue_comment'
+    | 'pr_opened' | 'pr_reopened' | 'pr_review_requested' | 'pr_review_submitted' | 'pr_comment' | 'pr_merged' | 'pr_closed'
 
 // Notifications
 export const notifications = pgTable('notifications', {
@@ -129,7 +131,9 @@ export const issues = pgTable('issues', {
   // Timestamps
   closedAt: timestamp('closed_at'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow()
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  // Sync status - false until full data (comments, reactions, etc.) has been fetched from GitHub
+  synced: boolean().default(false).notNull()
 })
 
 // Issue Assignees (many-to-many: issues <-> users)
@@ -150,12 +154,46 @@ export const issueRequestedReviewers = pgTable('issue_requested_reviewers', {
   userId: bigint('user_id', { mode: 'number' }).notNull().references(() => users.id, { onDelete: 'cascade' })
 })
 
-// Issue Comments
+// Issue Comments (general comments on issues/PRs)
 export const issueComments = pgTable('issue_comments', {
   id: bigint({ mode: 'number' }).primaryKey(), // GitHub comment ID
   issueId: bigint('issue_id', { mode: 'number' }).notNull().references(() => issues.id, { onDelete: 'cascade' }),
   userId: bigint('user_id', { mode: 'number' }).references(() => users.id, { onDelete: 'set null' }),
   body: text().notNull(),
+  htmlUrl: text('html_url'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow()
+})
+
+// Review state
+export type ReviewState = 'APPROVED' | 'CHANGES_REQUESTED' | 'COMMENTED' | 'DISMISSED' | 'PENDING'
+
+// Issue Reviews (PR review submissions with state)
+export const issueReviews = pgTable('issue_reviews', {
+  id: bigint({ mode: 'number' }).primaryKey(), // GitHub review ID
+  issueId: bigint('issue_id', { mode: 'number' }).notNull().references(() => issues.id, { onDelete: 'cascade' }),
+  userId: bigint('user_id', { mode: 'number' }).references(() => users.id, { onDelete: 'set null' }),
+  body: text(),
+  state: text().$type<ReviewState>().notNull(),
+  htmlUrl: text('html_url'),
+  commitId: text('commit_id'),
+  submittedAt: timestamp('submitted_at'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow()
+})
+
+// Issue Review Comments (inline code comments on PRs)
+export const issueReviewComments = pgTable('issue_review_comments', {
+  id: bigint({ mode: 'number' }).primaryKey(), // GitHub comment ID
+  issueId: bigint('issue_id', { mode: 'number' }).notNull().references(() => issues.id, { onDelete: 'cascade' }),
+  reviewId: bigint('review_id', { mode: 'number' }).references(() => issueReviews.id, { onDelete: 'cascade' }),
+  userId: bigint('user_id', { mode: 'number' }).references(() => users.id, { onDelete: 'set null' }),
+  body: text().notNull(),
+  path: text(), // File path
+  line: bigint({ mode: 'number' }), // Line number
+  side: text(), // 'LEFT' or 'RIGHT'
+  commitId: text('commit_id'),
+  diffHunk: text('diff_hunk'),
   htmlUrl: text('html_url'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow()
@@ -167,6 +205,8 @@ export const usersRelations = relations(users, ({ many }) => ({
   assignedIssues: many(issueAssignees),
   reviewRequests: many(issueRequestedReviewers),
   comments: many(issueComments),
+  reviews: many(issueReviews),
+  reviewComments: many(issueReviewComments),
   notifications: many(notifications, { relationName: 'notificationRecipient' }),
   actedNotifications: many(notifications, { relationName: 'notificationActor' }),
   subscriptions: many(repositorySubscriptions)
@@ -202,7 +242,9 @@ export const issuesRelations = relations(issues, ({ one, many }) => ({
   assignees: many(issueAssignees),
   labels: many(issueLabels),
   requestedReviewers: many(issueRequestedReviewers),
-  comments: many(issueComments)
+  comments: many(issueComments),
+  reviews: many(issueReviews),
+  reviewComments: many(issueReviewComments)
 }))
 
 export const labelsRelations = relations(labels, ({ one, many }) => ({
@@ -253,6 +295,33 @@ export const issueCommentsRelations = relations(issueComments, ({ one }) => ({
   }),
   user: one(users, {
     fields: [issueComments.userId],
+    references: [users.id]
+  })
+}))
+
+export const issueReviewsRelations = relations(issueReviews, ({ one, many }) => ({
+  issue: one(issues, {
+    fields: [issueReviews.issueId],
+    references: [issues.id]
+  }),
+  user: one(users, {
+    fields: [issueReviews.userId],
+    references: [users.id]
+  }),
+  comments: many(issueReviewComments)
+}))
+
+export const issueReviewCommentsRelations = relations(issueReviewComments, ({ one }) => ({
+  issue: one(issues, {
+    fields: [issueReviewComments.issueId],
+    references: [issues.id]
+  }),
+  review: one(issueReviews, {
+    fields: [issueReviewComments.reviewId],
+    references: [issueReviews.id]
+  }),
+  user: one(users, {
+    fields: [issueReviewComments.userId],
     references: [users.id]
   })
 }))

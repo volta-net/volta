@@ -202,6 +202,342 @@ async function syncIssueRequestedReviewers(issueId: number, reviewers: { id: num
 }
 
 // ============================================================================
+// Comments
+// ============================================================================
+
+export async function handleCommentEvent(action: string, comment: any, issue: any, repository: any, installationId?: number) {
+  // Check if repository is synced
+  const [repo] = await db.select().from(schema.repositories).where(eq(schema.repositories.id, repository.id))
+  if (!repo) {
+    console.log(`[Webhook] Repository ${repository.full_name} not synced, skipping comment event`)
+    return
+  }
+
+  // Check if the issue exists in our DB
+  const [existingIssue] = await db.select().from(schema.issues).where(eq(schema.issues.id, issue.id))
+  if (!existingIssue) {
+    console.log(`[Webhook] Issue ${issue.id} not synced, skipping comment event`)
+    return
+  }
+
+  // If issue hasn't been fully synced yet, fetch all comments now
+  if (!existingIssue.synced && installationId) {
+    await syncAllComments(installationId, repository.full_name, issue.number, existingIssue.id)
+    // Mark issue as synced
+    await db.update(schema.issues).set({ synced: true }).where(eq(schema.issues.id, existingIssue.id))
+    return // All comments including this one are now synced
+  }
+
+  // Issue already synced, just upsert this single comment
+  switch (action) {
+    case 'created':
+    case 'edited':
+      await upsertComment(comment, existingIssue.id)
+      break
+    case 'deleted':
+      await db.delete(schema.issueComments).where(eq(schema.issueComments.id, comment.id))
+      break
+  }
+}
+
+// Fetch all comments for an issue using installation token
+async function syncAllComments(installationId: number, repoFullName: string, issueNumber: number, issueId: number) {
+  try {
+    const octokit = await useOctokitAsInstallation(installationId)
+    const [owner, repo] = repoFullName.split('/')
+
+    const comments = await octokit.paginate(octokit.rest.issues.listComments, {
+      owner,
+      repo,
+      issue_number: issueNumber,
+      per_page: 100
+    })
+
+    // Delete existing comments and re-insert
+    await db.delete(schema.issueComments).where(eq(schema.issueComments.issueId, issueId))
+
+    for (const comment of comments) {
+      if (comment.user) {
+        await ensureUser({
+          id: comment.user.id,
+          login: comment.user.login,
+          avatar_url: comment.user.avatar_url
+        })
+      }
+
+      await db.insert(schema.issueComments).values({
+        id: comment.id,
+        issueId,
+        userId: comment.user?.id,
+        body: comment.body || '',
+        htmlUrl: comment.html_url,
+        createdAt: new Date(comment.created_at),
+        updatedAt: new Date(comment.updated_at)
+      })
+    }
+
+    console.log(`[Webhook] Synced ${comments.length} comments for issue #${issueNumber}`)
+  } catch (error) {
+    console.error(`[Webhook] Failed to sync comments for issue #${issueNumber}:`, error)
+  }
+}
+
+async function upsertComment(comment: any, issueId: number) {
+  // Ensure author exists as shadow user
+  if (comment.user) {
+    await ensureUser({
+      id: comment.user.id,
+      login: comment.user.login,
+      avatar_url: comment.user.avatar_url
+    })
+  }
+
+  const commentData = {
+    issueId,
+    userId: comment.user?.id,
+    body: comment.body || '',
+    htmlUrl: comment.html_url,
+    updatedAt: new Date(comment.updated_at)
+  }
+
+  const [existing] = await db.select().from(schema.issueComments).where(eq(schema.issueComments.id, comment.id))
+
+  if (existing) {
+    await db.update(schema.issueComments).set(commentData).where(eq(schema.issueComments.id, comment.id))
+  } else {
+    await db.insert(schema.issueComments).values({
+      id: comment.id,
+      ...commentData,
+      createdAt: new Date(comment.created_at)
+    })
+  }
+}
+
+// ============================================================================
+// PR Reviews
+// ============================================================================
+
+export async function handleReviewEvent(action: string, review: any, pullRequest: any, repository: any, installationId?: number) {
+  // Check if repository is synced
+  const [repo] = await db.select().from(schema.repositories).where(eq(schema.repositories.id, repository.id))
+  if (!repo) {
+    console.log(`[Webhook] Repository ${repository.full_name} not synced, skipping review event`)
+    return
+  }
+
+  // Check if the PR exists in our DB
+  const [existingPR] = await db.select().from(schema.issues).where(eq(schema.issues.id, pullRequest.id))
+  if (!existingPR) {
+    console.log(`[Webhook] PR ${pullRequest.id} not synced, skipping review event`)
+    return
+  }
+
+  // If PR hasn't been fully synced yet, fetch all reviews
+  if (!existingPR.synced && installationId) {
+    await syncAllReviews(installationId, repository.full_name, pullRequest.number, existingPR.id)
+    // Mark PR as synced
+    await db.update(schema.issues).set({ synced: true }).where(eq(schema.issues.id, existingPR.id))
+    return
+  }
+
+  switch (action) {
+    case 'submitted':
+    case 'edited':
+      await upsertReview(review, existingPR.id)
+      break
+    case 'dismissed':
+      await db.update(schema.issueReviews).set({
+        state: 'DISMISSED',
+        updatedAt: new Date()
+      }).where(eq(schema.issueReviews.id, review.id))
+      break
+  }
+}
+
+async function upsertReview(review: any, issueId: number) {
+  if (review.user) {
+    await ensureUser({
+      id: review.user.id,
+      login: review.user.login,
+      avatar_url: review.user.avatar_url
+    })
+  }
+
+  const reviewData = {
+    issueId,
+    userId: review.user?.id,
+    body: review.body,
+    state: review.state as any,
+    htmlUrl: review.html_url,
+    commitId: review.commit_id,
+    submittedAt: review.submitted_at ? new Date(review.submitted_at) : null,
+    updatedAt: new Date()
+  }
+
+  const [existing] = await db.select().from(schema.issueReviews).where(eq(schema.issueReviews.id, review.id))
+
+  if (existing) {
+    await db.update(schema.issueReviews).set(reviewData).where(eq(schema.issueReviews.id, review.id))
+  } else {
+    await db.insert(schema.issueReviews).values({
+      id: review.id,
+      ...reviewData
+    })
+  }
+}
+
+async function syncAllReviews(installationId: number, repoFullName: string, prNumber: number, issueId: number) {
+  try {
+    const octokit = await useOctokitAsInstallation(installationId)
+    const [owner, repo] = repoFullName.split('/')
+
+    // Sync reviews
+    const reviews = await octokit.paginate(octokit.rest.pulls.listReviews, {
+      owner,
+      repo,
+      pull_number: prNumber,
+      per_page: 100
+    })
+
+    await db.delete(schema.issueReviews).where(eq(schema.issueReviews.issueId, issueId))
+
+    for (const review of reviews) {
+      if (review.user) {
+        await ensureUser({
+          id: review.user.id,
+          login: review.user.login,
+          avatar_url: review.user.avatar_url
+        })
+      }
+
+      await db.insert(schema.issueReviews).values({
+        id: review.id,
+        issueId,
+        userId: review.user?.id,
+        body: review.body,
+        state: review.state as any,
+        htmlUrl: review.html_url,
+        commitId: review.commit_id,
+        submittedAt: review.submitted_at ? new Date(review.submitted_at) : null
+      })
+    }
+
+    // Sync review comments
+    const reviewComments = await octokit.paginate(octokit.rest.pulls.listReviewComments, {
+      owner,
+      repo,
+      pull_number: prNumber,
+      per_page: 100
+    })
+
+    await db.delete(schema.issueReviewComments).where(eq(schema.issueReviewComments.issueId, issueId))
+
+    for (const comment of reviewComments) {
+      if (comment.user) {
+        await ensureUser({
+          id: comment.user.id,
+          login: comment.user.login,
+          avatar_url: comment.user.avatar_url
+        })
+      }
+
+      await db.insert(schema.issueReviewComments).values({
+        id: comment.id,
+        issueId,
+        reviewId: comment.pull_request_review_id,
+        userId: comment.user?.id,
+        body: comment.body,
+        path: comment.path,
+        line: comment.line,
+        side: comment.side,
+        commitId: comment.commit_id,
+        diffHunk: comment.diff_hunk,
+        htmlUrl: comment.html_url,
+        createdAt: new Date(comment.created_at),
+        updatedAt: new Date(comment.updated_at)
+      })
+    }
+
+    console.log(`[Webhook] Synced ${reviews.length} reviews and ${reviewComments.length} review comments for PR #${prNumber}`)
+  } catch (error) {
+    console.error(`[Webhook] Failed to sync reviews for PR #${prNumber}:`, error)
+  }
+}
+
+// ============================================================================
+// PR Review Comments
+// ============================================================================
+
+export async function handleReviewCommentEvent(action: string, comment: any, pullRequest: any, repository: any, installationId?: number) {
+  // Check if repository is synced
+  const [repo] = await db.select().from(schema.repositories).where(eq(schema.repositories.id, repository.id))
+  if (!repo) {
+    console.log(`[Webhook] Repository ${repository.full_name} not synced, skipping review comment event`)
+    return
+  }
+
+  // Check if the PR exists in our DB
+  const [existingPR] = await db.select().from(schema.issues).where(eq(schema.issues.id, pullRequest.id))
+  if (!existingPR) {
+    console.log(`[Webhook] PR ${pullRequest.id} not synced, skipping review comment event`)
+    return
+  }
+
+  // If PR hasn't been fully synced, sync all reviews (which includes comments)
+  if (!existingPR.synced && installationId) {
+    await syncAllReviews(installationId, repository.full_name, pullRequest.number, existingPR.id)
+    await db.update(schema.issues).set({ synced: true }).where(eq(schema.issues.id, existingPR.id))
+    return
+  }
+
+  switch (action) {
+    case 'created':
+    case 'edited':
+      await upsertReviewComment(comment, existingPR.id)
+      break
+    case 'deleted':
+      await db.delete(schema.issueReviewComments).where(eq(schema.issueReviewComments.id, comment.id))
+      break
+  }
+}
+
+async function upsertReviewComment(comment: any, issueId: number) {
+  if (comment.user) {
+    await ensureUser({
+      id: comment.user.id,
+      login: comment.user.login,
+      avatar_url: comment.user.avatar_url
+    })
+  }
+
+  const commentData = {
+    issueId,
+    reviewId: comment.pull_request_review_id,
+    userId: comment.user?.id,
+    body: comment.body,
+    path: comment.path,
+    line: comment.line,
+    side: comment.side,
+    commitId: comment.commit_id,
+    diffHunk: comment.diff_hunk,
+    htmlUrl: comment.html_url,
+    updatedAt: new Date(comment.updated_at)
+  }
+
+  const [existing] = await db.select().from(schema.issueReviewComments).where(eq(schema.issueReviewComments.id, comment.id))
+
+  if (existing) {
+    await db.update(schema.issueReviewComments).set(commentData).where(eq(schema.issueReviewComments.id, comment.id))
+  } else {
+    await db.insert(schema.issueReviewComments).values({
+      id: comment.id,
+      ...commentData,
+      createdAt: new Date(comment.created_at)
+    })
+  }
+}
+
+// ============================================================================
 // Labels
 // ============================================================================
 

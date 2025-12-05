@@ -9,10 +9,15 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'Notification ID is required' })
   }
 
+  const notificationId = parseInt(id)
+  if (isNaN(notificationId)) {
+    throw createError({ statusCode: 400, message: 'Invalid notification ID' })
+  }
+
   const [notification] = await db
     .delete(schema.notifications)
     .where(and(
-      eq(schema.notifications.id, parseInt(id)),
+      eq(schema.notifications.id, notificationId),
       eq(schema.notifications.userId, user!.id)
     ))
     .returning()

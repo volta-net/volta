@@ -1,8 +1,9 @@
 import { eq } from 'drizzle-orm'
 import { db, schema } from 'hub:db'
+import { Octokit } from 'octokit'
 
 export default defineEventHandler(async (event) => {
-  await requireUserSession(event)
+  const { secure } = await requireUserSession(event)
 
   const owner = getRouterParam(event, 'owner')
   const name = getRouterParam(event, 'name')
@@ -12,6 +13,14 @@ export default defineEventHandler(async (event) => {
   }
 
   const fullName = `${owner}/${name}`
+
+  // Verify user has access to this repository on GitHub
+  const octokit = new Octokit({ auth: secure!.accessToken })
+  try {
+    await octokit.rest.repos.get({ owner, repo: name })
+  } catch {
+    throw createError({ statusCode: 403, message: 'You do not have access to this repository' })
+  }
 
   // Find the repository
   const [repository] = await db

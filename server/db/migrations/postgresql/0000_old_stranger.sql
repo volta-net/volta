@@ -34,6 +34,35 @@ CREATE TABLE "issue_requested_reviewers" (
 	"user_id" bigint NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE "issue_review_comments" (
+	"id" bigint PRIMARY KEY NOT NULL,
+	"issue_id" bigint NOT NULL,
+	"review_id" bigint,
+	"user_id" bigint,
+	"body" text NOT NULL,
+	"path" text,
+	"line" bigint,
+	"side" text,
+	"commit_id" text,
+	"diff_hunk" text,
+	"html_url" text,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "issue_reviews" (
+	"id" bigint PRIMARY KEY NOT NULL,
+	"issue_id" bigint NOT NULL,
+	"user_id" bigint,
+	"body" text,
+	"state" text NOT NULL,
+	"html_url" text,
+	"commit_id" text,
+	"submitted_at" timestamp,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE "issues" (
 	"id" bigint PRIMARY KEY NOT NULL,
 	"type" text NOT NULL,
@@ -60,7 +89,8 @@ CREATE TABLE "issues" (
 	"merged_at" timestamp,
 	"closed_at" timestamp,
 	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	"synced" boolean DEFAULT false NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "labels" (
@@ -150,6 +180,11 @@ ALTER TABLE "issue_labels" ADD CONSTRAINT "issue_labels_issue_id_issues_id_fk" F
 ALTER TABLE "issue_labels" ADD CONSTRAINT "issue_labels_label_id_labels_id_fk" FOREIGN KEY ("label_id") REFERENCES "public"."labels"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "issue_requested_reviewers" ADD CONSTRAINT "issue_requested_reviewers_issue_id_issues_id_fk" FOREIGN KEY ("issue_id") REFERENCES "public"."issues"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "issue_requested_reviewers" ADD CONSTRAINT "issue_requested_reviewers_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "issue_review_comments" ADD CONSTRAINT "issue_review_comments_issue_id_issues_id_fk" FOREIGN KEY ("issue_id") REFERENCES "public"."issues"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "issue_review_comments" ADD CONSTRAINT "issue_review_comments_review_id_issue_reviews_id_fk" FOREIGN KEY ("review_id") REFERENCES "public"."issue_reviews"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "issue_review_comments" ADD CONSTRAINT "issue_review_comments_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "issue_reviews" ADD CONSTRAINT "issue_reviews_issue_id_issues_id_fk" FOREIGN KEY ("issue_id") REFERENCES "public"."issues"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "issue_reviews" ADD CONSTRAINT "issue_reviews_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "issues" ADD CONSTRAINT "issues_repository_id_repositories_id_fk" FOREIGN KEY ("repository_id") REFERENCES "public"."repositories"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "issues" ADD CONSTRAINT "issues_milestone_id_milestones_id_fk" FOREIGN KEY ("milestone_id") REFERENCES "public"."milestones"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "issues" ADD CONSTRAINT "issues_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
