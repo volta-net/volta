@@ -19,13 +19,13 @@
     "@octokit/auth-app": "^8.1.2",
     "@vueuse/core": "^13.9.0",
     "@vueuse/nuxt": "^13.9.0",
-    "drizzle-kit": "^0.31.7",
-    "drizzle-orm": "^0.44.7",
+    "drizzle-kit": "^0.31.8",
+    "drizzle-orm": "^0.45.0",
     "nuxt": "^4.2.1",
     "nuxt-auth-utils": "^0.5.25",
     "octokit": "^5.0.5",
     "postgres": "^3.4.7",
-    "workflow": "4.0.1-beta.26"
+    "workflow": "4.0.1-beta.27"
   },
   "devDependencies": {
     "@nuxt/eslint": "^1.11.0",
