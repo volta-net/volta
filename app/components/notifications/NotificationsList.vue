@@ -197,8 +197,8 @@ function getNotificationIcon(notification: Notification) {
     return 'i-octicon-tag-24'
   }
 
-  // Workflow notifications
-  if (type === 'workflow') {
+  // Workflow run notifications
+  if (type === 'workflow_run') {
     if (action === 'failed') return 'i-octicon-x-circle-24'
     if (action === 'success') return 'i-octicon-check-circle-24'
     return 'i-octicon-play-24'
@@ -228,8 +228,8 @@ function getNotificationColor(notification: Notification) {
     return 'text-emerald-400'
   }
 
-  // Workflow notifications
-  if (type === 'workflow') {
+  // Workflow run notifications
+  if (type === 'workflow_run') {
     if (action === 'failed') return 'text-red-400'
     if (action === 'success') return 'text-emerald-400'
     return 'text-gray-400'
@@ -258,7 +258,7 @@ function getNotificationTitle(notification: Notification) {
     return notification.release.name || notification.release.tagName
   }
 
-  if (type === 'workflow' && notification.workflowRun) {
+  if (type === 'workflow_run' && notification.workflowRun) {
     return notification.workflowRun.name || notification.workflowRun.workflowName || 'Workflow'
   }
 
@@ -272,7 +272,7 @@ function getNotificationPrefix(notification: Notification) {
     return notification.release.tagName
   }
 
-  if (type === 'workflow' && notification.workflowRun) {
+  if (type === 'workflow_run' && notification.workflowRun) {
     return notification.workflowRun.workflowName
   }
 
@@ -303,6 +303,10 @@ function getActionLabel(action: Notification['action']) {
       return 'Review requested'
     case 'review_submitted':
       return 'Reviewed'
+    case 'review_dismissed':
+      return 'Review dismissed'
+    case 'ready_for_review':
+      return 'Ready for review'
     case 'published':
       return 'Published'
     case 'failed':
@@ -322,8 +326,8 @@ function getActionIcon(notification: Notification) {
     return 'i-octicon-tag-16'
   }
 
-  // Workflow specific icons
-  if (type === 'workflow') {
+  // Workflow run specific icons
+  if (type === 'workflow_run') {
     if (action === 'failed') return 'i-octicon-x-circle-16'
     if (action === 'success') return 'i-octicon-check-circle-16'
     return 'i-octicon-play-16'
@@ -344,6 +348,10 @@ function getActionIcon(notification: Notification) {
         return 'i-octicon-eye-16'
       case 'review_submitted':
         return 'i-octicon-check-circle-16'
+      case 'review_dismissed':
+        return 'i-octicon-x-16'
+      case 'ready_for_review':
+        return 'i-octicon-git-pull-request-16'
       case 'comment':
         return 'i-octicon-comment-16'
       case 'mentioned':

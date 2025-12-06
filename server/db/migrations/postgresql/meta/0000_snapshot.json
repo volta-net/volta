@@ -1,5 +1,5 @@
 {
-  "id": "1dfac359-110b-48fa-ab93-693dca65ffdb",
+  "id": "75d1076c-8dd7-4b0e-9374-837d42063687",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -1460,7 +1460,7 @@
           "type": "boolean",
           "primaryKey": false,
           "notNull": false,
-          "default": false
+          "default": true
         },
         "mentions": {
           "name": "mentions",
@@ -1474,7 +1474,7 @@
           "type": "boolean",
           "primaryKey": false,
           "notNull": false,
-          "default": false
+          "default": true
         },
         "created_at": {
           "name": "created_at",

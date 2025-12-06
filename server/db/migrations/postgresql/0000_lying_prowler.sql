@@ -180,9 +180,9 @@ CREATE TABLE "repository_subscriptions" (
 	"issues" boolean DEFAULT true,
 	"pull_requests" boolean DEFAULT true,
 	"releases" boolean DEFAULT true,
-	"ci" boolean DEFAULT false,
+	"ci" boolean DEFAULT true,
 	"mentions" boolean DEFAULT true,
-	"activity" boolean DEFAULT false,
+	"activity" boolean DEFAULT true,
 	"created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint

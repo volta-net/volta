@@ -28,6 +28,17 @@ export async function createNotification(data: NotificationData) {
       await ensureUser(data.actor)
     }
 
+    // Only notify users who have actually logged in (not shadow users)
+    const [user] = await db
+      .select({ registered: schema.users.registered })
+      .from(schema.users)
+      .where(eq(schema.users.id, data.userId))
+
+    if (!user || !user.registered) {
+      console.debug('[notifications] Skipping notification for non-registered user:', data.userId)
+      return
+    }
+
     // Check if notification already exists for this user + issue
     // If so, update it instead of creating a new one
     if (data.issueId) {
@@ -527,6 +538,25 @@ export async function notifyPRReopened(
   }
 }
 
+export async function notifyPRAssigned(
+  pullRequest: any,
+  repository: any,
+  assignee: any,
+  actor: any
+) {
+  // Don't notify if user assigned themselves - except in dev
+  if (shouldSkipSelfNotification(actor.id, assignee.id)) return
+
+  await createNotification({
+    userId: assignee.id,
+    type: 'pull_request',
+    action: 'assigned',
+    repositoryId: repository.id,
+    issueId: pullRequest.id,
+    actor
+  })
+}
+
 export async function notifyPRReviewRequested(
   pullRequest: any,
   repository: any,
@@ -540,6 +570,48 @@ export async function notifyPRReviewRequested(
     userId: reviewer.id,
     type: 'pull_request',
     action: 'review_requested',
+    repositoryId: repository.id,
+    issueId: pullRequest.id,
+    actor
+  })
+}
+
+export async function notifyPRReadyForReview(
+  pullRequest: any,
+  repository: any,
+  actor: any
+) {
+  // Notify requested reviewers that the PR is ready
+  const requestedReviewers = pullRequest.requested_reviewers || []
+
+  for (const reviewer of requestedReviewers) {
+    if (shouldSkipSelfNotification(actor.id, reviewer.id)) continue
+
+    await createNotification({
+      userId: reviewer.id,
+      type: 'pull_request',
+      action: 'ready_for_review',
+      repositoryId: repository.id,
+      issueId: pullRequest.id,
+      actor
+    })
+  }
+}
+
+export async function notifyPRReviewDismissed(
+  pullRequest: any,
+  review: any,
+  repository: any,
+  actor: any
+) {
+  // Notify the reviewer whose review was dismissed
+  if (!review.user) return
+  if (shouldSkipSelfNotification(actor.id, review.user.id)) return
+
+  await createNotification({
+    userId: review.user.id,
+    type: 'pull_request',
+    action: 'review_dismissed',
     repositoryId: repository.id,
     issueId: pullRequest.id,
     actor
@@ -841,9 +913,9 @@ export async function notifyWorkflowFailed(
     // Don't skip self-notification for CI - you want to know if your own build failed
     await createNotification({
       userId: subscriber.userId,
-      type: 'workflow',
+      type: 'workflow_run',
       action: 'failed',
-      body: workflowRun.name || workflowRun.workflow_name,
+      body: workflowRun.name || workflowRun.display_title || workflowRun.workflow?.name,
       repositoryId: repository.id,
       workflowRunId: workflowRun.id,
       actor

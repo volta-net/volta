@@ -47,6 +47,23 @@ async function deleteAllRead() {
   }
   await refresh()
 }
+
+// Get title for selected notification
+const selectedNotificationTitle = computed(() => {
+  const n = selectedNotification.value
+  if (!n) return ''
+
+  if (n.issue) {
+    return `#${n.issue.number} ${n.issue.title}`
+  }
+  if (n.release) {
+    return n.release.name || n.release.tagName
+  }
+  if (n.workflowRun) {
+    return n.workflowRun.name || n.workflowRun.workflowName || 'Workflow'
+  }
+  return 'Notification'
+})
 </script>
 
 <template>
@@ -97,8 +114,17 @@ async function deleteAllRead() {
     <template #header>
       <UDashboardNavbar>
         <template #title>
+          <!-- Issue/PR -->
           <template v-if="selectedNotification.issue">
             #{{ selectedNotification.issue.number }} {{ selectedNotification.issue.title }}
+          </template>
+          <!-- Release -->
+          <template v-else-if="selectedNotification.release">
+            {{ selectedNotification.release.name || selectedNotification.release.tagName }}
+          </template>
+          <!-- Workflow -->
+          <template v-else-if="selectedNotification.workflowRun">
+            {{ selectedNotification.workflowRun.name || selectedNotification.workflowRun.workflowName }}
           </template>
         </template>
       </UDashboardNavbar>
@@ -112,6 +138,19 @@ async function deleteAllRead() {
         <p v-else class="text-dimmed text-sm">
           No additional details
         </p>
+
+        <!-- Link to GitHub -->
+        <UButton
+          v-if="selectedNotification.issue?.htmlUrl || selectedNotification.release?.htmlUrl || selectedNotification.workflowRun?.htmlUrl"
+          :to="(selectedNotification.issue?.htmlUrl || selectedNotification.release?.htmlUrl || selectedNotification.workflowRun?.htmlUrl)!"
+          target="_blank"
+          color="neutral"
+          variant="soft"
+          icon="i-lucide-external-link"
+          class="self-start"
+        >
+          View on GitHub
+        </UButton>
       </div>
     </template>
   </UDashboardPanel>
@@ -135,7 +174,7 @@ async function deleteAllRead() {
     <USlideover
       v-if="isMobile"
       v-model:open="isPanelOpen"
-      :title="`#${selectedNotification?.issue?.number} ${selectedNotification?.issue?.title}`"
+      :title="selectedNotificationTitle"
     >
       <template #content>
         <!-- <InboxNotification

@@ -402,8 +402,10 @@ export async function syncCollaborators(accessToken: string, owner: string, repo
           repositoryId,
           issues: true,
           pullRequests: true,
+          releases: true,
+          ci: true,
           mentions: true,
-          activity: false
+          activity: true
         })
       } catch (error) {
         console.warn(`[sync] Failed to subscribe maintainer ${maintainer.login}:`, error)

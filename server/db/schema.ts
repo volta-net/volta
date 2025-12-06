@@ -15,13 +15,14 @@ export const users = pgTable('users', {
 })
 
 // Notification types (what entity the notification is about)
-export type NotificationType = 'issue' | 'pull_request' | 'release' | 'workflow'
+export type NotificationType = 'issue' | 'pull_request' | 'release' | 'workflow_run'
 
 // Notification actions (what happened)
 export type NotificationAction
   = | 'opened' | 'reopened' | 'closed' | 'merged'
     | 'assigned' | 'mentioned' | 'comment'
-    | 'review_requested' | 'review_submitted'
+    | 'review_requested' | 'review_submitted' | 'review_dismissed'
+    | 'ready_for_review' // draft PR marked ready
     | 'published' // releases
     | 'failed' | 'success' // workflow runs
 
@@ -443,13 +444,13 @@ export const repositorySubscriptions = pgTable('repository_subscriptions', {
   id: serial().primaryKey(),
   userId: bigint('user_id', { mode: 'number' }).notNull().references(() => users.id, { onDelete: 'cascade' }),
   repositoryId: bigint('repository_id', { mode: 'number' }).notNull().references(() => repositories.id, { onDelete: 'cascade' }),
-  // Notification preferences
+  // Notification preferences (all enabled by default for maintainers)
   issues: boolean().default(true), // New issues
   pullRequests: boolean('pull_requests').default(true), // New PRs
   releases: boolean().default(true), // New releases
-  ci: boolean().default(false), // CI failures
+  ci: boolean().default(true), // CI failures
   mentions: boolean().default(true), // @mentions
-  activity: boolean().default(false), // All activity (comments, reviews, etc.)
+  activity: boolean().default(true), // All activity (comments, reviews, etc.)
   createdAt: timestamp('created_at').notNull().defaultNow()
 })
 

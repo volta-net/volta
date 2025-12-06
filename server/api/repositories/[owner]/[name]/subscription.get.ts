@@ -36,6 +36,8 @@ export default defineEventHandler(async (event) => {
       subscribed: false,
       issues: false,
       pullRequests: false,
+      releases: false,
+      ci: false,
       mentions: false,
       activity: false
     }
@@ -45,6 +47,8 @@ export default defineEventHandler(async (event) => {
     subscribed: true,
     issues: subscription.issues,
     pullRequests: subscription.pullRequests,
+    releases: subscription.releases,
+    ci: subscription.ci,
     mentions: subscription.mentions,
     activity: subscription.activity
   }

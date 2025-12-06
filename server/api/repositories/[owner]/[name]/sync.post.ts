@@ -48,8 +48,10 @@ export default defineEventHandler(async (event) => {
           repositoryId: repository.id,
           issues: true,
           pullRequests: true,
+          releases: true,
+          ci: true,
           mentions: true,
-          activity: false
+          activity: true
         })
       }
     } catch (error) {

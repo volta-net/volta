@@ -2,11 +2,12 @@ import { eq } from 'drizzle-orm'
 import { db, schema } from 'hub:db'
 import type { NotificationType, NotificationAction } from '~~/server/db/schema'
 
-const validTypes: NotificationType[] = ['issue', 'pull_request', 'release', 'workflow']
+const validTypes: NotificationType[] = ['issue', 'pull_request', 'release', 'workflow_run']
 const validActions: NotificationAction[] = [
   'opened', 'reopened', 'closed', 'merged',
   'assigned', 'mentioned', 'comment',
-  'review_requested', 'review_submitted',
+  'review_requested', 'review_submitted', 'review_dismissed',
+  'ready_for_review',
   'published', 'failed', 'success'
 ]
 

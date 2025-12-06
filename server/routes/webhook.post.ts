@@ -68,6 +68,11 @@ export default defineEventHandler(async (event) => {
             payload.sender
           )
           // Auto-subscribe assignee to the issue
+          await ensureUser({
+            id: payload.assignee.id,
+            login: payload.assignee.login,
+            avatar_url: payload.assignee.avatar_url
+          })
           await subscribeUserToIssue(payload.issue.id, payload.assignee.id)
         }
         break
@@ -142,6 +147,21 @@ export default defineEventHandler(async (event) => {
             payload.sender
           )
         }
+        if (payload.action === 'assigned' && payload.assignee) {
+          await notifyPRAssigned(
+            payload.pull_request,
+            payload.repository,
+            payload.assignee,
+            payload.sender
+          )
+          // Auto-subscribe assignee to the PR
+          await ensureUser({
+            id: payload.assignee.id,
+            login: payload.assignee.login,
+            avatar_url: payload.assignee.avatar_url
+          })
+          await subscribeUserToIssue(payload.pull_request.id, payload.assignee.id)
+        }
         if (payload.action === 'review_requested' && payload.requested_reviewer) {
           await notifyPRReviewRequested(
             payload.pull_request,
@@ -150,7 +170,19 @@ export default defineEventHandler(async (event) => {
             payload.sender
           )
           // Auto-subscribe requested reviewer to the PR
+          await ensureUser({
+            id: payload.requested_reviewer.id,
+            login: payload.requested_reviewer.login,
+            avatar_url: payload.requested_reviewer.avatar_url
+          })
           await subscribeUserToIssue(payload.pull_request.id, payload.requested_reviewer.id)
+        }
+        if (payload.action === 'ready_for_review') {
+          await notifyPRReadyForReview(
+            payload.pull_request,
+            payload.repository,
+            payload.sender
+          )
         }
         if (payload.action === 'closed') {
           if (payload.pull_request.merged) {
@@ -187,6 +219,14 @@ export default defineEventHandler(async (event) => {
         // Create notification for review
         if (payload.action === 'submitted' && payload.review) {
           await notifyPRReviewSubmitted(
+            payload.pull_request,
+            payload.review,
+            payload.repository,
+            payload.sender
+          )
+        }
+        if (payload.action === 'dismissed' && payload.review) {
+          await notifyPRReviewDismissed(
             payload.pull_request,
             payload.review,
             payload.repository,

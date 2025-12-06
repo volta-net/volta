@@ -36,12 +36,16 @@ export default defineEventHandler(async (event) => {
   const updates: Partial<{
     issues: boolean
     pullRequests: boolean
+    releases: boolean
+    ci: boolean
     mentions: boolean
     activity: boolean
   }> = {}
 
   if (typeof body.issues === 'boolean') updates.issues = body.issues
   if (typeof body.pullRequests === 'boolean') updates.pullRequests = body.pullRequests
+  if (typeof body.releases === 'boolean') updates.releases = body.releases
+  if (typeof body.ci === 'boolean') updates.ci = body.ci
   if (typeof body.mentions === 'boolean') updates.mentions = body.mentions
   if (typeof body.activity === 'boolean') updates.activity = body.activity
 
@@ -56,18 +60,22 @@ export default defineEventHandler(async (event) => {
       subscribed: true,
       issues: updates.issues ?? existing.issues,
       pullRequests: updates.pullRequests ?? existing.pullRequests,
+      releases: updates.releases ?? existing.releases,
+      ci: updates.ci ?? existing.ci,
       mentions: updates.mentions ?? existing.mentions,
       activity: updates.activity ?? existing.activity
     }
   } else {
-    // Create new subscription with defaults
+    // Create new subscription with defaults (all enabled for maintainers)
     const newSubscription = {
       userId: user!.id,
       repositoryId: repository.id,
       issues: updates.issues ?? true,
       pullRequests: updates.pullRequests ?? true,
+      releases: updates.releases ?? true,
+      ci: updates.ci ?? true,
       mentions: updates.mentions ?? true,
-      activity: updates.activity ?? false
+      activity: updates.activity ?? true
     }
 
     await db.insert(schema.repositorySubscriptions).values(newSubscription)
@@ -76,6 +84,8 @@ export default defineEventHandler(async (event) => {
       subscribed: true,
       issues: newSubscription.issues,
       pullRequests: newSubscription.pullRequests,
+      releases: newSubscription.releases,
+      ci: newSubscription.ci,
       mentions: newSubscription.mentions,
       activity: newSubscription.activity
     }
