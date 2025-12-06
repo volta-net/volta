@@ -24,8 +24,8 @@ importers:
         specifier: ^4.2.1
         version: 4.2.1(@babel/parser@7.28.5)(@vercel/functions@3.3.4(@aws-sdk/credential-provider-web-identity@3.609.0(@aws-sdk/client-sts@3.943.0)))(change-case@5.4.4)(db0@0.3.4(@electric-sql/pglite@0.3.14)(drizzle-orm@0.45.0(@cloudflare/workers-types@4.20251202.0)(@electric-sql/pglite@0.3.14)(postgres@3.4.7)))(embla-carousel@8.6.0)(idb-keyval@6.2.2)(ioredis@5.8.2)(magicast@0.5.1)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(typescript@5.9.3)(vite@7.2.6(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(yaml@2.8.1))(vue-router@4.6.3(vue@3.5.25(typescript@5.9.3)))(vue@3.5.25(typescript@5.9.3))(zod@4.1.11)
       '@nuxthub/core':
-        specifier: npm:@nuxthub/core-nightly@0.10.0-20251203-230005-e2cb4b3
-        version: '@nuxthub/core-nightly@0.10.0-20251203-230005-e2cb4b3(@vercel/functions@3.3.4(@aws-sdk/credential-provider-web-identity@3.609.0(@aws-sdk/client-sts@3.943.0)))(db0@0.3.4(@electric-sql/pglite@0.3.14)(drizzle-orm@0.45.0(@cloudflare/workers-types@4.20251202.0)(@electric-sql/pglite@0.3.14)(postgres@3.4.7)))(idb-keyval@6.2.2)(ioredis@5.8.2)(magicast@0.5.1)(typescript@5.9.3)(vue-tsc@3.1.5(typescript@5.9.3))'
+        specifier: npm:@nuxthub/core-nightly@0.10.0-20251206-094240-e4af3d9
+        version: '@nuxthub/core-nightly@0.10.0-20251206-094240-e4af3d9(@vercel/functions@3.3.4(@aws-sdk/credential-provider-web-identity@3.609.0(@aws-sdk/client-sts@3.943.0)))(db0@0.3.4(@electric-sql/pglite@0.3.14)(drizzle-orm@0.45.0(@cloudflare/workers-types@4.20251202.0)(@electric-sql/pglite@0.3.14)(postgres@3.4.7)))(idb-keyval@6.2.2)(ioredis@5.8.2)(magicast@0.5.1)(typescript@5.9.3)(vue-tsc@3.1.5(typescript@5.9.3))'
       '@octokit/auth-app':
         specifier: ^8.1.2
         version: 8.1.2
@@ -1375,8 +1375,8 @@ packages:
       rolldown:
         optional: true
 
-  '@nuxthub/core-nightly@0.10.0-20251203-230005-e2cb4b3':
-    resolution: {integrity: sha512-ORJ6PFhSUUeMaRtMcARiXolnydRl3WQQMF6aqh573HVESxT0mRzKhthMRJFad+zsH2BNmhl7KzmfSoV1kfbUiQ==}
+  '@nuxthub/core-nightly@0.10.0-20251206-094240-e4af3d9':
+    resolution: {integrity: sha512-VgrdOacuW334Zfh8jKZva8HsJ3iCrnCR6WuPymvp67ycrUqvvJIg+FR6cxtuR45VmY4VdYyx3xtcwLuYMAEcnA==}
     hasBin: true
 
   '@nuxtjs/color-mode@3.5.2':
@@ -8681,7 +8681,7 @@ snapshots:
       - vue-tsc
       - yaml
 
-  '@nuxthub/core-nightly@0.10.0-20251203-230005-e2cb4b3(@vercel/functions@3.3.4(@aws-sdk/credential-provider-web-identity@3.609.0(@aws-sdk/client-sts@3.943.0)))(db0@0.3.4(@electric-sql/pglite@0.3.14)(drizzle-orm@0.45.0(@cloudflare/workers-types@4.20251202.0)(@electric-sql/pglite@0.3.14)(postgres@3.4.7)))(idb-keyval@6.2.2)(ioredis@5.8.2)(magicast@0.5.1)(typescript@5.9.3)(vue-tsc@3.1.5(typescript@5.9.3))':
+  '@nuxthub/core-nightly@0.10.0-20251206-094240-e4af3d9(@vercel/functions@3.3.4(@aws-sdk/credential-provider-web-identity@3.609.0(@aws-sdk/client-sts@3.943.0)))(db0@0.3.4(@electric-sql/pglite@0.3.14)(drizzle-orm@0.45.0(@cloudflare/workers-types@4.20251202.0)(@electric-sql/pglite@0.3.14)(postgres@3.4.7)))(idb-keyval@6.2.2)(ioredis@5.8.2)(magicast@0.5.1)(typescript@5.9.3)(vue-tsc@3.1.5(typescript@5.9.3))':
     dependencies:
       '@cloudflare/workers-types': 4.20251202.0
       '@nuxt/kit': 4.2.1(magicast@0.5.1)
