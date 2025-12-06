@@ -6,6 +6,10 @@ const links = [[{
   icon: 'i-lucide-package',
   to: '/settings',
   exact: true
+}, {
+  label: 'Notifications',
+  icon: 'i-lucide-bell',
+  to: '/settings/notifications'
 }]] satisfies NavigationMenuItem[][]
 </script>
 

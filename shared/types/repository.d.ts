@@ -1,3 +1,12 @@
+export interface RepositorySubscription {
+  issues: boolean
+  pullRequests: boolean
+  releases: boolean
+  ci: boolean
+  mentions: boolean
+  activity: boolean
+}
+
 export interface Repository {
   id: number
   name: string
@@ -15,4 +24,6 @@ export interface Repository {
   updatedAt: Date | string | null
   // Computed (for installations API)
   synced?: boolean
+  // Subscription preferences (from /api/repositories)
+  subscription?: RepositorySubscription
 }

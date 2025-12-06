@@ -137,7 +137,7 @@ function getInstallUrl() {
         :ui="{
           item: 'group',
           header: 'sticky top-0 bg-elevated/25 hover:bg-elevated/50 backdrop-blur-xl z-1 transition-colors',
-          trigger: 'px-4 gap-3',
+          trigger: 'px-4 py-3 gap-3',
           body: 'pb-0 divide-y divide-default border-t border-default'
         }"
       >
