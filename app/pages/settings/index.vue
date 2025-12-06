@@ -2,6 +2,8 @@
 import type { Installation } from '#shared/types/installation'
 
 const toast = useToast()
+const config = useRuntimeConfig().public
+
 const { data: installations, refresh } = await useFetch<Installation[]>('/api/installations')
 
 // Refresh data when window gains focus
@@ -98,7 +100,7 @@ function getGitHubConfigUrl(installation: Installation) {
 }
 
 function getInstallUrl() {
-  return 'https://github.com/apps/volta-2/installations/new'
+  return `https://github.com/apps/${config.github.appSlug}/installations/new`
 }
 </script>
 

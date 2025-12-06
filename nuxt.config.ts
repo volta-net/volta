@@ -22,6 +22,11 @@ export default defineNuxtConfig({
       appId: '',
       privateKey: '',
       webhookSecret: ''
+    },
+    public: {
+      github: {
+        appSlug: ''
+      }
     }
   },
 
