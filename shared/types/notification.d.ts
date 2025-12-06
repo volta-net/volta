@@ -1,12 +1,15 @@
-import type { NotificationType } from '../../server/db/schema'
+import type { NotificationType, NotificationAction } from '../../server/db/schema'
 
 export interface Notification {
   id: number
   userId: number
   type: NotificationType
+  action: NotificationAction
   body: string | null
   repositoryId: number | null
   issueId: number | null
+  releaseId: number | null
+  workflowRunId: number | null
   actorId: number | null
   read: boolean
   readAt: Date | null
@@ -27,6 +30,19 @@ export interface Notification {
     stateReason: string | null
     draft: boolean | null
     merged: boolean | null
+    htmlUrl: string | null
+  } | null
+  release: {
+    id: number
+    tagName: string
+    name: string | null
+    htmlUrl: string | null
+  } | null
+  workflowRun: {
+    id: number
+    name: string | null
+    workflowName: string | null
+    conclusion: string | null
     htmlUrl: string | null
   } | null
   actor: {

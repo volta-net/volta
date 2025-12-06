@@ -1,6 +1,7 @@
 import { eq } from 'drizzle-orm'
 import { db, schema } from 'hub:db'
 import { ensureUser } from './users'
+import { subscribeUserToIssue } from './sync'
 
 // ============================================================================
 // Issues
@@ -129,6 +130,11 @@ async function upsertIssue(item: any, repositoryId: number, type: 'issue' | 'pul
       id: item.id,
       ...itemData
     })
+
+    // Subscribe author to the new issue/PR
+    if (item.user?.id) {
+      await subscribeUserToIssue(item.id, item.user.id)
+    }
   }
 
   // Sync assignees
@@ -161,6 +167,9 @@ async function syncIssueAssignees(issueId: number, assignees: { id: number, logi
       issueId,
       userId: assignee.id
     })
+
+    // Auto-subscribe assignee to the issue
+    await subscribeUserToIssue(issueId, assignee.id)
   }
 }
 
@@ -198,6 +207,9 @@ async function syncIssueRequestedReviewers(issueId: number, reviewers: { id: num
       issueId,
       userId: reviewer.id
     })
+
+    // Auto-subscribe reviewer to the PR
+    await subscribeUserToIssue(issueId, reviewer.id)
   }
 }
 
@@ -231,6 +243,12 @@ export async function handleCommentEvent(action: string, comment: any, issue: an
   // Issue already synced, just upsert this single comment
   switch (action) {
     case 'created':
+      await upsertComment(comment, existingIssue.id)
+      // Subscribe commenter to the issue
+      if (comment.user?.id) {
+        await subscribeUserToIssue(existingIssue.id, comment.user.id)
+      }
+      break
     case 'edited':
       await upsertComment(comment, existingIssue.id)
       break
@@ -263,6 +281,9 @@ async function syncAllComments(installationId: number, repoFullName: string, iss
           login: comment.user.login,
           avatar_url: comment.user.avatar_url
         })
+
+        // Subscribe commenter to the issue
+        await subscribeUserToIssue(issueId, comment.user.id)
       }
 
       await db.insert(schema.issueComments).values({
@@ -342,6 +363,12 @@ export async function handleReviewEvent(action: string, review: any, pullRequest
 
   switch (action) {
     case 'submitted':
+      await upsertReview(review, existingPR.id)
+      // Subscribe reviewer to the PR
+      if (review.user?.id) {
+        await subscribeUserToIssue(existingPR.id, review.user.id)
+      }
+      break
     case 'edited':
       await upsertReview(review, existingPR.id)
       break
@@ -408,6 +435,9 @@ async function syncAllReviews(installationId: number, repoFullName: string, prNu
           login: review.user.login,
           avatar_url: review.user.avatar_url
         })
+
+        // Subscribe reviewer to the PR
+        await subscribeUserToIssue(issueId, review.user.id)
       }
 
       await db.insert(schema.issueReviews).values({
@@ -777,5 +807,112 @@ export async function handleInstallationRepositoriesEvent(action: string, instal
         await db.delete(schema.repositories).where(eq(schema.repositories.id, repo.id))
       }
       break
+  }
+}
+
+// ============================================================================
+// Releases
+// ============================================================================
+
+export async function handleReleaseEvent(action: string, release: any, repository: any) {
+  // Check if repository is synced
+  const [repo] = await db.select().from(schema.repositories).where(eq(schema.repositories.id, repository.id))
+  if (!repo) {
+    console.log(`[Webhook] Repository ${repository.full_name} not synced, skipping release event`)
+    return
+  }
+
+  if (action === 'published') {
+    // Ensure author exists as shadow user
+    if (release.author) {
+      await ensureUser({
+        id: release.author.id,
+        login: release.author.login,
+        avatar_url: release.author.avatar_url
+      })
+    }
+
+    const [existing] = await db.select().from(schema.releases).where(eq(schema.releases.id, release.id))
+
+    if (existing) {
+      await db.update(schema.releases).set({
+        tagName: release.tag_name,
+        name: release.name,
+        body: release.body,
+        draft: release.draft,
+        prerelease: release.prerelease,
+        htmlUrl: release.html_url,
+        publishedAt: release.published_at ? new Date(release.published_at) : null
+      }).where(eq(schema.releases.id, release.id))
+    } else {
+      await db.insert(schema.releases).values({
+        id: release.id,
+        repositoryId: repository.id,
+        authorId: release.author?.id,
+        tagName: release.tag_name,
+        name: release.name,
+        body: release.body,
+        draft: release.draft,
+        prerelease: release.prerelease,
+        htmlUrl: release.html_url,
+        publishedAt: release.published_at ? new Date(release.published_at) : null
+      })
+    }
+  } else if (action === 'deleted') {
+    await db.delete(schema.releases).where(eq(schema.releases.id, release.id))
+  }
+}
+
+// ============================================================================
+// Workflow Runs
+// ============================================================================
+
+export async function handleWorkflowRunEvent(action: string, workflowRun: any, repository: any) {
+  // Check if repository is synced
+  const [repo] = await db.select().from(schema.repositories).where(eq(schema.repositories.id, repository.id))
+  if (!repo) {
+    console.log(`[Webhook] Repository ${repository.full_name} not synced, skipping workflow run event`)
+    return
+  }
+
+  if (action === 'completed') {
+    // Ensure actor exists as shadow user
+    if (workflowRun.actor) {
+      await ensureUser({
+        id: workflowRun.actor.id,
+        login: workflowRun.actor.login,
+        avatar_url: workflowRun.actor.avatar_url
+      })
+    }
+
+    const [existing] = await db.select().from(schema.workflowRuns).where(eq(schema.workflowRuns.id, workflowRun.id))
+
+    if (existing) {
+      await db.update(schema.workflowRuns).set({
+        status: workflowRun.status,
+        conclusion: workflowRun.conclusion,
+        completedAt: workflowRun.updated_at ? new Date(workflowRun.updated_at) : null,
+        updatedAt: new Date()
+      }).where(eq(schema.workflowRuns.id, workflowRun.id))
+    } else {
+      await db.insert(schema.workflowRuns).values({
+        id: workflowRun.id,
+        repositoryId: repository.id,
+        actorId: workflowRun.actor?.id,
+        workflowId: workflowRun.workflow_id,
+        workflowName: workflowRun.workflow?.name || workflowRun.name,
+        name: workflowRun.name || workflowRun.display_title,
+        headBranch: workflowRun.head_branch,
+        headSha: workflowRun.head_sha,
+        event: workflowRun.event,
+        status: workflowRun.status,
+        conclusion: workflowRun.conclusion,
+        htmlUrl: workflowRun.html_url,
+        runNumber: workflowRun.run_number,
+        runAttempt: workflowRun.run_attempt,
+        startedAt: workflowRun.run_started_at ? new Date(workflowRun.run_started_at) : null,
+        completedAt: workflowRun.updated_at ? new Date(workflowRun.updated_at) : null
+      })
+    }
   }
 }

@@ -18,6 +18,11 @@ export default defineAppConfig({
       slots: {
         root: 'sm:px-4 h-12'
       }
+    },
+    dashboardToolbar: {
+      slots: {
+        root: 'sm:px-4'
+      }
     }
   }
 })

@@ -14,10 +14,16 @@ export const users = pgTable('users', {
   updatedAt: timestamp('updated_at').notNull().defaultNow()
 })
 
-// Notification types
-export type NotificationType
-  = | 'issue_opened' | 'issue_reopened' | 'issue_closed' | 'issue_assigned' | 'issue_mentioned' | 'issue_comment'
-    | 'pr_opened' | 'pr_reopened' | 'pr_review_requested' | 'pr_review_submitted' | 'pr_comment' | 'pr_merged' | 'pr_closed'
+// Notification types (what entity the notification is about)
+export type NotificationType = 'issue' | 'pull_request' | 'release' | 'workflow'
+
+// Notification actions (what happened)
+export type NotificationAction
+  = | 'opened' | 'reopened' | 'closed' | 'merged'
+    | 'assigned' | 'mentioned' | 'comment'
+    | 'review_requested' | 'review_submitted'
+    | 'published' // releases
+    | 'failed' | 'success' // workflow runs
 
 // Notifications
 export const notifications = pgTable('notifications', {
@@ -26,10 +32,13 @@ export const notifications = pgTable('notifications', {
   userId: bigint('user_id', { mode: 'number' }).notNull().references(() => users.id, { onDelete: 'cascade' }),
   // Notification content
   type: text().$type<NotificationType>().notNull(),
+  action: text().$type<NotificationAction>().notNull(),
   body: text(), // Optional extra context (e.g., comment body)
   // Relations (populated via Drizzle)
   repositoryId: bigint('repository_id', { mode: 'number' }).references(() => repositories.id, { onDelete: 'cascade' }),
   issueId: bigint('issue_id', { mode: 'number' }).references(() => issues.id, { onDelete: 'cascade' }),
+  releaseId: bigint('release_id', { mode: 'number' }).references(() => releases.id, { onDelete: 'cascade' }),
+  workflowRunId: bigint('workflow_run_id', { mode: 'number' }).references(() => workflowRuns.id, { onDelete: 'cascade' }),
   // Actor (who triggered the notification)
   actorId: bigint('actor_id', { mode: 'number' }).references(() => users.id, { onDelete: 'set null' }),
   // Status
@@ -65,6 +74,46 @@ export const repositories = pgTable('repositories', {
   // Volta-specific
   syncEnabled: boolean('sync_enabled').default(true),
   lastSyncedAt: timestamp('last_synced_at'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow()
+})
+
+// Releases (matches GitHub API)
+export const releases = pgTable('releases', {
+  id: bigint({ mode: 'number' }).primaryKey(), // GitHub release ID
+  repositoryId: bigint('repository_id', { mode: 'number' }).notNull().references(() => repositories.id, { onDelete: 'cascade' }),
+  authorId: bigint('author_id', { mode: 'number' }).references(() => users.id, { onDelete: 'set null' }),
+  tagName: text('tag_name').notNull(),
+  name: text(),
+  body: text(),
+  draft: boolean().default(false),
+  prerelease: boolean().default(false),
+  htmlUrl: text('html_url'),
+  publishedAt: timestamp('published_at'),
+  createdAt: timestamp('created_at').notNull().defaultNow()
+})
+
+// Workflow run conclusions
+export type WorkflowConclusion = 'success' | 'failure' | 'cancelled' | 'skipped' | 'timed_out' | 'action_required' | 'stale' | 'neutral' | 'startup_failure'
+
+// Workflow Runs (GitHub Actions)
+export const workflowRuns = pgTable('workflow_runs', {
+  id: bigint({ mode: 'number' }).primaryKey(), // GitHub workflow run ID
+  repositoryId: bigint('repository_id', { mode: 'number' }).notNull().references(() => repositories.id, { onDelete: 'cascade' }),
+  actorId: bigint('actor_id', { mode: 'number' }).references(() => users.id, { onDelete: 'set null' }),
+  workflowId: bigint('workflow_id', { mode: 'number' }).notNull(),
+  workflowName: text('workflow_name'),
+  name: text(), // Run name (e.g., "CI" or "Build and Test")
+  headBranch: text('head_branch'),
+  headSha: text('head_sha'),
+  event: text(), // push, pull_request, etc.
+  status: text(), // queued, in_progress, completed
+  conclusion: text().$type<WorkflowConclusion>(), // success, failure, etc.
+  htmlUrl: text('html_url'),
+  runNumber: bigint('run_number', { mode: 'number' }),
+  runAttempt: bigint('run_attempt', { mode: 'number' }),
+  startedAt: timestamp('started_at'),
+  completedAt: timestamp('completed_at'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow()
 })
@@ -209,7 +258,8 @@ export const usersRelations = relations(users, ({ many }) => ({
   reviewComments: many(issueReviewComments),
   notifications: many(notifications, { relationName: 'notificationRecipient' }),
   actedNotifications: many(notifications, { relationName: 'notificationActor' }),
-  subscriptions: many(repositorySubscriptions)
+  subscriptions: many(repositorySubscriptions),
+  issueSubscriptions: many(issueSubscriptions)
 }))
 
 export const installationsRelations = relations(installations, ({ many }) => ({
@@ -223,7 +273,31 @@ export const repositoriesRelations = relations(repositories, ({ one, many }) => 
   }),
   issues: many(issues),
   labels: many(labels),
-  milestones: many(milestones)
+  milestones: many(milestones),
+  releases: many(releases),
+  workflowRuns: many(workflowRuns)
+}))
+
+export const releasesRelations = relations(releases, ({ one }) => ({
+  repository: one(repositories, {
+    fields: [releases.repositoryId],
+    references: [repositories.id]
+  }),
+  author: one(users, {
+    fields: [releases.authorId],
+    references: [users.id]
+  })
+}))
+
+export const workflowRunsRelations = relations(workflowRuns, ({ one }) => ({
+  repository: one(repositories, {
+    fields: [workflowRuns.repositoryId],
+    references: [repositories.id]
+  }),
+  actor: one(users, {
+    fields: [workflowRuns.actorId],
+    references: [users.id]
+  })
 }))
 
 export const issuesRelations = relations(issues, ({ one, many }) => ({
@@ -244,7 +318,8 @@ export const issuesRelations = relations(issues, ({ one, many }) => ({
   requestedReviewers: many(issueRequestedReviewers),
   comments: many(issueComments),
   reviews: many(issueReviews),
-  reviewComments: many(issueReviewComments)
+  reviewComments: many(issueReviewComments),
+  subscriptions: many(issueSubscriptions)
 }))
 
 export const labelsRelations = relations(labels, ({ one, many }) => ({
@@ -348,6 +423,14 @@ export const notificationsRelations = relations(notifications, ({ one }) => ({
     fields: [notifications.issueId],
     references: [issues.id]
   }),
+  release: one(releases, {
+    fields: [notifications.releaseId],
+    references: [releases.id]
+  }),
+  workflowRun: one(workflowRuns, {
+    fields: [notifications.workflowRunId],
+    references: [workflowRuns.id]
+  }),
   actor: one(users, {
     fields: [notifications.actorId],
     references: [users.id],
@@ -363,6 +446,8 @@ export const repositorySubscriptions = pgTable('repository_subscriptions', {
   // Notification preferences
   issues: boolean().default(true), // New issues
   pullRequests: boolean('pull_requests').default(true), // New PRs
+  releases: boolean().default(true), // New releases
+  ci: boolean().default(false), // CI failures
   mentions: boolean().default(true), // @mentions
   activity: boolean().default(false), // All activity (comments, reviews, etc.)
   createdAt: timestamp('created_at').notNull().defaultNow()
@@ -376,5 +461,23 @@ export const repositorySubscriptionsRelations = relations(repositorySubscription
   repository: one(repositories, {
     fields: [repositorySubscriptions.repositoryId],
     references: [repositories.id]
+  })
+}))
+
+// Issue Subscriptions - Users subscribe to specific issues for activity notifications
+export const issueSubscriptions = pgTable('issue_subscriptions', {
+  issueId: bigint('issue_id', { mode: 'number' }).notNull().references(() => issues.id, { onDelete: 'cascade' }),
+  userId: bigint('user_id', { mode: 'number' }).notNull().references(() => users.id, { onDelete: 'cascade' }),
+  createdAt: timestamp('created_at').notNull().defaultNow()
+})
+
+export const issueSubscriptionsRelations = relations(issueSubscriptions, ({ one }) => ({
+  issue: one(issues, {
+    fields: [issueSubscriptions.issueId],
+    references: [issues.id]
+  }),
+  user: one(users, {
+    fields: [issueSubscriptions.userId],
+    references: [users.id]
   })
 }))

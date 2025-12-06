@@ -28,6 +28,7 @@ pnpm install
 | Permission | Access |
 | --- | --- |
 | **Repository permissions** | |
+| Actions | Read-only |
 | Contents | Read-only |
 | Issues | Read & write |
 | Metadata | Read-only |
@@ -48,6 +49,7 @@ pnpm install
    - Push
    - Release
    - Repository
+   - Workflow run
 
 5. For **"Where can this GitHub App be installed?"**, select **Any account** (or **Only on this account** for development)
 

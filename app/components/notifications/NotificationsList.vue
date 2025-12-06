@@ -114,9 +114,12 @@ async function undoDelete() {
     method: 'POST',
     body: {
       type: notification.type,
+      action: notification.action,
       body: notification.body,
       repositoryId: notification.repositoryId,
       issueId: notification.issueId,
+      releaseId: notification.releaseId,
+      workflowRunId: notification.workflowRunId,
       actorId: notification.actorId,
       read: notification.read
     }
@@ -186,7 +189,23 @@ const issueStateColors: Record<string, string> = {
   closed_pr: 'text-red-400'
 }
 
-function getIssueIcon(issue: Notification['issue']) {
+function getNotificationIcon(notification: Notification) {
+  const { type, action } = notification
+
+  // Release notifications
+  if (type === 'release') {
+    return 'i-octicon-tag-24'
+  }
+
+  // Workflow notifications
+  if (type === 'workflow') {
+    if (action === 'failed') return 'i-octicon-x-circle-24'
+    if (action === 'success') return 'i-octicon-check-circle-24'
+    return 'i-octicon-play-24'
+  }
+
+  // Issue/PR - use existing logic
+  const issue = notification.issue
   if (!issue) return 'i-octicon-bell-24'
 
   if (issue.type === 'pull_request') {
@@ -201,7 +220,23 @@ function getIssueIcon(issue: Notification['issue']) {
   return issueStateIcons[issue.stateReason || 'completed'] || issueStateIcons.completed
 }
 
-function getIssueColor(issue: Notification['issue']) {
+function getNotificationColor(notification: Notification) {
+  const { type, action } = notification
+
+  // Release notifications
+  if (type === 'release') {
+    return 'text-emerald-400'
+  }
+
+  // Workflow notifications
+  if (type === 'workflow') {
+    if (action === 'failed') return 'text-red-400'
+    if (action === 'success') return 'text-emerald-400'
+    return 'text-gray-400'
+  }
+
+  // Issue/PR - use existing logic
+  const issue = notification.issue
   if (!issue) return 'text-muted'
 
   if (issue.type === 'pull_request') {
@@ -216,93 +251,127 @@ function getIssueColor(issue: Notification['issue']) {
   return issueStateColors[issue.stateReason || 'completed'] || issueStateColors.completed
 }
 
-function getReasonLabel(type: Notification['type']) {
-  switch (type) {
-    case 'issue_opened':
-    case 'pr_opened':
+function getNotificationTitle(notification: Notification) {
+  const { type } = notification
+
+  if (type === 'release' && notification.release) {
+    return notification.release.name || notification.release.tagName
+  }
+
+  if (type === 'workflow' && notification.workflowRun) {
+    return notification.workflowRun.name || notification.workflowRun.workflowName || 'Workflow'
+  }
+
+  return notification.issue?.title ?? 'Notification'
+}
+
+function getNotificationPrefix(notification: Notification) {
+  const { type } = notification
+
+  if (type === 'release' && notification.release) {
+    return notification.release.tagName
+  }
+
+  if (type === 'workflow' && notification.workflowRun) {
+    return notification.workflowRun.workflowName
+  }
+
+  if (notification.issue) {
+    return `#${notification.issue.number}`
+  }
+
+  return null
+}
+
+function getActionLabel(action: Notification['action']) {
+  switch (action) {
+    case 'opened':
       return 'Opened'
-    case 'issue_reopened':
-    case 'pr_reopened':
+    case 'reopened':
       return 'Reopened'
-    case 'issue_closed':
-    case 'pr_closed':
+    case 'closed':
       return 'Closed'
-    case 'issue_assigned':
-      return 'Assigned'
-    case 'issue_mentioned':
-      return 'Mentioned'
-    case 'issue_comment':
-    case 'pr_comment':
-      return 'Commented'
-    case 'pr_review_requested':
-      return 'Review requested'
-    case 'pr_review_submitted':
-      return 'Reviewed'
-    case 'pr_merged':
+    case 'merged':
       return 'Merged'
+    case 'assigned':
+      return 'Assigned'
+    case 'mentioned':
+      return 'Mentioned'
+    case 'comment':
+      return 'Commented'
+    case 'review_requested':
+      return 'Review requested'
+    case 'review_submitted':
+      return 'Reviewed'
+    case 'published':
+      return 'Published'
+    case 'failed':
+      return 'Failed'
+    case 'success':
+      return 'Success'
     default:
       return null
   }
 }
 
-function getReasonIcon(type: Notification['type']) {
-  switch (type) {
-    case 'issue_opened':
-      return 'i-octicon-issue-opened-16'
-    case 'issue_reopened':
-      return 'i-octicon-issue-reopened-16'
-    case 'issue_closed':
-      return 'i-octicon-issue-closed-16'
-    case 'issue_assigned':
-      return 'i-octicon-person-16'
-    case 'issue_mentioned':
-      return 'i-octicon-mention-16'
-    case 'issue_comment':
-    case 'pr_comment':
-      return 'i-octicon-comment-16'
-    case 'pr_opened':
-      return 'i-octicon-git-pull-request-16'
-    case 'pr_reopened':
-      return 'i-octicon-git-pull-request-16'
-    case 'pr_review_requested':
-      return 'i-octicon-eye-16'
-    case 'pr_review_submitted':
-      return 'i-octicon-check-circle-16'
-    case 'pr_merged':
-      return 'i-octicon-git-merge-16'
-    case 'pr_closed':
-      return 'i-octicon-git-pull-request-closed-16'
-    default:
-      return 'i-octicon-bell-16'
-  }
-}
+function getActionIcon(notification: Notification) {
+  const { type, action } = notification
 
-function getTitle(notification: Notification) {
-  const issue = notification.issue
-  if (!issue) return 'Notification'
-
-  switch (notification.type) {
-    case 'issue_opened':
-      return issue.title
-    case 'issue_assigned':
-      return issue.title
-    case 'issue_mentioned':
-      return issue.title
-    case 'issue_comment':
-      return issue.title
-    case 'pr_review_requested':
-      return issue.title
-    case 'pr_review_submitted':
-      return issue.title
-    case 'pr_comment':
-      return issue.title
-    case 'pr_merged':
-      return issue.title
-    case 'pr_closed':
-      return issue.title
-    default:
-      return issue.title
+  // Release specific icons
+  if (type === 'release') {
+    return 'i-octicon-tag-16'
   }
+
+  // Workflow specific icons
+  if (type === 'workflow') {
+    if (action === 'failed') return 'i-octicon-x-circle-16'
+    if (action === 'success') return 'i-octicon-check-circle-16'
+    return 'i-octicon-play-16'
+  }
+
+  // Pull request specific icons
+  if (type === 'pull_request') {
+    switch (action) {
+      case 'opened':
+        return 'i-octicon-git-pull-request-16'
+      case 'reopened':
+        return 'i-octicon-git-pull-request-16'
+      case 'closed':
+        return 'i-octicon-git-pull-request-closed-16'
+      case 'merged':
+        return 'i-octicon-git-merge-16'
+      case 'review_requested':
+        return 'i-octicon-eye-16'
+      case 'review_submitted':
+        return 'i-octicon-check-circle-16'
+      case 'comment':
+        return 'i-octicon-comment-16'
+      case 'mentioned':
+        return 'i-octicon-mention-16'
+      case 'assigned':
+        return 'i-octicon-person-16'
+    }
+  }
+
+  // Issue specific icons
+  if (type === 'issue') {
+    switch (action) {
+      case 'opened':
+        return 'i-octicon-issue-opened-16'
+      case 'reopened':
+        return 'i-octicon-issue-reopened-16'
+      case 'closed':
+        return 'i-octicon-issue-closed-16'
+      case 'comment':
+        return 'i-octicon-comment-16'
+      case 'mentioned':
+        return 'i-octicon-mention-16'
+      case 'assigned':
+        return 'i-octicon-person-16'
+    }
+  }
+
+  return 'i-octicon-bell-16'
 }
 </script>
 
@@ -323,15 +392,15 @@ function getTitle(notification: Notification) {
         <!-- Title row -->
         <div class="flex items-center gap-2">
           <UIcon
-            :name="getIssueIcon(notification.issue)"
-            :class="getIssueColor(notification.issue)"
+            :name="getNotificationIcon(notification)"
+            :class="getNotificationColor(notification)"
             class="size-4 shrink-0"
           />
           <p class="font-medium truncate flex-1" :class="[notification.read && 'opacity-70']">
-            <template v-if="notification.issue">
-              #{{ notification.issue.number }}
+            <template v-if="getNotificationPrefix(notification)">
+              {{ getNotificationPrefix(notification) }}
             </template>
-            {{ getTitle(notification) }}
+            {{ getNotificationTitle(notification) }}
           </p>
           <span v-if="!notification.read" class="w-2 h-2 rounded-full bg-info shrink-0" />
           <time class="text-xs text-muted shrink-0">
@@ -360,9 +429,9 @@ function getTitle(notification: Notification) {
           </UBadge>
 
           <UBadge
-            v-if="getReasonLabel(notification.type)"
-            :label="getReasonLabel(notification.type)!"
-            :icon="getReasonIcon(notification.type)"
+            v-if="getActionLabel(notification.action)"
+            :label="getActionLabel(notification.action)!"
+            :icon="getActionIcon(notification)"
             variant="outline"
             color="neutral"
             size="sm"

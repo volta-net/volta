@@ -67,6 +67,8 @@ export default defineEventHandler(async (event) => {
             payload.assignee,
             payload.sender
           )
+          // Auto-subscribe assignee to the issue
+          await subscribeUserToIssue(payload.issue.id, payload.assignee.id)
         }
         break
 
@@ -147,6 +149,8 @@ export default defineEventHandler(async (event) => {
             payload.requested_reviewer,
             payload.sender
           )
+          // Auto-subscribe requested reviewer to the PR
+          await subscribeUserToIssue(payload.pull_request.id, payload.requested_reviewer.id)
         }
         if (payload.action === 'closed') {
           if (payload.pull_request.merged) {
@@ -235,6 +239,29 @@ export default defineEventHandler(async (event) => {
 
       case 'release':
         console.log(`[Webhook] Release ${payload.action}: ${payload.repository?.full_name} ${payload.release?.tag_name}`)
+        if (payload.action === 'published' && payload.release) {
+          await handleReleaseEvent(payload.action, payload.release, payload.repository)
+          await notifyReleasePublished(
+            payload.release,
+            payload.repository,
+            payload.sender
+          )
+        }
+        break
+
+      case 'workflow_run':
+        console.log(`[Webhook] Workflow run ${payload.action}: ${payload.workflow_run?.name} (${payload.workflow_run?.conclusion})`)
+        if (payload.action === 'completed' && payload.workflow_run) {
+          await handleWorkflowRunEvent(payload.action, payload.workflow_run, payload.repository)
+          // Only notify on failure
+          if (payload.workflow_run.conclusion === 'failure') {
+            await notifyWorkflowFailed(
+              payload.workflow_run,
+              payload.repository,
+              payload.sender
+            )
+          }
+        }
         break
 
       default:

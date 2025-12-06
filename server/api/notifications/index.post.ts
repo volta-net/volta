@@ -1,10 +1,13 @@
 import { eq } from 'drizzle-orm'
 import { db, schema } from 'hub:db'
-import type { NotificationType } from '~~/server/db/schema'
+import type { NotificationType, NotificationAction } from '~~/server/db/schema'
 
-const validTypes: NotificationType[] = [
-  'issue_opened', 'issue_reopened', 'issue_closed', 'issue_assigned', 'issue_mentioned', 'issue_comment',
-  'pr_opened', 'pr_reopened', 'pr_review_requested', 'pr_review_submitted', 'pr_comment', 'pr_merged', 'pr_closed'
+const validTypes: NotificationType[] = ['issue', 'pull_request', 'release', 'workflow']
+const validActions: NotificationAction[] = [
+  'opened', 'reopened', 'closed', 'merged',
+  'assigned', 'mentioned', 'comment',
+  'review_requested', 'review_submitted',
+  'published', 'failed', 'success'
 ]
 
 export default defineEventHandler(async (event) => {
@@ -14,6 +17,10 @@ export default defineEventHandler(async (event) => {
   // Validate required fields
   if (!body.type || !validTypes.includes(body.type)) {
     throw createError({ statusCode: 400, message: 'Invalid notification type' })
+  }
+
+  if (!body.action || !validActions.includes(body.action)) {
+    throw createError({ statusCode: 400, message: 'Invalid notification action' })
   }
 
   // Validate foreign keys exist (prevent referencing non-existent entities)
@@ -31,6 +38,20 @@ export default defineEventHandler(async (event) => {
     }
   }
 
+  if (body.releaseId) {
+    const [release] = await db.select().from(schema.releases).where(eq(schema.releases.id, body.releaseId))
+    if (!release) {
+      throw createError({ statusCode: 400, message: 'Invalid release ID' })
+    }
+  }
+
+  if (body.workflowRunId) {
+    const [workflowRun] = await db.select().from(schema.workflowRuns).where(eq(schema.workflowRuns.id, body.workflowRunId))
+    if (!workflowRun) {
+      throw createError({ statusCode: 400, message: 'Invalid workflow run ID' })
+    }
+  }
+
   // Validate actor exists (prevent spoofing non-existent users)
   if (body.actorId) {
     const [actor] = await db.select().from(schema.users).where(eq(schema.users.id, body.actorId))
@@ -43,9 +64,12 @@ export default defineEventHandler(async (event) => {
   const [notification] = await db.insert(schema.notifications).values({
     userId: user!.id,
     type: body.type as NotificationType,
+    action: body.action as NotificationAction,
     body: body.body,
     repositoryId: body.repositoryId,
     issueId: body.issueId,
+    releaseId: body.releaseId,
+    workflowRunId: body.workflowRunId,
     actorId: body.actorId,
     read: body.read ?? false
   }).returning()

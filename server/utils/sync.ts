@@ -1,7 +1,30 @@
-import { eq } from 'drizzle-orm'
+import { eq, and } from 'drizzle-orm'
 import { db, schema } from 'hub:db'
 import { Octokit } from 'octokit'
 import { ensureUser } from './users'
+
+// Helper: subscribe a user to an issue (idempotent)
+export async function subscribeUserToIssue(issueId: number, userId: number) {
+  try {
+    const [existing] = await db
+      .select()
+      .from(schema.issueSubscriptions)
+      .where(and(
+        eq(schema.issueSubscriptions.issueId, issueId),
+        eq(schema.issueSubscriptions.userId, userId)
+      ))
+
+    if (!existing) {
+      await db.insert(schema.issueSubscriptions).values({
+        issueId,
+        userId
+      })
+    }
+  } catch (error) {
+    // Foreign key constraint failure is expected for users not in our system
+    console.debug('[sync] Skipped issue subscription for user:', userId, error)
+  }
+}
 
 export async function syncRepositoryInfo(accessToken: string, owner: string, repo: string) {
   const octokit = new Octokit({ auth: accessToken })
@@ -181,6 +204,11 @@ export async function syncIssues(accessToken: string, owner: string, repo: strin
       })
     }
 
+    // Subscribe issue author to the issue
+    if (issue.user?.id) {
+      await subscribeUserToIssue(issue.id, issue.user.id)
+    }
+
     // Sync assignees
     await syncIssueAssignees(issue.id, issue.assignees || [])
 
@@ -247,6 +275,11 @@ export async function syncIssues(accessToken: string, owner: string, repo: strin
       })
     }
 
+    // Subscribe PR author to the PR
+    if (pr.user?.id) {
+      await subscribeUserToIssue(pr.id, pr.user.id)
+    }
+
     // Sync assignees
     await syncIssueAssignees(pr.id, pr.assignees || [])
 
@@ -277,6 +310,9 @@ async function syncIssueAssignees(issueId: number, assignees: { id: number, logi
       issueId,
       userId: assignee.id
     })
+
+    // Auto-subscribe assignee to the issue
+    await subscribeUserToIssue(issueId, assignee.id)
   }
 }
 
@@ -310,6 +346,9 @@ async function syncIssueRequestedReviewers(issueId: number, reviewers: { id: num
       issueId,
       userId: reviewer.id
     })
+
+    // Auto-subscribe reviewer to the PR
+    await subscribeUserToIssue(issueId, reviewer.id)
   }
 }
 

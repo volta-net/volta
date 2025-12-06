@@ -63,6 +63,12 @@ CREATE TABLE "issue_reviews" (
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE "issue_subscriptions" (
+	"issue_id" bigint NOT NULL,
+	"user_id" bigint NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE "issues" (
 	"id" bigint PRIMARY KEY NOT NULL,
 	"type" text NOT NULL,
@@ -124,12 +130,29 @@ CREATE TABLE "notifications" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"user_id" bigint NOT NULL,
 	"type" text NOT NULL,
+	"action" text NOT NULL,
 	"body" text,
 	"repository_id" bigint,
 	"issue_id" bigint,
+	"release_id" bigint,
+	"workflow_run_id" bigint,
 	"actor_id" bigint,
 	"read" boolean DEFAULT false,
 	"read_at" timestamp,
+	"created_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "releases" (
+	"id" bigint PRIMARY KEY NOT NULL,
+	"repository_id" bigint NOT NULL,
+	"author_id" bigint,
+	"tag_name" text NOT NULL,
+	"name" text,
+	"body" text,
+	"draft" boolean DEFAULT false,
+	"prerelease" boolean DEFAULT false,
+	"html_url" text,
+	"published_at" timestamp,
 	"created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
@@ -156,6 +179,8 @@ CREATE TABLE "repository_subscriptions" (
 	"repository_id" bigint NOT NULL,
 	"issues" boolean DEFAULT true,
 	"pull_requests" boolean DEFAULT true,
+	"releases" boolean DEFAULT true,
+	"ci" boolean DEFAULT false,
 	"mentions" boolean DEFAULT true,
 	"activity" boolean DEFAULT false,
 	"created_at" timestamp DEFAULT now() NOT NULL
@@ -168,6 +193,27 @@ CREATE TABLE "users" (
 	"email" text,
 	"avatar_url" text,
 	"registered" boolean DEFAULT false NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "workflow_runs" (
+	"id" bigint PRIMARY KEY NOT NULL,
+	"repository_id" bigint NOT NULL,
+	"actor_id" bigint,
+	"workflow_id" bigint NOT NULL,
+	"workflow_name" text,
+	"name" text,
+	"head_branch" text,
+	"head_sha" text,
+	"event" text,
+	"status" text,
+	"conclusion" text,
+	"html_url" text,
+	"run_number" bigint,
+	"run_attempt" bigint,
+	"started_at" timestamp,
+	"completed_at" timestamp,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
@@ -185,6 +231,8 @@ ALTER TABLE "issue_review_comments" ADD CONSTRAINT "issue_review_comments_review
 ALTER TABLE "issue_review_comments" ADD CONSTRAINT "issue_review_comments_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "issue_reviews" ADD CONSTRAINT "issue_reviews_issue_id_issues_id_fk" FOREIGN KEY ("issue_id") REFERENCES "public"."issues"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "issue_reviews" ADD CONSTRAINT "issue_reviews_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "issue_subscriptions" ADD CONSTRAINT "issue_subscriptions_issue_id_issues_id_fk" FOREIGN KEY ("issue_id") REFERENCES "public"."issues"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "issue_subscriptions" ADD CONSTRAINT "issue_subscriptions_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "issues" ADD CONSTRAINT "issues_repository_id_repositories_id_fk" FOREIGN KEY ("repository_id") REFERENCES "public"."repositories"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "issues" ADD CONSTRAINT "issues_milestone_id_milestones_id_fk" FOREIGN KEY ("milestone_id") REFERENCES "public"."milestones"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "issues" ADD CONSTRAINT "issues_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
@@ -193,7 +241,13 @@ ALTER TABLE "milestones" ADD CONSTRAINT "milestones_repository_id_repositories_i
 ALTER TABLE "notifications" ADD CONSTRAINT "notifications_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "notifications" ADD CONSTRAINT "notifications_repository_id_repositories_id_fk" FOREIGN KEY ("repository_id") REFERENCES "public"."repositories"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "notifications" ADD CONSTRAINT "notifications_issue_id_issues_id_fk" FOREIGN KEY ("issue_id") REFERENCES "public"."issues"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "notifications" ADD CONSTRAINT "notifications_release_id_releases_id_fk" FOREIGN KEY ("release_id") REFERENCES "public"."releases"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "notifications" ADD CONSTRAINT "notifications_workflow_run_id_workflow_runs_id_fk" FOREIGN KEY ("workflow_run_id") REFERENCES "public"."workflow_runs"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "notifications" ADD CONSTRAINT "notifications_actor_id_users_id_fk" FOREIGN KEY ("actor_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "releases" ADD CONSTRAINT "releases_repository_id_repositories_id_fk" FOREIGN KEY ("repository_id") REFERENCES "public"."repositories"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "releases" ADD CONSTRAINT "releases_author_id_users_id_fk" FOREIGN KEY ("author_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "repositories" ADD CONSTRAINT "repositories_installation_id_installations_id_fk" FOREIGN KEY ("installation_id") REFERENCES "public"."installations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "repository_subscriptions" ADD CONSTRAINT "repository_subscriptions_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "repository_subscriptions" ADD CONSTRAINT "repository_subscriptions_repository_id_repositories_id_fk" FOREIGN KEY ("repository_id") REFERENCES "public"."repositories"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "repository_subscriptions" ADD CONSTRAINT "repository_subscriptions_repository_id_repositories_id_fk" FOREIGN KEY ("repository_id") REFERENCES "public"."repositories"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "workflow_runs" ADD CONSTRAINT "workflow_runs_repository_id_repositories_id_fk" FOREIGN KEY ("repository_id") REFERENCES "public"."repositories"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "workflow_runs" ADD CONSTRAINT "workflow_runs_actor_id_users_id_fk" FOREIGN KEY ("actor_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;

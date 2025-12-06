@@ -21,6 +21,8 @@ export default defineEventHandler(async (event) => {
     with: {
       repository: true,
       issue: true,
+      release: true,
+      workflowRun: true,
       actor: true
     }
   })
