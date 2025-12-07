@@ -33,6 +33,11 @@ export default defineOAuthGitHubEventHandler({
       console.warn('[auth] Failed to save user to database:', error)
     }
 
+    // Calculate token expiry (GitHub tokens expire in 8 hours = 28800 seconds)
+    const expiresAt = tokens.expires_in
+      ? Date.now() + (tokens.expires_in * 1000)
+      : undefined
+
     await setUserSession(event, {
       user: {
         id: user.id,
@@ -40,7 +45,9 @@ export default defineOAuthGitHubEventHandler({
         avatar: user.avatar_url
       },
       secure: {
-        accessToken: tokens.access_token
+        accessToken: tokens.access_token,
+        refreshToken: tokens.refresh_token,
+        expiresAt
       }
     })
 

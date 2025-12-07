@@ -4,7 +4,7 @@ import { Octokit } from 'octokit'
 import { ensureUser } from '~~/server/utils/users'
 
 export default defineEventHandler(async (event) => {
-  const { user, secure } = await requireUserSession(event)
+  const { user } = await requireUserSession(event)
   const id = getRouterParam(event, 'id')
 
   if (!id) {
@@ -64,8 +64,11 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, message: 'Issue not found' })
   }
 
+  // Get valid access token (refreshes if expired)
+  const accessToken = await getValidAccessToken(event)
+
   // Verify user has access to the repository on GitHub
-  const octokit = new Octokit({ auth: secure!.accessToken })
+  const octokit = new Octokit({ auth: accessToken })
   const [owner, repo] = issue.repository!.fullName.split('/')
   try {
     await octokit.rest.repos.get({ owner, repo })
@@ -87,14 +90,14 @@ export default defineEventHandler(async (event) => {
     ))
 
   // Always sync in background for freshness
-  syncIssueFromGitHub(secure!.accessToken, issue).catch((err) => {
+  syncIssueFromGitHub(accessToken, issue).catch((err) => {
     console.warn('[issues] Failed to re-sync issue from GitHub:', err)
   })
 
   // If issue hasn't been fully synced yet (comments, reactions, etc.), await the sync
   if (!issue.synced) {
     try {
-      await syncIssueFromGitHub(secure!.accessToken, issue)
+      await syncIssueFromGitHub(accessToken, issue)
 
       // Re-fetch issue with fresh data
       const freshIssue = await db.query.issues.findFirst({

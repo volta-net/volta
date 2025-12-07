@@ -3,7 +3,7 @@ import { db, schema } from 'hub:db'
 import { Octokit } from 'octokit'
 
 export default defineEventHandler(async (event) => {
-  const { secure } = await requireUserSession(event)
+  await requireUserSession(event)
 
   const owner = getRouterParam(event, 'owner')
   const name = getRouterParam(event, 'name')
@@ -15,7 +15,8 @@ export default defineEventHandler(async (event) => {
   const fullName = `${owner}/${name}`
 
   // Verify user has access to this repository on GitHub
-  const octokit = new Octokit({ auth: secure!.accessToken })
+  const accessToken = await getValidAccessToken(event)
+  const octokit = new Octokit({ auth: accessToken })
   try {
     await octokit.rest.repos.get({ owner, repo: name })
   } catch {

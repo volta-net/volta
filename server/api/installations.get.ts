@@ -3,9 +3,10 @@ import { db, schema } from 'hub:db'
 import type { Installation } from '#shared/types/installation'
 
 export default defineEventHandler(async (event): Promise<Installation[]> => {
-  const { secure } = await requireUserSession(event)
+  await requireUserSession(event)
 
-  const octokit = useOctokitWithToken(secure!.accessToken)
+  const accessToken = await getValidAccessToken(event)
+  const octokit = useOctokitWithToken(accessToken)
 
   // Get all installations accessible to the user (paginated)
   const allInstallations = await octokit.paginate(

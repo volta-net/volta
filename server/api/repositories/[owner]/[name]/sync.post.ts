@@ -3,7 +3,7 @@ import { db, schema } from 'hub:db'
 import { Octokit } from 'octokit'
 
 export default defineEventHandler(async (event) => {
-  const { user, secure } = await requireUserSession(event)
+  const { user } = await requireUserSession(event)
   const owner = getRouterParam(event, 'owner')
   const repo = getRouterParam(event, 'name')
 
@@ -11,12 +11,14 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'Owner and repository name are required' })
   }
 
+  const accessToken = await getValidAccessToken(event)
+
   // Sync repository (runs directly without workflow for now)
-  const { repository } = await syncRepositoryInfo(secure!.accessToken, owner, repo)
-  const collaboratorsCount = await syncCollaborators(secure!.accessToken, owner, repo, repository.id)
-  const labelsCount = await syncLabels(secure!.accessToken, owner, repo, repository.id)
-  const milestonesCount = await syncMilestones(secure!.accessToken, owner, repo, repository.id)
-  const issuesCount = await syncIssues(secure!.accessToken, owner, repo, repository.id)
+  const { repository } = await syncRepositoryInfo(accessToken, owner, repo)
+  const collaboratorsCount = await syncCollaborators(accessToken, owner, repo, repository.id)
+  const labelsCount = await syncLabels(accessToken, owner, repo, repository.id)
+  const milestonesCount = await syncMilestones(accessToken, owner, repo, repository.id)
+  const issuesCount = await syncIssues(accessToken, owner, repo, repository.id)
   await updateRepositoryLastSynced(repository.id)
 
   // Also ensure the current user is subscribed
@@ -24,7 +26,7 @@ export default defineEventHandler(async (event) => {
   let userId = user?.id
   if (!userId) {
     try {
-      const octokit = new Octokit({ auth: secure!.accessToken })
+      const octokit = new Octokit({ auth: accessToken })
       const { data: ghUser } = await octokit.rest.users.getAuthenticated()
       userId = ghUser.id
     } catch (error) {
