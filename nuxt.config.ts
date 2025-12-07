@@ -6,8 +6,8 @@ export default defineNuxtConfig({
     '@nuxt/ui',
     '@nuxthub/core',
     'nuxt-auth-utils',
-    '@vueuse/nuxt',
-    'workflow/nuxt'
+    '@vueuse/nuxt'
+    // 'workflow/nuxt'
   ],
   ssr: false,
 
