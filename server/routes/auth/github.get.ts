@@ -1,11 +1,24 @@
 import { eq } from 'drizzle-orm'
 import { db, schema } from 'hub:db'
 
+// Extended GitHub tokens type (when token expiration is enabled in GitHub App)
+interface GitHubTokensWithRefresh {
+  access_token: string
+  scope: string
+  token_type: string
+  // These fields are present when "User-to-server token expiration" is enabled
+  refresh_token?: string
+  expires_in?: number
+  refresh_token_expires_in?: number
+}
+
 export default defineOAuthGitHubEventHandler({
   config: {
     scope: ['notifications']
   },
-  async onSuccess(event, { user, tokens }) {
+  async onSuccess(event, { user, tokens: _tokens }) {
+    // Cast tokens to extended type that includes refresh token fields
+    const tokens = _tokens as GitHubTokensWithRefresh
     // Upsert user in database
     try {
       const [existingUser] = await db.select().from(schema.users).where(eq(schema.users.id, user.id))
