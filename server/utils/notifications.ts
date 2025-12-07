@@ -926,9 +926,9 @@ export async function notifyWorkflowFailed(
 }
 
 export async function notifyWorkflowSuccess(
-  workflowRun: any,
-  repository: any,
-  actor: any
+  _workflowRun: any,
+  _repository: any,
+  _actor: any
 ) {
   // Only notify after a previous failure (recovery notification)
   // This would require tracking previous state - for now, skip success notifications
