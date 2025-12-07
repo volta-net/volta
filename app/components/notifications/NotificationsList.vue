@@ -79,7 +79,10 @@ async function deleteNotification() {
   }
 
   // Delete from server
-  await $fetch(`/api/notifications/${notification.id}`, { method: 'DELETE' })
+  await $fetch(`/api/notifications/${notification.id}`, {
+    method: 'DELETE'
+  })
+
   emit('refresh')
 
   // Show toast

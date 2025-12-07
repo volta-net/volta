@@ -96,7 +96,9 @@ function findMentionedUsernames(text: string | null | undefined): string[] {
   const usernames = new Set<string>()
 
   for (const match of matches) {
-    usernames.add(match[1].toLowerCase())
+    if (match[1]) {
+      usernames.add(match[1].toLowerCase())
+    }
   }
 
   return Array.from(usernames)

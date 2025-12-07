@@ -24,13 +24,15 @@ export function useOctokit() {
   return _octokit
 }
 
-export async function useOctokitAsInstallation(installationId: number) {
+export async function useOctokitAsInstallation(installationId: number): Promise<Octokit> {
   const octokit = useOctokit()
 
-  return octokit.auth({
+  const auth = await octokit.auth({
     type: 'installation',
     installationId
-  }) as Promise<{ token: string }>
+  }) as { token: string }
+
+  return useOctokitWithToken(auth.token)
 }
 
 export function useOctokitWithToken(token: string) {

@@ -39,10 +39,12 @@ const accordionItems = computed(() => {
 })
 
 async function syncRepository(fullName: string) {
+  const [owner, name] = fullName.split('/')
+
   syncing.value = fullName
 
   try {
-    const result = await $fetch<SyncResult>(`/api/repositories/${fullName}/sync`, {
+    const result = await $fetch<SyncResult>(`/api/repositories/${owner}/${name}/sync`, {
       method: 'POST'
     })
 
@@ -66,10 +68,12 @@ async function syncRepository(fullName: string) {
 }
 
 async function deleteRepository(fullName: string) {
+  const [owner, name] = fullName.split('/')
+
   deleting.value = fullName
 
   try {
-    await $fetch(`/api/repositories/${fullName}`, {
+    await $fetch(`/api/repositories/${owner}/${name}`, {
       method: 'DELETE'
     })
 

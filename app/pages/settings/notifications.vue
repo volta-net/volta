@@ -20,12 +20,16 @@ const loading = ref<string | null>(null)
 
 // Update subscription preference
 async function updateSubscription(fullName: string, updates: Partial<RepositorySubscription>) {
+  const [owner, name] = fullName.split('/')
+
   loading.value = fullName
+
   try {
-    await $fetch<RepositorySubscription>(`/api/repositories/${fullName}/subscription`, {
-      method: 'PATCH' as const,
+    await $fetch<RepositorySubscription>(`/api/repositories/${owner}/${name}/subscription`, {
+      method: 'PATCH',
       body: updates
     })
+
     // Refresh to get updated data
     await refresh()
   } catch (error: any) {
