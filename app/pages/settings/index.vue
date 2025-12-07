@@ -146,11 +146,7 @@ function getInstallUrl() {
         }"
       >
         <template #leading="{ item }">
-          <UAvatar
-            :src="item.installation.account.avatar"
-            :alt="item.label"
-            class="rounded-md"
-          />
+          <UAvatar :src="item.installation.account.avatar" :alt="item.label" class="rounded-md" />
         </template>
 
         <template #default="{ item }">
@@ -178,39 +174,31 @@ function getInstallUrl() {
         </template>
 
         <template #trailing="{ item }">
-          <UDropdownMenu
-            :content="{ align: 'start' }"
-            :items="[
-              [{
-                label: 'Configure',
-                icon: 'i-lucide-external-link',
-                to: getGitHubConfigUrl(item.installation),
-                target: '_blank'
-              }],
-              [{
-                label: 'Disconnect...',
-                icon: 'i-lucide-unplug',
-                color: 'error' as const
-              }]
-            ]"
-          >
+          <div class="flex items-center gap-2 ms-auto">
             <UButton
+              icon="i-lucide-external-link"
               color="neutral"
               variant="soft"
               size="sm"
-              icon="i-lucide-ellipsis-vertical"
-              class="ms-auto"
+              :to="getGitHubConfigUrl(item.installation)"
+              target="_blank"
               @click.stop
             />
-          </UDropdownMenu>
+
+            <UButton
+              icon="i-lucide-chevron-down"
+              color="neutral"
+              variant="soft"
+              size="sm"
+              :ui="{
+                leadingIcon: 'group-data-[state=open]:rotate-180 transition-transform duration-200'
+              }"
+            />
+          </div>
         </template>
 
         <template #body="{ item }">
-          <div
-            v-for="repo in item.installation.repositories"
-            :key="repo.id"
-            class="flex items-center justify-between py-3 px-4 bg-default"
-          >
+          <div v-for="repo in item.installation.repositories" :key="repo.id" class="flex items-center justify-between py-3 px-4 bg-default">
             <div class="flex items-center gap-3 min-w-0">
               <UAvatar :icon="repo.private ? 'i-lucide-lock' : 'i-lucide-book'" />
               <div class="min-w-0">
@@ -259,6 +247,7 @@ function getInstallUrl() {
                 size="sm"
                 trailing-icon="i-lucide-ellipsis-vertical"
                 :loading="syncing === repo.fullName || deleting === repo.fullName"
+                class="data-[state=open]:bg-accented/75"
               />
             </UDropdownMenu>
 

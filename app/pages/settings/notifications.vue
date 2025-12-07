@@ -88,35 +88,31 @@ function getDropdownItems(repo: RepositoryWithSubscription): DropdownMenuItem[][
 
   return [[
     {
-      type: 'checkbox',
       label: 'Participating and @mentions',
       description: 'Receive notifications for issues and pull requests you are participating in, and @mentions.',
       icon: 'i-lucide-users',
-      checked: activePreset === 'participating',
+      active: activePreset === 'participating',
       onSelect: () => updateSubscription(repo.fullName, presets.participating)
     },
     {
-      type: 'checkbox',
       label: 'All activity',
       description: 'Receive notifications for all activity in the repository.',
       icon: 'i-lucide-activity',
-      checked: activePreset === 'all',
+      active: activePreset === 'all',
       onSelect: () => updateSubscription(repo.fullName, presets.all)
     },
     {
-      type: 'checkbox',
       label: 'Ignore',
       description: 'Receive no notifications for this repository.',
       icon: 'i-lucide-eye-off',
-      checked: activePreset === 'ignore',
+      active: activePreset === 'ignore',
       onSelect: () => updateSubscription(repo.fullName, presets.ignore)
     },
     {
-      type: 'checkbox',
       label: 'Custom',
       description: 'Receive notifications for specific activity in the repository.',
       icon: 'i-lucide-settings',
-      checked: activePreset === 'custom',
+      active: activePreset === 'custom',
       children: [[
         {
           type: 'checkbox',
@@ -226,10 +222,19 @@ function getSubscriptionSummary(repo: RepositoryWithSubscription): { label: stri
         }"
       >
         <template #leading="{ item }">
-          <UAvatar
-            :src="`https://github.com/${item.label}.png`"
-            :alt="item.label"
-            class="rounded-md"
+          <UAvatar :src="`https://github.com/${item.label}.png`" :alt="item.label" class="rounded-md" />
+        </template>
+
+        <template #trailing>
+          <UButton
+            icon="i-lucide-chevron-down"
+            color="neutral"
+            variant="soft"
+            size="sm"
+            class="ms-auto"
+            :ui="{
+              leadingIcon: 'group-data-[state=open]:rotate-180 transition-transform duration-200'
+            }"
           />
         </template>
 
@@ -245,11 +250,7 @@ function getSubscriptionSummary(repo: RepositoryWithSubscription): { label: stri
         </template>
 
         <template #body="{ item }">
-          <div
-            v-for="repo in item.repositories"
-            :key="repo.id"
-            class="flex items-center justify-between py-3 px-4 bg-default"
-          >
+          <div v-for="repo in item.repositories" :key="repo.id" class="flex items-center justify-between py-3 px-4 bg-default">
             <div class="flex items-center gap-3 min-w-0">
               <UAvatar :icon="repo.private ? 'i-lucide-lock' : 'i-lucide-book'" />
               <div class="min-w-0">
@@ -264,21 +265,20 @@ function getSubscriptionSummary(repo: RepositoryWithSubscription): { label: stri
               </div>
             </div>
 
-            <UDropdownMenu
-              :items="getDropdownItems(repo)"
-              :content="{ align: 'end' }"
-              :ui="{ content: 'w-72', itemDescription: 'text-clip' }"
-            >
+            <UDropdownMenu :items="getDropdownItems(repo)" :content="{ align: 'end' }" :ui="{ content: 'w-72', itemDescription: 'text-clip' }">
               <UButton
                 color="neutral"
                 variant="soft"
                 size="sm"
-                :icon="getSubscriptionSummary(repo).icon"
+                v-bind="getSubscriptionSummary(repo)"
                 trailing-icon="i-lucide-chevron-down"
                 :loading="loading === repo.fullName"
-              >
-                {{ getSubscriptionSummary(repo).label }}
-              </UButton>
+                square
+                :ui="{
+                  trailingIcon: 'group-data-[state=open]/button:rotate-180 transition-transform duration-200'
+                }"
+                class="group/button data-[state=open]:bg-accented/75"
+              />
             </UDropdownMenu>
           </div>
 
