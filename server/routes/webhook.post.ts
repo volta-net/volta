@@ -36,7 +36,7 @@ export default defineEventHandler(async (event) => {
 
       // Issue events
       case 'issues':
-        await handleIssueEvent(payload.action, payload.issue, payload.repository)
+        await handleIssueEvent(payload.action, payload.issue, payload.repository, payload.installation?.id)
         // Create notifications
         if (payload.action === 'opened') {
           await notifyIssueOpened(
@@ -83,9 +83,9 @@ export default defineEventHandler(async (event) => {
         const isPRComment = !!payload.issue?.pull_request
         if (payload.issue) {
           if (isPRComment) {
-            await handlePullRequestEvent('edited', payload.issue, payload.repository)
+            await handlePullRequestEvent('edited', payload.issue, payload.repository, payload.installation?.id)
           } else {
-            await handleIssueEvent('edited', payload.issue, payload.repository)
+            await handleIssueEvent('edited', payload.issue, payload.repository, payload.installation?.id)
           }
         }
         // Sync the comment to our database
@@ -131,7 +131,7 @@ export default defineEventHandler(async (event) => {
 
       // Pull request events
       case 'pull_request':
-        await handlePullRequestEvent(payload.action, payload.pull_request, payload.repository)
+        await handlePullRequestEvent(payload.action, payload.pull_request, payload.repository, payload.installation?.id)
         // Create notifications
         if (payload.action === 'opened') {
           await notifyPROpened(
@@ -204,7 +204,7 @@ export default defineEventHandler(async (event) => {
       case 'pull_request_review':
         // Update PR on review activity
         if (payload.pull_request) {
-          await handlePullRequestEvent('edited', payload.pull_request, payload.repository)
+          await handlePullRequestEvent('edited', payload.pull_request, payload.repository, payload.installation?.id)
         }
         // Sync the review to our database
         if (payload.review) {
@@ -238,7 +238,7 @@ export default defineEventHandler(async (event) => {
       case 'pull_request_review_comment':
         // Update PR on review activity
         if (payload.pull_request) {
-          await handlePullRequestEvent('edited', payload.pull_request, payload.repository)
+          await handlePullRequestEvent('edited', payload.pull_request, payload.repository, payload.installation?.id)
         }
         // Sync the review comment to our database
         if (payload.comment) {
@@ -264,7 +264,7 @@ export default defineEventHandler(async (event) => {
       case 'pull_request_review_thread':
         // Update PR on review activity
         if (payload.pull_request) {
-          await handlePullRequestEvent('edited', payload.pull_request, payload.repository)
+          await handlePullRequestEvent('edited', payload.pull_request, payload.repository, payload.installation?.id)
         }
         break
 

@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm'
+import { eq, and } from 'drizzle-orm'
 import { db, schema } from 'hub:db'
 import { ensureUser } from './users'
 import { subscribeUserToIssue } from './sync'
@@ -7,7 +7,7 @@ import { subscribeUserToIssue } from './sync'
 // Issues
 // ============================================================================
 
-export async function handleIssueEvent(action: string, issue: any, repository: any) {
+export async function handleIssueEvent(action: string, issue: any, repository: any, installationId?: number) {
   // Check if repository is synced
   const [repo] = await db.select().from(schema.repositories).where(eq(schema.repositories.id, repository.id))
   if (!repo) {
@@ -28,7 +28,7 @@ export async function handleIssueEvent(action: string, issue: any, repository: a
     case 'demilestoned':
     case 'locked':
     case 'unlocked':
-      await upsertIssue(issue, repository.id, 'issue')
+      await upsertIssue(issue, repository.id, repository.full_name, 'issue', installationId)
       break
     case 'deleted':
     case 'transferred':
@@ -41,7 +41,7 @@ export async function handleIssueEvent(action: string, issue: any, repository: a
 // Pull Requests
 // ============================================================================
 
-export async function handlePullRequestEvent(action: string, pullRequest: any, repository: any) {
+export async function handlePullRequestEvent(action: string, pullRequest: any, repository: any, installationId?: number) {
   // Check if repository is synced
   const [repo] = await db.select().from(schema.repositories).where(eq(schema.repositories.id, repository.id))
   if (!repo) {
@@ -67,7 +67,7 @@ export async function handlePullRequestEvent(action: string, pullRequest: any, r
     case 'review_requested':
     case 'review_request_removed':
     case 'synchronize':
-      await upsertIssue(pullRequest, repository.id, 'pull_request')
+      await upsertIssue(pullRequest, repository.id, repository.full_name, 'pull_request', installationId)
       break
   }
 }
@@ -76,7 +76,7 @@ export async function handlePullRequestEvent(action: string, pullRequest: any, r
 // Issues (Issues & Pull Requests unified)
 // ============================================================================
 
-async function upsertIssue(item: any, repositoryId: number, type: 'issue' | 'pull_request') {
+async function upsertIssue(item: any, repositoryId: number, repositoryFullName: string, type: 'issue' | 'pull_request', installationId?: number) {
   // Ensure author exists as shadow user
   if (item.user) {
     await ensureUser({
@@ -149,24 +149,54 @@ async function upsertIssue(item: any, repositoryId: number, type: 'issue' | 'pul
     const reviewers = item.requested_reviewers?.filter((r: any) => r.id) || []
     await syncIssueRequestedReviewers(item.id, reviewers)
   }
+
+  // If issue/PR hasn't been fully synced yet, sync comments (and reviews for PRs)
+  if (installationId && !existing?.synced) {
+    await syncAllComments(installationId, repositoryFullName, item.number, item.id)
+    if (type === 'pull_request') {
+      await syncAllReviews(installationId, repositoryFullName, item.number, item.id)
+    }
+    await db.update(schema.issues).set({ synced: true }).where(eq(schema.issues.id, item.id))
+  }
 }
 
 // Helper: sync issue assignees
 async function syncIssueAssignees(issueId: number, assignees: { id: number, login: string, avatar_url: string }[]) {
-  // Delete existing assignees
-  await db.delete(schema.issueAssignees).where(eq(schema.issueAssignees.issueId, issueId))
+  const newAssigneeIds = new Set(assignees.map(a => a.id))
+
+  // Get existing assignees
+  const existingAssignees = await db
+    .select()
+    .from(schema.issueAssignees)
+    .where(eq(schema.issueAssignees.issueId, issueId))
+
+  const existingIds = new Set(existingAssignees.map(a => a.userId))
+
+  // Delete removed assignees
+  for (const existing of existingAssignees) {
+    if (!newAssigneeIds.has(existing.userId)) {
+      await db.delete(schema.issueAssignees).where(
+        and(
+          eq(schema.issueAssignees.issueId, issueId),
+          eq(schema.issueAssignees.userId, existing.userId)
+        )
+      )
+    }
+  }
 
   // Insert new assignees
   for (const assignee of assignees) {
-    await ensureUser({
-      id: assignee.id,
-      login: assignee.login,
-      avatar_url: assignee.avatar_url
-    })
-    await db.insert(schema.issueAssignees).values({
-      issueId,
-      userId: assignee.id
-    })
+    if (!existingIds.has(assignee.id)) {
+      await ensureUser({
+        id: assignee.id,
+        login: assignee.login,
+        avatar_url: assignee.avatar_url
+      })
+      await db.insert(schema.issueAssignees).values({
+        issueId,
+        userId: assignee.id
+      })
+    }
 
     // Auto-subscribe assignee to the issue
     await subscribeUserToIssue(issueId, assignee.id)
@@ -175,38 +205,80 @@ async function syncIssueAssignees(issueId: number, assignees: { id: number, logi
 
 // Helper: sync issue labels
 async function syncIssueLabels(issueId: number, labelIds: number[]) {
-  // Delete existing labels
-  await db.delete(schema.issueLabels).where(eq(schema.issueLabels.issueId, issueId))
+  const newLabelIds = new Set(labelIds)
+
+  // Get existing labels
+  const existingLabels = await db
+    .select()
+    .from(schema.issueLabels)
+    .where(eq(schema.issueLabels.issueId, issueId))
+
+  const existingIds = new Set(existingLabels.map(l => l.labelId))
+
+  // Delete removed labels
+  for (const existing of existingLabels) {
+    if (!newLabelIds.has(existing.labelId)) {
+      await db.delete(schema.issueLabels).where(
+        and(
+          eq(schema.issueLabels.issueId, issueId),
+          eq(schema.issueLabels.labelId, existing.labelId)
+        )
+      )
+    }
+  }
 
   // Insert new labels (only if label exists in our DB)
   for (const labelId of labelIds) {
-    try {
-      await db.insert(schema.issueLabels).values({
-        issueId,
-        labelId
-      })
-    } catch {
-      // Label may not exist in our DB yet - skip
+    if (!existingIds.has(labelId)) {
+      try {
+        await db.insert(schema.issueLabels).values({
+          issueId,
+          labelId
+        })
+      } catch {
+        // Label may not exist in our DB yet - skip
+      }
     }
   }
 }
 
 // Helper: sync issue requested reviewers
 async function syncIssueRequestedReviewers(issueId: number, reviewers: { id: number, login: string, avatar_url?: string }[]) {
-  // Delete existing reviewers
-  await db.delete(schema.issueRequestedReviewers).where(eq(schema.issueRequestedReviewers.issueId, issueId))
+  const newReviewerIds = new Set(reviewers.map(r => r.id))
+
+  // Get existing reviewers
+  const existingReviewers = await db
+    .select()
+    .from(schema.issueRequestedReviewers)
+    .where(eq(schema.issueRequestedReviewers.issueId, issueId))
+
+  const existingIds = new Set(existingReviewers.map(r => r.userId))
+
+  // Delete removed reviewers
+  for (const existing of existingReviewers) {
+    if (!newReviewerIds.has(existing.userId)) {
+      await db.delete(schema.issueRequestedReviewers).where(
+        and(
+          eq(schema.issueRequestedReviewers.issueId, issueId),
+          eq(schema.issueRequestedReviewers.userId, existing.userId)
+        )
+      )
+    }
+  }
 
   // Insert new reviewers
   for (const reviewer of reviewers) {
-    await ensureUser({
-      id: reviewer.id,
-      login: reviewer.login,
-      avatar_url: reviewer.avatar_url
-    })
-    await db.insert(schema.issueRequestedReviewers).values({
-      issueId,
-      userId: reviewer.id
-    })
+    if (!existingIds.has(reviewer.id)) {
+      await ensureUser({
+        id: reviewer.id,
+        login: reviewer.login,
+        avatar_url: reviewer.avatar_url
+      })
+      await db.insert(schema.issueRequestedReviewers).values({
+        issueId,
+        userId: reviewer.id
+      })
+    }
 
     // Auto-subscribe reviewer to the PR
     await subscribeUserToIssue(issueId, reviewer.id)
@@ -232,9 +304,13 @@ export async function handleCommentEvent(action: string, comment: any, issue: an
     return
   }
 
-  // If issue hasn't been fully synced yet, fetch all comments now
+  // If issue hasn't been fully synced yet, fetch all comments (and reviews for PRs) now
   if (!existingIssue.synced && installationId) {
     await syncAllComments(installationId, repository.full_name, issue.number, existingIssue.id)
+    // Also sync reviews if this is a PR
+    if (existingIssue.type === 'pull_request') {
+      await syncAllReviews(installationId, repository.full_name, issue.number, existingIssue.id)
+    }
     // Mark issue as synced
     await db.update(schema.issues).set({ synced: true }).where(eq(schema.issues.id, existingIssue.id))
     return // All comments including this one are now synced
@@ -271,9 +347,7 @@ async function syncAllComments(installationId: number, repoFullName: string, iss
       per_page: 100
     })
 
-    // Delete existing comments and re-insert
-    await db.delete(schema.issueComments).where(eq(schema.issueComments.issueId, issueId))
-
+    // Upsert comments
     for (const comment of comments) {
       if (comment.user) {
         await ensureUser({
@@ -286,15 +360,25 @@ async function syncAllComments(installationId: number, repoFullName: string, iss
         await subscribeUserToIssue(issueId, comment.user.id)
       }
 
-      await db.insert(schema.issueComments).values({
-        id: comment.id,
+      const commentData = {
         issueId,
         userId: comment.user?.id,
         body: comment.body || '',
         htmlUrl: comment.html_url,
-        createdAt: new Date(comment.created_at),
         updatedAt: new Date(comment.updated_at)
-      })
+      }
+
+      const [existing] = await db.select().from(schema.issueComments).where(eq(schema.issueComments.id, comment.id))
+
+      if (existing) {
+        await db.update(schema.issueComments).set(commentData).where(eq(schema.issueComments.id, comment.id))
+      } else {
+        await db.insert(schema.issueComments).values({
+          id: comment.id,
+          ...commentData,
+          createdAt: new Date(comment.created_at)
+        })
+      }
     }
 
     console.log(`[Webhook] Synced ${comments.length} comments for issue #${issueNumber}`)
@@ -353,8 +437,9 @@ export async function handleReviewEvent(action: string, review: any, pullRequest
     return
   }
 
-  // If PR hasn't been fully synced yet, fetch all reviews
+  // If PR hasn't been fully synced yet, fetch all comments and reviews
   if (!existingPR.synced && installationId) {
+    await syncAllComments(installationId, repository.full_name, pullRequest.number, existingPR.id)
     await syncAllReviews(installationId, repository.full_name, pullRequest.number, existingPR.id)
     // Mark PR as synced
     await db.update(schema.issues).set({ synced: true }).where(eq(schema.issues.id, existingPR.id))
@@ -426,8 +511,6 @@ async function syncAllReviews(installationId: number, repoFullName: string, prNu
       per_page: 100
     })
 
-    await db.delete(schema.issueReviews).where(eq(schema.issueReviews.issueId, issueId))
-
     for (const review of reviews) {
       if (review.user) {
         await ensureUser({
@@ -440,8 +523,7 @@ async function syncAllReviews(installationId: number, repoFullName: string, prNu
         await subscribeUserToIssue(issueId, review.user.id)
       }
 
-      await db.insert(schema.issueReviews).values({
-        id: review.id,
+      const reviewData = {
         issueId,
         userId: review.user?.id,
         body: review.body,
@@ -449,7 +531,18 @@ async function syncAllReviews(installationId: number, repoFullName: string, prNu
         htmlUrl: review.html_url,
         commitId: review.commit_id,
         submittedAt: review.submitted_at ? new Date(review.submitted_at) : null
-      })
+      }
+
+      const [existing] = await db.select().from(schema.issueReviews).where(eq(schema.issueReviews.id, review.id))
+
+      if (existing) {
+        await db.update(schema.issueReviews).set(reviewData).where(eq(schema.issueReviews.id, review.id))
+      } else {
+        await db.insert(schema.issueReviews).values({
+          id: review.id,
+          ...reviewData
+        })
+      }
     }
 
     // Sync review comments
@@ -460,8 +553,6 @@ async function syncAllReviews(installationId: number, repoFullName: string, prNu
       per_page: 100
     })
 
-    await db.delete(schema.issueReviewComments).where(eq(schema.issueReviewComments.issueId, issueId))
-
     for (const comment of reviewComments) {
       if (comment.user) {
         await ensureUser({
@@ -471,8 +562,7 @@ async function syncAllReviews(installationId: number, repoFullName: string, prNu
         })
       }
 
-      await db.insert(schema.issueReviewComments).values({
-        id: comment.id,
+      const commentData = {
         issueId,
         reviewId: comment.pull_request_review_id,
         userId: comment.user?.id,
@@ -483,9 +573,20 @@ async function syncAllReviews(installationId: number, repoFullName: string, prNu
         commitId: comment.commit_id,
         diffHunk: comment.diff_hunk,
         htmlUrl: comment.html_url,
-        createdAt: new Date(comment.created_at),
         updatedAt: new Date(comment.updated_at)
-      })
+      }
+
+      const [existing] = await db.select().from(schema.issueReviewComments).where(eq(schema.issueReviewComments.id, comment.id))
+
+      if (existing) {
+        await db.update(schema.issueReviewComments).set(commentData).where(eq(schema.issueReviewComments.id, comment.id))
+      } else {
+        await db.insert(schema.issueReviewComments).values({
+          id: comment.id,
+          ...commentData,
+          createdAt: new Date(comment.created_at)
+        })
+      }
     }
 
     console.log(`[Webhook] Synced ${reviews.length} reviews and ${reviewComments.length} review comments for PR #${prNumber}`)
@@ -513,8 +614,9 @@ export async function handleReviewCommentEvent(action: string, comment: any, pul
     return
   }
 
-  // If PR hasn't been fully synced, sync all reviews (which includes comments)
+  // If PR hasn't been fully synced, sync all comments and reviews
   if (!existingPR.synced && installationId) {
+    await syncAllComments(installationId, repository.full_name, pullRequest.number, existingPR.id)
     await syncAllReviews(installationId, repository.full_name, pullRequest.number, existingPR.id)
     await db.update(schema.issues).set({ synced: true }).where(eq(schema.issues.id, existingPR.id))
     return
