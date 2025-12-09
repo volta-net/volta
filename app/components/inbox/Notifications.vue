@@ -394,7 +394,7 @@ function getActionIcon(notification: Notification) {
       :ref="el => { notificationsRefs[notification.id] = el as Element }"
     >
       <div
-        class="relative px-4 py-3 text-sm cursor-pointer before:absolute before:z-[-1] before:inset-px before:rounded-md before:transition-colors transition-colors"
+        class="relative p-3 text-sm cursor-default before:absolute before:z-[-1] before:inset-px before:rounded-md before:transition-colors transition-colors"
         :class="[
           selectedNotification?.id === notification.id ? 'text-highlighted before:bg-elevated' : 'text-default hover:text-highlighted hover:before:bg-elevated/50'
         ]"

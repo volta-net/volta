@@ -5,7 +5,6 @@ import type { Notification } from '#shared/types/notification'
 const { data: notifications, refresh } = await useFetch<Notification[]>('/api/notifications')
 
 const selectedNotification = ref<Notification | null>()
-const unreadNotifications = computed(() => notifications.value?.filter(notification => !notification.read) ?? [])
 
 // Refetch notifications when window regains focus
 const focused = useWindowFocus()
@@ -98,12 +97,13 @@ const selectedNotificationTitle = computed(() => {
             color="neutral"
             size="sm"
             trailing-icon="i-lucide-ellipsis"
+            class="data-[state=open]:bg-elevated"
           />
         </UDropdownMenu>
       </template>
     </UDashboardNavbar>
 
-    <NotificationsList
+    <InboxNotifications
       v-model="selectedNotification"
       :notifications="notifications ?? []"
       @refresh="refresh"
@@ -114,74 +114,47 @@ const selectedNotificationTitle = computed(() => {
     <template #header>
       <UDashboardNavbar>
         <template #title>
-          <!-- Issue/PR -->
-          <template v-if="selectedNotification.issue">
-            #{{ selectedNotification.issue.number }} {{ selectedNotification.issue.title }}
-          </template>
-          <!-- Release -->
-          <template v-else-if="selectedNotification.release">
-            {{ selectedNotification.release.name || selectedNotification.release.tagName }}
-          </template>
-          <!-- Workflow -->
-          <template v-else-if="selectedNotification.workflowRun">
-            {{ selectedNotification.workflowRun.name || selectedNotification.workflowRun.workflowName }}
-          </template>
+          {{ selectedNotificationTitle }}
+        </template>
+
+        <template #right>
+          <UButton
+            icon="i-simple-icons-github"
+            color="neutral"
+            variant="ghost"
+            size="sm"
+            :to="(selectedNotification.issue?.htmlUrl || selectedNotification.release?.htmlUrl || selectedNotification.workflowRun?.htmlUrl)!"
+            target="_blank"
+          />
         </template>
       </UDashboardNavbar>
     </template>
 
-    <template #content>
-      <div class="flex flex-col gap-4 p-4">
-        <p v-if="selectedNotification?.body" class="text-muted text-sm">
-          {{ selectedNotification.body }}
-        </p>
-        <p v-else class="text-dimmed text-sm">
-          No additional details
-        </p>
-
-        <!-- Link to GitHub -->
-        <UButton
-          v-if="selectedNotification.issue?.htmlUrl || selectedNotification.release?.htmlUrl || selectedNotification.workflowRun?.htmlUrl"
-          :to="(selectedNotification.issue?.htmlUrl || selectedNotification.release?.htmlUrl || selectedNotification.workflowRun?.htmlUrl)!"
-          target="_blank"
-          color="neutral"
-          variant="soft"
-          icon="i-lucide-external-link"
-          class="self-start"
-        >
-          View on GitHub
-        </UButton>
-      </div>
+    <template #body>
+      <InboxNotification
+        :notification="selectedNotification"
+        @close="selectedNotification = null"
+      />
     </template>
   </UDashboardPanel>
 
   <UDashboardPanel v-else id="inbox-2" class="hidden lg:flex">
-    <div class="flex-1 flex flex-col items-center justify-center gap-4">
-      <UIcon name="i-lucide-inbox" class="size-20 text-dimmed" />
-
-      <p class="text-muted text-sm">
-        <template v-if="unreadNotifications.length > 0">
-          {{ unreadNotifications.length }} unread notification(s)
-        </template>
-        <template v-else>
-          No notifications yet
-        </template>
-      </p>
-    </div>
+    <template #body>
+      <InboxEmpty :notifications="notifications ?? []" />
+    </template>
   </UDashboardPanel>
 
   <ClientOnly>
     <USlideover
-      v-if="isMobile"
+      v-if="isMobile && selectedNotification"
       v-model:open="isPanelOpen"
       :title="selectedNotificationTitle"
     >
       <template #content>
-        <!-- <InboxNotification
-          v-if="selectedNotification"
+        <InboxNotification
           :notification="selectedNotification"
           @close="selectedNotification = null"
-        /> -->
+        />
       </template>
     </USlideover>
   </ClientOnly>
