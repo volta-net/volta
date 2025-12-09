@@ -254,49 +254,118 @@ async function syncIssueFromGitHub(accessToken: string, issue: any) {
 }
 
 async function syncAssignees(issueId: number, assignees: { id: number, login: string, avatar_url: string }[]) {
-  await db.delete(schema.issueAssignees).where(eq(schema.issueAssignees.issueId, issueId))
+  const newAssigneeIds = new Set(assignees.map(a => a.id))
 
+  // Get existing assignees
+  const existingAssignees = await db
+    .select()
+    .from(schema.issueAssignees)
+    .where(eq(schema.issueAssignees.issueId, issueId))
+
+  const existingIds = new Set(existingAssignees.map(a => a.userId))
+
+  // Delete removed assignees
+  for (const existing of existingAssignees) {
+    if (!newAssigneeIds.has(existing.userId)) {
+      await db.delete(schema.issueAssignees).where(
+        and(
+          eq(schema.issueAssignees.issueId, issueId),
+          eq(schema.issueAssignees.userId, existing.userId)
+        )
+      )
+    }
+  }
+
+  // Insert new assignees
   for (const assignee of assignees) {
-    await ensureUser({
-      id: assignee.id,
-      login: assignee.login,
-      avatar_url: assignee.avatar_url
-    })
-    await db.insert(schema.issueAssignees).values({
-      issueId,
-      userId: assignee.id
-    })
+    if (!existingIds.has(assignee.id)) {
+      await ensureUser({
+        id: assignee.id,
+        login: assignee.login,
+        avatar_url: assignee.avatar_url
+      })
+      await db.insert(schema.issueAssignees).values({
+        issueId,
+        userId: assignee.id
+      })
+    }
   }
 }
 
 async function syncLabels(issueId: number, labelIds: number[]) {
-  await db.delete(schema.issueLabels).where(eq(schema.issueLabels.issueId, issueId))
+  const newLabelIds = new Set(labelIds)
 
+  // Get existing labels
+  const existingLabels = await db
+    .select()
+    .from(schema.issueLabels)
+    .where(eq(schema.issueLabels.issueId, issueId))
+
+  const existingIds = new Set(existingLabels.map(l => l.labelId))
+
+  // Delete removed labels
+  for (const existing of existingLabels) {
+    if (!newLabelIds.has(existing.labelId)) {
+      await db.delete(schema.issueLabels).where(
+        and(
+          eq(schema.issueLabels.issueId, issueId),
+          eq(schema.issueLabels.labelId, existing.labelId)
+        )
+      )
+    }
+  }
+
+  // Insert new labels
   for (const labelId of labelIds) {
-    try {
-      await db.insert(schema.issueLabels).values({
-        issueId,
-        labelId
-      })
-    } catch {
-      // Label may not exist in our DB
+    if (!existingIds.has(labelId)) {
+      try {
+        await db.insert(schema.issueLabels).values({
+          issueId,
+          labelId
+        })
+      } catch {
+        // Label may not exist in our DB
+      }
     }
   }
 }
 
 async function syncRequestedReviewers(issueId: number, reviewers: { id: number, login: string, avatar_url?: string }[]) {
-  await db.delete(schema.issueRequestedReviewers).where(eq(schema.issueRequestedReviewers.issueId, issueId))
+  const newReviewerIds = new Set(reviewers.map(r => r.id))
 
+  // Get existing reviewers
+  const existingReviewers = await db
+    .select()
+    .from(schema.issueRequestedReviewers)
+    .where(eq(schema.issueRequestedReviewers.issueId, issueId))
+
+  const existingIds = new Set(existingReviewers.map(r => r.userId))
+
+  // Delete removed reviewers
+  for (const existing of existingReviewers) {
+    if (!newReviewerIds.has(existing.userId)) {
+      await db.delete(schema.issueRequestedReviewers).where(
+        and(
+          eq(schema.issueRequestedReviewers.issueId, issueId),
+          eq(schema.issueRequestedReviewers.userId, existing.userId)
+        )
+      )
+    }
+  }
+
+  // Insert new reviewers
   for (const reviewer of reviewers) {
-    await ensureUser({
-      id: reviewer.id,
-      login: reviewer.login,
-      avatar_url: reviewer.avatar_url
-    })
-    await db.insert(schema.issueRequestedReviewers).values({
-      issueId,
-      userId: reviewer.id
-    })
+    if (!existingIds.has(reviewer.id)) {
+      await ensureUser({
+        id: reviewer.id,
+        login: reviewer.login,
+        avatar_url: reviewer.avatar_url
+      })
+      await db.insert(schema.issueRequestedReviewers).values({
+        issueId,
+        userId: reviewer.id
+      })
+    }
   }
 }
 
@@ -310,9 +379,7 @@ async function syncComments(accessToken: string, owner: string, repo: string, is
     per_page: 100
   })
 
-  // Delete existing comments and re-insert
-  await db.delete(schema.issueComments).where(eq(schema.issueComments.issueId, issueId))
-
+  // Upsert comments
   for (const comment of comments) {
     if (comment.user) {
       await ensureUser({
@@ -322,15 +389,25 @@ async function syncComments(accessToken: string, owner: string, repo: string, is
       })
     }
 
-    await db.insert(schema.issueComments).values({
-      id: comment.id,
+    const commentData = {
       issueId,
       userId: comment.user?.id,
       body: comment.body || '',
       htmlUrl: comment.html_url,
-      createdAt: new Date(comment.created_at),
       updatedAt: new Date(comment.updated_at)
-    })
+    }
+
+    const [existing] = await db.select().from(schema.issueComments).where(eq(schema.issueComments.id, comment.id))
+
+    if (existing) {
+      await db.update(schema.issueComments).set(commentData).where(eq(schema.issueComments.id, comment.id))
+    } else {
+      await db.insert(schema.issueComments).values({
+        id: comment.id,
+        ...commentData,
+        createdAt: new Date(comment.created_at)
+      })
+    }
   }
 }
 
@@ -344,9 +421,7 @@ async function syncReviews(accessToken: string, owner: string, repo: string, prN
     per_page: 100
   })
 
-  // Delete existing reviews and re-insert
-  await db.delete(schema.issueReviews).where(eq(schema.issueReviews.issueId, issueId))
-
+  // Upsert reviews
   for (const review of reviews) {
     if (review.user) {
       await ensureUser({
@@ -356,8 +431,7 @@ async function syncReviews(accessToken: string, owner: string, repo: string, prN
       })
     }
 
-    await db.insert(schema.issueReviews).values({
-      id: review.id,
+    const reviewData = {
       issueId,
       userId: review.user?.id,
       body: review.body,
@@ -365,7 +439,18 @@ async function syncReviews(accessToken: string, owner: string, repo: string, prN
       htmlUrl: review.html_url,
       commitId: review.commit_id,
       submittedAt: review.submitted_at ? new Date(review.submitted_at) : null
-    })
+    }
+
+    const [existing] = await db.select().from(schema.issueReviews).where(eq(schema.issueReviews.id, review.id))
+
+    if (existing) {
+      await db.update(schema.issueReviews).set(reviewData).where(eq(schema.issueReviews.id, review.id))
+    } else {
+      await db.insert(schema.issueReviews).values({
+        id: review.id,
+        ...reviewData
+      })
+    }
   }
 }
 
@@ -379,9 +464,7 @@ async function syncReviewComments(accessToken: string, owner: string, repo: stri
     per_page: 100
   })
 
-  // Delete existing review comments and re-insert
-  await db.delete(schema.issueReviewComments).where(eq(schema.issueReviewComments.issueId, issueId))
-
+  // Upsert review comments
   for (const comment of comments) {
     if (comment.user) {
       await ensureUser({
@@ -391,8 +474,7 @@ async function syncReviewComments(accessToken: string, owner: string, repo: stri
       })
     }
 
-    await db.insert(schema.issueReviewComments).values({
-      id: comment.id,
+    const commentData = {
       issueId,
       reviewId: comment.pull_request_review_id,
       userId: comment.user?.id,
@@ -403,8 +485,19 @@ async function syncReviewComments(accessToken: string, owner: string, repo: stri
       commitId: comment.commit_id,
       diffHunk: comment.diff_hunk,
       htmlUrl: comment.html_url,
-      createdAt: new Date(comment.created_at),
       updatedAt: new Date(comment.updated_at)
-    })
+    }
+
+    const [existing] = await db.select().from(schema.issueReviewComments).where(eq(schema.issueReviewComments.id, comment.id))
+
+    if (existing) {
+      await db.update(schema.issueReviewComments).set(commentData).where(eq(schema.issueReviewComments.id, comment.id))
+    } else {
+      await db.insert(schema.issueReviewComments).values({
+        id: comment.id,
+        ...commentData,
+        createdAt: new Date(comment.created_at)
+      })
+    }
   }
 }

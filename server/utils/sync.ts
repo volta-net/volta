@@ -296,20 +296,41 @@ export async function syncIssues(accessToken: string, owner: string, repo: strin
 
 // Helper: sync issue assignees
 async function syncIssueAssignees(issueId: number, assignees: { id: number, login: string, avatar_url: string }[]) {
-  // Delete existing assignees
-  await db.delete(schema.issueAssignees).where(eq(schema.issueAssignees.issueId, issueId))
+  const newAssigneeIds = new Set(assignees.map(a => a.id))
+
+  // Get existing assignees
+  const existingAssignees = await db
+    .select()
+    .from(schema.issueAssignees)
+    .where(eq(schema.issueAssignees.issueId, issueId))
+
+  const existingIds = new Set(existingAssignees.map(a => a.userId))
+
+  // Delete removed assignees
+  for (const existing of existingAssignees) {
+    if (!newAssigneeIds.has(existing.userId)) {
+      await db.delete(schema.issueAssignees).where(
+        and(
+          eq(schema.issueAssignees.issueId, issueId),
+          eq(schema.issueAssignees.userId, existing.userId)
+        )
+      )
+    }
+  }
 
   // Insert new assignees
   for (const assignee of assignees) {
-    await ensureUser({
-      id: assignee.id,
-      login: assignee.login,
-      avatar_url: assignee.avatar_url
-    })
-    await db.insert(schema.issueAssignees).values({
-      issueId,
-      userId: assignee.id
-    })
+    if (!existingIds.has(assignee.id)) {
+      await ensureUser({
+        id: assignee.id,
+        login: assignee.login,
+        avatar_url: assignee.avatar_url
+      })
+      await db.insert(schema.issueAssignees).values({
+        issueId,
+        userId: assignee.id
+      })
+    }
 
     // Auto-subscribe assignee to the issue
     await subscribeUserToIssue(issueId, assignee.id)
@@ -318,34 +339,76 @@ async function syncIssueAssignees(issueId: number, assignees: { id: number, logi
 
 // Helper: sync issue labels
 async function syncIssueLabels(issueId: number, labelIds: number[]) {
-  // Delete existing labels
-  await db.delete(schema.issueLabels).where(eq(schema.issueLabels.issueId, issueId))
+  const newLabelIds = new Set(labelIds)
+
+  // Get existing labels
+  const existingLabels = await db
+    .select()
+    .from(schema.issueLabels)
+    .where(eq(schema.issueLabels.issueId, issueId))
+
+  const existingIds = new Set(existingLabels.map(l => l.labelId))
+
+  // Delete removed labels
+  for (const existing of existingLabels) {
+    if (!newLabelIds.has(existing.labelId)) {
+      await db.delete(schema.issueLabels).where(
+        and(
+          eq(schema.issueLabels.issueId, issueId),
+          eq(schema.issueLabels.labelId, existing.labelId)
+        )
+      )
+    }
+  }
 
   // Insert new labels
   for (const labelId of labelIds) {
-    await db.insert(schema.issueLabels).values({
-      issueId,
-      labelId
-    })
+    if (!existingIds.has(labelId)) {
+      await db.insert(schema.issueLabels).values({
+        issueId,
+        labelId
+      })
+    }
   }
 }
 
 // Helper: sync issue requested reviewers
 async function syncIssueRequestedReviewers(issueId: number, reviewers: { id: number, login: string, avatar_url?: string }[]) {
-  // Delete existing reviewers
-  await db.delete(schema.issueRequestedReviewers).where(eq(schema.issueRequestedReviewers.issueId, issueId))
+  const newReviewerIds = new Set(reviewers.map(r => r.id))
+
+  // Get existing reviewers
+  const existingReviewers = await db
+    .select()
+    .from(schema.issueRequestedReviewers)
+    .where(eq(schema.issueRequestedReviewers.issueId, issueId))
+
+  const existingIds = new Set(existingReviewers.map(r => r.userId))
+
+  // Delete removed reviewers
+  for (const existing of existingReviewers) {
+    if (!newReviewerIds.has(existing.userId)) {
+      await db.delete(schema.issueRequestedReviewers).where(
+        and(
+          eq(schema.issueRequestedReviewers.issueId, issueId),
+          eq(schema.issueRequestedReviewers.userId, existing.userId)
+        )
+      )
+    }
+  }
 
   // Insert new reviewers
   for (const reviewer of reviewers) {
-    await ensureUser({
-      id: reviewer.id,
-      login: reviewer.login,
-      avatar_url: reviewer.avatar_url
-    })
-    await db.insert(schema.issueRequestedReviewers).values({
-      issueId,
-      userId: reviewer.id
-    })
+    if (!existingIds.has(reviewer.id)) {
+      await ensureUser({
+        id: reviewer.id,
+        login: reviewer.login,
+        avatar_url: reviewer.avatar_url
+      })
+      await db.insert(schema.issueRequestedReviewers).values({
+        issueId,
+        userId: reviewer.id
+      })
+    }
 
     // Auto-subscribe reviewer to the PR
     await subscribeUserToIssue(issueId, reviewer.id)
