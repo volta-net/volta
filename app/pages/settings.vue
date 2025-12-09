@@ -1,16 +1,12 @@
 <script setup lang="ts">
 import type { NavigationMenuItem } from '@nuxt/ui'
 
-const links = [[{
-  label: 'Integrations',
+const links = [{
+  label: 'Repositories',
   icon: 'i-lucide-package',
   to: '/settings',
   exact: true
-}, {
-  label: 'Notifications',
-  icon: 'i-lucide-bell',
-  to: '/settings/notifications'
-}]] satisfies NavigationMenuItem[][]
+}] satisfies NavigationMenuItem[]
 </script>
 
 <template>

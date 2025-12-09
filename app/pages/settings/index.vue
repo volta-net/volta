@@ -1,5 +1,8 @@
 <script setup lang="ts">
-import type { Installation } from '#shared/types/installation'
+import { triggerRef } from 'vue'
+import type { DropdownMenuItem } from '@nuxt/ui'
+import type { Installation, InstallationRepository } from '#shared/types/installation'
+import type { RepositorySubscription } from '#shared/types/repository'
 
 const toast = useToast()
 const config = useRuntimeConfig().public
@@ -14,8 +17,9 @@ watch(focused, (isFocused) => {
   }
 })
 
-const syncing = ref<string | null>(null)
-const deleting = ref<string | null>(null)
+const syncing = ref<Set<string>>(new Set())
+const deleting = ref<Set<string>>(new Set())
+const updatingSubscription = ref<string | null>(null)
 
 interface SyncResult {
   success: boolean
@@ -41,7 +45,7 @@ const accordionItems = computed(() => {
 async function syncRepository(fullName: string) {
   const [owner, name] = fullName.split('/')
 
-  syncing.value = fullName
+  syncing.value.add(fullName)
 
   try {
     const result = await $fetch<SyncResult>(`/api/repositories/${owner}/${name}/sync`, {
@@ -63,14 +67,168 @@ async function syncRepository(fullName: string) {
       color: 'error'
     })
   } finally {
-    syncing.value = null
+    syncing.value.delete(fullName)
   }
+}
+
+async function importAllRepositories(installation: Installation) {
+  const unsyncedRepos = installation.repositories.filter(r => !r.synced)
+  if (!unsyncedRepos.length) {
+    toast.add({
+      title: 'All repositories imported',
+      description: 'All repositories are already imported.',
+      color: 'neutral'
+    })
+    return
+  }
+
+  unsyncedRepos.forEach(repo => syncing.value.add(repo.fullName))
+
+  try {
+    await Promise.all(unsyncedRepos.map(async (repo) => {
+      const [owner, name] = repo.fullName.split('/')
+      try {
+        await $fetch(`/api/repositories/${owner}/${name}/sync`, { method: 'POST' })
+        // Optimistically update local state
+        repo.synced = true
+        repo.lastSyncedAt = new Date()
+        triggerRef(installations)
+      } finally {
+        syncing.value.delete(repo.fullName)
+      }
+    }))
+
+    toast.add({
+      title: 'Repositories imported',
+      description: `Successfully imported ${unsyncedRepos.length} repositories.`,
+      color: 'success'
+    })
+  } catch (error: any) {
+    await refresh()
+    toast.add({
+      title: 'Import failed',
+      description: error.data?.message || 'Some repositories failed to import.',
+      color: 'error'
+    })
+  }
+}
+
+async function syncAllRepositories(installation: Installation) {
+  const syncedRepos = installation.repositories.filter(r => r.synced)
+  if (!syncedRepos.length) {
+    return
+  }
+
+  syncedRepos.forEach(repo => syncing.value.add(repo.fullName))
+
+  try {
+    await Promise.all(syncedRepos.map(async (repo) => {
+      const [owner, name] = repo.fullName.split('/')
+      try {
+        await $fetch(`/api/repositories/${owner}/${name}/sync`, { method: 'POST' })
+        // Optimistically update local state
+        repo.lastSyncedAt = new Date()
+        triggerRef(installations)
+      } finally {
+        syncing.value.delete(repo.fullName)
+      }
+    }))
+
+    toast.add({
+      title: 'Repositories synced',
+      description: `Successfully synced ${syncedRepos.length} repositories.`,
+      color: 'success'
+    })
+  } catch (error: any) {
+    await refresh()
+    toast.add({
+      title: 'Sync failed',
+      description: error.data?.message || 'Some repositories failed to sync.',
+      color: 'error'
+    })
+  }
+}
+
+async function removeAllRepositories(installation: Installation) {
+  const syncedRepos = installation.repositories.filter(r => r.synced)
+  if (!syncedRepos.length) {
+    return
+  }
+
+  syncedRepos.forEach(repo => deleting.value.add(repo.fullName))
+
+  try {
+    await Promise.all(syncedRepos.map(async (repo) => {
+      const [owner, name] = repo.fullName.split('/')
+      try {
+        await $fetch(`/api/repositories/${owner}/${name}`, { method: 'DELETE' })
+        // Optimistically update local state
+        repo.synced = false
+        repo.lastSyncedAt = null
+        triggerRef(installations)
+      } finally {
+        deleting.value.delete(repo.fullName)
+      }
+    }))
+
+    toast.add({
+      title: 'Repositories removed',
+      description: `Successfully removed ${syncedRepos.length} repositories.`,
+      color: 'success'
+    })
+  } catch (error: any) {
+    await refresh()
+    toast.add({
+      title: 'Remove failed',
+      description: error.data?.message || 'Some repositories failed to remove.',
+      color: 'error'
+    })
+  }
+}
+
+function getInstallationDropdownItems(installation: Installation) {
+  const hasUnsynced = installation.repositories.some(r => !r.synced)
+  const hasSynced = installation.repositories.some(r => r.synced)
+
+  const items: DropdownMenuItem[][] = [
+    [{
+      label: 'Configure',
+      icon: 'i-lucide-external-link',
+      to: getGitHubConfigUrl(installation),
+      target: '_blank'
+    }]
+  ]
+
+  if (hasUnsynced) {
+    items.push([{
+      label: 'Import all',
+      icon: 'i-lucide-download',
+      onSelect: () => importAllRepositories(installation)
+    }])
+  }
+
+  if (hasSynced) {
+    items.push([{
+      label: 'Sync all',
+      icon: 'i-lucide-refresh-cw',
+      onSelect: () => syncAllRepositories(installation)
+    }])
+
+    items.push([{
+      label: 'Remove all',
+      icon: 'i-lucide-trash-2',
+      color: 'error' as const,
+      onSelect: () => removeAllRepositories(installation)
+    }])
+  }
+
+  return items
 }
 
 async function deleteRepository(fullName: string) {
   const [owner, name] = fullName.split('/')
 
-  deleting.value = fullName
+  deleting.value.add(fullName)
 
   try {
     await $fetch(`/api/repositories/${owner}/${name}`, {
@@ -92,7 +250,7 @@ async function deleteRepository(fullName: string) {
       color: 'error'
     })
   } finally {
-    deleting.value = null
+    deleting.value.delete(fullName)
   }
 }
 
@@ -106,12 +264,164 @@ function getGitHubConfigUrl(installation: Installation) {
 function getInstallUrl() {
   return `https://github.com/apps/${config.github.appSlug}/installations/new`
 }
+
+// ============================================================================
+// Notification Subscription Logic
+// ============================================================================
+
+// Preset configurations
+const presets = {
+  participating: { issues: false, pullRequests: false, releases: true, ci: false, mentions: true, activity: true },
+  all: { issues: true, pullRequests: true, releases: true, ci: true, mentions: true, activity: true },
+  ignore: { issues: false, pullRequests: false, releases: false, ci: false, mentions: false, activity: false }
+}
+
+// Update subscription preference
+async function updateSubscription(repo: InstallationRepository, updates: Partial<RepositorySubscription>) {
+  const [owner, name] = repo.fullName.split('/')
+
+  updatingSubscription.value = repo.fullName
+
+  try {
+    const result = await $fetch<RepositorySubscription>(`/api/repositories/${owner}/${name}/subscription`, {
+      method: 'PATCH',
+      body: updates
+    })
+
+    // Optimistically update local state
+    if (repo.subscription) {
+      Object.assign(repo.subscription, result)
+    }
+    triggerRef(installations)
+  } catch (error: any) {
+    toast.add({
+      title: 'Failed to update subscription',
+      description: error.data?.message || 'An error occurred',
+      color: 'error'
+    })
+  } finally {
+    updatingSubscription.value = null
+  }
+}
+
+// Check which preset matches the current subscription
+function getActivePreset(sub: RepositorySubscription): 'participating' | 'all' | 'ignore' | 'custom' {
+  for (const [name, preset] of Object.entries(presets)) {
+    const matches = Object.entries(preset).every(([key, value]) => sub[key as keyof typeof preset] === value)
+    if (matches) {
+      return name as 'participating' | 'all' | 'ignore'
+    }
+  }
+  return 'custom'
+}
+
+// Build dropdown items for notification settings
+function getNotificationDropdownItems(repo: InstallationRepository): DropdownMenuItem[][] {
+  if (!repo.subscription) return []
+
+  const sub = repo.subscription
+  const activePreset = getActivePreset(sub)
+
+  return [[
+    {
+      label: 'Participating and @mentions',
+      description: 'Releases, @mentions, and activity on subscribed issues.',
+      icon: 'i-lucide-users',
+      active: activePreset === 'participating',
+      onSelect: () => updateSubscription(repo, presets.participating)
+    },
+    {
+      label: 'All activity',
+      description: 'All activity in the repository.',
+      icon: 'i-lucide-activity',
+      active: activePreset === 'all',
+      onSelect: () => updateSubscription(repo, presets.all)
+    },
+    {
+      label: 'Ignore',
+      description: 'Receive no notifications.',
+      icon: 'i-lucide-eye-off',
+      active: activePreset === 'ignore',
+      onSelect: () => updateSubscription(repo, presets.ignore)
+    },
+    {
+      label: 'Custom',
+      description: 'Choose specific activity types.',
+      icon: 'i-lucide-settings',
+      active: activePreset === 'custom',
+      children: [[
+        {
+          type: 'checkbox',
+          label: 'Issues',
+          icon: 'i-octicon-issue-opened-24',
+          checked: sub.issues,
+          onUpdateChecked: (checked: boolean) => updateSubscription(repo, { issues: checked })
+        },
+        {
+          type: 'checkbox',
+          label: 'Pull requests',
+          icon: 'i-octicon-git-pull-request-24',
+          checked: sub.pullRequests,
+          onUpdateChecked: (checked: boolean) => updateSubscription(repo, { pullRequests: checked })
+        },
+        {
+          type: 'checkbox',
+          label: 'Releases',
+          icon: 'i-octicon-tag-24',
+          checked: sub.releases,
+          onUpdateChecked: (checked: boolean) => updateSubscription(repo, { releases: checked })
+        },
+        {
+          type: 'checkbox',
+          label: 'CI failures',
+          icon: 'i-octicon-x-circle-24',
+          checked: sub.ci,
+          onUpdateChecked: (checked: boolean) => updateSubscription(repo, { ci: checked })
+        },
+        {
+          type: 'checkbox',
+          label: 'Mentions',
+          icon: 'i-octicon-mention-24',
+          checked: sub.mentions,
+          onUpdateChecked: (checked: boolean) => updateSubscription(repo, { mentions: checked })
+        },
+        {
+          type: 'checkbox',
+          label: 'Activities',
+          icon: 'i-octicon-bell-24',
+          checked: sub.activity,
+          onUpdateChecked: (checked: boolean) => updateSubscription(repo, { activity: checked })
+        }
+      ]]
+    }
+  ]]
+}
+
+// Get label and icon for the notification dropdown button
+function getSubscriptionSummary(repo: InstallationRepository): { label: string, icon: string } {
+  if (!repo.subscription) {
+    return { label: 'Default', icon: 'i-lucide-bell' }
+  }
+
+  const preset = getActivePreset(repo.subscription)
+
+  switch (preset) {
+    case 'participating':
+      return { label: 'Participating', icon: 'i-lucide-users' }
+    case 'all':
+      return { label: 'All', icon: 'i-lucide-activity' }
+    case 'ignore':
+      return { label: 'Ignore', icon: 'i-lucide-eye-off' }
+    case 'custom':
+      return { label: 'Custom', icon: 'i-lucide-settings' }
+  }
+}
 </script>
 
 <template>
   <div class="flex flex-col flex-1 min-h-0">
     <UPageCard
-      title="Connected organizations"
+      title="Connected repositories"
       description="Install the GitHub App on your account or organization to get started."
       variant="naked"
       orientation="horizontal"
@@ -175,15 +485,18 @@ function getInstallUrl() {
 
         <template #trailing="{ item }">
           <div class="flex items-center gap-2 ms-auto">
-            <UButton
-              icon="i-lucide-external-link"
-              color="neutral"
-              variant="soft"
-              size="sm"
-              :to="getGitHubConfigUrl(item.installation)"
-              target="_blank"
-              @click.stop
-            />
+            <UDropdownMenu
+              :content="{ align: 'end' }"
+              :items="getInstallationDropdownItems(item.installation)"
+            >
+              <UButton
+                icon="i-lucide-ellipsis-vertical"
+                color="neutral"
+                variant="soft"
+                size="sm"
+                @click.stop
+              />
+            </UDropdownMenu>
 
             <UButton
               icon="i-lucide-chevron-down"
@@ -198,7 +511,7 @@ function getInstallUrl() {
         </template>
 
         <template #body="{ item }">
-          <div v-for="repo in item.installation.repositories" :key="repo.id" class="flex items-center justify-between py-3 px-4 bg-default">
+          <div v-for="repo in item.installation.repositories" :key="repo.id" class="flex items-center justify-between py-3 px-4 bg-default gap-3">
             <div class="flex items-center gap-3 min-w-0">
               <UAvatar :icon="repo.private ? 'i-lucide-lock' : 'i-lucide-book'" />
               <div class="min-w-0">
@@ -224,32 +537,56 @@ function getInstallUrl() {
               </div>
             </div>
 
-            <UDropdownMenu
-              v-if="repo.synced"
-              :content="{ align: 'start' }"
-              :items="[
-                [{
-                  label: 'Sync now',
-                  icon: 'i-lucide-refresh-cw',
-                  onSelect: () => syncRepository(repo.fullName)
-                }],
-                [{
-                  label: 'Remove...',
-                  icon: 'i-lucide-trash-2',
-                  color: 'error' as const,
-                  onSelect: () => deleteRepository(repo.fullName)
-                }]
-              ]"
-            >
-              <UButton
-                color="neutral"
-                variant="soft"
-                size="sm"
-                trailing-icon="i-lucide-ellipsis-vertical"
-                :loading="syncing === repo.fullName || deleting === repo.fullName"
-                class="data-[state=open]:bg-accented/75"
-              />
-            </UDropdownMenu>
+            <div v-if="repo.synced" class="flex items-center gap-2 shrink-0">
+              <!-- Notification dropdown -->
+              <UDropdownMenu
+                v-if="repo.subscription"
+                :items="getNotificationDropdownItems(repo)"
+                :content="{ align: 'end' }"
+                :ui="{ content: 'w-72', itemDescription: 'text-clip' }"
+              >
+                <UButton
+                  color="neutral"
+                  variant="soft"
+                  size="sm"
+                  v-bind="getSubscriptionSummary(repo)"
+                  trailing-icon="i-lucide-chevron-down"
+                  :loading="updatingSubscription === repo.fullName"
+                  square
+                  :ui="{
+                    trailingIcon: 'group-data-[state=open]/button:rotate-180 transition-transform duration-200'
+                  }"
+                  class="group/button data-[state=open]:bg-accented/75"
+                />
+              </UDropdownMenu>
+
+              <!-- Sync/Delete dropdown -->
+              <UDropdownMenu
+                :content="{ align: 'start' }"
+                :items="[
+                  [{
+                    label: 'Sync now',
+                    icon: 'i-lucide-refresh-cw',
+                    onSelect: () => syncRepository(repo.fullName)
+                  }],
+                  [{
+                    label: 'Remove...',
+                    icon: 'i-lucide-trash-2',
+                    color: 'error' as const,
+                    onSelect: () => deleteRepository(repo.fullName)
+                  }]
+                ]"
+              >
+                <UButton
+                  color="neutral"
+                  variant="soft"
+                  size="sm"
+                  icon="i-lucide-ellipsis-vertical"
+                  :loading="syncing.has(repo.fullName) || deleting.has(repo.fullName)"
+                  class="data-[state=open]:bg-accented/75"
+                />
+              </UDropdownMenu>
+            </div>
 
             <UButton
               v-else
@@ -257,7 +594,7 @@ function getInstallUrl() {
               color="neutral"
               variant="soft"
               size="sm"
-              :loading="syncing === repo.fullName"
+              :loading="syncing.has(repo.fullName)"
               @click="syncRepository(repo.fullName)"
             >
               Import
