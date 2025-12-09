@@ -1,4 +1,8 @@
-import type { Repository } from './repository'
+import type { Repository, RepositorySubscription } from './repository'
+
+export interface InstallationRepository extends Repository {
+  subscription?: RepositorySubscription
+}
 
 export interface Installation {
   id: number
@@ -7,5 +11,5 @@ export interface Installation {
     avatar: string | undefined
     type: string | undefined
   }
-  repositories: Repository[]
+  repositories: InstallationRepository[]
 }
