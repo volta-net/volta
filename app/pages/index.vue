@@ -134,6 +134,7 @@ const selectedNotificationTitle = computed(() => {
       <InboxNotification
         :notification="selectedNotification"
         @close="selectedNotification = null"
+        @refresh="refresh"
       />
     </template>
   </UDashboardPanel>
@@ -154,6 +155,7 @@ const selectedNotificationTitle = computed(() => {
         <InboxNotification
           :notification="selectedNotification"
           @close="selectedNotification = null"
+          @refresh="refresh"
         />
       </template>
     </USlideover>

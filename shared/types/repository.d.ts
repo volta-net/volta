@@ -1,27 +1,10 @@
-export interface RepositorySubscription {
-  issues: boolean
-  pullRequests: boolean
-  releases: boolean
-  ci: boolean
-  mentions: boolean
-  activity: boolean
-}
+import type { DBRepository, DBRepositorySubscription } from './db'
 
-export interface Repository {
-  id: number
-  name: string
-  fullName: string
-  private: boolean | null
-  description: string | null
-  htmlUrl: string | null
-  defaultBranch: string | null
-  archived: boolean | null
-  disabled: boolean | null
-  // Volta-specific
-  syncEnabled: boolean | null
-  lastSyncedAt: Date | string | null
-  createdAt: Date | string | null
-  updatedAt: Date | string | null
+// Subscription preferences
+export interface RepositorySubscription extends Pick<DBRepositorySubscription, 'issues' | 'pullRequests' | 'releases' | 'ci' | 'mentions' | 'activity'> {}
+
+// Repository with optional computed fields
+export interface Repository extends Omit<DBRepository, 'installationId'> {
   // Computed (for installations API)
   synced?: boolean
   // Subscription preferences (from /api/repositories)

@@ -1,53 +1,23 @@
-import type { NotificationType, NotificationAction } from '../../server/db/schema'
+import type { DBNotification, DBRelease, DBWorkflowRun, NotificationType, NotificationAction } from './db'
+import type { Repository } from './repository'
+import type { Issue, User } from './issue'
 
-export interface Notification {
-  id: number
-  userId: number
+// Partial types for notification relations (only the fields we need)
+type NotificationRepository = Pick<Repository, 'id' | 'name' | 'fullName' | 'htmlUrl'>
+type NotificationIssue = Pick<Issue, 'id' | 'type' | 'number' | 'title' | 'state' | 'stateReason' | 'draft' | 'merged' | 'htmlUrl'>
+type NotificationRelease = Pick<DBRelease, 'id' | 'tagName' | 'name' | 'htmlUrl'>
+type NotificationWorkflowRun = Pick<DBWorkflowRun, 'id' | 'name' | 'workflowName' | 'conclusion' | 'htmlUrl'>
+type NotificationActor = Pick<User, 'id' | 'login' | 'avatarUrl'>
+
+// Notification with populated relations for API responses
+export interface Notification extends Omit<DBNotification, 'read'> {
   type: NotificationType
   action: NotificationAction
-  body: string | null
-  repositoryId: number | null
-  issueId: number | null
-  releaseId: number | null
-  workflowRunId: number | null
-  actorId: number | null
   read: boolean
-  readAt: Date | null
-  createdAt: Date
   // Populated relations
-  repository: {
-    id: number
-    name: string
-    fullName: string
-    htmlUrl: string | null
-  } | null
-  issue: {
-    id: number
-    type: 'issue' | 'pull_request'
-    number: number
-    title: string
-    state: string
-    stateReason: string | null
-    draft: boolean | null
-    merged: boolean | null
-    htmlUrl: string | null
-  } | null
-  release: {
-    id: number
-    tagName: string
-    name: string | null
-    htmlUrl: string | null
-  } | null
-  workflowRun: {
-    id: number
-    name: string | null
-    workflowName: string | null
-    conclusion: string | null
-    htmlUrl: string | null
-  } | null
-  actor: {
-    id: number
-    login: string
-    avatarUrl: string | null
-  } | null
+  repository: NotificationRepository | null
+  issue: NotificationIssue | null
+  release: NotificationRelease | null
+  workflowRun: NotificationWorkflowRun | null
+  actor: NotificationActor | null
 }

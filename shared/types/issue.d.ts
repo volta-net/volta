@@ -1,66 +1,23 @@
-import type { IssueType } from '../../server/db/schema'
+import type { DBUser, DBLabel, DBMilestone, DBIssueComment, DBIssue, IssueType } from './db'
 import type { Repository } from './repository'
 
-export interface User {
-  id: number
-  login: string
-  name: string | null
-  avatarUrl: string | null
-}
+// User with selected fields for API responses
+export type User = Pick<DBUser, 'id' | 'login' | 'name' | 'avatarUrl'>
 
-export interface Label {
-  id: number
-  name: string
-  color: string
-  description: string | null
-}
+// Label with selected fields for API responses
+export type Label = Pick<DBLabel, 'id' | 'name' | 'color' | 'description'>
 
-export interface Milestone {
-  id: number
-  number: number
-  title: string
-  description: string | null
-  state: string
-  htmlUrl: string | null
-  dueOn: Date | null
-}
+// Milestone with selected fields for API responses
+export type Milestone = Pick<DBMilestone, 'id' | 'number' | 'title' | 'description' | 'state' | 'htmlUrl' | 'dueOn'>
 
-export interface Comment {
-  id: number
-  body: string
-  htmlUrl: string | null
-  createdAt: Date
-  updatedAt: Date
+// Comment with user relation
+export interface Comment extends Pick<DBIssueComment, 'id' | 'body' | 'htmlUrl' | 'createdAt' | 'updatedAt'> {
   user: User | null
 }
 
-export interface Issue {
-  id: number
+// Issue with all relations populated
+export interface Issue extends Omit<DBIssue, 'repositoryId' | 'milestoneId' | 'userId' | 'synced'> {
   type: IssueType
-  number: number
-  title: string
-  body: string | null
-  state: string
-  stateReason: string | null
-  htmlUrl: string | null
-  locked: boolean | null
-  // PR-specific
-  draft: boolean | null
-  merged: boolean | null
-  commits: number | null
-  additions: number | null
-  deletions: number | null
-  changedFiles: number | null
-  headRef: string | null
-  headSha: string | null
-  baseRef: string | null
-  baseSha: string | null
-  mergedAt: Date | null
-  // Timestamps
-  closedAt: Date | null
-  createdAt: Date
-  updatedAt: Date
-  // Relations
   repository: Repository | null
   milestone: Milestone | null
   user: User | null
