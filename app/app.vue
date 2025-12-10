@@ -28,7 +28,7 @@ useSeoMeta({
 </script>
 
 <template>
-  <UApp>
+  <UApp :toaster="{ expand: false }">
     <NuxtLoadingIndicator color="var(--ui-primary)" :height="2" />
 
     <NuxtLayout v-if="user">
