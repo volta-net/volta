@@ -15,7 +15,7 @@
     "@iconify-json/lucide": "^1.2.79",
     "@iconify-json/simple-icons": "^1.2.62",
     "@nuxt/ui": "^4.2.1",
-    "@nuxthub/core": "npm:@nuxthub/core-nightly@0.10.0-20251209-200045-09311fc",
+    "@nuxthub/core": "^0.10.0",
     "@octokit/auth-app": "^8.1.2",
     "@vueuse/core": "^14.1.0",
     "@vueuse/nuxt": "^14.1.0",
