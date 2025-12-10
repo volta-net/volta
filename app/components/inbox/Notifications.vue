@@ -13,9 +13,11 @@ const toast = useToast()
 const notificationsRefs = ref<Record<string, Element>>({})
 const selectedNotification = defineModel<Notification | null>()
 
-// Undo state
-const deletedNotification = ref<Notification | null>(null)
-const undoTimeout = ref<ReturnType<typeof setTimeout> | null>(null)
+// Stack of pending deletions (notifications to delete when their toast closes)
+const pendingDeletes = ref<Notification[]>([])
+
+// Set of pending delete IDs for quick lookup in template
+const pendingDeleteIds = computed(() => new Set(pendingDeletes.value.map(n => n.id)))
 
 watch(selectedNotification, () => {
   if (!selectedNotification.value) {
@@ -54,88 +56,66 @@ async function toggleRead() {
   emit('refresh')
 }
 
-// Delete notification
-async function deleteNotification() {
+// Delete notification (deferred until toast closes)
+function deleteNotification() {
   if (!selectedNotification.value) return
 
   const notification = selectedNotification.value
 
-  // Store for undo
-  deletedNotification.value = notification
+  // Add to pending deletes stack
+  pendingDeletes.value.push(notification)
 
-  // Clear any existing undo timeout
-  if (undoTimeout.value) {
-    clearTimeout(undoTimeout.value)
-  }
-
-  // Move selection to next notification before deleting
-  const index = props.notifications.findIndex(n => n.id === notification.id)
-  if (index < props.notifications.length - 1) {
-    selectedNotification.value = props.notifications[index + 1]
+  // Move selection to next notification (skip other pending deletes)
+  const visibleNotifications = props.notifications.filter(n => !pendingDeleteIds.value.has(n.id))
+  const index = visibleNotifications.findIndex(n => n.id === notification.id)
+  if (index < visibleNotifications.length - 1) {
+    selectedNotification.value = visibleNotifications[index + 1]
   } else if (index > 0) {
-    selectedNotification.value = props.notifications[index - 1]
+    selectedNotification.value = visibleNotifications[index - 1]
   } else {
     selectedNotification.value = null
   }
 
-  // Delete from server
+  // Show toast - actual deletion happens when toast closes
+  toast.add({
+    'id': `notification-deleted-${notification.id}`,
+    'title': 'Notification deleted',
+    'description': 'Press Z to undo',
+    'icon': 'i-lucide-trash-2',
+    'duration': 5000,
+    'onUpdate:open': (open) => {
+      if (!open) {
+        executeDelete(notification)
+      }
+    }
+  })
+}
+
+// Execute delete for a specific notification
+async function executeDelete(notification: Notification) {
+  // Check if still in pending (not undone)
+  const index = pendingDeletes.value.findIndex(n => n.id === notification.id)
+  if (index === -1) return
+
+  // Delete from server first (keep hidden via pendingDeletes)
   await $fetch(`/api/notifications/${notification.id}`, {
     method: 'DELETE'
   })
 
+  // Now remove from pending - notification is already deleted so no blink
+  pendingDeletes.value.splice(index, 1)
   emit('refresh')
-
-  // Show toast
-  toast.add({
-    title: 'Notification deleted',
-    description: 'Press Z to undo',
-    icon: 'i-lucide-trash-2',
-    duration: 5000
-  })
-
-  // Clear undo state after 5 seconds
-  undoTimeout.value = setTimeout(() => {
-    deletedNotification.value = null
-    undoTimeout.value = null
-  }, 5000)
 }
 
-// Undo delete
-async function undoDelete() {
-  if (!deletedNotification.value) return
+// Undo most recent delete
+function undoDelete() {
+  if (!pendingDeletes.value.length) return
 
-  const notification = deletedNotification.value
+  // Get most recent pending delete
+  const notification = pendingDeletes.value.pop()!
 
-  // Clear timeout
-  if (undoTimeout.value) {
-    clearTimeout(undoTimeout.value)
-    undoTimeout.value = null
-  }
-
-  // Recreate notification on server
-  await $fetch('/api/notifications', {
-    method: 'POST',
-    body: {
-      type: notification.type,
-      action: notification.action,
-      body: notification.body,
-      repositoryId: notification.repositoryId,
-      issueId: notification.issueId,
-      releaseId: notification.releaseId,
-      workflowRunId: notification.workflowRunId,
-      actorId: notification.actorId,
-      read: notification.read
-    }
-  })
-
-  deletedNotification.value = null
-  emit('refresh')
-
-  toast.add({
-    title: 'Notification restored',
-    icon: 'i-lucide-undo-2',
-    duration: 2000
-  })
+  // Remove its toast
+  toast.remove(`notification-deleted-${notification.id}`)
 }
 
 defineShortcuts({
@@ -387,13 +367,12 @@ function getActionIcon(notification: Notification) {
 </script>
 
 <template>
-  <div class="overflow-y-auto p-1">
-    <div
-      v-for="notification in notifications"
-      :key="notification.id"
-      :ref="el => { notificationsRefs[notification.id] = el as Element }"
-    >
+  <div class="overflow-y-auto p-1 isolate">
+    <template v-for="notification in notifications" :key="notification.id">
+      <!-- Hide pending-deleted notifications -->
       <div
+        v-if="!pendingDeleteIds.has(notification.id)"
+        :ref="el => { notificationsRefs[notification.id] = el as Element }"
         class="relative p-3 text-sm cursor-default before:absolute before:z-[-1] before:inset-px before:rounded-md before:transition-colors transition-colors"
         :class="[
           selectedNotification?.id === notification.id ? 'text-highlighted before:bg-elevated' : 'text-default hover:text-highlighted hover:before:bg-elevated/50'
@@ -458,6 +437,6 @@ function getActionIcon(notification: Notification) {
           />
         </div>
       </div>
-    </div>
+    </template>
   </div>
 </template>
