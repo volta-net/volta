@@ -52,6 +52,35 @@ function getConclusionBadge(conclusion: string | null | undefined): { label: str
 </script>
 
 <template>
+  <!-- Navbar -->
+  <UDashboardNavbar>
+    <template v-if="notification.repository" #leading>
+      <UButton
+        :label="notification.repository.fullName"
+        :avatar="{ src: `https://github.com/${notification.repository.fullName.split('/')[0]}.png`, alt: notification.repository.fullName }"
+        :to="notification.repository.htmlUrl!"
+        target="_blank"
+        color="neutral"
+        variant="ghost"
+        size="sm"
+      />
+    </template>
+    <template #title>
+      {{ notification.workflowRun?.workflowName || notification.workflowRun?.name }}
+    </template>
+    <template #right>
+      <UButton
+        v-if="notification.workflowRun?.htmlUrl"
+        icon="i-simple-icons-github"
+        color="neutral"
+        variant="ghost"
+        size="sm"
+        :to="notification.workflowRun.htmlUrl"
+        target="_blank"
+      />
+    </template>
+  </UDashboardNavbar>
+
   <div class="flex-1 overflow-y-auto">
     <div class="p-4 space-y-6">
       <!-- Header -->
@@ -62,37 +91,18 @@ function getConclusionBadge(conclusion: string | null | undefined): { label: str
           </div>
           <div class="min-w-0">
             <h2 class="font-semibold text-highlighted truncate">
-              {{ notification.workflowRun?.workflowName || notification.workflowRun?.name }}
-            </h2>
-            <p v-if="notification.workflowRun?.name !== notification.workflowRun?.workflowName" class="text-sm text-muted truncate">
               {{ notification.workflowRun?.name }}
-            </p>
+            </h2>
+            <UBadge v-bind="getConclusionBadge(notification.workflowRun?.conclusion)" variant="subtle" class="mt-1" />
           </div>
         </div>
-
-        <div class="flex items-center gap-2">
-          <UBadge v-bind="getConclusionBadge(notification.workflowRun?.conclusion)" variant="subtle" />
-          <UButton
-            v-if="notification.workflowRun?.htmlUrl"
-            :to="notification.workflowRun.htmlUrl"
-            target="_blank"
-            color="neutral"
-            variant="ghost"
-            icon="i-lucide-external-link"
-            size="sm"
-          />
-        </div>
-      </div>
-
-      <!-- Repository info -->
-      <div v-if="notification.repository" class="flex items-center gap-2 text-sm text-muted">
-        <UIcon name="i-octicon-repo-16" class="size-4 shrink-0" />
-        <span>{{ notification.repository.fullName }}</span>
       </div>
 
       <!-- Body/Description -->
       <div v-if="notification.body" class="prose prose-sm dark:prose-invert max-w-none">
-        <p class="text-muted whitespace-pre-wrap">{{ notification.body }}</p>
+        <p class="text-muted whitespace-pre-wrap">
+          {{ notification.body }}
+        </p>
       </div>
 
       <!-- Actor -->

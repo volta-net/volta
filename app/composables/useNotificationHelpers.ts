@@ -109,6 +109,56 @@ export function useNotificationHelpers() {
     }
   }
 
+  function getActionVerb(action: Notification['action']) {
+    switch (action) {
+      case 'opened':
+        return 'opened'
+      case 'reopened':
+        return 'reopened'
+      case 'closed':
+        return 'closed'
+      case 'merged':
+        return 'merged'
+      case 'assigned':
+        return 'assigned you to'
+      case 'mentioned':
+        return 'mentioned you in'
+      case 'comment':
+        return 'commented'
+      case 'review_requested':
+        return 'requested your review on'
+      case 'review_submitted':
+        return 'reviewed'
+      case 'review_dismissed':
+        return 'dismissed a review on'
+      case 'ready_for_review':
+        return 'marked as ready for review'
+      case 'published':
+        return 'published'
+      case 'failed':
+        return 'failed'
+      case 'success':
+        return 'succeeded'
+      default:
+        return 'updated'
+    }
+  }
+
+  function getSubjectLabel(type: Notification['type']) {
+    switch (type) {
+      case 'pull_request':
+        return 'pull request'
+      case 'issue':
+        return 'issue'
+      case 'release':
+        return 'release'
+      case 'workflow_run':
+        return 'workflow'
+      default:
+        return null
+    }
+  }
+
   function getActionIcon(notification: Notification) {
     const { type, action } = notification
 
@@ -179,6 +229,8 @@ export function useNotificationHelpers() {
     getTitle,
     getPrefix,
     getActionLabel,
+    getActionVerb,
+    getSubjectLabel,
     getActionIcon
   }
 }

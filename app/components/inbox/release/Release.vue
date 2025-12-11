@@ -7,6 +7,35 @@ defineProps<{
 </script>
 
 <template>
+  <!-- Navbar -->
+  <UDashboardNavbar>
+    <template v-if="notification.repository" #leading>
+      <UButton
+        :label="notification.repository.fullName"
+        :avatar="{ src: `https://github.com/${notification.repository.fullName.split('/')[0]}.png`, alt: notification.repository.fullName }"
+        :to="notification.repository.htmlUrl!"
+        target="_blank"
+        color="neutral"
+        variant="ghost"
+        size="sm"
+      />
+    </template>
+    <template #title>
+      {{ notification.release?.name || notification.release?.tagName }}
+    </template>
+    <template #right>
+      <UButton
+        v-if="notification.release?.htmlUrl"
+        icon="i-simple-icons-github"
+        color="neutral"
+        variant="ghost"
+        size="sm"
+        :to="notification.release.htmlUrl"
+        target="_blank"
+      />
+    </template>
+  </UDashboardNavbar>
+
   <div class="flex-1 overflow-y-auto">
     <div class="p-4 space-y-6">
       <!-- Header -->
@@ -17,29 +46,13 @@ defineProps<{
           </div>
           <div class="min-w-0">
             <h2 class="font-semibold text-highlighted truncate">
-              {{ notification.release?.name || notification.release?.tagName }}
-            </h2>
-            <p class="text-sm text-muted">
               {{ notification.release?.tagName }}
+            </h2>
+            <p v-if="notification.release?.name && notification.release.name !== notification.release.tagName" class="text-sm text-muted">
+              {{ notification.release.name }}
             </p>
           </div>
         </div>
-
-        <UButton
-          v-if="notification.release?.htmlUrl"
-          :to="notification.release.htmlUrl"
-          target="_blank"
-          color="neutral"
-          variant="ghost"
-          icon="i-lucide-external-link"
-          size="sm"
-        />
-      </div>
-
-      <!-- Repository info -->
-      <div v-if="notification.repository" class="flex items-center gap-2 text-sm text-muted">
-        <UIcon name="i-octicon-repo-16" class="size-4 shrink-0" />
-        <span>{{ notification.repository.fullName }}</span>
       </div>
 
       <!-- Body/Description -->

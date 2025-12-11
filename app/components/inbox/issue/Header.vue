@@ -3,12 +3,10 @@ import type { Issue } from '#shared/types/issue'
 
 const props = defineProps<{
   issue: Issue
-  isSubscribed: boolean
 }>()
 
 const emit = defineEmits<{
   (e: 'update:title', title: string): void
-  (e: 'toggle-subscription'): void
 }>()
 
 const { getStateIcon, getStateColor, getStateBadge } = useIssueState(computed(() => props.issue))
@@ -103,27 +101,6 @@ function cancelEdit() {
         <span>{{ issue.user?.login }}</span>
         <span>opened {{ useTimeAgo(new Date(issue.createdAt)) }}</span>
       </div>
-    </div>
-
-    <!-- Actions -->
-    <div class="flex items-center gap-1">
-      <UTooltip :text="isSubscribed ? 'Unsubscribe' : 'Subscribe'">
-        <UButton
-          :icon="isSubscribed ? 'i-lucide-bell-ring' : 'i-lucide-bell'"
-          color="neutral"
-          variant="ghost"
-          size="sm"
-          @click="emit('toggle-subscription')"
-        />
-      </UTooltip>
-      <UButton
-        icon="i-simple-icons-github"
-        color="neutral"
-        variant="ghost"
-        size="sm"
-        :to="issue.htmlUrl!"
-        target="_blank"
-      />
     </div>
   </div>
 </template>

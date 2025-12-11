@@ -12,25 +12,18 @@ const emit = defineEmits<{
 
 const toast = useToast()
 
-// Fetch full issue details
-const { data: issue, status, refresh: refreshIssue } = await useFetch<Issue>(() =>
+// Fetch full issue details (includes isSubscribed)
+const { data: issue, status, refresh: refreshIssue } = await useFetch<Issue & { isSubscribed: boolean }>(() =>
   props.notification.issue?.id ? `/api/issues/${props.notification.issue.id}` : null as unknown as string, {
   watch: [() => props.notification.issue?.id],
   immediate: !!props.notification.issue?.id
 })
 
-// Subscription management
+// Local subscription state (initialized from issue, updated on toggle)
 const isSubscribed = ref(false)
-
-async function checkSubscription() {
-  if (!issue.value) return
-  try {
-    const data = await $fetch(`/api/issues/${issue.value.id}/subscription`)
-    isSubscribed.value = !!data
-  } catch {
-    // Not subscribed
-  }
-}
+watch(() => issue.value?.isSubscribed, (val) => {
+  isSubscribed.value = !!val
+}, { immediate: true })
 
 async function toggleSubscription() {
   if (!issue.value) return
@@ -49,11 +42,6 @@ async function toggleSubscription() {
   }
 }
 
-// Watch for issue changes
-watch(() => issue.value?.id, () => {
-  checkSubscription()
-}, { immediate: true })
-
 // Handle refresh from child components
 async function handleRefresh() {
   await refreshIssue()
@@ -62,21 +50,63 @@ async function handleRefresh() {
 </script>
 
 <template>
-  <!-- Loading state -->
-  <div v-if="status === 'pending'" class="flex-1 flex items-center justify-center">
+  <!-- Navbar -->
+  <UDashboardNavbar :ui="{ title: 'text-sm font-semibold' }">
+    <template v-if="notification.repository" #leading>
+      <UButton
+        :label="notification.repository.fullName"
+        :avatar="{ src: `https://github.com/${notification.repository.fullName.split('/')[0]}.png`, alt: notification.repository.fullName }"
+        :to="notification.repository.htmlUrl!"
+        target="_blank"
+        color="neutral"
+        variant="ghost"
+        size="sm"
+        class="text-sm/4 text-highlighted -mx-1.5"
+        square
+      />
+
+      <UIcon name="i-lucide-chevron-right" class="size-4 text-muted" />
+    </template>
+
+    <template #title>
+      #{{ notification.issue?.number }}
+    </template>
+
+    <template #right>
+      <UButton
+        :icon="isSubscribed ? 'i-lucide-bell-off' : 'i-lucide-bell'"
+        :label="isSubscribed ? 'Unsubscribe' : 'Subscribe'"
+        color="neutral"
+        variant="subtle"
+        size="sm"
+        square
+        @click="toggleSubscription"
+      />
+      <UButton
+        v-if="notification.issue?.htmlUrl"
+        icon="i-simple-icons-github"
+        color="neutral"
+        variant="ghost"
+        size="sm"
+        :to="notification.issue.htmlUrl"
+        target="_blank"
+      />
+    </template>
+  </UDashboardNavbar>
+
+  <!-- Loading state (only on initial load, not refetches) -->
+  <div v-if="status === 'pending' && !issue" class="flex-1 flex items-center justify-center">
     <UIcon name="i-lucide-loader-2" class="size-8 animate-spin text-muted" />
   </div>
 
   <!-- Issue/PR View -->
   <template v-else-if="issue">
-    <div class="flex-1 overflow-y-auto">
-      <div class="p-4 space-y-6">
+    <div class="flex-1 overflow-y-auto p-4">
+      <div class="space-y-6">
         <!-- Header -->
         <InboxIssueHeader
           :issue="issue"
-          :is-subscribed="isSubscribed"
           @update:title="handleRefresh"
-          @toggle-subscription="toggleSubscription"
         />
 
         <!-- Labels -->

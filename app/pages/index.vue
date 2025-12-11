@@ -46,23 +46,6 @@ async function deleteAllRead() {
   }
   await refresh()
 }
-
-// Get title for selected notification
-const selectedNotificationTitle = computed(() => {
-  const n = selectedNotification.value
-  if (!n) return ''
-
-  if (n.issue) {
-    return `#${n.issue.number} ${n.issue.title}`
-  }
-  if (n.release) {
-    return n.release.name || n.release.tagName
-  }
-  if (n.workflowRun) {
-    return n.workflowRun.name || n.workflowRun.workflowName || 'Workflow'
-  }
-  return 'Notification'
-})
 </script>
 
 <template>
@@ -108,35 +91,23 @@ const selectedNotificationTitle = computed(() => {
       :notifications="notifications ?? []"
       @refresh="refresh"
     />
+
+    <template #resize-handle="{ onMouseDown, onTouchStart, onDoubleClick }">
+      <UDashboardResizeHandle
+        class="after:absolute after:inset-y-0 after:right-0 after:w-px hover:after:bg-(--ui-border-accented) after:transition z-1"
+        @mousedown="onMouseDown"
+        @touchstart="onTouchStart"
+        @dblclick="onDoubleClick"
+      />
+    </template>
   </UDashboardPanel>
 
   <UDashboardPanel v-if="selectedNotification" id="inbox-2">
-    <template #header>
-      <UDashboardNavbar>
-        <template #title>
-          {{ selectedNotificationTitle }}
-        </template>
-
-        <template #right>
-          <UButton
-            icon="i-simple-icons-github"
-            color="neutral"
-            variant="ghost"
-            size="sm"
-            :to="(selectedNotification.issue?.htmlUrl || selectedNotification.release?.htmlUrl || selectedNotification.workflowRun?.htmlUrl)!"
-            target="_blank"
-          />
-        </template>
-      </UDashboardNavbar>
-    </template>
-
-    <template #body>
-      <InboxNotification
-        :notification="selectedNotification"
-        @close="selectedNotification = null"
-        @refresh="refresh"
-      />
-    </template>
+    <InboxNotification
+      :notification="selectedNotification"
+      @close="selectedNotification = null"
+      @refresh="refresh"
+    />
   </UDashboardPanel>
 
   <UDashboardPanel v-else id="inbox-2" class="hidden lg:flex">
@@ -149,7 +120,6 @@ const selectedNotificationTitle = computed(() => {
     <USlideover
       v-if="isMobile && selectedNotification"
       v-model:open="isPanelOpen"
-      :title="selectedNotificationTitle"
     >
       <template #content>
         <InboxNotification
