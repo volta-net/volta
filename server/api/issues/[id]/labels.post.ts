@@ -30,18 +30,20 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, message: 'Label not found' })
   }
 
-  // Get valid access token
-  const accessToken = await getValidAccessToken(event)
+  // Add label on GitHub (skip in development)
+  if (import.meta.dev) {
+    console.log(`[DEV] Mocking GitHub API: issues.addLabels for ${body.owner}/${body.repo}#${body.issueNumber} (${label.name})`)
+  } else {
+    const accessToken = await getValidAccessToken(event)
+    const octokit = new Octokit({ auth: accessToken })
 
-  // Add label on GitHub
-  const octokit = new Octokit({ auth: accessToken })
-
-  await octokit.rest.issues.addLabels({
-    owner: body.owner,
-    repo: body.repo,
-    issue_number: body.issueNumber,
-    labels: [label.name]
-  })
+    await octokit.rest.issues.addLabels({
+      owner: body.owner,
+      repo: body.repo,
+      issue_number: body.issueNumber,
+      labels: [label.name]
+    })
+  }
 
   // Check if already exists in database
   const existing = await db.query.issueLabels.findFirst({

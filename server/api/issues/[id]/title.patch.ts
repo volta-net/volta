@@ -21,18 +21,20 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'Title is required' })
   }
 
-  // Get valid access token
-  const accessToken = await getValidAccessToken(event)
+  // Update on GitHub (skip in development)
+  if (import.meta.dev) {
+    console.log(`[DEV] Mocking GitHub API: issues.update (title) for ${body.owner}/${body.repo}#${body.issueNumber}`)
+  } else {
+    const accessToken = await getValidAccessToken(event)
+    const octokit = new Octokit({ auth: accessToken })
 
-  // Update on GitHub
-  const octokit = new Octokit({ auth: accessToken })
-
-  await octokit.rest.issues.update({
-    owner: body.owner,
-    repo: body.repo,
-    issue_number: body.issueNumber,
-    title: body.title.trim()
-  })
+    await octokit.rest.issues.update({
+      owner: body.owner,
+      repo: body.repo,
+      issue_number: body.issueNumber,
+      title: body.title.trim()
+    })
+  }
 
   // Update in database
   await db.update(schema.issues).set({

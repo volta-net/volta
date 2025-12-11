@@ -21,29 +21,41 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'Comment body is required' })
   }
 
-  // Get valid access token
-  const accessToken = await getValidAccessToken(event)
+  let commentId: number
+  let commentHtmlUrl: string
 
-  // Create comment on GitHub
-  const octokit = new Octokit({ auth: accessToken })
+  // Create comment on GitHub (skip in development)
+  if (import.meta.dev) {
+    // Mock comment in development
+    console.log(`[DEV] Mocking GitHub API: issues.createComment for ${body.owner}/${body.repo}#${body.issueNumber}`)
+    commentId = Date.now()
+    commentHtmlUrl = `https://github.com/${body.owner}/${body.repo}/issues/${body.issueNumber}#issuecomment-${commentId}`
+  } else {
+    const accessToken = await getValidAccessToken(event)
+    const octokit = new Octokit({ auth: accessToken })
 
-  const { data: comment } = await octokit.rest.issues.createComment({
-    owner: body.owner,
-    repo: body.repo,
-    issue_number: body.issueNumber,
-    body: body.body.trim()
-  })
+    const { data: comment } = await octokit.rest.issues.createComment({
+      owner: body.owner,
+      repo: body.repo,
+      issue_number: body.issueNumber,
+      body: body.body.trim()
+    })
+
+    commentId = comment.id
+    commentHtmlUrl = comment.html_url
+  }
 
   // Store comment in database
+  const now = new Date()
   await db.insert(schema.issueComments).values({
-    id: comment.id,
+    id: commentId,
     issueId,
     userId: user!.id,
-    body: comment.body || '',
-    htmlUrl: comment.html_url,
-    createdAt: new Date(comment.created_at),
-    updatedAt: new Date(comment.updated_at)
+    body: body.body.trim(),
+    htmlUrl: commentHtmlUrl,
+    createdAt: now,
+    updatedAt: now
   })
 
-  return { success: true, commentId: comment.id }
+  return { success: true, commentId }
 })

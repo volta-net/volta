@@ -3,9 +3,8 @@ import { db, schema } from 'hub:db'
 import type { NotificationType, NotificationAction } from '../db/schema'
 
 // In development, allow self-notifications for testing
-const isDev = import.meta.dev
 function shouldSkipSelfNotification(actorId: number, recipientId: number): boolean {
-  if (isDev) return false // Allow self-notifications in dev
+  if (import.meta.dev) return false // Allow self-notifications in dev
   return actorId === recipientId
 }
 

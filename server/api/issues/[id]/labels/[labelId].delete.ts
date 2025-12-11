@@ -29,22 +29,24 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, message: 'Label not found' })
   }
 
-  // Get valid access token
-  const accessToken = await getValidAccessToken(event)
+  // Remove label on GitHub (skip in development)
+  if (import.meta.dev) {
+    console.log(`[DEV] Mocking GitHub API: issues.removeLabel for ${body.owner}/${body.repo}#${body.issueNumber} (${label.name})`)
+  } else {
+    const accessToken = await getValidAccessToken(event)
+    const octokit = new Octokit({ auth: accessToken })
 
-  // Remove label on GitHub
-  const octokit = new Octokit({ auth: accessToken })
-
-  try {
-    await octokit.rest.issues.removeLabel({
-      owner: body.owner,
-      repo: body.repo,
-      issue_number: body.issueNumber,
-      name: label.name
-    })
-  } catch (err: any) {
-    // Ignore if label not found on issue
-    if (err.status !== 404) throw err
+    try {
+      await octokit.rest.issues.removeLabel({
+        owner: body.owner,
+        repo: body.repo,
+        issue_number: body.issueNumber,
+        name: label.name
+      })
+    } catch (err: any) {
+      // Ignore if label not found on issue
+      if (err.status !== 404) throw err
+    }
   }
 
   // Remove from database
