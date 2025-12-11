@@ -80,6 +80,16 @@ export default defineEventHandler(async (event) => {
       eq(schema.notifications.read, false)
     ))
 
+  // Check if user is subscribed to this issue
+  const [subscription] = await db
+    .select()
+    .from(schema.issueSubscriptions)
+    .where(and(
+      eq(schema.issueSubscriptions.issueId, issueId),
+      eq(schema.issueSubscriptions.userId, user!.id)
+    ))
+  const isSubscribed = !!subscription
+
   // Always sync in background for freshness
   // syncIssueFromGitHub(accessToken, issue).catch((err) => {
   //   console.warn('[issues] Failed to re-sync issue from GitHub:', err)
@@ -119,7 +129,8 @@ export default defineEventHandler(async (event) => {
         ...freshIssue,
         assignees: freshIssue!.assignees.map(a => a.user),
         labels: freshIssue!.labels.map(l => l.label),
-        requestedReviewers: freshIssue!.requestedReviewers.map(r => r.user)
+        requestedReviewers: freshIssue!.requestedReviewers.map(r => r.user),
+        isSubscribed
       }
     } catch (err) {
       console.warn('[issues] Failed to sync issue from GitHub:', err)
@@ -132,7 +143,8 @@ export default defineEventHandler(async (event) => {
     ...issue,
     assignees: issue.assignees.map(a => a.user),
     labels: issue.labels.map(l => l.label),
-    requestedReviewers: issue.requestedReviewers.map(r => r.user)
+    requestedReviewers: issue.requestedReviewers.map(r => r.user),
+    isSubscribed
   }
 })
 
