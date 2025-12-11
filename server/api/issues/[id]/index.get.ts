@@ -67,15 +67,6 @@ export default defineEventHandler(async (event) => {
   // Get valid access token (refreshes if expired)
   const accessToken = await getValidAccessToken(event)
 
-  // Verify user has access to the repository on GitHub
-  const octokit = new Octokit({ auth: accessToken })
-  const [owner, repo] = issue.repository!.fullName.split('/')
-  try {
-    await octokit.rest.repos.get({ owner, repo })
-  } catch {
-    throw createError({ statusCode: 403, message: 'You do not have access to this issue' })
-  }
-
   // Mark related notification as read (if exists)
   await db
     .update(schema.notifications)
@@ -90,9 +81,9 @@ export default defineEventHandler(async (event) => {
     ))
 
   // Always sync in background for freshness
-  syncIssueFromGitHub(accessToken, issue).catch((err) => {
-    console.warn('[issues] Failed to re-sync issue from GitHub:', err)
-  })
+  // syncIssueFromGitHub(accessToken, issue).catch((err) => {
+  //   console.warn('[issues] Failed to re-sync issue from GitHub:', err)
+  // })
 
   // If issue hasn't been fully synced yet (comments, reactions, etc.), await the sync
   if (!issue.synced) {
