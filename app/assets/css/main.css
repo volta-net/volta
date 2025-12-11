@@ -5,14 +5,6 @@
   --font-sans: 'Inter', sans-serif;
 }
 
-:root {
-  --ui-primary: black;
-}
-
-.dark {
-  --ui-primary: white;
-}
-
 @layer base {
   body {
     @apply bg-neutral-50 dark:bg-neutral-950;

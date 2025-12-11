@@ -35,6 +35,7 @@ const links = [[{
           :collapsed="collapsed"
           :items="links[0]"
           orientation="vertical"
+          color="neutral"
           tooltip
           popover
         />
@@ -43,6 +44,7 @@ const links = [[{
           :collapsed="collapsed"
           :items="links[1]"
           orientation="vertical"
+          color="neutral"
           tooltip
           class="mt-auto"
         />
