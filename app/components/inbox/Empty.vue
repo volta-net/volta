@@ -1,11 +1,9 @@
 <script setup lang="ts">
 import type { Notification } from '#shared/types/notification'
 
-const props = defineProps<{
-  notifications: Notification[]
+defineProps<{
+  unreadNotifications: Notification[]
 }>()
-
-const unreadNotifications = computed(() => props.notifications.filter(notification => !notification.read) ?? [])
 </script>
 
 <template>

@@ -82,15 +82,17 @@ async function handleRefresh() {
         square
         @click="toggleSubscription"
       />
-      <UButton
-        v-if="notification.issue?.htmlUrl"
-        icon="i-simple-icons-github"
-        color="neutral"
-        variant="ghost"
-        size="sm"
-        :to="notification.issue.htmlUrl"
-        target="_blank"
-      />
+      <UTooltip text="Open on GitHub" :kbds="['meta', 'g']">
+        <UButton
+          v-if="notification.issue?.htmlUrl"
+          icon="i-simple-icons-github"
+          color="neutral"
+          variant="subtle"
+          size="sm"
+          :to="notification.issue.htmlUrl"
+          target="_blank"
+        />
+      </UTooltip>
     </template>
   </UDashboardNavbar>
 

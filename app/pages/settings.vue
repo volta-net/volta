@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import type { NavigationMenuItem } from '@nuxt/ui'
 
+useSeoMeta({
+  title: 'Settings'
+})
+
 const links = [{
   label: 'Repositories',
   icon: 'i-lucide-package',

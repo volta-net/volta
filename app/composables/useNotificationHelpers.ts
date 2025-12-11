@@ -1,20 +1,20 @@
 import type { Notification } from '#shared/types/notification'
 import { getIssueStateIcon, getIssueStateColor } from './useIssueState'
+import { getWorkflowStateIcon, getWorkflowStateColor } from './useWorkflowState'
+import { getReleaseStateIcon, getReleaseStateColor } from './useReleaseState'
 
 export function useNotificationHelpers() {
   function getIcon(notification: Notification) {
-    const { type, action } = notification
+    const { type } = notification
 
     // Release notifications
     if (type === 'release') {
-      return 'i-octicon-tag-24'
+      return getReleaseStateIcon(notification.release)
     }
 
     // Workflow run notifications
-    if (type === 'workflow_run') {
-      if (action === 'failed') return 'i-octicon-x-circle-24'
-      if (action === 'success') return 'i-octicon-check-circle-24'
-      return 'i-octicon-play-24'
+    if (type === 'workflow_run' && notification.workflowRun) {
+      return getWorkflowStateIcon(notification.workflowRun.conclusion)
     }
 
     // Issue/PR - reuse shared utility
@@ -23,18 +23,16 @@ export function useNotificationHelpers() {
   }
 
   function getColor(notification: Notification) {
-    const { type, action } = notification
+    const { type } = notification
 
     // Release notifications
     if (type === 'release') {
-      return 'text-emerald-400'
+      return getReleaseStateColor(notification.release)
     }
 
     // Workflow run notifications
-    if (type === 'workflow_run') {
-      if (action === 'failed') return 'text-red-400'
-      if (action === 'success') return 'text-emerald-400'
-      return 'text-gray-400'
+    if (type === 'workflow_run' && notification.workflowRun) {
+      return getWorkflowStateColor(notification.workflowRun.conclusion)
     }
 
     // Issue/PR - reuse shared utility
@@ -159,70 +157,6 @@ export function useNotificationHelpers() {
     }
   }
 
-  function getActionIcon(notification: Notification) {
-    const { type, action } = notification
-
-    // Release specific icons
-    if (type === 'release') {
-      return 'i-octicon-tag-16'
-    }
-
-    // Workflow run specific icons
-    if (type === 'workflow_run') {
-      if (action === 'failed') return 'i-octicon-x-circle-16'
-      if (action === 'success') return 'i-octicon-check-circle-16'
-      return 'i-octicon-play-16'
-    }
-
-    // Pull request specific icons
-    if (type === 'pull_request') {
-      switch (action) {
-        case 'opened':
-          return 'i-octicon-git-pull-request-16'
-        case 'reopened':
-          return 'i-octicon-git-pull-request-16'
-        case 'closed':
-          return 'i-octicon-git-pull-request-closed-16'
-        case 'merged':
-          return 'i-octicon-git-merge-16'
-        case 'review_requested':
-          return 'i-octicon-eye-16'
-        case 'review_submitted':
-          return 'i-octicon-check-circle-16'
-        case 'review_dismissed':
-          return 'i-octicon-x-16'
-        case 'ready_for_review':
-          return 'i-octicon-git-pull-request-16'
-        case 'comment':
-          return 'i-octicon-comment-16'
-        case 'mentioned':
-          return 'i-octicon-mention-16'
-        case 'assigned':
-          return 'i-octicon-person-16'
-      }
-    }
-
-    // Issue specific icons
-    if (type === 'issue') {
-      switch (action) {
-        case 'opened':
-          return 'i-octicon-issue-opened-16'
-        case 'reopened':
-          return 'i-octicon-issue-reopened-16'
-        case 'closed':
-          return 'i-octicon-issue-closed-16'
-        case 'comment':
-          return 'i-octicon-comment-16'
-        case 'mentioned':
-          return 'i-octicon-mention-16'
-        case 'assigned':
-          return 'i-octicon-person-16'
-      }
-    }
-
-    return 'i-octicon-bell-16'
-  }
-
   return {
     getIcon,
     getColor,
@@ -230,7 +164,6 @@ export function useNotificationHelpers() {
     getPrefix,
     getActionLabel,
     getActionVerb,
-    getSubjectLabel,
-    getActionIcon
+    getSubjectLabel
   }
 }

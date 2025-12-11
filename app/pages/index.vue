@@ -6,6 +6,8 @@ const { data: notifications, refresh } = await useFetch<Notification[]>('/api/no
 
 const selectedNotification = ref<Notification | null>()
 
+const unreadNotifications = computed(() => notifications.value?.filter(notification => !notification.read) ?? [])
+
 // Refetch notifications when window regains focus
 const focused = useWindowFocus()
 watch(focused, (isFocused) => {
@@ -46,6 +48,10 @@ async function deleteAllRead() {
   }
   await refresh()
 }
+
+useSeoMeta({
+  title: () => `Inbox${unreadNotifications.value.length > 0 ? ` (${unreadNotifications.value.length})` : ''}`
+})
 </script>
 
 <template>
@@ -112,7 +118,7 @@ async function deleteAllRead() {
 
   <UDashboardPanel v-else id="inbox-2" class="hidden lg:flex">
     <template #body>
-      <InboxEmpty :notifications="notifications ?? []" />
+      <InboxEmpty :unread-notifications="unreadNotifications" />
     </template>
   </UDashboardPanel>
 

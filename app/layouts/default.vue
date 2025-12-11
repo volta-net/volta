@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import type { NavigationMenuItem } from '@nuxt/ui'
 
+useSeoMeta({
+  titleTemplate: '%s - Volta'
+})
+
 const links = [[{
   label: 'Inbox',
   icon: 'i-lucide-inbox',

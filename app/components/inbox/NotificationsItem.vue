@@ -89,7 +89,7 @@ function getTooltipText(notification: Notification): string {
           <span v-if="getPrefix(notification)" class="text-muted">{{ getPrefix(notification) }}</span>
           {{ getTitle(notification) }}
         </p>
-        <span v-if="!notification.read" class="size-2 rounded-full bg-info shrink-0" />
+        <span v-if="!notification.read" class="size-2 rounded-full bg-primary shrink-0 m-1" />
         <UIcon
           :name="getIcon(notification)"
           :class="getColor(notification)"

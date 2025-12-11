@@ -24,7 +24,7 @@ defineProps<{
     <!-- PR specific info -->
     <div v-if="issue.type === 'pull_request'" class="flex items-center gap-4 text-sm">
       <div class="flex items-center gap-1">
-        <UIcon name="i-octicon-git-commit-16" class="size-4 text-muted" />
+        <UIcon name="i-octicon-git-commit-24" class="size-4 text-muted" />
         <span>{{ issue.commits }} commit{{ issue.commits !== 1 ? 's' : '' }}</span>
       </div>
       <div class="flex items-center gap-1 text-emerald-500">
@@ -34,7 +34,7 @@ defineProps<{
         <span>-{{ issue.deletions }}</span>
       </div>
       <div class="flex items-center gap-1">
-        <UIcon name="i-octicon-file-diff-16" class="size-4 text-muted" />
+        <UIcon name="i-octicon-file-diff-24" class="size-4 text-muted" />
         <span>{{ issue.changedFiles }} file{{ issue.changedFiles !== 1 ? 's' : '' }}</span>
       </div>
     </div>
