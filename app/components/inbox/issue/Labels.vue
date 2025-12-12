@@ -16,9 +16,10 @@ const availableLabels = ref<Label[]>([])
 const selectedLabelIds = computed(() => props.issue.labels?.map(l => l.id) ?? [])
 
 async function fetchLabels() {
-  if (!props.issue.repository?.id) return
+  if (!props.issue.repository?.fullName) return
+  const [owner, name] = props.issue.repository.fullName.split('/')
   try {
-    const labels = await $fetch<Label[]>(`/api/repositories/${props.issue.repository.id}/labels`)
+    const labels = await $fetch<Label[]>(`/api/repositories/${owner}/${name}/labels`)
     availableLabels.value = labels ?? []
   } catch {
     // Labels not available
