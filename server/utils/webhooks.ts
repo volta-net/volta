@@ -86,6 +86,24 @@ async function upsertIssue(item: any, repositoryId: number, repositoryFullName: 
     })
   }
 
+  // Ensure closed_by user exists
+  if (item.closed_by) {
+    await ensureUser({
+      id: item.closed_by.id,
+      login: item.closed_by.login,
+      avatar_url: item.closed_by.avatar_url
+    })
+  }
+
+  // Ensure merged_by user exists (PRs only)
+  if (item.merged_by) {
+    await ensureUser({
+      id: item.merged_by.id,
+      login: item.merged_by.login,
+      avatar_url: item.merged_by.avatar_url
+    })
+  }
+
   const itemData: any = {
     type,
     repositoryId,
@@ -98,6 +116,7 @@ async function upsertIssue(item: any, repositoryId: number, repositoryFullName: 
     htmlUrl: item.html_url,
     locked: item.locked,
     closedAt: item.closed_at ? new Date(item.closed_at) : null,
+    closedById: item.closed_by?.id ?? null,
     updatedAt: new Date()
   }
 
@@ -119,6 +138,7 @@ async function upsertIssue(item: any, repositoryId: number, repositoryFullName: 
     itemData.baseRef = item.base?.ref
     itemData.baseSha = item.base?.sha
     itemData.mergedAt = item.merged_at ? new Date(item.merged_at) : null
+    itemData.mergedById = item.merged_by?.id ?? null
   }
 
   const [existing] = await db.select().from(schema.issues).where(eq(schema.issues.id, item.id))

@@ -16,11 +16,13 @@ export interface Comment extends Pick<DBIssueComment, 'id' | 'body' | 'htmlUrl' 
 }
 
 // Issue with all relations populated
-export interface Issue extends Omit<DBIssue, 'repositoryId' | 'milestoneId' | 'userId' | 'synced'> {
+export interface Issue extends Omit<DBIssue, 'repositoryId' | 'milestoneId' | 'userId' | 'closedById' | 'mergedById' | 'synced'> {
   type: IssueType
   repository: Repository | null
   milestone: Milestone | null
   user: User | null
+  closedBy: User | null
+  mergedBy: User | null
   assignees: User[]
   labels: Label[]
   requestedReviewers: User[]

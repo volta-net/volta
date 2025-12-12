@@ -178,8 +178,10 @@ export const issues = pgTable('issues', {
   baseRef: text('base_ref'),
   baseSha: text('base_sha'),
   mergedAt: timestamp('merged_at'),
+  mergedById: bigint('merged_by_id', { mode: 'number' }).references(() => users.id, { onDelete: 'set null' }),
   // Timestamps
   closedAt: timestamp('closed_at'),
+  closedById: bigint('closed_by_id', { mode: 'number' }).references(() => users.id, { onDelete: 'set null' }),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
   // Sync status - false until full data (comments, reactions, etc.) has been fetched from GitHub
@@ -252,6 +254,8 @@ export const issueReviewComments = pgTable('issue_review_comments', {
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   issues: many(issues),
+  closedIssues: many(issues, { relationName: 'issueClosedBy' }),
+  mergedIssues: many(issues, { relationName: 'issueMergedBy' }),
   assignedIssues: many(issueAssignees),
   reviewRequests: many(issueRequestedReviewers),
   comments: many(issueComments),
@@ -313,6 +317,16 @@ export const issuesRelations = relations(issues, ({ one, many }) => ({
   user: one(users, {
     fields: [issues.userId],
     references: [users.id]
+  }),
+  closedBy: one(users, {
+    fields: [issues.closedById],
+    references: [users.id],
+    relationName: 'issueClosedBy'
+  }),
+  mergedBy: one(users, {
+    fields: [issues.mergedById],
+    references: [users.id],
+    relationName: 'issueMergedBy'
   }),
   assignees: many(issueAssignees),
   labels: many(issueLabels),

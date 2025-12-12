@@ -42,10 +42,12 @@ const timelineItems = computed<ActivityItem[]>(() => {
   // Closed/Merged
   if (props.issue.closedAt) {
     const isMerged = props.issue.type === 'pull_request' && props.issue.merged
+    const actor = isMerged ? props.issue.mergedBy : props.issue.closedBy
     items.push({
       date: useTimeAgo(new Date(props.issue.mergedAt || props.issue.closedAt)).value,
-      username: 'System',
+      username: actor?.login || 'Unknown',
       action: isMerged ? 'merged this pull request' : `closed this ${props.issue.type === 'pull_request' ? 'pull request' : 'issue'}`,
+      avatar: actor?.avatarUrl ? { src: actor.avatarUrl } : undefined,
       icon: isMerged ? 'i-octicon-git-merge-24' : 'i-octicon-issue-closed-24',
       sortDate: new Date(props.issue.mergedAt || props.issue.closedAt)
     })
@@ -73,12 +75,6 @@ const timelineItems = computed<ActivityItem[]>(() => {
       >
         <template #title="{ item }">
           <div class="flex items-center gap-1.5">
-            <UAvatar
-              v-if="(item as ActivityItem).avatar?.src"
-              :src="(item as ActivityItem).avatar!.src"
-              :alt="(item as ActivityItem).username"
-              size="3xs"
-            />
             <span class="font-medium">{{ (item as ActivityItem).username }}</span>
             <span class="font-normal text-muted">{{ (item as ActivityItem).action }}</span>
           </div>

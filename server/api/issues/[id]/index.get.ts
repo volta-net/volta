@@ -23,6 +23,8 @@ export default defineEventHandler(async (event) => {
       repository: true,
       milestone: true,
       user: true,
+      closedBy: true,
+      mergedBy: true,
       assignees: {
         with: {
           user: true
@@ -107,6 +109,8 @@ export default defineEventHandler(async (event) => {
           repository: true,
           milestone: true,
           user: true,
+          closedBy: true,
+          mergedBy: true,
           assignees: { with: { user: true } },
           labels: { with: { label: true } },
           requestedReviewers: { with: { user: true } },
@@ -172,6 +176,15 @@ async function syncIssueFromGitHub(accessToken: string, issue: any) {
       })
     }
 
+    // Ensure merged_by user exists
+    if (ghPr.merged_by) {
+      await ensureUser({
+        id: ghPr.merged_by.id,
+        login: ghPr.merged_by.login,
+        avatar_url: ghPr.merged_by.avatar_url
+      })
+    }
+
     // Update issue data
     await db.update(schema.issues).set({
       title: ghPr.title,
@@ -189,7 +202,10 @@ async function syncIssueFromGitHub(accessToken: string, issue: any) {
       baseRef: ghPr.base.ref,
       baseSha: ghPr.base.sha,
       mergedAt: ghPr.merged_at ? new Date(ghPr.merged_at) : null,
+      mergedById: ghPr.merged_by?.id ?? null,
       closedAt: ghPr.closed_at ? new Date(ghPr.closed_at) : null,
+      // For PRs, if merged, the merger is also the closer
+      closedById: ghPr.merged_by?.id ?? null,
       updatedAt: new Date()
     }).where(eq(schema.issues.id, issue.id))
 
@@ -228,6 +244,15 @@ async function syncIssueFromGitHub(accessToken: string, issue: any) {
       })
     }
 
+    // Ensure closed_by user exists
+    if (ghIssue.closed_by) {
+      await ensureUser({
+        id: ghIssue.closed_by.id,
+        login: ghIssue.closed_by.login,
+        avatar_url: ghIssue.closed_by.avatar_url
+      })
+    }
+
     // Update issue data
     await db.update(schema.issues).set({
       title: ghIssue.title,
@@ -236,6 +261,7 @@ async function syncIssueFromGitHub(accessToken: string, issue: any) {
       stateReason: ghIssue.state_reason,
       locked: ghIssue.locked,
       closedAt: ghIssue.closed_at ? new Date(ghIssue.closed_at) : null,
+      closedById: ghIssue.closed_by?.id ?? null,
       updatedAt: new Date()
     }).where(eq(schema.issues.id, issue.id))
 

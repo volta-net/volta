@@ -1,5 +1,5 @@
 {
-  "id": "53c1614a-d1d8-483d-9860-d22c11cc3c90",
+  "id": "0c81480f-d6f4-411d-afd5-483ed72807bc",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -751,9 +751,21 @@
           "primaryKey": false,
           "notNull": false
         },
+        "merged_by_id": {
+          "name": "merged_by_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
         "closed_at": {
           "name": "closed_at",
           "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "closed_by_id": {
+          "name": "closed_by_id",
+          "type": "bigint",
           "primaryKey": false,
           "notNull": false
         },
@@ -813,6 +825,32 @@
           "tableTo": "users",
           "columnsFrom": [
             "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "issues_merged_by_id_users_id_fk": {
+          "name": "issues_merged_by_id_users_id_fk",
+          "tableFrom": "issues",
+          "tableTo": "users",
+          "columnsFrom": [
+            "merged_by_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "issues_closed_by_id_users_id_fk": {
+          "name": "issues_closed_by_id_users_id_fk",
+          "tableFrom": "issues",
+          "tableTo": "users",
+          "columnsFrom": [
+            "closed_by_id"
           ],
           "columnsTo": [
             "id"
