@@ -16,44 +16,44 @@ interface IssueStateConfig {
 const issueStates: Record<string, IssueStateConfig> = {
   // Pull Request states
   pr_draft: {
-    icon: 'i-octicon-git-pull-request-draft-{size}',
+    icon: 'i-octicon-git-pull-request-draft-16',
     color: 'text-neutral-500 dark:text-neutral-400',
     label: 'Draft',
     badgeColor: 'neutral'
   },
   pr_merged: {
-    icon: 'i-octicon-git-merge-{size}',
+    icon: 'i-octicon-git-merge-16',
     color: 'text-purple-500 dark:text-purple-400',
     label: 'Merged',
     badgeColor: 'info'
   },
   pr_closed: {
-    icon: 'i-octicon-git-pull-request-closed-{size}',
+    icon: 'i-octicon-git-pull-request-closed-16',
     color: 'text-red-500 dark:text-red-400',
     label: 'Closed',
     badgeColor: 'error'
   },
   pr_open: {
-    icon: 'i-octicon-git-pull-request-{size}',
+    icon: 'i-octicon-git-pull-request-16',
     color: 'text-emerald-500 dark:text-emerald-400',
     label: 'Open',
     badgeColor: 'success'
   },
   // Issue states
   issue_open: {
-    icon: 'i-octicon-issue-opened-{size}',
+    icon: 'i-octicon-issue-opened-16',
     color: 'text-emerald-500 dark:text-emerald-400',
     label: 'Open',
     badgeColor: 'success'
   },
   issue_not_planned: {
-    icon: 'i-octicon-skip-{size}',
+    icon: 'i-octicon-skip-16',
     color: 'text-neutral-500 dark:text-neutral-400',
     label: 'Not planned',
     badgeColor: 'neutral'
   },
   issue_closed: {
-    icon: 'i-octicon-issue-closed-{size}',
+    icon: 'i-octicon-issue-closed-16',
     color: 'text-purple-500 dark:text-purple-400',
     label: 'Closed',
     badgeColor: 'info'
@@ -77,17 +77,14 @@ function getStateKey(issue: IssueStateLike | null | undefined): string {
 }
 
 // Get full state config
-export function getIssueState(issue: IssueStateLike | null | undefined, size: 16 | 24 = 24): IssueStateConfig & { icon: string } {
+export function getIssueState(issue: IssueStateLike | null | undefined): IssueStateConfig & { icon: string } {
   const key = getStateKey(issue)
   const state = issueStates[key]!
-  return {
-    ...state,
-    icon: state.icon.replace('{size}', String(size))
-  }
+  return state
 }
 
 // Individual getters for convenience
-export const getIssueStateIcon = (issue: IssueStateLike | null | undefined, size: 16 | 24 = 24) => getIssueState(issue, size).icon
+export const getIssueStateIcon = (issue: IssueStateLike | null | undefined) => getIssueState(issue).icon
 export const getIssueStateColor = (issue: IssueStateLike | null | undefined) => getIssueState(issue).color
 export const getIssueStateBadge = (issue: IssueStateLike | null | undefined) => {
   const state = getIssueState(issue)
@@ -95,8 +92,8 @@ export const getIssueStateBadge = (issue: IssueStateLike | null | undefined) => 
 }
 
 // Composable for reactive use
-export function useIssueState(issue: Ref<IssueStateLike | null | undefined>, size: 16 | 24 = 24) {
-  const state = computed(() => getIssueState(issue.value, size))
+export function useIssueState(issue: Ref<IssueStateLike | null | undefined>) {
+  const state = computed(() => getIssueState(issue.value))
 
   return {
     state,
@@ -105,7 +102,7 @@ export function useIssueState(issue: Ref<IssueStateLike | null | undefined>, siz
     label: computed(() => state.value.label),
     badgeColor: computed(() => state.value.badgeColor),
     // Legacy methods for backward compatibility
-    getStateIcon: (s: 16 | 24 = size) => getIssueStateIcon(issue.value, s),
+    getStateIcon: () => getIssueStateIcon(issue.value),
     getStateColor: () => getIssueStateColor(issue.value),
     getStateBadge: () => getIssueStateBadge(issue.value)
   }

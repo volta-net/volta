@@ -11,55 +11,55 @@ interface WorkflowStateConfig {
 
 const workflowStates: Record<string, WorkflowStateConfig> = {
   success: {
-    icon: 'i-octicon-check-circle-fill-24',
+    icon: 'i-octicon-check-circle-fill-16',
     color: 'text-emerald-500 dark:text-emerald-400',
     label: 'Success',
     badgeColor: 'success'
   },
   neutral: {
-    icon: 'i-octicon-check-circle-fill-24',
+    icon: 'i-octicon-check-circle-fill-16',
     color: 'text-emerald-500 dark:text-emerald-400',
     label: 'Success',
     badgeColor: 'success'
   },
   failure: {
-    icon: 'i-octicon-x-circle-fill-24',
+    icon: 'i-octicon-x-circle-fill-16',
     color: 'text-red-500 dark:text-red-400',
     label: 'Failed',
     badgeColor: 'error'
   },
   timed_out: {
-    icon: 'i-octicon-x-circle-fill-24',
+    icon: 'i-octicon-x-circle-fill-16',
     color: 'text-red-500 dark:text-red-400',
     label: 'Timed out',
     badgeColor: 'error'
   },
   startup_failure: {
-    icon: 'i-octicon-x-circle-fill-24',
+    icon: 'i-octicon-x-circle-fill-16',
     color: 'text-red-500 dark:text-red-400',
     label: 'Startup failure',
     badgeColor: 'error'
   },
   cancelled: {
-    icon: 'i-octicon-stop-24',
+    icon: 'i-octicon-stop-16',
     color: 'text-neutral-500 dark:text-neutral-400',
     label: 'Cancelled',
     badgeColor: 'neutral'
   },
   skipped: {
-    icon: 'i-octicon-skip-24',
+    icon: 'i-octicon-skip-16',
     color: 'text-neutral-500 dark:text-neutral-400',
     label: 'Skipped',
     badgeColor: 'neutral'
   },
   stale: {
-    icon: 'i-octicon-skip-24',
+    icon: 'i-octicon-skip-16',
     color: 'text-neutral-500 dark:text-neutral-400',
     label: 'Stale',
     badgeColor: 'neutral'
   },
   action_required: {
-    icon: 'i-octicon-alert-24',
+    icon: 'i-octicon-alert-16',
     color: 'text-yellow-500 dark:text-yellow-400',
     label: 'Action required',
     badgeColor: 'warning'
@@ -67,7 +67,7 @@ const workflowStates: Record<string, WorkflowStateConfig> = {
 }
 
 const defaultState: WorkflowStateConfig = {
-  icon: 'i-octicon-clock-24',
+  icon: 'i-octicon-clock-16',
   color: 'text-yellow-500 dark:text-yellow-400',
   label: 'Running',
   badgeColor: 'warning'

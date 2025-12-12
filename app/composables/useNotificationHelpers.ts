@@ -18,8 +18,8 @@ export function useNotificationHelpers() {
     }
 
     // Issue/PR - reuse shared utility
-    if (!notification.issue) return 'i-octicon-bell-24'
-    return getIssueStateIcon(notification.issue, 24)
+    if (!notification.issue) return 'i-octicon-bell-16'
+    return getIssueStateIcon(notification.issue)
   }
 
   function getColor(notification: Notification) {

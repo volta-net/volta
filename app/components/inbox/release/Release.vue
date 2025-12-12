@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { Notification } from '#shared/types/notification'
-import { getReleaseState, getReleaseStateBadge } from '~/composables/useReleaseState'
 
 defineProps<{
   notification: Notification

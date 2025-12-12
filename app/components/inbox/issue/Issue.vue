@@ -13,7 +13,7 @@ const emit = defineEmits<{
 const toast = useToast()
 
 // Fetch full issue details (includes isSubscribed)
-const { data: issue, status, refresh: refreshIssue } = await useFetch<Issue & { isSubscribed: boolean }>(() =>
+const { data: issue, status, refresh: refreshIssue } = await useLazyFetch<Issue & { isSubscribed: boolean }>(() =>
   props.notification.issue?.id ? `/api/issues/${props.notification.issue.id}` : null as unknown as string, {
   watch: [() => props.notification.issue?.id],
   immediate: !!props.notification.issue?.id

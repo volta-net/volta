@@ -20,6 +20,37 @@ watch(focused, (isFocused) => {
 const syncing = ref<Set<string>>(new Set())
 const deleting = ref<Set<string>>(new Set())
 const updatingSubscription = ref<string | null>(null)
+const updatingFavorite = ref<Set<number>>(new Set())
+
+const { data: favoriteRepositories, refresh: refreshFavorites } = await useFetch('/api/favorites/repositories', {
+  default: () => []
+})
+
+const favoriteRepoIds = computed(() => new Set(favoriteRepositories.value?.map(f => f.repositoryId) || []))
+
+async function toggleFavorite(repositoryId: number) {
+  updatingFavorite.value.add(repositoryId)
+
+  try {
+    if (favoriteRepoIds.value.has(repositoryId)) {
+      await $fetch(`/api/favorites/repositories/${repositoryId}`, { method: 'DELETE' })
+    } else {
+      await $fetch('/api/favorites/repositories', {
+        method: 'POST',
+        body: { repositoryId }
+      })
+    }
+    await refreshFavorites()
+  } catch (error: any) {
+    toast.add({
+      title: 'Failed to update favorites',
+      description: error.data?.message || 'An error occurred',
+      color: 'error'
+    })
+  } finally {
+    updatingFavorite.value.delete(repositoryId)
+  }
+}
 
 interface SyncResult {
   success: boolean
@@ -353,42 +384,42 @@ function getNotificationDropdownItems(repo: InstallationRepository): DropdownMen
         {
           type: 'checkbox',
           label: 'Issues',
-          icon: 'i-octicon-issue-opened-24',
+          icon: 'i-octicon-issue-opened-16',
           checked: sub.issues,
           onUpdateChecked: (checked: boolean) => updateSubscription(repo, { issues: checked })
         },
         {
           type: 'checkbox',
           label: 'Pull requests',
-          icon: 'i-octicon-git-pull-request-24',
+          icon: 'i-octicon-git-pull-request-16',
           checked: sub.pullRequests,
           onUpdateChecked: (checked: boolean) => updateSubscription(repo, { pullRequests: checked })
         },
         {
           type: 'checkbox',
           label: 'Releases',
-          icon: 'i-octicon-tag-24',
+          icon: 'i-octicon-tag-16',
           checked: sub.releases,
           onUpdateChecked: (checked: boolean) => updateSubscription(repo, { releases: checked })
         },
         {
           type: 'checkbox',
           label: 'CI failures',
-          icon: 'i-octicon-x-circle-24',
+          icon: 'i-octicon-x-circle-16',
           checked: sub.ci,
           onUpdateChecked: (checked: boolean) => updateSubscription(repo, { ci: checked })
         },
         {
           type: 'checkbox',
           label: 'Mentions',
-          icon: 'i-octicon-mention-24',
+          icon: 'i-octicon-mention-16',
           checked: sub.mentions,
           onUpdateChecked: (checked: boolean) => updateSubscription(repo, { mentions: checked })
         },
         {
           type: 'checkbox',
           label: 'Activities',
-          icon: 'i-octicon-bell-24',
+          icon: 'i-octicon-bell-16',
           checked: sub.activity,
           onUpdateChecked: (checked: boolean) => updateSubscription(repo, { activity: checked })
         }
@@ -486,8 +517,9 @@ function getSubscriptionSummary(repo: InstallationRepository): { label: string, 
         <template #trailing="{ item }">
           <div class="flex items-center gap-2 ms-auto">
             <UDropdownMenu
-              :content="{ align: 'end' }"
+              :content="{ align: 'start' }"
               :items="getInstallationDropdownItems(item.installation)"
+              size="sm"
             >
               <UButton
                 icon="i-lucide-ellipsis-vertical"
@@ -538,12 +570,26 @@ function getSubscriptionSummary(repo: InstallationRepository): { label: string, 
             </div>
 
             <div v-if="repo.synced" class="flex items-center gap-2 shrink-0">
+              <!-- Favorite toggle -->
+              <UTooltip :text="favoriteRepoIds.has(repo.id) ? 'Remove from favorites' : 'Add to favorites'">
+                <UButton
+                  :icon="favoriteRepoIds.has(repo.id) ? 'i-lucide-star' : 'i-lucide-star'"
+                  color="neutral"
+                  variant="soft"
+                  size="sm"
+                  :loading="updatingFavorite.has(repo.id)"
+                  :class="favoriteRepoIds.has(repo.id) ? 'text-yellow-500' : 'text-muted'"
+                  @click="toggleFavorite(repo.id)"
+                />
+              </UTooltip>
+
               <!-- Notification dropdown -->
               <UDropdownMenu
                 v-if="repo.subscription"
                 :items="getNotificationDropdownItems(repo)"
                 :content="{ align: 'end' }"
                 :ui="{ content: 'w-72', itemDescription: 'text-clip' }"
+                size="sm"
               >
                 <UButton
                   color="neutral"
@@ -563,6 +609,7 @@ function getSubscriptionSummary(repo: InstallationRepository): { label: string, 
               <!-- Sync/Delete dropdown -->
               <UDropdownMenu
                 :content="{ align: 'start' }"
+                size="sm"
                 :items="[
                   [{
                     label: 'Sync now',

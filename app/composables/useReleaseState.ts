@@ -13,19 +13,19 @@ interface ReleaseStateConfig {
 
 const releaseStates: Record<string, ReleaseStateConfig> = {
   draft: {
-    icon: 'i-octicon-tag-24',
+    icon: 'i-octicon-tag-16',
     color: 'text-neutral-500 dark:text-neutral-400',
     label: 'Draft',
     badgeColor: 'neutral'
   },
   prerelease: {
-    icon: 'i-octicon-tag-24',
+    icon: 'i-octicon-tag-16',
     color: 'text-yellow-500 dark:text-yellow-400',
     label: 'Pre-release',
     badgeColor: 'info'
   },
   published: {
-    icon: 'i-octicon-tag-24',
+    icon: 'i-octicon-tag-16',
     color: 'text-blue-500 dark:text-blue-400',
     label: 'Published',
     badgeColor: 'success'

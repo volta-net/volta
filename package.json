@@ -8,7 +8,9 @@
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
     "lint": "eslint .",
-    "typecheck": "nuxt typecheck"
+    "typecheck": "nuxt typecheck",
+    "db:generate": "nuxt db generate",
+    "db:migrate": "nuxt db migrate"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.3.14",

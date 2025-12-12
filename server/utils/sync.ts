@@ -192,6 +192,9 @@ export async function syncIssues(accessToken: string, owner: string, repo: strin
       htmlUrl: issue.html_url,
       locked: issue.locked,
       closedAt: issue.closed_at ? new Date(issue.closed_at) : null,
+      // Engagement metrics from GitHub API
+      reactionCount: issue.reactions?.total_count ?? 0,
+      commentCount: issue.comments ?? 0,
       updatedAt: new Date()
     }
 
@@ -263,6 +266,9 @@ export async function syncIssues(accessToken: string, owner: string, repo: strin
       baseSha: pr.base.sha,
       mergedAt: pr.merged_at ? new Date(pr.merged_at) : null,
       closedAt: pr.closed_at ? new Date(pr.closed_at) : null,
+      // Engagement metrics (reactions not available in pulls.list, will be updated via webhooks)
+      reactionCount: 0,
+      commentCount: 0,
       updatedAt: new Date()
     }
 

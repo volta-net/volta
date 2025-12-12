@@ -5,11 +5,38 @@ useSeoMeta({
   titleTemplate: '%s - Volta'
 })
 
-const links = [[{
-  label: 'Inbox',
-  icon: 'i-lucide-inbox',
+const { data: favoriteIssues } = await useFetch('/api/favorites/issues', {
+  default: () => []
+})
+
+const favoriteIssueItems = computed<NavigationMenuItem[]>(() => {
+  if (!favoriteIssues.value || favoriteIssues.value.length === 0) {
+    return []
+  }
+
+  return favoriteIssues.value.map(fav => ({
+    label: `${fav.repository.fullName}#${fav.issue.number} ${fav.issue.title}`,
+    icon: getIssueStateIcon(fav.issue),
+    to: fav.issue.htmlUrl || '#',
+    target: '_blank' as const
+  }))
+})
+
+const links = computed<NavigationMenuItem[][]>(() => [[{
+  label: 'Dashboard',
+  icon: 'i-lucide-activity',
   to: '/'
 }, {
+  label: 'Inbox',
+  icon: 'i-lucide-inbox',
+  to: '/inbox'
+}, ...(favoriteIssueItems.value.length > 0
+  ? [{
+      label: 'Favorites',
+      icon: 'i-lucide-star',
+      children: favoriteIssueItems.value
+    }]
+  : []), {
   label: 'Settings',
   icon: 'i-lucide-settings',
   to: '/settings'
@@ -18,7 +45,7 @@ const links = [[{
   icon: 'i-lucide-message-circle',
   to: 'https://github.com/volta-net/volta',
   target: '_blank'
-}]] satisfies NavigationMenuItem[][]
+}]])
 </script>
 
 <template>
@@ -50,6 +77,7 @@ const links = [[{
           orientation="vertical"
           color="neutral"
           tooltip
+          popover
           class="mt-auto"
         />
       </template>

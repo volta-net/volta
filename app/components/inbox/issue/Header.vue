@@ -16,6 +16,40 @@ const editedTitle = ref(props.issue.title)
 const isEditing = ref(false)
 const isSaving = ref(false)
 
+// Favorite functionality
+const { data: favoriteIssues, refresh: refreshFavorites } = await useFetch('/api/favorites/issues', {
+  default: () => []
+})
+
+const isFavorited = computed(() => favoriteIssues.value?.some(f => f.issueId === props.issue.id) || false)
+const updatingFavorite = ref(false)
+
+async function toggleFavorite() {
+  updatingFavorite.value = true
+
+  try {
+    if (isFavorited.value) {
+      await $fetch(`/api/favorites/issues/${props.issue.id}`, { method: 'DELETE' })
+      toast.add({ title: 'Removed from favorites', icon: 'i-lucide-star' })
+    } else {
+      await $fetch('/api/favorites/issues', {
+        method: 'POST',
+        body: { issueId: props.issue.id }
+      })
+      toast.add({ title: 'Added to favorites', icon: 'i-lucide-star' })
+    }
+    await refreshFavorites()
+  } catch (error: any) {
+    toast.add({
+      title: 'Failed to update favorites',
+      description: error.data?.message || 'An error occurred',
+      color: 'error'
+    })
+  } finally {
+    updatingFavorite.value = false
+  }
+}
+
 watch(() => props.issue.title, (newTitle) => {
   editedTitle.value = newTitle
 })
@@ -102,5 +136,18 @@ function cancelEdit() {
         <span>opened {{ useTimeAgo(new Date(issue.createdAt)) }}</span>
       </div>
     </div>
+
+    <!-- Favorite button -->
+    <UTooltip :text="isFavorited ? 'Remove from favorites' : 'Add to favorites'">
+      <UButton
+        :icon="isFavorited ? 'i-lucide-star' : 'i-lucide-star'"
+        color="neutral"
+        variant="ghost"
+        size="sm"
+        :loading="updatingFavorite"
+        :class="isFavorited ? 'text-yellow-500' : 'text-muted'"
+        @click="toggleFavorite"
+      />
+    </UTooltip>
   </div>
 </template>

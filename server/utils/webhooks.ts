@@ -117,6 +117,9 @@ async function upsertIssue(item: any, repositoryId: number, repositoryFullName: 
     locked: item.locked,
     closedAt: item.closed_at ? new Date(item.closed_at) : null,
     closedById: item.closed_by?.id ?? null,
+    // Engagement metrics from GitHub webhook payload
+    reactionCount: item.reactions?.total_count ?? 0,
+    commentCount: item.comments ?? 0,
     updatedAt: new Date()
   }
 

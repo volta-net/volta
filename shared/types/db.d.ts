@@ -16,6 +16,8 @@ import type {
   issueReviewComments,
   repositorySubscriptions,
   issueSubscriptions,
+  favoriteRepositories,
+  favoriteIssues,
   NotificationType,
   NotificationAction,
   IssueType,
@@ -41,6 +43,8 @@ export type DBIssueReview = typeof issueReviews.$inferSelect
 export type DBIssueReviewComment = typeof issueReviewComments.$inferSelect
 export type DBRepositorySubscription = typeof repositorySubscriptions.$inferSelect
 export type DBIssueSubscription = typeof issueSubscriptions.$inferSelect
+export type DBFavoriteRepository = typeof favoriteRepositories.$inferSelect
+export type DBFavoriteIssue = typeof favoriteIssues.$inferSelect
 
 // Re-export schema types
 export type {

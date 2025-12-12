@@ -22,7 +22,7 @@ const timelineItems = computed<ActivityItem[]>(() => {
     username: props.issue.user?.login || 'Unknown',
     action: `opened this ${props.issue.type === 'pull_request' ? 'pull request' : 'issue'}`,
     avatar: props.issue.user?.avatarUrl ? { src: props.issue.user.avatarUrl } : undefined,
-    icon: props.issue.type === 'pull_request' ? 'i-octicon-git-pull-request-24' : 'i-octicon-issue-opened-24',
+    icon: props.issue.type === 'pull_request' ? 'i-octicon-git-pull-request-16' : 'i-octicon-issue-opened-16',
     sortDate: new Date(props.issue.createdAt)
   })
 
@@ -34,7 +34,7 @@ const timelineItems = computed<ActivityItem[]>(() => {
       action: 'commented',
       description: comment.body,
       avatar: comment.user?.avatarUrl ? { src: comment.user.avatarUrl } : undefined,
-      icon: 'i-octicon-comment-24',
+      icon: 'i-octicon-comment-16',
       sortDate: new Date(comment.createdAt)
     })
   })
@@ -48,7 +48,7 @@ const timelineItems = computed<ActivityItem[]>(() => {
       username: actor?.login || 'Unknown',
       action: isMerged ? 'merged this pull request' : `closed this ${props.issue.type === 'pull_request' ? 'pull request' : 'issue'}`,
       avatar: actor?.avatarUrl ? { src: actor.avatarUrl } : undefined,
-      icon: isMerged ? 'i-octicon-git-merge-24' : 'i-octicon-issue-closed-24',
+      icon: isMerged ? 'i-octicon-git-merge-16' : 'i-octicon-issue-closed-16',
       sortDate: new Date(props.issue.mergedAt || props.issue.closedAt)
     })
   }

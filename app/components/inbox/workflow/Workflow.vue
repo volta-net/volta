@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { Notification } from '#shared/types/notification'
-import { getWorkflowStateIcon, getWorkflowStateColor, getWorkflowStateBadge } from '~/composables/useWorkflowState'
 
 defineProps<{
   notification: Notification

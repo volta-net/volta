@@ -184,6 +184,9 @@ export const issues = pgTable('issues', {
   closedById: bigint('closed_by_id', { mode: 'number' }).references(() => users.id, { onDelete: 'set null' }),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  // Engagement metrics (from GitHub API)
+  reactionCount: bigint('reaction_count', { mode: 'number' }).default(0),
+  commentCount: bigint('comment_count', { mode: 'number' }).default(0),
   // Sync status - false until full data (comments, reactions, etc.) has been fetched from GitHub
   synced: boolean().default(false).notNull()
 })
@@ -264,7 +267,9 @@ export const usersRelations = relations(users, ({ many }) => ({
   notifications: many(notifications, { relationName: 'notificationRecipient' }),
   actedNotifications: many(notifications, { relationName: 'notificationActor' }),
   subscriptions: many(repositorySubscriptions),
-  issueSubscriptions: many(issueSubscriptions)
+  issueSubscriptions: many(issueSubscriptions),
+  favoriteRepositories: many(favoriteRepositories),
+  favoriteIssues: many(favoriteIssues)
 }))
 
 export const installationsRelations = relations(installations, ({ many }) => ({
@@ -280,7 +285,8 @@ export const repositoriesRelations = relations(repositories, ({ one, many }) => 
   labels: many(labels),
   milestones: many(milestones),
   releases: many(releases),
-  workflowRuns: many(workflowRuns)
+  workflowRuns: many(workflowRuns),
+  favorites: many(favoriteRepositories)
 }))
 
 export const releasesRelations = relations(releases, ({ one }) => ({
@@ -334,7 +340,8 @@ export const issuesRelations = relations(issues, ({ one, many }) => ({
   comments: many(issueComments),
   reviews: many(issueReviews),
   reviewComments: many(issueReviewComments),
-  subscriptions: many(issueSubscriptions)
+  subscriptions: many(issueSubscriptions),
+  favorites: many(favoriteIssues)
 }))
 
 export const labelsRelations = relations(labels, ({ one, many }) => ({
@@ -494,5 +501,43 @@ export const issueSubscriptionsRelations = relations(issueSubscriptions, ({ one 
   user: one(users, {
     fields: [issueSubscriptions.userId],
     references: [users.id]
+  })
+}))
+
+// Favorite Repositories - repos user wants on dashboard
+export const favoriteRepositories = pgTable('favorite_repositories', {
+  id: serial().primaryKey(),
+  userId: bigint('user_id', { mode: 'number' }).notNull().references(() => users.id, { onDelete: 'cascade' }),
+  repositoryId: bigint('repository_id', { mode: 'number' }).notNull().references(() => repositories.id, { onDelete: 'cascade' }),
+  createdAt: timestamp('created_at').notNull().defaultNow()
+})
+
+export const favoriteRepositoriesRelations = relations(favoriteRepositories, ({ one }) => ({
+  user: one(users, {
+    fields: [favoriteRepositories.userId],
+    references: [users.id]
+  }),
+  repository: one(repositories, {
+    fields: [favoriteRepositories.repositoryId],
+    references: [repositories.id]
+  })
+}))
+
+// Favorite Issues - issues for quick sidebar access
+export const favoriteIssues = pgTable('favorite_issues', {
+  id: serial().primaryKey(),
+  userId: bigint('user_id', { mode: 'number' }).notNull().references(() => users.id, { onDelete: 'cascade' }),
+  issueId: bigint('issue_id', { mode: 'number' }).notNull().references(() => issues.id, { onDelete: 'cascade' }),
+  createdAt: timestamp('created_at').notNull().defaultNow()
+})
+
+export const favoriteIssuesRelations = relations(favoriteIssues, ({ one }) => ({
+  user: one(users, {
+    fields: [favoriteIssues.userId],
+    references: [users.id]
+  }),
+  issue: one(issues, {
+    fields: [favoriteIssues.issueId],
+    references: [issues.id]
   })
 }))

@@ -1,139 +1,144 @@
 <script setup lang="ts">
-import { breakpointsTailwind } from '@vueuse/core'
-import type { Notification } from '#shared/types/notification'
+useSeoMeta({
+  title: 'Dashboard'
+})
 
-const { data: notifications, refresh } = await useFetch<Notification[]>('/api/notifications')
+const { data: dashboard, refresh, status } = await useLazyFetch('/api/dashboard')
 
-const selectedNotification = ref<Notification | null>()
-
-const unreadNotifications = computed(() => notifications.value?.filter(notification => !notification.read) ?? [])
-
-// Refetch notifications when window regains focus
-const focused = useWindowFocus()
-watch(focused, (isFocused) => {
-  if (isFocused) {
+// Refresh data when window gains focus
+const visibility = useDocumentVisibility()
+watch(visibility, (isVisible) => {
+  if (isVisible) {
     refresh()
   }
-})
-
-const isPanelOpen = computed({
-  get() {
-    return !!selectedNotification.value
-  },
-  set(value: boolean) {
-    if (!value) {
-      selectedNotification.value = null
-    }
-  }
-})
-
-const breakpoints = useBreakpoints(breakpointsTailwind)
-const isMobile = breakpoints.smaller('lg')
-
-async function markAllAsRead() {
-  await $fetch('/api/notifications/read-all', { method: 'POST' })
-  await refresh()
-}
-
-async function deleteAll() {
-  await $fetch('/api/notifications', { method: 'DELETE' })
-  selectedNotification.value = null
-  await refresh()
-}
-
-async function deleteAllRead() {
-  await $fetch('/api/notifications/read', { method: 'DELETE' })
-  if (selectedNotification.value?.read) {
-    selectedNotification.value = null
-  }
-  await refresh()
-}
-
-useSeoMeta({
-  title: () => `Inbox${unreadNotifications.value.length > 0 ? ` (${unreadNotifications.value.length})` : ''}`
 })
 </script>
 
 <template>
-  <UDashboardPanel
-    id="inbox-1"
-    :default-size="25"
-    :min-size="20"
-    :max-size="30"
-    resizable
-  >
-    <UDashboardNavbar title="Inbox">
-      <template #trailing>
-        <UDropdownMenu
-          :content="{ align: 'start' }"
-          size="sm"
-          :items="[[{
-            label: 'Mark all as read',
-            icon: 'i-lucide-check-circle',
-            onSelect: markAllAsRead
-          }], [{
-            label: 'Delete all',
-            icon: 'i-lucide-trash-2',
-            onSelect: deleteAll
-          }, {
-            label: 'Delete all read',
-            icon: 'i-lucide-trash-2',
-            onSelect: deleteAllRead
-          }]]"
-        >
-          <UButton
-            variant="ghost"
-            color="neutral"
-            size="sm"
-            trailing-icon="i-lucide-ellipsis"
-            class="data-[state=open]:bg-elevated"
-          />
-        </UDropdownMenu>
-      </template>
-    </UDashboardNavbar>
-
-    <InboxNotifications
-      v-model="selectedNotification"
-      :notifications="notifications ?? []"
-      @refresh="refresh"
-    />
-
-    <template #resize-handle="{ onMouseDown, onTouchStart, onDoubleClick }">
-      <UDashboardResizeHandle
-        class="after:absolute after:inset-y-0 after:right-0 after:w-px hover:after:bg-(--ui-border-accented) after:transition z-1"
-        @mousedown="onMouseDown"
-        @touchstart="onTouchStart"
-        @dblclick="onDoubleClick"
-      />
+  <UDashboardPanel id="dashboard" :ui="{ body: 'overflow-hidden' }">
+    <template #header>
+      <UDashboardNavbar title="Dashboard">
+        <template #right>
+          <DashboardFavoritesMenu @change="refresh" />
+        </template>
+      </UDashboardNavbar>
     </template>
-  </UDashboardPanel>
 
-  <UDashboardPanel v-if="selectedNotification" id="inbox-2">
-    <InboxNotification
-      :notification="selectedNotification"
-      @close="selectedNotification = null"
-      @refresh="refresh"
-    />
-  </UDashboardPanel>
-
-  <UDashboardPanel v-else id="inbox-2" class="hidden lg:flex">
     <template #body>
-      <InboxEmpty :unread-notifications="unreadNotifications" />
+      <!-- Loading state -->
+      <div v-if="status === 'pending'" class="flex-1 flex flex-col items-center justify-center">
+        <UIcon name="i-lucide-loader-2" class="size-6 animate-spin text-muted" />
+      </div>
+
+      <!-- No favorites selected -->
+      <div v-else-if="!dashboard?.hasFavorites" class="flex-1 flex flex-col items-center justify-center text-center">
+        <div class="size-16 rounded-full bg-elevated flex items-center justify-center mb-4">
+          <UIcon name="i-lucide-star" class="size-8 text-muted" />
+        </div>
+        <h2 class="text-lg font-semibold mb-2">
+          Select your favorite repositories
+        </h2>
+        <p class="text-muted text-sm max-w-md mb-6">
+          Choose the repositories you want to focus on. Your dashboard will show PRs, issues, and activity from these repositories.
+        </p>
+        <DashboardFavoritesMenu @change="refresh" />
+      </div>
+
+      <div v-else class="grid grid-cols-7 gap-4 min-h-0">
+        <DashboardSection
+          title="My Pull Requests"
+          icon="i-octicon-git-pull-request-16"
+          :count="dashboard.myPullRequests.length"
+          empty-text="No open PRs authored by you"
+        >
+          <DashboardItem
+            v-for="pr in dashboard.myPullRequests"
+            :key="pr.id"
+            :item="pr"
+          />
+        </DashboardSection>
+
+        <DashboardSection
+          title="Review Requested"
+          icon="i-octicon-code-review-16"
+          :count="dashboard.reviewRequested.length"
+          empty-text="No pending review requests"
+        >
+          <DashboardItem
+            v-for="pr in dashboard.reviewRequested"
+            :key="pr.id"
+            :item="pr"
+            show-author
+          />
+        </DashboardSection>
+
+        <DashboardSection
+          title="Dependency Updates"
+          icon="i-octicon-dependabot-16"
+          :count="dashboard.renovatePRs.length"
+          empty-text="No dependency update PRs"
+        >
+          <DashboardItem
+            v-for="pr in dashboard.renovatePRs"
+            :key="pr.id"
+            :item="pr"
+            show-author
+            show-c-i-status
+          />
+        </DashboardSection>
+
+        <DashboardSection
+          title="Assigned to Me"
+          icon="i-lucide-user-check"
+          :count="dashboard.assignedToMe.length"
+          empty-text="No issues or PRs assigned to you"
+        >
+          <DashboardItem
+            v-for="item in dashboard.assignedToMe"
+            :key="item.id"
+            :item="item"
+          />
+        </DashboardSection>
+
+        <DashboardSection
+          title="Hot Issues"
+          icon="i-lucide-flame"
+          :count="dashboard.hotIssues.length"
+          empty-text="No issues with high engagement"
+        >
+          <DashboardItem
+            v-for="issue in dashboard.hotIssues"
+            :key="issue.id"
+            :item="issue"
+          />
+        </DashboardSection>
+
+        <DashboardSection
+          title="Priority Bugs"
+          icon="i-lucide-bug"
+          :count="dashboard.priorityBugs.length"
+          empty-text="No priority bugs found"
+        >
+          <DashboardItem
+            v-for="issue in dashboard.priorityBugs"
+            :key="issue.id"
+            :item="issue"
+          />
+        </DashboardSection>
+
+        <DashboardSection
+          title="Recommended Today"
+          icon="i-lucide-lightbulb"
+          :count="dashboard.recommendedToday.length"
+          empty-text="No recommendations available"
+        >
+          <DashboardItem
+            v-for="issue in dashboard.recommendedToday"
+            :key="issue.id"
+            :item="issue"
+          />
+        </DashboardSection>
+      </div>
     </template>
   </UDashboardPanel>
-
-  <ClientOnly>
-    <USlideover
-      v-if="isMobile && selectedNotification"
-      v-model:open="isPanelOpen"
-    >
-      <template #content>
-        <InboxNotification
-          :notification="selectedNotification"
-          @close="selectedNotification = null"
-          @refresh="refresh"
-        />
-      </template>
-    </USlideover>
-  </ClientOnly>
 </template>

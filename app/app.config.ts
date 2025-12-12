@@ -6,7 +6,8 @@ export default defineAppConfig({
     },
     dashboardPanel: {
       slots: {
-        root: 'min-h-[calc(100svh-2rem)]'
+        root: 'min-h-[calc(100svh-2rem)]',
+        body: 'sm:p-4 sm:gap-4'
       }
     },
     dashboardSidebar: {
