@@ -195,7 +195,9 @@ export async function syncIssues(accessToken: string, owner: string, repo: strin
       // Engagement metrics from GitHub API
       reactionCount: issue.reactions?.total_count ?? 0,
       commentCount: issue.comments ?? 0,
-      updatedAt: new Date()
+      // Use GitHub timestamps
+      createdAt: new Date(issue.created_at),
+      updatedAt: new Date(issue.updated_at)
     }
 
     if (existingIssue) {
@@ -269,7 +271,9 @@ export async function syncIssues(accessToken: string, owner: string, repo: strin
       // Engagement metrics (reactions not available in pulls.list, will be updated via webhooks)
       reactionCount: 0,
       commentCount: 0,
-      updatedAt: new Date()
+      // Use GitHub timestamps
+      createdAt: new Date(pr.created_at),
+      updatedAt: new Date(pr.updated_at)
     }
 
     if (existingPR) {
@@ -453,11 +457,29 @@ export async function syncCollaborators(accessToken: string, owner: string, repo
 
     const subscribedUserIds = new Set(existingSubscriptions.map(s => s.userId))
 
-    // Subscribe each maintainer to the repository
-    for (const maintainer of maintainers) {
-      // Skip if already subscribed
-      if (subscribedUserIds.has(maintainer.id)) continue
+    // Get existing collaborators
+    const existingCollaborators = await db
+      .select()
+      .from(schema.repositoryCollaborators)
+      .where(eq(schema.repositoryCollaborators.repositoryId, repositoryId))
 
+    const existingCollaboratorIds = new Set(existingCollaborators.map(c => c.userId))
+    const newCollaboratorIds = new Set(maintainers.map(m => m.id))
+
+    // Delete collaborators that are no longer maintainers
+    for (const existing of existingCollaborators) {
+      if (!newCollaboratorIds.has(existing.userId)) {
+        await db.delete(schema.repositoryCollaborators).where(
+          and(
+            eq(schema.repositoryCollaborators.repositoryId, repositoryId),
+            eq(schema.repositoryCollaborators.userId, existing.userId)
+          )
+        )
+      }
+    }
+
+    // Store each collaborator and subscribe them
+    for (const maintainer of maintainers) {
       try {
         // Ensure user exists as shadow user (so foreign key works)
         await ensureUser({
@@ -466,18 +488,47 @@ export async function syncCollaborators(accessToken: string, owner: string, repo
           avatar_url: maintainer.avatar_url
         })
 
-        await db.insert(schema.repositorySubscriptions).values({
-          userId: maintainer.id,
-          repositoryId,
-          issues: true,
-          pullRequests: true,
-          releases: true,
-          ci: true,
-          mentions: true,
-          activity: true
-        })
+        // Determine permission level
+        const permission = maintainer.permissions?.admin
+          ? 'admin'
+          : maintainer.permissions?.maintain
+            ? 'maintain'
+            : 'write'
+
+        // Insert or update collaborator
+        if (existingCollaboratorIds.has(maintainer.id)) {
+          await db.update(schema.repositoryCollaborators).set({
+            permission,
+            updatedAt: new Date()
+          }).where(
+            and(
+              eq(schema.repositoryCollaborators.repositoryId, repositoryId),
+              eq(schema.repositoryCollaborators.userId, maintainer.id)
+            )
+          )
+        } else {
+          await db.insert(schema.repositoryCollaborators).values({
+            repositoryId,
+            userId: maintainer.id,
+            permission
+          })
+        }
+
+        // Subscribe if not already subscribed
+        if (!subscribedUserIds.has(maintainer.id)) {
+          await db.insert(schema.repositorySubscriptions).values({
+            userId: maintainer.id,
+            repositoryId,
+            issues: true,
+            pullRequests: true,
+            releases: true,
+            ci: true,
+            mentions: true,
+            activity: true
+          })
+        }
       } catch (error) {
-        console.warn(`[sync] Failed to subscribe maintainer ${maintainer.login}:`, error)
+        console.warn(`[sync] Failed to sync maintainer ${maintainer.login}:`, error)
       }
     }
 

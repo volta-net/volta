@@ -101,7 +101,6 @@ function cancelEdit() {
         <UButton
           icon="i-lucide-check"
           color="primary"
-          size="sm"
           :loading="isSaving"
           @click="saveTitle"
         />
@@ -109,7 +108,6 @@ function cancelEdit() {
           icon="i-lucide-x"
           color="neutral"
           variant="ghost"
-          size="sm"
           @click="cancelEdit"
         />
       </div>
@@ -143,7 +141,6 @@ function cancelEdit() {
         :icon="isFavorited ? 'i-lucide-star' : 'i-lucide-star'"
         color="neutral"
         variant="ghost"
-        size="sm"
         :loading="updatingFavorite"
         :class="isFavorited ? 'text-yellow-500' : 'text-muted'"
         @click="toggleFavorite"

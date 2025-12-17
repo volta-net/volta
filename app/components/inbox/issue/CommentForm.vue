@@ -55,7 +55,6 @@ async function addComment() {
         <UButton
           label="Comment"
           color="primary"
-          size="sm"
           icon="i-lucide-send"
           :loading="isSubmitting"
           :disabled="!newComment.trim()"

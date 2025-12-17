@@ -1,6 +1,7 @@
 <script setup lang="ts">
 const props = defineProps<{
-  item: Issue
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  item: any
   showAuthor?: boolean
   showCIStatus?: boolean
 }>()

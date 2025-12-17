@@ -66,7 +66,6 @@ useSeoMeta({
       <template #trailing>
         <UDropdownMenu
           :content="{ align: 'start' }"
-          size="sm"
           :items="[[{
             label: 'Mark all as read',
             icon: 'i-lucide-check-circle',
@@ -84,7 +83,6 @@ useSeoMeta({
           <UButton
             variant="ghost"
             color="neutral"
-            size="sm"
             trailing-icon="i-lucide-ellipsis"
             class="data-[state=open]:bg-elevated"
           />

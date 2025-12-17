@@ -65,7 +65,6 @@ function handleOpen(open: boolean) {
         variant="subtle"
         :style="{ '--badge-bg': `#${label.color}20`, '--badge-color': `#${label.color}` }"
         :ui="{ base: 'bg-[var(--badge-bg)] text-[var(--badge-color)]' }"
-        size="sm"
       />
     </template>
     <UPopover v-model:open="isOpen" @update:open="handleOpen">
@@ -78,7 +77,9 @@ function handleOpen(open: boolean) {
       />
       <template #content>
         <div class="p-2 w-56 max-h-64 overflow-y-auto">
-          <p class="text-xs text-muted mb-2 px-1">Select labels</p>
+          <p class="text-xs text-muted mb-2 px-1">
+            Select labels
+          </p>
           <div class="space-y-0.5">
             <button
               v-for="label in availableLabels"

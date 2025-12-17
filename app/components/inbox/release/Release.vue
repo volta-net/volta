@@ -17,7 +17,6 @@ defineProps<{
         target="_blank"
         color="neutral"
         variant="ghost"
-        size="sm"
       />
     </template>
     <template #title>
@@ -30,7 +29,6 @@ defineProps<{
           icon="i-simple-icons-github"
           color="neutral"
           variant="subtle"
-          size="sm"
           :to="notification.release.htmlUrl"
           target="_blank"
         />

@@ -60,7 +60,6 @@ async function handleRefresh() {
         target="_blank"
         color="neutral"
         variant="ghost"
-        size="sm"
         class="text-sm/4 text-highlighted -mx-1.5"
         square
       />
@@ -78,7 +77,6 @@ async function handleRefresh() {
         :label="isSubscribed ? 'Unsubscribe' : 'Subscribe'"
         color="neutral"
         variant="subtle"
-        size="sm"
         square
         @click="toggleSubscription"
       />
@@ -88,7 +86,6 @@ async function handleRefresh() {
           icon="i-simple-icons-github"
           color="neutral"
           variant="subtle"
-          size="sm"
           :to="notification.issue.htmlUrl"
           target="_blank"
         />

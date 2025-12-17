@@ -120,7 +120,9 @@ async function upsertIssue(item: any, repositoryId: number, repositoryFullName: 
     // Engagement metrics from GitHub webhook payload
     reactionCount: item.reactions?.total_count ?? 0,
     commentCount: item.comments ?? 0,
-    updatedAt: new Date()
+    // Use GitHub timestamps
+    createdAt: new Date(item.created_at),
+    updatedAt: new Date(item.updated_at)
   }
 
   // Issue-specific fields

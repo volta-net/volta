@@ -73,13 +73,11 @@ function cancelEdit() {
             label="Cancel"
             color="neutral"
             variant="ghost"
-            size="sm"
             @click="cancelEdit"
           />
           <UButton
             label="Save"
             color="primary"
-            size="sm"
             :loading="isSaving"
             @click="saveBody"
           />

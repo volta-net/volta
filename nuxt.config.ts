@@ -1,6 +1,5 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-
   modules: [
     '@nuxt/eslint',
     '@nuxt/ui',
@@ -16,6 +15,17 @@ export default defineNuxtConfig({
   },
 
   css: ['~/assets/css/main.css'],
+
+  ui: {
+    theme: {
+      defaultVariants: {
+        size: 'sm'
+      }
+    },
+    experimental: {
+      componentDetection: true
+    }
+  },
 
   runtimeConfig: {
     github: {

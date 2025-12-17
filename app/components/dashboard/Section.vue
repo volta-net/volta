@@ -3,6 +3,7 @@ defineProps<{
   title: string
   icon: string
   count?: number
+  loading?: boolean
   emptyText?: string
 }>()
 </script>
@@ -25,14 +26,17 @@ defineProps<{
           v-if="count !== undefined && count > 0"
           color="neutral"
           variant="subtle"
-          size="sm"
         >
           {{ count }}
         </UBadge>
       </div>
     </template>
 
-    <slot v-if="$slots.default" />
+    <div v-if="loading" class="p-4 flex justify-center">
+      <UIcon name="i-lucide-loader-2" class="size-5 animate-spin text-muted" />
+    </div>
+
+    <slot v-else-if="$slots.default" />
 
     <div v-else class="p-4 text-center text-sm text-muted">
       {{ emptyText || 'No items' }}

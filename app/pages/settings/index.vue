@@ -22,6 +22,11 @@ const deleting = ref<Set<string>>(new Set())
 const updatingSubscription = ref<string | null>(null)
 const updatingFavorite = ref<Set<number>>(new Set())
 
+// Installation-level bulk operation loading states
+const importingAll = ref<Set<number>>(new Set())
+const syncingAll = ref<Set<number>>(new Set())
+const removingAll = ref<Set<number>>(new Set())
+
 const { data: favoriteRepositories, refresh: refreshFavorites } = await useFetch('/api/favorites/repositories', {
   default: () => []
 })
@@ -113,6 +118,7 @@ async function importAllRepositories(installation: Installation) {
     return
   }
 
+  importingAll.value.add(installation.id)
   unsyncedRepos.forEach(repo => syncing.value.add(repo.fullName))
 
   try {
@@ -141,6 +147,8 @@ async function importAllRepositories(installation: Installation) {
       description: error.data?.message || 'Some repositories failed to import.',
       color: 'error'
     })
+  } finally {
+    importingAll.value.delete(installation.id)
   }
 }
 
@@ -150,6 +158,7 @@ async function syncAllRepositories(installation: Installation) {
     return
   }
 
+  syncingAll.value.add(installation.id)
   syncedRepos.forEach(repo => syncing.value.add(repo.fullName))
 
   try {
@@ -177,6 +186,8 @@ async function syncAllRepositories(installation: Installation) {
       description: error.data?.message || 'Some repositories failed to sync.',
       color: 'error'
     })
+  } finally {
+    syncingAll.value.delete(installation.id)
   }
 }
 
@@ -186,6 +197,7 @@ async function removeAllRepositories(installation: Installation) {
     return
   }
 
+  removingAll.value.add(installation.id)
   syncedRepos.forEach(repo => deleting.value.add(repo.fullName))
 
   try {
@@ -214,12 +226,18 @@ async function removeAllRepositories(installation: Installation) {
       description: error.data?.message || 'Some repositories failed to remove.',
       color: 'error'
     })
+  } finally {
+    removingAll.value.delete(installation.id)
   }
 }
 
 function getInstallationDropdownItems(installation: Installation) {
   const hasUnsynced = installation.repositories.some(r => !r.synced)
   const hasSynced = installation.repositories.some(r => r.synced)
+
+  const isImporting = importingAll.value.has(installation.id)
+  const isSyncing = syncingAll.value.has(installation.id)
+  const isRemoving = removingAll.value.has(installation.id)
 
   const items: DropdownMenuItem[][] = [
     [{
@@ -230,27 +248,46 @@ function getInstallationDropdownItems(installation: Installation) {
     }]
   ]
 
+  const actionItems: DropdownMenuItem[] = []
+
   if (hasUnsynced) {
-    items.push([{
+    actionItems.push({
       label: 'Import all',
       icon: 'i-lucide-download',
-      onSelect: () => importAllRepositories(installation)
-    }])
+      loading: isImporting,
+      disabled: isImporting || isSyncing || isRemoving,
+      onSelect: (e) => {
+        e.preventDefault()
+        importAllRepositories(installation)
+      }
+    })
   }
 
   if (hasSynced) {
-    items.push([{
+    actionItems.push({
       label: 'Sync all',
       icon: 'i-lucide-refresh-cw',
-      onSelect: () => syncAllRepositories(installation)
-    }])
-
-    items.push([{
+      loading: isSyncing,
+      disabled: isImporting || isSyncing || isRemoving,
+      onSelect: (e) => {
+        e.preventDefault()
+        syncAllRepositories(installation)
+      }
+    }, {
       label: 'Remove all',
       icon: 'i-lucide-trash-2',
+      loading: isRemoving,
       color: 'error' as const,
-      onSelect: () => removeAllRepositories(installation)
-    }])
+      disabled: isImporting || isSyncing || isRemoving,
+      onSelect: (e) => {
+        e.preventDefault()
+        removeAllRepositories(installation)
+      }
+    })
+  }
+
+  if (actionItems.length > 0) {
+    items.push(actionItems)
   }
 
   return items
@@ -359,21 +396,30 @@ function getNotificationDropdownItems(repo: InstallationRepository): DropdownMen
       description: 'Releases, @mentions, and activity on subscribed issues.',
       icon: 'i-lucide-users',
       active: activePreset === 'participating',
-      onSelect: () => updateSubscription(repo, presets.participating)
+      onSelect: (e) => {
+        e.preventDefault()
+        updateSubscription(repo, presets.participating)
+      }
     },
     {
       label: 'All activity',
       description: 'All activity in the repository.',
       icon: 'i-lucide-activity',
       active: activePreset === 'all',
-      onSelect: () => updateSubscription(repo, presets.all)
+      onSelect: (e) => {
+        e.preventDefault()
+        updateSubscription(repo, presets.all)
+      }
     },
     {
       label: 'Ignore',
       description: 'Receive no notifications.',
       icon: 'i-lucide-eye-off',
       active: activePreset === 'ignore',
-      onSelect: () => updateSubscription(repo, presets.ignore)
+      onSelect: (e) => {
+        e.preventDefault()
+        updateSubscription(repo, presets.ignore)
+      }
     },
     {
       label: 'Custom',
@@ -386,42 +432,48 @@ function getNotificationDropdownItems(repo: InstallationRepository): DropdownMen
           label: 'Issues',
           icon: 'i-octicon-issue-opened-16',
           checked: sub.issues,
-          onUpdateChecked: (checked: boolean) => updateSubscription(repo, { issues: checked })
+          onUpdateChecked: (checked: boolean) => updateSubscription(repo, { issues: checked }),
+          onSelect: e => e.preventDefault()
         },
         {
           type: 'checkbox',
           label: 'Pull requests',
           icon: 'i-octicon-git-pull-request-16',
           checked: sub.pullRequests,
-          onUpdateChecked: (checked: boolean) => updateSubscription(repo, { pullRequests: checked })
+          onUpdateChecked: (checked: boolean) => updateSubscription(repo, { pullRequests: checked }),
+          onSelect: e => e.preventDefault()
         },
         {
           type: 'checkbox',
           label: 'Releases',
           icon: 'i-octicon-tag-16',
           checked: sub.releases,
-          onUpdateChecked: (checked: boolean) => updateSubscription(repo, { releases: checked })
+          onUpdateChecked: (checked: boolean) => updateSubscription(repo, { releases: checked }),
+          onSelect: e => e.preventDefault()
         },
         {
           type: 'checkbox',
           label: 'CI failures',
           icon: 'i-octicon-x-circle-16',
           checked: sub.ci,
-          onUpdateChecked: (checked: boolean) => updateSubscription(repo, { ci: checked })
+          onUpdateChecked: (checked: boolean) => updateSubscription(repo, { ci: checked }),
+          onSelect: e => e.preventDefault()
         },
         {
           type: 'checkbox',
           label: 'Mentions',
           icon: 'i-octicon-mention-16',
           checked: sub.mentions,
-          onUpdateChecked: (checked: boolean) => updateSubscription(repo, { mentions: checked })
+          onUpdateChecked: (checked: boolean) => updateSubscription(repo, { mentions: checked }),
+          onSelect: e => e.preventDefault()
         },
         {
           type: 'checkbox',
           label: 'Activities',
           icon: 'i-octicon-bell-16',
           checked: sub.activity,
-          onUpdateChecked: (checked: boolean) => updateSubscription(repo, { activity: checked })
+          onUpdateChecked: (checked: boolean) => updateSubscription(repo, { activity: checked }),
+          onSelect: e => e.preventDefault()
         }
       ]]
     }
@@ -463,7 +515,6 @@ function getSubscriptionSummary(repo: InstallationRepository): { label: string, 
         icon="i-lucide-plus"
         color="neutral"
         variant="soft"
-        size="sm"
         :to="getInstallUrl()"
         target="_blank"
         class="me-4"
@@ -519,13 +570,11 @@ function getSubscriptionSummary(repo: InstallationRepository): { label: string, 
             <UDropdownMenu
               :content="{ align: 'start' }"
               :items="getInstallationDropdownItems(item.installation)"
-              size="sm"
             >
               <UButton
                 icon="i-lucide-ellipsis-vertical"
                 color="neutral"
                 variant="soft"
-                size="sm"
                 @click.stop
               />
             </UDropdownMenu>
@@ -534,7 +583,6 @@ function getSubscriptionSummary(repo: InstallationRepository): { label: string, 
               icon="i-lucide-chevron-down"
               color="neutral"
               variant="soft"
-              size="sm"
               :ui="{
                 leadingIcon: 'group-data-[state=open]:rotate-180 transition-transform duration-200'
               }"
@@ -553,7 +601,6 @@ function getSubscriptionSummary(repo: InstallationRepository): { label: string, 
                     v-if="repo.synced"
                     color="success"
                     variant="subtle"
-                    size="sm"
                   >
                     Synced
                   </UBadge>
@@ -576,7 +623,6 @@ function getSubscriptionSummary(repo: InstallationRepository): { label: string, 
                   :icon="favoriteRepoIds.has(repo.id) ? 'i-lucide-star' : 'i-lucide-star'"
                   color="neutral"
                   variant="soft"
-                  size="sm"
                   :loading="updatingFavorite.has(repo.id)"
                   :class="favoriteRepoIds.has(repo.id) ? 'text-yellow-500' : 'text-muted'"
                   @click="toggleFavorite(repo.id)"
@@ -589,12 +635,10 @@ function getSubscriptionSummary(repo: InstallationRepository): { label: string, 
                 :items="getNotificationDropdownItems(repo)"
                 :content="{ align: 'end' }"
                 :ui="{ content: 'w-72', itemDescription: 'text-clip' }"
-                size="sm"
               >
                 <UButton
                   color="neutral"
                   variant="soft"
-                  size="sm"
                   v-bind="getSubscriptionSummary(repo)"
                   trailing-icon="i-lucide-chevron-down"
                   :loading="updatingSubscription === repo.fullName"
@@ -609,25 +653,29 @@ function getSubscriptionSummary(repo: InstallationRepository): { label: string, 
               <!-- Sync/Delete dropdown -->
               <UDropdownMenu
                 :content="{ align: 'start' }"
-                size="sm"
                 :items="[
-                  [{
+                  {
                     label: 'Sync now',
                     icon: 'i-lucide-refresh-cw',
-                    onSelect: () => syncRepository(repo.fullName)
-                  }],
-                  [{
+                    onSelect: (e) => {
+                      e.preventDefault()
+                      syncRepository(repo.fullName)
+                    }
+                  },
+                  {
                     label: 'Remove...',
                     icon: 'i-lucide-trash-2',
                     color: 'error' as const,
-                    onSelect: () => deleteRepository(repo.fullName)
-                  }]
+                    onSelect: (e) => {
+                      e.preventDefault()
+                      deleteRepository(repo.fullName)
+                    }
+                  }
                 ]"
               >
                 <UButton
                   color="neutral"
                   variant="soft"
-                  size="sm"
                   icon="i-lucide-ellipsis-vertical"
                   :loading="syncing.has(repo.fullName) || deleting.has(repo.fullName)"
                   class="data-[state=open]:bg-accented/75"
@@ -640,7 +688,6 @@ function getSubscriptionSummary(repo: InstallationRepository): { label: string, 
               icon="i-lucide-download"
               color="neutral"
               variant="soft"
-              size="sm"
               :loading="syncing.has(repo.fullName)"
               @click="syncRepository(repo.fullName)"
             >

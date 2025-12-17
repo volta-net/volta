@@ -4,6 +4,12 @@ export default defineAppConfig({
       primary: 'blue',
       neutral: 'zinc'
     },
+    slideover: {
+      slots: {
+        header: 'sm:px-4',
+        body: 'sm:p-4'
+      }
+    },
     dashboardPanel: {
       slots: {
         root: 'min-h-[calc(100svh-2rem)]',

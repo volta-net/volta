@@ -62,6 +62,7 @@ const items = computed<DropdownMenuItem[][]>(() => ([[{
   <UDropdownMenu
     :items="items"
     :content="{ align: 'start', collisionPadding: 12 }"
+    size="md"
   >
     <UButton
       :avatar="{
@@ -71,6 +72,7 @@ const items = computed<DropdownMenuItem[][]>(() => ([[{
       :label="user?.username"
       color="neutral"
       variant="ghost"
+      size="md"
       class="data-[state=open]:bg-elevated px-2.5 lg:px-1.5"
       :ui="{ label: 'lg:hidden' }"
     />

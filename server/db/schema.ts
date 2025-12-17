@@ -286,7 +286,8 @@ export const repositoriesRelations = relations(repositories, ({ one, many }) => 
   milestones: many(milestones),
   releases: many(releases),
   workflowRuns: many(workflowRuns),
-  favorites: many(favoriteRepositories)
+  favorites: many(favoriteRepositories),
+  collaborators: many(repositoryCollaborators)
 }))
 
 export const releasesRelations = relations(releases, ({ one }) => ({
@@ -520,6 +521,28 @@ export const favoriteRepositoriesRelations = relations(favoriteRepositories, ({ 
   repository: one(repositories, {
     fields: [favoriteRepositories.repositoryId],
     references: [repositories.id]
+  })
+}))
+
+// Repository Collaborators - users with write access to a repository
+export type CollaboratorPermission = 'admin' | 'maintain' | 'write' | 'triage' | 'read'
+
+export const repositoryCollaborators = pgTable('repository_collaborators', {
+  repositoryId: bigint('repository_id', { mode: 'number' }).notNull().references(() => repositories.id, { onDelete: 'cascade' }),
+  userId: bigint('user_id', { mode: 'number' }).notNull().references(() => users.id, { onDelete: 'cascade' }),
+  permission: text().$type<CollaboratorPermission>().notNull(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow()
+})
+
+export const repositoryCollaboratorsRelations = relations(repositoryCollaborators, ({ one }) => ({
+  repository: one(repositories, {
+    fields: [repositoryCollaborators.repositoryId],
+    references: [repositories.id]
+  }),
+  user: one(users, {
+    fields: [repositoryCollaborators.userId],
+    references: [users.id]
   })
 }))
 
