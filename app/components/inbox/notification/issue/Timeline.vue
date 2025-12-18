@@ -20,9 +20,9 @@ const timelineItems = computed<ActivityItem[]>(() => {
   items.push({
     date: useTimeAgo(new Date(props.issue.createdAt)).value,
     username: props.issue.user?.login || 'Unknown',
-    action: `opened this ${props.issue.type === 'pull_request' ? 'pull request' : 'issue'}`,
+    action: `opened this ${props.issue.pullRequest ? 'pull request' : 'issue'}`,
     avatar: props.issue.user?.avatarUrl ? { src: props.issue.user.avatarUrl } : undefined,
-    icon: props.issue.type === 'pull_request' ? 'i-octicon-git-pull-request-16' : 'i-octicon-issue-opened-16',
+    icon: props.issue.pullRequest ? 'i-octicon-git-pull-request-16' : 'i-octicon-issue-opened-16',
     sortDate: new Date(props.issue.createdAt)
   })
 
@@ -41,12 +41,12 @@ const timelineItems = computed<ActivityItem[]>(() => {
 
   // Closed/Merged
   if (props.issue.closedAt) {
-    const isMerged = props.issue.type === 'pull_request' && props.issue.merged
+    const isMerged = props.issue.pullRequest && props.issue.merged
     const actor = isMerged ? props.issue.mergedBy : props.issue.closedBy
     items.push({
       date: useTimeAgo(new Date(props.issue.mergedAt || props.issue.closedAt)).value,
       username: actor?.login || 'Unknown',
-      action: isMerged ? 'merged this pull request' : `closed this ${props.issue.type === 'pull_request' ? 'pull request' : 'issue'}`,
+      action: isMerged ? 'merged this pull request' : `closed this ${props.issue.pullRequest ? 'pull request' : 'issue'}`,
       avatar: actor?.avatarUrl ? { src: actor.avatarUrl } : undefined,
       icon: isMerged ? 'i-octicon-git-merge-16' : 'i-octicon-issue-closed-16',
       sortDate: new Date(props.issue.mergedAt || props.issue.closedAt)

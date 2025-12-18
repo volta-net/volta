@@ -1,9 +1,8 @@
 import { eq, and, inArray } from 'drizzle-orm'
 import { db, schema } from 'hub:db'
-import type { Installation } from '#shared/types/installation'
 import type { RepositorySubscription } from '#shared/types/repository'
 
-export default defineEventHandler(async (event): Promise<Installation[]> => {
+export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
 
   const accessToken = await getValidAccessToken(event)

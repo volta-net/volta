@@ -1,13 +1,11 @@
 <script setup lang="ts">
 const props = defineProps<{
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   item: any
   showAuthor?: boolean
-  showCIStatus?: boolean
 }>()
 
 const issueState = computed(() => ({
-  type: props.item.type as 'issue' | 'pull_request',
+  pullRequest: props.item.pullRequest ?? false,
   state: props.item.state,
   stateReason: props.item.stateReason ?? null,
   draft: props.item.draft ?? false,
@@ -19,6 +17,10 @@ const stateColor = computed(() => getIssueStateColor(issueState.value))
 
 // Support both `author` and `user` fields
 const authorLogin = computed(() => props.item.author?.login || props.item.user?.login)
+
+// Labels (limited to first 3 for display)
+const displayLabels = computed(() => (props.item.labels || []).slice(0, 3))
+const hasMoreLabels = computed(() => (props.item.labels || []).length > 3)
 
 const ciStatusConfig = computed(() => {
   const ciStatus = props.item.ciStatus
@@ -92,9 +94,32 @@ function formatTimeAgo(date: Date | string) {
       </div>
     </div>
 
+    <!-- Type Badge -->
+    <UBadge
+      v-if="item.type"
+      :label="item.type.name"
+      :style="item.type.color ? { backgroundColor: `#${item.type.color}20`, color: `#${item.type.color}` } : {}"
+      variant="subtle"
+      size="xs"
+      class="shrink-0"
+    />
+
+    <!-- Labels -->
+    <div v-if="displayLabels.length" class="flex items-center gap-1 shrink-0">
+      <UBadge
+        v-for="label in displayLabels"
+        :key="label.id"
+        :label="label.name"
+        :style="{ backgroundColor: `#${label.color}20`, color: `#${label.color}` }"
+        variant="subtle"
+        size="xs"
+      />
+      <span v-if="hasMoreLabels" class="text-xs text-muted">+{{ item.labels.length - 3 }}</span>
+    </div>
+
     <!-- CI Status -->
     <UTooltip
-      v-if="showCIStatus && ciStatusConfig"
+      v-if="ciStatusConfig"
       :text="ciStatusConfig.label"
     >
       <UIcon

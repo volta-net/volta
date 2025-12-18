@@ -42,7 +42,7 @@ useSeoMeta({
     </NuxtLayout>
 
     <div v-else class="flex flex-col h-screen">
-      <div class="flex-1 flex flex-col items-center justify-center gap-8 rounded-md ring ring-default bg-default/75 shadow m-4">
+      <div class="flex-1 flex flex-col items-center justify-center gap-8 rounded-lg ring ring-default bg-default/75 shadow m-4">
         <AppLogo class="mx-auto h-12 text-highlighted" />
 
         <h1 class="text-lg font-medium text-toned">

@@ -1,8 +1,8 @@
-import { eq, and } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import { db, schema } from 'hub:db'
 
 export default defineEventHandler(async (event) => {
-  await requireUserSession(event)
+  const { user } = await requireUserSession(event)
   const owner = getRouterParam(event, 'owner')
   const name = getRouterParam(event, 'name')
 
@@ -19,6 +19,9 @@ export default defineEventHandler(async (event) => {
   if (!repository) {
     throw createError({ statusCode: 404, message: 'Repository not found' })
   }
+
+  // Verify user has access to this repository
+  await requireRepositoryAccess(user!.id, repository.id)
 
   const labels = await db.query.labels.findMany({
     where: eq(schema.labels.repositoryId, repository.id),

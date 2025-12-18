@@ -5,22 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1765538162819,
-      "tag": "0000_chief_angel",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1765570765014,
-      "tag": "0001_neat_snowbird",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1766008170552,
-      "tag": "0002_spooky_micromax",
+      "when": 1766082521933,
+      "tag": "0000_right_morlun",
       "breakpoints": true
     }
   ]

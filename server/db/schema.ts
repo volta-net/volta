@@ -131,6 +131,17 @@ export const labels = pgTable('labels', {
   updatedAt: timestamp('updated_at').notNull().defaultNow()
 })
 
+// Types (GitHub issue types - Bug, Feature, etc.)
+export const types = pgTable('types', {
+  id: bigint({ mode: 'number' }).primaryKey(), // GitHub issue type ID
+  repositoryId: bigint('repository_id', { mode: 'number' }).notNull().references(() => repositories.id, { onDelete: 'cascade' }),
+  name: text().notNull(),
+  description: text(),
+  color: text(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow()
+})
+
 // Milestones (matches GitHub API)
 export const milestones = pgTable('milestones', {
   id: bigint({ mode: 'number' }).primaryKey(), // GitHub milestone ID
@@ -148,15 +159,13 @@ export const milestones = pgTable('milestones', {
   updatedAt: timestamp('updated_at').notNull().defaultNow()
 })
 
-// Issue types (includes PRs)
-export type IssueType = 'issue' | 'pull_request'
-
 // Issues (Issues & Pull Requests unified)
 export const issues = pgTable('issues', {
   id: bigint({ mode: 'number' }).primaryKey(), // GitHub issue/PR ID
-  type: text().$type<IssueType>().notNull(), // 'issue' | 'pull_request'
+  pullRequest: boolean('pull_request').default(false).notNull(), // true for PRs, false for issues
   repositoryId: bigint('repository_id', { mode: 'number' }).notNull().references(() => repositories.id, { onDelete: 'cascade' }),
   milestoneId: bigint('milestone_id', { mode: 'number' }).references(() => milestones.id, { onDelete: 'set null' }),
+  typeId: bigint('type_id', { mode: 'number' }).references(() => types.id, { onDelete: 'set null' }), // GitHub issue type (Bug, Feature, etc.)
   // Author (relation to users - shadow user created if needed)
   userId: bigint('user_id', { mode: 'number' }).references(() => users.id, { onDelete: 'set null' }),
   number: bigint({ mode: 'number' }).notNull(),
@@ -188,7 +197,9 @@ export const issues = pgTable('issues', {
   reactionCount: bigint('reaction_count', { mode: 'number' }).default(0),
   commentCount: bigint('comment_count', { mode: 'number' }).default(0),
   // Sync status - false until full data (comments, reactions, etc.) has been fetched from GitHub
-  synced: boolean().default(false).notNull()
+  synced: boolean().default(false).notNull(),
+  // When we last synced this issue from GitHub (for staleness checks)
+  syncedAt: timestamp('synced_at')
 })
 
 // Issue Assignees (many-to-many: issues <-> users)
@@ -283,6 +294,7 @@ export const repositoriesRelations = relations(repositories, ({ one, many }) => 
   }),
   issues: many(issues),
   labels: many(labels),
+  types: many(types),
   milestones: many(milestones),
   releases: many(releases),
   workflowRuns: many(workflowRuns),
@@ -321,6 +333,10 @@ export const issuesRelations = relations(issues, ({ one, many }) => ({
     fields: [issues.milestoneId],
     references: [milestones.id]
   }),
+  type: one(types, {
+    fields: [issues.typeId],
+    references: [types.id]
+  }),
   user: one(users, {
     fields: [issues.userId],
     references: [users.id]
@@ -351,6 +367,14 @@ export const labelsRelations = relations(labels, ({ one, many }) => ({
     references: [repositories.id]
   }),
   issues: many(issueLabels)
+}))
+
+export const typesRelations = relations(types, ({ one, many }) => ({
+  repository: one(repositories, {
+    fields: [types.repositoryId],
+    references: [repositories.id]
+  }),
+  issues: many(issues)
 }))
 
 export const issueAssigneesRelations = relations(issueAssignees, ({ one }) => ({

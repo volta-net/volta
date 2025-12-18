@@ -7,7 +7,7 @@ import type { RepositorySubscription } from '#shared/types/repository'
 const toast = useToast()
 const config = useRuntimeConfig().public
 
-const { data: installations, refresh } = await useFetch<Installation[]>('/api/installations')
+const { data: installations, status: installationsStatus, refresh } = useLazyFetch<Installation[]>('/api/installations')
 
 // Refresh data when window gains focus
 const focused = useWindowFocus()
@@ -27,7 +27,7 @@ const importingAll = ref<Set<number>>(new Set())
 const syncingAll = ref<Set<number>>(new Set())
 const removingAll = ref<Set<number>>(new Set())
 
-const { data: favoriteRepositories, refresh: refreshFavorites } = await useFetch('/api/favorites/repositories', {
+const { data: favoriteRepositories, refresh: refreshFavorites } = useLazyFetch('/api/favorites/repositories', {
   default: () => []
 })
 
@@ -527,8 +527,19 @@ function getSubscriptionSummary(repo: InstallationRepository): { label: string, 
         body: 'p-0 sm:p-0'
       }"
     >
+      <!-- Loading skeleton (only on initial load, not refresh) -->
+      <div v-if="installationsStatus === 'pending' && !installations?.length" class="divide-y divide-default">
+        <div v-for="i in 2" :key="i" class="px-4 py-3 flex items-center gap-3 bg-elevated/25">
+          <USkeleton class="size-8 rounded-md" />
+          <div class="flex-1 space-y-1.5 my-1">
+            <USkeleton class="h-3 w-20" />
+            <USkeleton class="h-2.5 w-24" />
+          </div>
+        </div>
+      </div>
+
       <UAccordion
-        v-if="installations?.length"
+        v-else-if="installations?.length"
         :items="accordionItems"
         :ui="{
           item: 'group',
@@ -538,7 +549,12 @@ function getSubscriptionSummary(repo: InstallationRepository): { label: string, 
         }"
       >
         <template #leading="{ item }">
-          <UAvatar :src="item.installation.account.avatar" :alt="item.label" class="rounded-md" />
+          <UAvatar
+            :src="item.installation.account.avatar"
+            :alt="item.label"
+            class="rounded-md"
+            size="md"
+          />
         </template>
 
         <template #default="{ item }">
@@ -546,7 +562,7 @@ function getSubscriptionSummary(repo: InstallationRepository): { label: string, 
             <p class="text-sm font-medium">
               {{ item.label }}
             </p>
-            <p class="text-sm text-muted font-normal">
+            <p class="text-xs text-muted font-normal">
               <template v-if="item.installation.repositories?.length">
                 <span v-if="item.installation.repositories.every((r: any) => r.synced)" class="text-success">
                   All {{ item.installation.repositories.length }} repos synced
@@ -593,7 +609,7 @@ function getSubscriptionSummary(repo: InstallationRepository): { label: string, 
         <template #body="{ item }">
           <div v-for="repo in item.installation.repositories" :key="repo.id" class="flex items-center justify-between py-3 px-4 bg-default gap-3">
             <div class="flex items-center gap-3 min-w-0">
-              <UAvatar :icon="repo.private ? 'i-lucide-lock' : 'i-lucide-book'" />
+              <UAvatar :icon="repo.private ? 'i-lucide-lock' : 'i-lucide-book'" size="md" />
               <div class="min-w-0">
                 <p class="font-medium truncate flex items-center gap-2">
                   <NuxtLink :to="`https://github.com/${repo.fullName}`" target="_blank">{{ repo.name }}</NuxtLink>
@@ -605,7 +621,7 @@ function getSubscriptionSummary(repo: InstallationRepository): { label: string, 
                     Synced
                   </UBadge>
                 </p>
-                <p class="text-sm text-muted truncate">
+                <p class="text-xs text-muted truncate">
                   <template v-if="repo.synced && repo.lastSyncedAt">
                     Last synced {{ useTimeAgo(repo.lastSyncedAt).value }}
                   </template>
@@ -657,6 +673,7 @@ function getSubscriptionSummary(repo: InstallationRepository): { label: string, 
                   {
                     label: 'Sync now',
                     icon: 'i-lucide-refresh-cw',
+                    loading: syncing.has(repo.fullName),
                     onSelect: (e) => {
                       e.preventDefault()
                       syncRepository(repo.fullName)
@@ -666,6 +683,7 @@ function getSubscriptionSummary(repo: InstallationRepository): { label: string, 
                     label: 'Remove...',
                     icon: 'i-lucide-trash-2',
                     color: 'error' as const,
+                    loading: deleting.has(repo.fullName),
                     onSelect: (e) => {
                       e.preventDefault()
                       deleteRepository(repo.fullName)

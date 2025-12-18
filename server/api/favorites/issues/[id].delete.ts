@@ -12,6 +12,21 @@ export default defineEventHandler(async (event) => {
     })
   }
 
+  // Fetch issue to check access
+  const issue = await db.query.issues.findFirst({
+    where: eq(schema.issues.id, issueId)
+  })
+
+  if (!issue) {
+    throw createError({
+      statusCode: 404,
+      message: 'Issue not found'
+    })
+  }
+
+  // Check user has access to this repository
+  await requireRepositoryAccess(user!.id, issue.repositoryId)
+
   await db
     .delete(schema.favoriteIssues)
     .where(and(

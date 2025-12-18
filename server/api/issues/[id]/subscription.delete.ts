@@ -15,14 +15,16 @@ export default defineEventHandler(async (event) => {
   }
 
   // Check if the issue exists
-  const [issue] = await db
-    .select()
-    .from(schema.issues)
-    .where(eq(schema.issues.id, issueId))
+  const issue = await db.query.issues.findFirst({
+    where: eq(schema.issues.id, issueId)
+  })
 
   if (!issue) {
     throw createError({ statusCode: 404, message: 'Issue not found' })
   }
+
+  // Check user has access to this repository
+  await requireRepositoryAccess(user!.id, issue.repositoryId)
 
   // Unsubscribe
   await db

@@ -13,10 +13,9 @@ export default defineEventHandler(async (event) => {
   }
 
   // Check if repository exists
-  const [repository] = await db
-    .select()
-    .from(schema.repositories)
-    .where(eq(schema.repositories.id, repositoryId))
+  const repository = await db.query.repositories.findFirst({
+    where: eq(schema.repositories.id, repositoryId)
+  })
 
   if (!repository) {
     throw createError({
@@ -25,14 +24,16 @@ export default defineEventHandler(async (event) => {
     })
   }
 
+  // Verify user has access to this repository
+  await requireRepositoryAccess(user!.id, repositoryId)
+
   // Check if already favorited
-  const [existing] = await db
-    .select()
-    .from(schema.favoriteRepositories)
-    .where(and(
+  const existing = await db.query.favoriteRepositories.findFirst({
+    where: and(
       eq(schema.favoriteRepositories.userId, user!.id),
       eq(schema.favoriteRepositories.repositoryId, repositoryId)
-    ))
+    )
+  })
 
   if (existing) {
     return { id: existing.id, repositoryId, alreadyExists: true }
@@ -47,5 +48,5 @@ export default defineEventHandler(async (event) => {
     })
     .returning()
 
-  return { id: favorite.id, repositoryId, alreadyExists: false }
+  return { id: favorite!.id, repositoryId, alreadyExists: false }
 })

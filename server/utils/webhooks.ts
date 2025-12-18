@@ -1,7 +1,7 @@
 import { eq, and } from 'drizzle-orm'
 import { db, schema } from 'hub:db'
 import { ensureUser } from './users'
-import { subscribeUserToIssue } from './sync'
+import { subscribeUserToIssue, ensureType } from './sync'
 
 // ============================================================================
 // Issues
@@ -28,11 +28,19 @@ export async function handleIssueEvent(action: string, issue: any, repository: a
     case 'demilestoned':
     case 'locked':
     case 'unlocked':
-      await upsertIssue(issue, repository.id, repository.full_name, 'issue', installationId)
+    case 'typed':
+    case 'untyped':
+      await upsertIssue(issue, repository.id, repository.full_name, false, installationId)
       break
     case 'deleted':
     case 'transferred':
-      await db.delete(schema.issues).where(eq(schema.issues.id, issue.id))
+      // Delete by repositoryId + number to handle different ID sources
+      await db.delete(schema.issues).where(
+        and(
+          eq(schema.issues.repositoryId, repository.id),
+          eq(schema.issues.number, issue.number)
+        )
+      )
       break
   }
 }
@@ -67,7 +75,7 @@ export async function handlePullRequestEvent(action: string, pullRequest: any, r
     case 'review_requested':
     case 'review_request_removed':
     case 'synchronize':
-      await upsertIssue(pullRequest, repository.id, repository.full_name, 'pull_request', installationId)
+      await upsertIssue(pullRequest, repository.id, repository.full_name, true, installationId)
       break
   }
 }
@@ -76,7 +84,7 @@ export async function handlePullRequestEvent(action: string, pullRequest: any, r
 // Issues (Issues & Pull Requests unified)
 // ============================================================================
 
-async function upsertIssue(item: any, repositoryId: number, repositoryFullName: string, type: 'issue' | 'pull_request', installationId?: number) {
+async function upsertIssue(item: any, repositoryId: number, _repositoryFullName: string, isPullRequest: boolean, _installationId?: number) {
   // Ensure author exists as shadow user
   if (item.user) {
     await ensureUser({
@@ -104,10 +112,22 @@ async function upsertIssue(item: any, repositoryId: number, repositoryFullName: 
     })
   }
 
+  // Ensure type exists if present (issues only)
+  let typeId: number | null = null
+  if (!isPullRequest && item.type?.id) {
+    typeId = await ensureType(repositoryId, {
+      id: item.type.id,
+      name: item.type.name,
+      color: item.type.color,
+      description: item.type.description
+    })
+  }
+
   const itemData: any = {
-    type,
+    pullRequest: isPullRequest,
     repositoryId,
     milestoneId: item.milestone?.id ?? null,
+    typeId,
     userId: item.user?.id,
     number: item.number,
     title: item.title,
@@ -126,12 +146,12 @@ async function upsertIssue(item: any, repositoryId: number, repositoryFullName: 
   }
 
   // Issue-specific fields
-  if (type === 'issue') {
+  if (!isPullRequest) {
     itemData.stateReason = item.state_reason
   }
 
   // PR-specific fields
-  if (type === 'pull_request') {
+  if (isPullRequest) {
     itemData.draft = item.draft
     itemData.merged = item.merged_at !== null || item.merged === true
     itemData.commits = item.commits
@@ -146,10 +166,17 @@ async function upsertIssue(item: any, repositoryId: number, repositoryFullName: 
     itemData.mergedById = item.merged_by?.id ?? null
   }
 
-  const [existing] = await db.select().from(schema.issues).where(eq(schema.issues.id, item.id))
+  // Look up by repositoryId + number (unique) instead of id
+  // because GitHub returns different IDs for issues vs PRs
+  const [existing] = await db.select().from(schema.issues).where(
+    and(
+      eq(schema.issues.repositoryId, repositoryId),
+      eq(schema.issues.number, item.number)
+    )
+  )
 
   if (existing) {
-    await db.update(schema.issues).set(itemData).where(eq(schema.issues.id, item.id))
+    await db.update(schema.issues).set(itemData).where(eq(schema.issues.id, existing.id))
   } else {
     await db.insert(schema.issues).values({
       id: item.id,
@@ -162,26 +189,19 @@ async function upsertIssue(item: any, repositoryId: number, repositoryFullName: 
     }
   }
 
+  const itemId = existing?.id ?? item.id
+
   // Sync assignees
-  await syncIssueAssignees(item.id, item.assignees || [])
+  await syncIssueAssignees(itemId, item.assignees || [])
 
   // Sync labels
   const labelIds = item.labels?.map((l: any) => l.id).filter(Boolean) || []
-  await syncIssueLabels(item.id, labelIds)
+  await syncIssueLabels(itemId, labelIds)
 
   // Sync requested reviewers (PRs only)
-  if (type === 'pull_request') {
+  if (isPullRequest) {
     const reviewers = item.requested_reviewers?.filter((r: any) => r.id) || []
-    await syncIssueRequestedReviewers(item.id, reviewers)
-  }
-
-  // If issue/PR hasn't been fully synced yet, sync comments (and reviews for PRs)
-  if (installationId && !existing?.synced) {
-    await syncAllComments(installationId, repositoryFullName, item.number, item.id)
-    if (type === 'pull_request') {
-      await syncAllReviews(installationId, repositoryFullName, item.number, item.id)
-    }
-    await db.update(schema.issues).set({ synced: true }).where(eq(schema.issues.id, item.id))
+    await syncIssueRequestedReviewers(itemId, reviewers)
   }
 }
 
@@ -314,7 +334,7 @@ async function syncIssueRequestedReviewers(issueId: number, reviewers: { id: num
 // Comments
 // ============================================================================
 
-export async function handleCommentEvent(action: string, comment: any, issue: any, repository: any, installationId?: number) {
+export async function handleCommentEvent(action: string, comment: any, issue: any, repository: any, _installationId?: number) {
   // Check if repository is synced
   const [repo] = await db.select().from(schema.repositories).where(eq(schema.repositories.id, repository.id))
   if (!repo) {
@@ -329,19 +349,7 @@ export async function handleCommentEvent(action: string, comment: any, issue: an
     return
   }
 
-  // If issue hasn't been fully synced yet, fetch all comments (and reviews for PRs) now
-  if (!existingIssue.synced && installationId) {
-    await syncAllComments(installationId, repository.full_name, issue.number, existingIssue.id)
-    // Also sync reviews if this is a PR
-    if (existingIssue.type === 'pull_request') {
-      await syncAllReviews(installationId, repository.full_name, issue.number, existingIssue.id)
-    }
-    // Mark issue as synced
-    await db.update(schema.issues).set({ synced: true }).where(eq(schema.issues.id, existingIssue.id))
-    return // All comments including this one are now synced
-  }
-
-  // Issue already synced, just upsert this single comment
+  // Upsert the comment
   switch (action) {
     case 'created':
       await upsertComment(comment, existingIssue.id)
@@ -356,59 +364,6 @@ export async function handleCommentEvent(action: string, comment: any, issue: an
     case 'deleted':
       await db.delete(schema.issueComments).where(eq(schema.issueComments.id, comment.id))
       break
-  }
-}
-
-// Fetch all comments for an issue using installation token
-async function syncAllComments(installationId: number, repoFullName: string, issueNumber: number, issueId: number) {
-  try {
-    const octokit = await useOctokitAsInstallation(installationId)
-    const [owner, repo] = repoFullName.split('/')
-
-    const comments = await octokit.paginate(octokit.rest.issues.listComments, {
-      owner,
-      repo,
-      issue_number: issueNumber,
-      per_page: 100
-    })
-
-    // Upsert comments
-    for (const comment of comments) {
-      if (comment.user) {
-        await ensureUser({
-          id: comment.user.id,
-          login: comment.user.login,
-          avatar_url: comment.user.avatar_url
-        })
-
-        // Subscribe commenter to the issue
-        await subscribeUserToIssue(issueId, comment.user.id)
-      }
-
-      const commentData = {
-        issueId,
-        userId: comment.user?.id,
-        body: comment.body || '',
-        htmlUrl: comment.html_url,
-        updatedAt: new Date(comment.updated_at)
-      }
-
-      const [existing] = await db.select().from(schema.issueComments).where(eq(schema.issueComments.id, comment.id))
-
-      if (existing) {
-        await db.update(schema.issueComments).set(commentData).where(eq(schema.issueComments.id, comment.id))
-      } else {
-        await db.insert(schema.issueComments).values({
-          id: comment.id,
-          ...commentData,
-          createdAt: new Date(comment.created_at)
-        })
-      }
-    }
-
-    console.log(`[Webhook] Synced ${comments.length} comments for issue #${issueNumber}`)
-  } catch (error) {
-    console.error(`[Webhook] Failed to sync comments for issue #${issueNumber}:`, error)
   }
 }
 
@@ -447,7 +402,7 @@ async function upsertComment(comment: any, issueId: number) {
 // PR Reviews
 // ============================================================================
 
-export async function handleReviewEvent(action: string, review: any, pullRequest: any, repository: any, installationId?: number) {
+export async function handleReviewEvent(action: string, review: any, pullRequest: any, repository: any, _installationId?: number) {
   // Check if repository is synced
   const [repo] = await db.select().from(schema.repositories).where(eq(schema.repositories.id, repository.id))
   if (!repo) {
@@ -459,15 +414,6 @@ export async function handleReviewEvent(action: string, review: any, pullRequest
   const [existingPR] = await db.select().from(schema.issues).where(eq(schema.issues.id, pullRequest.id))
   if (!existingPR) {
     console.log(`[Webhook] PR ${pullRequest.id} not synced, skipping review event`)
-    return
-  }
-
-  // If PR hasn't been fully synced yet, fetch all comments and reviews
-  if (!existingPR.synced && installationId) {
-    await syncAllComments(installationId, repository.full_name, pullRequest.number, existingPR.id)
-    await syncAllReviews(installationId, repository.full_name, pullRequest.number, existingPR.id)
-    // Mark PR as synced
-    await db.update(schema.issues).set({ synced: true }).where(eq(schema.issues.id, existingPR.id))
     return
   }
 
@@ -523,108 +469,11 @@ async function upsertReview(review: any, issueId: number) {
   }
 }
 
-async function syncAllReviews(installationId: number, repoFullName: string, prNumber: number, issueId: number) {
-  try {
-    const octokit = await useOctokitAsInstallation(installationId)
-    const [owner, repo] = repoFullName.split('/')
-
-    // Sync reviews
-    const reviews = await octokit.paginate(octokit.rest.pulls.listReviews, {
-      owner,
-      repo,
-      pull_number: prNumber,
-      per_page: 100
-    })
-
-    for (const review of reviews) {
-      if (review.user) {
-        await ensureUser({
-          id: review.user.id,
-          login: review.user.login,
-          avatar_url: review.user.avatar_url
-        })
-
-        // Subscribe reviewer to the PR
-        await subscribeUserToIssue(issueId, review.user.id)
-      }
-
-      const reviewData = {
-        issueId,
-        userId: review.user?.id,
-        body: review.body,
-        state: review.state as any,
-        htmlUrl: review.html_url,
-        commitId: review.commit_id,
-        submittedAt: review.submitted_at ? new Date(review.submitted_at) : null
-      }
-
-      const [existing] = await db.select().from(schema.issueReviews).where(eq(schema.issueReviews.id, review.id))
-
-      if (existing) {
-        await db.update(schema.issueReviews).set(reviewData).where(eq(schema.issueReviews.id, review.id))
-      } else {
-        await db.insert(schema.issueReviews).values({
-          id: review.id,
-          ...reviewData
-        })
-      }
-    }
-
-    // Sync review comments
-    const reviewComments = await octokit.paginate(octokit.rest.pulls.listReviewComments, {
-      owner,
-      repo,
-      pull_number: prNumber,
-      per_page: 100
-    })
-
-    for (const comment of reviewComments) {
-      if (comment.user) {
-        await ensureUser({
-          id: comment.user.id,
-          login: comment.user.login,
-          avatar_url: comment.user.avatar_url
-        })
-      }
-
-      const commentData = {
-        issueId,
-        reviewId: comment.pull_request_review_id,
-        userId: comment.user?.id,
-        body: comment.body,
-        path: comment.path,
-        line: comment.line,
-        side: comment.side,
-        commitId: comment.commit_id,
-        diffHunk: comment.diff_hunk,
-        htmlUrl: comment.html_url,
-        updatedAt: new Date(comment.updated_at)
-      }
-
-      const [existing] = await db.select().from(schema.issueReviewComments).where(eq(schema.issueReviewComments.id, comment.id))
-
-      if (existing) {
-        await db.update(schema.issueReviewComments).set(commentData).where(eq(schema.issueReviewComments.id, comment.id))
-      } else {
-        await db.insert(schema.issueReviewComments).values({
-          id: comment.id,
-          ...commentData,
-          createdAt: new Date(comment.created_at)
-        })
-      }
-    }
-
-    console.log(`[Webhook] Synced ${reviews.length} reviews and ${reviewComments.length} review comments for PR #${prNumber}`)
-  } catch (error) {
-    console.error(`[Webhook] Failed to sync reviews for PR #${prNumber}:`, error)
-  }
-}
-
 // ============================================================================
 // PR Review Comments
 // ============================================================================
 
-export async function handleReviewCommentEvent(action: string, comment: any, pullRequest: any, repository: any, installationId?: number) {
+export async function handleReviewCommentEvent(action: string, comment: any, pullRequest: any, repository: any, _installationId?: number) {
   // Check if repository is synced
   const [repo] = await db.select().from(schema.repositories).where(eq(schema.repositories.id, repository.id))
   if (!repo) {
@@ -636,14 +485,6 @@ export async function handleReviewCommentEvent(action: string, comment: any, pul
   const [existingPR] = await db.select().from(schema.issues).where(eq(schema.issues.id, pullRequest.id))
   if (!existingPR) {
     console.log(`[Webhook] PR ${pullRequest.id} not synced, skipping review comment event`)
-    return
-  }
-
-  // If PR hasn't been fully synced, sync all comments and reviews
-  if (!existingPR.synced && installationId) {
-    await syncAllComments(installationId, repository.full_name, pullRequest.number, existingPR.id)
-    await syncAllReviews(installationId, repository.full_name, pullRequest.number, existingPR.id)
-    await db.update(schema.issues).set({ synced: true }).where(eq(schema.issues.id, existingPR.id))
     return
   }
 
@@ -788,6 +629,88 @@ async function upsertMilestone(milestone: any, repositoryId: number) {
       id: milestone.id,
       ...milestoneData
     })
+  }
+}
+
+// ============================================================================
+// Repository Collaborators (Members)
+// Note: Requires organization "Members" permission to receive these events
+// ============================================================================
+
+export async function handleMemberEvent(action: string, member: any, repository: any) {
+  // Check if repository is synced
+  const [repo] = await db.select().from(schema.repositories).where(eq(schema.repositories.id, repository.id))
+  if (!repo) {
+    console.log(`[Webhook] Repository ${repository.full_name} not synced, skipping member event`)
+    return
+  }
+
+  switch (action) {
+    case 'added': {
+      // Ensure user exists
+      await ensureUser({
+        id: member.id,
+        login: member.login,
+        avatar_url: member.avatar_url
+      })
+
+      // Add as collaborator (we don't get permission level from webhook, default to 'write')
+      const [existingCollaborator] = await db
+        .select()
+        .from(schema.repositoryCollaborators)
+        .where(and(
+          eq(schema.repositoryCollaborators.repositoryId, repository.id),
+          eq(schema.repositoryCollaborators.userId, member.id)
+        ))
+
+      if (!existingCollaborator) {
+        await db.insert(schema.repositoryCollaborators).values({
+          repositoryId: repository.id,
+          userId: member.id,
+          permission: 'write'
+        })
+        console.log(`[Webhook] Added collaborator ${member.login} to ${repository.full_name}`)
+      }
+
+      // Also subscribe them to the repository
+      const [existingSub] = await db
+        .select()
+        .from(schema.repositorySubscriptions)
+        .where(and(
+          eq(schema.repositorySubscriptions.repositoryId, repository.id),
+          eq(schema.repositorySubscriptions.userId, member.id)
+        ))
+
+      if (!existingSub) {
+        await db.insert(schema.repositorySubscriptions).values({
+          repositoryId: repository.id,
+          userId: member.id,
+          issues: true,
+          pullRequests: true,
+          releases: true,
+          ci: true,
+          mentions: true,
+          activity: true
+        })
+      }
+      break
+    }
+
+    case 'removed':
+      // Remove from collaborators
+      await db.delete(schema.repositoryCollaborators).where(
+        and(
+          eq(schema.repositoryCollaborators.repositoryId, repository.id),
+          eq(schema.repositoryCollaborators.userId, member.id)
+        )
+      )
+      console.log(`[Webhook] Removed collaborator ${member.login} from ${repository.full_name}`)
+      break
+
+    case 'edited':
+      // Permission changed - we could update permission level here if needed
+      console.log(`[Webhook] Collaborator ${member.login} permissions changed on ${repository.full_name}`)
+      break
   }
 }
 

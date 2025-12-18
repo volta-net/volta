@@ -116,7 +116,13 @@ useSeoMeta({
 
   <UDashboardPanel v-else id="inbox-2" class="hidden lg:flex">
     <template #body>
-      <InboxEmpty :unread-notifications="unreadNotifications" />
+      <UEmpty
+        icon="i-lucide-inbox"
+        :description="unreadNotifications.length > 0 ? `${unreadNotifications.length} unread notification(s)` : 'No notifications yet'"
+        variant="naked"
+        size="lg"
+        class="flex-1"
+      />
     </template>
   </UDashboardPanel>
 

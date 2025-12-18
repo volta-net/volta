@@ -13,20 +13,20 @@ const emit = defineEmits<{
 <template>
   <div class="flex flex-col h-full overflow-hidden">
     <!-- Issue / Pull Request -->
-    <InboxIssue
+    <InboxNotificationIssue
       v-if="notification.issue"
       :notification="notification"
       @refresh="emit('refresh')"
     />
 
     <!-- Release -->
-    <InboxRelease
+    <InboxNotificationRelease
       v-else-if="notification.release"
       :notification="notification"
     />
 
     <!-- Workflow Run -->
-    <InboxWorkflow
+    <InboxNotificationWorkflow
       v-else-if="notification.workflowRun"
       :notification="notification"
     />

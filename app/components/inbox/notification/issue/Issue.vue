@@ -103,25 +103,25 @@ async function handleRefresh() {
     <div class="flex-1 overflow-y-auto p-4">
       <div class="space-y-6">
         <!-- Header -->
-        <InboxIssueHeader
+        <InboxNotificationIssueHeader
           :issue="issue"
           @update:title="handleRefresh"
         />
 
         <!-- Labels -->
-        <InboxIssueLabels :issue="issue" @refresh="handleRefresh" />
+        <InboxNotificationIssueLabels :issue="issue" @refresh="handleRefresh" />
 
         <!-- Meta (Assignees, PR stats, Reviewers) -->
-        <InboxIssueMeta :issue="issue" />
+        <InboxNotificationIssueMeta :issue="issue" />
 
         <!-- Body -->
-        <InboxIssueBody :issue="issue" @refresh="handleRefresh" />
+        <InboxNotificationIssueBody :issue="issue" @refresh="handleRefresh" />
 
         <!-- Activity Timeline -->
-        <InboxIssueTimeline :issue="issue" />
+        <InboxNotificationIssueTimeline :issue="issue" />
 
         <!-- Add Comment -->
-        <InboxIssueCommentForm :issue="issue" @refresh="handleRefresh" />
+        <InboxNotificationIssueCommentForm :issue="issue" @refresh="handleRefresh" />
       </div>
     </div>
   </template>

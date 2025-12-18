@@ -1,4 +1,4 @@
-import type { DBUser, DBLabel, DBMilestone, DBIssueComment, DBIssue, IssueType } from './db'
+import type { DBUser, DBLabel, DBMilestone, DBIssueComment, DBIssue } from './db'
 import type { Repository } from './repository'
 
 // User with selected fields for API responses
@@ -16,10 +16,11 @@ export interface Comment extends Pick<DBIssueComment, 'id' | 'body' | 'htmlUrl' 
 }
 
 // Issue with all relations populated
-export interface Issue extends Omit<DBIssue, 'repositoryId' | 'milestoneId' | 'userId' | 'closedById' | 'mergedById' | 'synced'> {
-  type: IssueType
+export interface Issue extends Omit<DBIssue, 'repositoryId' | 'milestoneId' | 'typeId' | 'userId' | 'closedById' | 'mergedById' | 'synced'> {
+  pullRequest: boolean
   repository: Repository | null
   milestone: Milestone | null
+  type: { id: number, name: string, color: string | null } | null
   user: User | null
   closedBy: User | null
   mergedBy: User | null

@@ -14,23 +14,24 @@ export default defineEventHandler(async (event) => {
   const fullName = `${owner}/${name}`
 
   // Find the repository
-  const [repository] = await db
-    .select()
-    .from(schema.repositories)
-    .where(eq(schema.repositories.fullName, fullName))
+  const repository = await db.query.repositories.findFirst({
+    where: eq(schema.repositories.fullName, fullName)
+  })
 
   if (!repository) {
     throw createError({ statusCode: 404, message: 'Repository not found' })
   }
 
+  // Verify user has access to this repository
+  await requireRepositoryAccess(user!.id, repository.id)
+
   // Check if subscription exists
-  const [existing] = await db
-    .select()
-    .from(schema.repositorySubscriptions)
-    .where(and(
+  const existing = await db.query.repositorySubscriptions.findFirst({
+    where: and(
       eq(schema.repositorySubscriptions.repositoryId, repository.id),
       eq(schema.repositorySubscriptions.userId, user!.id)
-    ))
+    )
+  })
 
   // Build update object with only the fields that were provided
   const updates: Partial<{

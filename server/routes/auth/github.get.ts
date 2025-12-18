@@ -55,7 +55,8 @@ export default defineOAuthGitHubEventHandler({
       user: {
         id: user.id,
         username: user.login,
-        avatar: user.avatar_url
+        avatar: user.avatar_url,
+        registered: true
       },
       secure: {
         accessToken: tokens.access_token,

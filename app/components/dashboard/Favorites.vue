@@ -1,32 +1,20 @@
 <script setup lang="ts">
 const open = defineModel<boolean>('open', { default: false })
 
+const props = defineProps<{
+  favorites: { id: number, repositoryId: number, repository: any, createdAt: string }[]
+}>()
+
 const emit = defineEmits<{
   change: []
 }>()
 
 const toast = useToast()
 
-// Fetch user's installations and their repositories
-const { data: installations } = await useFetch('/api/installations')
+// Fetch synced repositories user has access to (fast - from DB)
+const { data: repositories } = await useFetch('/api/repositories/synced')
 
-// Fetch current favorites
-const { data: favorites, refresh: refreshFavorites } = await useFetch('/api/favorites/repositories')
-
-const favoriteRepoIds = computed(() => new Set(favorites.value?.map(f => f.repositoryId) || []))
-
-const allRepositories = computed(() => {
-  if (!installations.value) return []
-
-  return installations.value.flatMap(installation =>
-    installation.repositories
-      .filter(repo => repo.synced)
-      .map(repo => ({
-        ...repo,
-        installationLogin: installation.account.login
-      }))
-  )
-})
+const favoriteRepoIds = computed(() => new Set(props.favorites?.map(f => f.repositoryId) || []))
 
 const updating = ref<Set<number>>(new Set())
 
@@ -42,7 +30,6 @@ async function toggleFavorite(repositoryId: number) {
         body: { repositoryId }
       })
     }
-    await refreshFavorites()
     emit('change')
   } catch (error: any) {
     toast.add({
@@ -54,6 +41,10 @@ async function toggleFavorite(repositoryId: number) {
     updating.value.delete(repositoryId)
   }
 }
+
+function goToSettings() {
+  open.value = false
+}
 </script>
 
 <template>
@@ -61,29 +52,37 @@ async function toggleFavorite(repositoryId: number) {
     v-model:open="open"
     title="Favorite Repositories"
     inset
-    :ui="{ header: 'min-h-0 h-12 flex items-center justify-between', close: 'static' }"
+    :modal="false"
+    :ui="{
+      content: 'rounded-l-none sm:shadow-none',
+      header: 'min-h-0 h-12 flex items-center justify-between',
+      close: 'static',
+      body: 'flex flex-col'
+    }"
   >
     <template #body>
-      <div v-if="allRepositories.length === 0" class="flex flex-col items-center justify-center text-center">
-        <div class="size-12 rounded-full bg-elevated flex items-center justify-center mb-4">
-          <UIcon name="i-lucide-inbox" class="size-6 text-muted" />
-        </div>
-        <p class="text-sm text-muted mb-4">
-          No synced repositories
-        </p>
-        <UButton
-          to="/settings"
-          color="neutral"
-          variant="soft"
-          icon="i-lucide-settings"
-          label="Import repositories"
-          @click="open = false"
-        />
-      </div>
+      <UEmpty
+        v-if="!repositories?.length"
+        icon="i-lucide-package"
+        title="No synced repositories"
+        description="You have to install the GitHub App on your account or organization to get started."
+        variant="naked"
+        size="lg"
+        class="flex-1"
+        :actions="[{
+          label: 'Import repositories',
+          to: '/settings',
+          icon: 'i-lucide-download',
+          color: 'neutral',
+          variant: 'soft',
+          size: 'sm',
+          onClick: goToSettings
+        }]"
+      />
 
       <div v-else class="flex flex-col">
         <button
-          v-for="repo in allRepositories"
+          v-for="repo in repositories"
           :key="repo.id"
           type="button"
           class="flex items-center gap-3 p-3 rounded-lg hover:bg-elevated/50 transition-colors text-left"

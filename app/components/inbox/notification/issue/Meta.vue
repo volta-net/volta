@@ -22,7 +22,7 @@ defineProps<{
     </div>
 
     <!-- PR specific info -->
-    <div v-if="issue.type === 'pull_request'" class="flex items-center gap-4 text-sm">
+    <div v-if="issue.pullRequest" class="flex items-center gap-4 text-sm">
       <div class="flex items-center gap-1">
         <UIcon name="i-octicon-git-commit-16" class="size-4 text-muted" />
         <span>{{ issue.commits }} commit{{ issue.commits !== 1 ? 's' : '' }}</span>

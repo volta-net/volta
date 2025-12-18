@@ -273,6 +273,16 @@ export default defineEventHandler(async (event) => {
         await handleRepositoryEvent(payload.action, payload.repository)
         break
 
+      case 'public':
+        // Repository changed from private to public
+        await handleRepositoryEvent('publicized', payload.repository)
+        break
+
+      // Collaborator events (requires organization "Members" permission)
+      case 'member':
+        await handleMemberEvent(payload.action, payload.member, payload.repository)
+        break
+
       case 'push':
         console.log(`[Webhook] Push to ${payload.repository?.full_name}: ${payload.commits?.length || 0} commits`)
         break

@@ -1,7 +1,6 @@
 import { eq, and } from 'drizzle-orm'
 import { db, schema } from 'hub:db'
 import { Octokit } from 'octokit'
-import { ensureUser } from '~~/server/utils/users'
 
 export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
@@ -66,6 +65,9 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, message: 'Issue not found' })
   }
 
+  // Check user has access to this repository
+  await requireRepositoryAccess(user!.id, issue.repositoryId)
+
   // Get valid access token (refreshes if expired)
   const accessToken = await getValidAccessToken(event)
 
@@ -83,19 +85,24 @@ export default defineEventHandler(async (event) => {
     ))
 
   // Check if user is subscribed to this issue
-  const [subscription] = await db
-    .select()
-    .from(schema.issueSubscriptions)
-    .where(and(
+  const subscription = await db.query.issueSubscriptions.findFirst({
+    where: and(
       eq(schema.issueSubscriptions.issueId, issueId),
       eq(schema.issueSubscriptions.userId, user!.id)
-    ))
+    )
+  })
   const isSubscribed = !!subscription
 
-  // Always sync in background for freshness
-  // syncIssueFromGitHub(accessToken, issue).catch((err) => {
-  //   console.warn('[issues] Failed to re-sync issue from GitHub:', err)
-  // })
+  // Re-sync in background if data is stale (for reactions, etc. that don't have webhooks)
+  const STALE_THRESHOLD = 5 * 60 * 1000 // 5 minutes
+  const isStale = issue.synced && issue.syncedAt && (Date.now() - new Date(issue.syncedAt).getTime() > STALE_THRESHOLD)
+
+  if (isStale) {
+    // Sync in background (don't await - return cached data immediately)
+    syncIssueFromGitHub(accessToken, issue).catch((err) => {
+      console.warn('[issues] Failed to re-sync stale issue from GitHub:', err)
+    })
+  }
 
   // If issue hasn't been fully synced yet (comments, reactions, etc.), await the sync
   if (!issue.synced) {
@@ -158,7 +165,7 @@ async function syncIssueFromGitHub(accessToken: string, issue: any) {
   const [owner, repo] = issue.repository.fullName.split('/')
 
   // Fetch fresh issue data from GitHub
-  const isPR = issue.type === 'pull_request'
+  const isPR = issue.pullRequest
 
   if (isPR) {
     const { data: ghPr } = await octokit.rest.pulls.get({
@@ -227,7 +234,7 @@ async function syncIssueFromGitHub(accessToken: string, issue: any) {
     await syncReviewComments(accessToken, owner, repo, issue.number, issue.id)
 
     // Mark as fully synced
-    await db.update(schema.issues).set({ synced: true }).where(eq(schema.issues.id, issue.id))
+    await db.update(schema.issues).set({ synced: true, syncedAt: new Date() }).where(eq(schema.issues.id, issue.id))
   } else {
     const { data: ghIssue } = await octokit.rest.issues.get({
       owner,
@@ -278,7 +285,7 @@ async function syncIssueFromGitHub(accessToken: string, issue: any) {
     await syncComments(accessToken, owner, repo, issue.number, issue.id)
 
     // Mark as fully synced
-    await db.update(schema.issues).set({ synced: true }).where(eq(schema.issues.id, issue.id))
+    await db.update(schema.issues).set({ synced: true, syncedAt: new Date() }).where(eq(schema.issues.id, issue.id))
   }
 }
 

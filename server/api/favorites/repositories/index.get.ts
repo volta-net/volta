@@ -1,9 +1,10 @@
-import { eq } from 'drizzle-orm'
+import { eq, and } from 'drizzle-orm'
 import { db, schema } from 'hub:db'
 
 export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
 
+  // Get favorites joined with collaborator check to only return accessible ones
   const favorites = await db
     .select({
       id: schema.favoriteRepositories.id,
@@ -22,6 +23,13 @@ export default defineEventHandler(async (event) => {
     .innerJoin(
       schema.repositories,
       eq(schema.favoriteRepositories.repositoryId, schema.repositories.id)
+    )
+    .innerJoin(
+      schema.repositoryCollaborators,
+      and(
+        eq(schema.repositoryCollaborators.repositoryId, schema.repositories.id),
+        eq(schema.repositoryCollaborators.userId, user!.id)
+      )
     )
     .where(eq(schema.favoriteRepositories.userId, user!.id))
 

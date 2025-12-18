@@ -1,7 +1,11 @@
-import type { Issue } from '#shared/types/issue'
-
-// Partial issue type for notification context (subset of Issue fields)
-export type IssueStateLike = Pick<Issue, 'type' | 'state' | 'stateReason' | 'draft' | 'merged'>
+// Partial issue type for notification context
+export type IssueStateLike = {
+  pullRequest: boolean
+  state: string
+  stateReason?: string | null
+  draft?: boolean | null
+  merged?: boolean | null
+}
 
 type BadgeColor = 'success' | 'error' | 'info' | 'neutral'
 
@@ -64,7 +68,7 @@ const issueStates: Record<string, IssueStateConfig> = {
 function getStateKey(issue: IssueStateLike | null | undefined): string {
   if (!issue) return 'issue_open'
 
-  if (issue.type === 'pull_request') {
+  if (issue.pullRequest) {
     if (issue.draft) return 'pr_draft'
     if (issue.merged) return 'pr_merged'
     if (issue.state === 'closed') return 'pr_closed'

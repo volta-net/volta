@@ -20,7 +20,6 @@ import type {
   favoriteIssues,
   NotificationType,
   NotificationAction,
-  IssueType,
   ReviewState,
   WorkflowConclusion
 } from '../../server/db/schema'
@@ -50,7 +49,6 @@ export type DBFavoriteIssue = typeof favoriteIssues.$inferSelect
 export type {
   NotificationType,
   NotificationAction,
-  IssueType,
   ReviewState,
   WorkflowConclusion
 }

@@ -13,14 +13,16 @@ export default defineEventHandler(async (event) => {
   const fullName = `${owner}/${name}`
 
   // Find the repository
-  const [repository] = await db
-    .select()
-    .from(schema.repositories)
-    .where(eq(schema.repositories.fullName, fullName))
+  const repository = await db.query.repositories.findFirst({
+    where: eq(schema.repositories.fullName, fullName)
+  })
 
   if (!repository) {
     throw createError({ statusCode: 404, message: 'Repository not found' })
   }
+
+  // Verify user has access to this repository
+  await requireRepositoryAccess(user!.id, repository.id)
 
   // Delete subscription
   await db

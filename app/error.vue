@@ -8,7 +8,7 @@ defineProps<{
 
 <template>
   <div class="flex flex-col h-screen">
-    <div class="flex-1 flex flex-col items-center justify-center gap-8 rounded-md ring ring-default bg-default/75 shadow m-4">
+    <div class="flex-1 flex flex-col items-center justify-center gap-8 rounded-lg ring ring-default bg-default/75 shadow m-4">
       <UError :error="error" class="min-h-0" />
     </div>
   </div>

@@ -15,9 +15,15 @@ export default defineEventHandler(async (event) => {
 
   // Sync repository (runs directly without workflow for now)
   const { repository } = await syncRepositoryInfo(accessToken, owner, repo)
+
+  // Sync collaborators first (so we can verify access)
   const collaboratorsCount = await syncCollaborators(accessToken, owner, repo, repository.id)
+
+  // Verify user has access to this repository (must be after syncCollaborators for first-time sync)
+  await requireRepositoryAccess(user!.id, repository.id)
   const labelsCount = await syncLabels(accessToken, owner, repo, repository.id)
   const milestonesCount = await syncMilestones(accessToken, owner, repo, repository.id)
+  const typesCount = await syncTypes(accessToken, owner, repo, repository.id)
   const issuesCount = await syncIssues(accessToken, owner, repo, repository.id)
   await updateRepositoryLastSynced(repository.id)
 
@@ -36,13 +42,12 @@ export default defineEventHandler(async (event) => {
 
   if (userId) {
     try {
-      const [existingSubscription] = await db
-        .select()
-        .from(schema.repositorySubscriptions)
-        .where(and(
+      const existingSubscription = await db.query.repositorySubscriptions.findFirst({
+        where: and(
           eq(schema.repositorySubscriptions.userId, userId),
           eq(schema.repositorySubscriptions.repositoryId, repository.id)
-        ))
+        )
+      })
 
       if (!existingSubscription) {
         await db.insert(schema.repositorySubscriptions).values({
@@ -68,6 +73,7 @@ export default defineEventHandler(async (event) => {
       collaborators: collaboratorsCount,
       labels: labelsCount,
       milestones: milestonesCount,
+      types: typesCount,
       issues: issuesCount.issues,
       pullRequests: issuesCount.pullRequests
     }

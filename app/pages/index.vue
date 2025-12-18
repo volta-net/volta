@@ -74,13 +74,17 @@ watch(visibility, (isVisible) => {
 
 // Favorites slideover state
 const favoritesOpen = ref(false)
+
+function openFavorites() {
+  favoritesOpen.value = true
+}
 </script>
 
 <template>
   <UDashboardPanel id="dashboard" :ui="{ body: 'overflow-hidden' }">
     <template #header>
       <UDashboardNavbar title="Dashboard" :ui="{ left: 'gap-3' }">
-        <template #trailing>
+        <template v-if="hasFavorites" #trailing>
           <UFieldGroup>
             <UButton
               v-for="tab in tabs"
@@ -96,7 +100,7 @@ const favoritesOpen = ref(false)
           </UFieldGroup>
         </template>
 
-        <template #right>
+        <template v-if="hasFavorites" #right>
           <UButton
             color="neutral"
             variant="soft"
@@ -109,7 +113,7 @@ const favoritesOpen = ref(false)
     </template>
 
     <template #body>
-      <DashboardFavorites v-model:open="favoritesOpen" @change="refresh" />
+      <LazyDashboardFavorites v-model:open="favoritesOpen" :favorites="favoriteRepos ?? []" @change="refresh" />
 
       <!-- Loading state -->
       <div v-if="isInitialLoading" class="flex-1 flex flex-col items-center justify-center">
@@ -117,27 +121,27 @@ const favoritesOpen = ref(false)
       </div>
 
       <!-- No favorites selected -->
-      <div v-else-if="!hasFavorites" class="flex-1 flex flex-col items-center justify-center text-center">
-        <div class="size-16 rounded-full bg-elevated flex items-center justify-center mb-4">
-          <UIcon name="i-lucide-star" class="size-8 text-muted" />
-        </div>
-        <h2 class="text-lg font-semibold mb-2">
-          Select your favorite repositories
-        </h2>
-        <p class="text-muted text-sm max-w-md mb-6">
-          Choose the repositories you want to focus on. Your dashboard will show PRs, issues, and activity from these repositories.
-        </p>
-        <UButton
-          color="neutral"
-          variant="soft"
-          icon="i-lucide-star"
-          :label="!hasFavorites ? 'Select favorites' : `${favoriteRepos.length} favorites selected`"
-          @click="favoritesOpen = true"
-        />
-      </div>
+      <UEmpty
+        v-else-if="!hasFavorites"
+        icon="i-lucide-star"
+        title="Select your favorite repositories"
+        description="Choose the repositories you want to focus on. Your dashboard will show PRs, issues, and activity from these repositories."
+        variant="naked"
+        size="lg"
+        class="flex-1"
+        :ui="{ header: 'max-w-md' }"
+        :actions="[{
+          label: 'Select favorites',
+          icon: 'i-lucide-star',
+          color: 'neutral',
+          variant: 'soft',
+          size: 'sm',
+          onClick: openFavorites
+        }]"
+      />
 
       <!-- Pull Requests Tab -->
-      <div v-else-if="activeTab === 'pull-requests'" class="grid grid-cols-5 gap-4 min-h-0">
+      <div v-else-if="activeTab === 'pull-requests'" class="grid grid-cols-5 gap-4 min-h-0 flex-1">
         <DashboardSection
           title="My Pull Requests"
           icon="i-octicon-git-pull-request-16"
@@ -209,13 +213,12 @@ const favoritesOpen = ref(false)
             :key="pr.id"
             :item="pr"
             show-author
-            show-c-i-status
           />
         </DashboardSection>
       </div>
 
       <!-- Issues Tab -->
-      <div v-else-if="activeTab === 'issues'" class="grid grid-cols-5 gap-4 min-h-0">
+      <div v-else-if="activeTab === 'issues'" class="grid grid-cols-5 gap-4 min-h-0 flex-1">
         <DashboardSection
           title="Assigned to Me"
           icon="i-lucide-user-check"

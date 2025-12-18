@@ -1,9 +1,8 @@
 import { eq } from 'drizzle-orm'
 import { db, schema } from 'hub:db'
-import { Octokit } from 'octokit'
 
 export default defineEventHandler(async (event) => {
-  await requireUserSession(event)
+  const { user } = await requireUserSession(event)
 
   const owner = getRouterParam(event, 'owner')
   const name = getRouterParam(event, 'name')
@@ -14,24 +13,17 @@ export default defineEventHandler(async (event) => {
 
   const fullName = `${owner}/${name}`
 
-  // Verify user has access to this repository on GitHub
-  const accessToken = await getValidAccessToken(event)
-  const octokit = new Octokit({ auth: accessToken })
-  try {
-    await octokit.rest.repos.get({ owner, repo: name })
-  } catch {
-    throw createError({ statusCode: 403, message: 'You do not have access to this repository' })
-  }
-
   // Find the repository
-  const [repository] = await db
-    .select()
-    .from(schema.repositories)
-    .where(eq(schema.repositories.fullName, fullName))
+  const repository = await db.query.repositories.findFirst({
+    where: eq(schema.repositories.fullName, fullName)
+  })
 
   if (!repository) {
     throw createError({ statusCode: 404, message: 'Repository not found' })
   }
+
+  // Verify user has access to this repository
+  await requireRepositoryAccess(user!.id, repository.id)
 
   // Delete the repository (cascade will handle issues, PRs, labels, milestones)
   await db.delete(schema.repositories).where(eq(schema.repositories.id, repository.id))

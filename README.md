@@ -29,24 +29,25 @@ pnpm install
 | --- | --- |
 | **Repository permissions** | |
 | Actions | Read-only |
+| Administration | Read-only |
 | Contents | Read-only |
 | Issues | Read & write |
 | Metadata | Read-only |
 | Pull requests | Read & write |
 
 4. Subscribe to **events**:
-   - Commit comment
    - Installation target
+   - Meta
    - Issue comment
    - Issues
    - Label
-   - Meta
    - Milestone
+   - Member
+   - Public
    - Pull request
    - Pull request review
    - Pull request review comment
    - Pull request review thread
-   - Push
    - Release
    - Repository
    - Workflow run

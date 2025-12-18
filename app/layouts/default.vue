@@ -87,7 +87,7 @@ const links = computed<NavigationMenuItem[][]>(() => [[{
       </template>
     </UDashboardSidebar>
 
-    <div class="flex-1 flex m-4 lg:ml-0 rounded-md ring ring-default bg-default/75 shadow">
+    <div class="flex-1 flex m-4 lg:ml-0 rounded-lg ring ring-default bg-default/75 shadow">
       <slot />
     </div>
 

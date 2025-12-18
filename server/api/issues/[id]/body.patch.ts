@@ -3,7 +3,7 @@ import { db, schema } from 'hub:db'
 import { Octokit } from 'octokit'
 
 export default defineEventHandler(async (event) => {
-  await requireUserSession(event)
+  const { user } = await requireUserSession(event)
   const id = getRouterParam(event, 'id')
 
   if (!id) {
@@ -15,7 +15,19 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'Invalid issue ID' })
   }
 
-  const body = await readBody<{ body: string; owner: string; repo: string; issueNumber: number }>(event)
+  // Fetch issue to check access
+  const issue = await db.query.issues.findFirst({
+    where: eq(schema.issues.id, issueId)
+  })
+
+  if (!issue) {
+    throw createError({ statusCode: 404, message: 'Issue not found' })
+  }
+
+  // Check user has access to this repository
+  await requireRepositoryAccess(user!.id, issue.repositoryId)
+
+  const body = await readBody<{ body: string, owner: string, repo: string, issueNumber: number }>(event)
 
   // Update on GitHub (skip in development)
   if (import.meta.dev) {
