@@ -4,16 +4,14 @@ import { db, schema } from 'hub:db'
 export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
 
-  const favoriteRepoIds = await getUserFavoriteRepoIds(user!.id)
-  if (favoriteRepoIds.length === 0) return []
-
   // Get open PRs that are not drafts (with reviews and labels)
   const prs = await db.query.issues.findMany({
     where: and(
       eq(schema.issues.pullRequest, true),
       eq(schema.issues.state, 'open'),
+      eq(schema.issues.merged, false),
       eq(schema.issues.draft, false),
-      inArray(schema.issues.repositoryId, favoriteRepoIds)
+      inArray(schema.issues.repositoryId, getUserFavoriteRepoIdsSubquery(user!.id))
     ),
     orderBy: desc(schema.issues.updatedAt),
     with: {
@@ -24,12 +22,14 @@ export default defineEventHandler(async (event) => {
     }
   })
 
+  if (prs.length === 0) return []
+
   // Get CI status for all PRs (batch query)
   const ciByHeadSha = await getCIStatusForPRs(prs.map(pr => ({ repositoryId: pr.repositoryId, headSha: pr.headSha })))
 
   // Filter PRs: approved, no changes requested, CI passing
   return prs
-    .filter(pr => {
+    .filter((pr) => {
       const hasChangesRequested = pr.reviews.some(r => r.state === 'CHANGES_REQUESTED')
       const hasApproval = pr.reviews.some(r => r.state === 'APPROVED')
 

@@ -5,22 +5,18 @@ export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
   const userId = user!.id
 
-  const favoriteRepoIds = await getUserFavoriteRepoIds(userId)
-  if (favoriteRepoIds.length === 0) return []
-
-  // Get PR IDs where review is requested from user
-  const requestedIds = await db
-    .select({ issueId: schema.issueRequestedReviewers.issueId })
-    .from(schema.issueRequestedReviewers)
-    .where(eq(schema.issueRequestedReviewers.userId, userId))
-
-  if (requestedIds.length === 0) return []
-
+  // Use subqueries for single-query filtering
   const prs = await db.query.issues.findMany({
     where: and(
-      inArray(schema.issues.id, requestedIds.map(r => r.issueId)),
+      inArray(
+        schema.issues.id,
+        db.select({ id: schema.issueRequestedReviewers.issueId })
+          .from(schema.issueRequestedReviewers)
+          .where(eq(schema.issueRequestedReviewers.userId, userId))
+      ),
       eq(schema.issues.state, 'open'),
-      inArray(schema.issues.repositoryId, favoriteRepoIds)
+      eq(schema.issues.merged, false),
+      inArray(schema.issues.repositoryId, getUserFavoriteRepoIdsSubquery(userId))
     ),
     orderBy: desc(schema.issues.updatedAt),
     with: {
@@ -29,6 +25,8 @@ export default defineEventHandler(async (event) => {
       labels: { with: { label: true } }
     }
   })
+
+  if (prs.length === 0) return []
 
   // Get CI status (batch query)
   const ciByHeadSha = await getCIStatusForPRs(prs.map(pr => ({ repositoryId: pr.repositoryId, headSha: pr.headSha })))

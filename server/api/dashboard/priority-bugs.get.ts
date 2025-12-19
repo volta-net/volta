@@ -4,77 +4,54 @@ import { db, schema } from 'hub:db'
 export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
 
-  const favoriteRepoIds = await getUserFavoriteRepoIds(user!.id)
-  if (favoriteRepoIds.length === 0) return []
+  const favoriteRepoIdsSubquery = getUserFavoriteRepoIdsSubquery(user!.id)
 
-  // Get bug label IDs
-  const bugLabels = await db
+  // Get issue IDs with bug labels (using subqueries)
+  const bugLabelIdsSubquery = db
     .select({ id: schema.labels.id })
     .from(schema.labels)
     .where(and(
-      inArray(schema.labels.repositoryId, favoriteRepoIds),
+      inArray(schema.labels.repositoryId, favoriteRepoIdsSubquery),
       ilike(schema.labels.name, '%bug%')
     ))
 
-  const bugLabelIds = bugLabels.map(l => l.id)
+  const bugIssueIdsFromLabels = db
+    .selectDistinct({ id: schema.issueLabels.issueId })
+    .from(schema.issueLabels)
+    .where(inArray(schema.issueLabels.labelId, bugLabelIdsSubquery))
 
-  // Get issue IDs that have bug labels
-  let bugIssueIds: number[] = []
-  if (bugLabelIds.length > 0) {
-    const issuesWithBugLabels = await db
-      .selectDistinct({ issueId: schema.issueLabels.issueId })
-      .from(schema.issueLabels)
-      .where(inArray(schema.issueLabels.labelId, bugLabelIds))
-
-    bugIssueIds = issuesWithBugLabels.map(i => i.issueId)
-  }
-
-  // Get issue IDs that have Bug issue type
-  const issuesWithBugType = await db
-    .selectDistinct({ issueId: schema.issues.id })
+  // Get issue IDs with Bug type (using subquery)
+  const bugIssueIdsFromType = db
+    .selectDistinct({ id: schema.issues.id })
     .from(schema.issues)
     .innerJoin(schema.types, eq(schema.issues.typeId, schema.types.id))
     .where(and(
-      inArray(schema.issues.repositoryId, favoriteRepoIds),
+      inArray(schema.issues.repositoryId, favoriteRepoIdsSubquery),
       ilike(schema.types.name, 'bug')
     ))
 
-  const bugTypeIssueIds = issuesWithBugType.map(i => i.issueId)
-
-  // Get triage label IDs to exclude
-  const triageLabels = await db
+  // Get triage issue IDs to exclude (using subqueries)
+  const triageLabelIdsSubquery = db
     .select({ id: schema.labels.id })
     .from(schema.labels)
     .where(and(
-      inArray(schema.labels.repositoryId, favoriteRepoIds),
+      inArray(schema.labels.repositoryId, favoriteRepoIdsSubquery),
       ilike(schema.labels.name, '%triage%')
     ))
 
-  const triageLabelIds = triageLabels.map(l => l.id)
+  const triageIssueIdsSubquery = db
+    .selectDistinct({ id: schema.issueLabels.issueId })
+    .from(schema.issueLabels)
+    .where(inArray(schema.issueLabels.labelId, triageLabelIdsSubquery))
 
-  // Get issue IDs that have triage labels (to exclude)
-  let triageIssueIds: number[] = []
-  if (triageLabelIds.length > 0) {
-    const issuesWithTriageLabels = await db
-      .selectDistinct({ issueId: schema.issueLabels.issueId })
-      .from(schema.issueLabels)
-      .where(inArray(schema.issueLabels.labelId, triageLabelIds))
-
-    triageIssueIds = issuesWithTriageLabels.map(i => i.issueId)
-  }
-
-  // Combine bug issue IDs from labels and issue types
-  const allBugIssueIds = [...new Set([...bugIssueIds, ...bugTypeIssueIds])]
-  if (allBugIssueIds.length === 0) return []
-
-  // Query issues that either have Bug issue type or bug label
+  // Query issues that have Bug type or bug label, excluding triage
   const issues = await db.query.issues.findMany({
     where: and(
       eq(schema.issues.pullRequest, false),
       eq(schema.issues.state, 'open'),
-      inArray(schema.issues.repositoryId, favoriteRepoIds),
-      inArray(schema.issues.id, allBugIssueIds),
-      triageIssueIds.length > 0 ? notInArray(schema.issues.id, triageIssueIds) : undefined
+      inArray(schema.issues.repositoryId, favoriteRepoIdsSubquery),
+      sql`(${inArray(schema.issues.id, bugIssueIdsFromLabels)} OR ${inArray(schema.issues.id, bugIssueIdsFromType)})`,
+      notInArray(schema.issues.id, triageIssueIdsSubquery)
     ),
     orderBy: [
       desc(sql`${schema.issues.reactionCount} + ${schema.issues.commentCount}`),

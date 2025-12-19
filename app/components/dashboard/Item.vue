@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import type { DashboardItem } from '#shared/types/dashboard'
+
 const props = defineProps<{
-  item: any
+  item: DashboardItem
   showAuthor?: boolean
 }>()
 
@@ -15,8 +17,7 @@ const issueState = computed(() => ({
 const stateIcon = computed(() => getIssueStateIcon(issueState.value))
 const stateColor = computed(() => getIssueStateColor(issueState.value))
 
-// Support both `author` and `user` fields
-const authorLogin = computed(() => props.item.author?.login || props.item.user?.login)
+const authorLogin = computed(() => props.item.user?.login)
 
 // Labels (limited to first 3 for display)
 const displayLabels = computed(() => (props.item.labels || []).slice(0, 3))

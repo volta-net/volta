@@ -1,42 +1,25 @@
-import { eq, and } from 'drizzle-orm'
+import { eq, and, inArray } from 'drizzle-orm'
 import { db, schema } from 'hub:db'
 
 export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
 
-  // Get favorites joined with collaborator check to only return accessible ones
-  const favorites = await db
-    .select({
-      id: schema.favoriteRepositories.id,
-      repositoryId: schema.favoriteRepositories.repositoryId,
-      repository: {
-        id: schema.repositories.id,
-        name: schema.repositories.name,
-        fullName: schema.repositories.fullName,
-        private: schema.repositories.private,
-        description: schema.repositories.description,
-        htmlUrl: schema.repositories.htmlUrl
-      },
-      createdAt: schema.favoriteRepositories.createdAt
-    })
-    .from(schema.favoriteRepositories)
-    .innerJoin(
-      schema.repositories,
-      eq(schema.favoriteRepositories.repositoryId, schema.repositories.id)
-    )
-    .innerJoin(
-      schema.repositoryCollaborators,
-      and(
-        eq(schema.repositoryCollaborators.repositoryId, schema.repositories.id),
-        eq(schema.repositoryCollaborators.userId, user!.id)
+  // Get favorites with repository relation, filtered to repos where user is collaborator
+  // Uses subquery for single DB round-trip
+  const favorites = await db.query.favoriteRepositories.findMany({
+    where: and(
+      eq(schema.favoriteRepositories.userId, user!.id),
+      inArray(
+        schema.favoriteRepositories.repositoryId,
+        db.select({ id: schema.repositoryCollaborators.repositoryId })
+          .from(schema.repositoryCollaborators)
+          .where(eq(schema.repositoryCollaborators.userId, user!.id))
       )
-    )
-    .where(eq(schema.favoriteRepositories.userId, user!.id))
+    ),
+    with: {
+      repository: true
+    }
+  })
 
-  return favorites.map(f => ({
-    id: f.id,
-    repositoryId: f.repositoryId,
-    repository: f.repository,
-    createdAt: f.createdAt
-  }))
+  return favorites
 })

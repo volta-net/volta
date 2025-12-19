@@ -5,13 +5,12 @@ import { db, schema } from 'hub:db'
  * Check if a user is a collaborator (has write access) to a repository
  */
 export async function isRepositoryCollaborator(userId: number, repositoryId: number): Promise<boolean> {
-  const [collaborator] = await db
-    .select()
-    .from(schema.repositoryCollaborators)
-    .where(and(
+  const collaborator = await db.query.repositoryCollaborators.findFirst({
+    where: and(
       eq(schema.repositoryCollaborators.repositoryId, repositoryId),
       eq(schema.repositoryCollaborators.userId, userId)
-    ))
+    )
+  })
 
   return !!collaborator
 }
@@ -31,11 +30,12 @@ export async function requireRepositoryAccess(userId: number, repositoryId: numb
 }
 
 /**
- * Get favorite repository IDs that the user has collaborator access to
+ * Get a subquery for favorite repository IDs that the user has collaborator access to.
+ * Use with inArray() for single-query filtering.
  */
-export async function getUserFavoriteRepoIds(userId: number): Promise<number[]> {
-  const favoriteRepos = await db
-    .select({ repositoryId: schema.favoriteRepositories.repositoryId })
+export function getUserFavoriteRepoIdsSubquery(userId: number) {
+  return db
+    .select({ id: schema.favoriteRepositories.repositoryId })
     .from(schema.favoriteRepositories)
     .innerJoin(
       schema.repositoryCollaborators,
@@ -45,8 +45,14 @@ export async function getUserFavoriteRepoIds(userId: number): Promise<number[]> 
       )
     )
     .where(eq(schema.favoriteRepositories.userId, userId))
+}
 
-  return favoriteRepos.map(f => f.repositoryId)
+/**
+ * Get favorite repository IDs that the user has collaborator access to (executes query)
+ */
+export async function getUserFavoriteRepoIds(userId: number): Promise<number[]> {
+  const favoriteRepos = await getUserFavoriteRepoIdsSubquery(userId)
+  return favoriteRepos.map(f => f.id)
 }
 
 interface GitHubUser {
@@ -64,7 +70,9 @@ interface GitHubUser {
  */
 export async function ensureUser(user: GitHubUser) {
   try {
-    const [existing] = await db.select().from(schema.users).where(eq(schema.users.id, user.id))
+    const existing = await db.query.users.findFirst({
+      where: eq(schema.users.id, user.id)
+    })
 
     if (!existing) {
       // Create shadow user

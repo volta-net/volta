@@ -1,5 +1,22 @@
 import { eq, and } from 'drizzle-orm'
 import { db, schema } from 'hub:db'
+import type { ReviewState } from '../db/schema'
+import type {
+  GitHubUser,
+  GitHubRepository,
+  GitHubIssue,
+  GitHubPullRequest,
+  GitHubIssueOrPR,
+  GitHubComment,
+  GitHubReview,
+  GitHubReviewComment,
+  GitHubLabel,
+  GitHubMilestone,
+  GitHubRelease,
+  GitHubWorkflowRun,
+  GitHubInstallation,
+  GitHubInstallationRepository
+} from '../types/github'
 import { ensureUser } from './users'
 import { subscribeUserToIssue, ensureType } from './sync'
 
@@ -7,7 +24,7 @@ import { subscribeUserToIssue, ensureType } from './sync'
 // Issues
 // ============================================================================
 
-export async function handleIssueEvent(action: string, issue: any, repository: any, installationId?: number) {
+export async function handleIssueEvent(action: string, issue: GitHubIssue, repository: GitHubRepository, _installationId?: number) {
   // Check if repository is synced
   const [repo] = await db.select().from(schema.repositories).where(eq(schema.repositories.id, repository.id))
   if (!repo) {
@@ -30,7 +47,7 @@ export async function handleIssueEvent(action: string, issue: any, repository: a
     case 'unlocked':
     case 'typed':
     case 'untyped':
-      await upsertIssue(issue, repository.id, repository.full_name, false, installationId)
+      await upsertIssue(issue, repository.id, repository.full_name, false)
       break
     case 'deleted':
     case 'transferred':
@@ -49,7 +66,7 @@ export async function handleIssueEvent(action: string, issue: any, repository: a
 // Pull Requests
 // ============================================================================
 
-export async function handlePullRequestEvent(action: string, pullRequest: any, repository: any, installationId?: number) {
+export async function handlePullRequestEvent(action: string, pullRequest: GitHubPullRequest, repository: GitHubRepository, _installationId?: number) {
   // Check if repository is synced
   const [repo] = await db.select().from(schema.repositories).where(eq(schema.repositories.id, repository.id))
   if (!repo) {
@@ -75,7 +92,7 @@ export async function handlePullRequestEvent(action: string, pullRequest: any, r
     case 'review_requested':
     case 'review_request_removed':
     case 'synchronize':
-      await upsertIssue(pullRequest, repository.id, repository.full_name, true, installationId)
+      await upsertIssue(pullRequest, repository.id, repository.full_name, true)
       break
   }
 }
@@ -84,7 +101,7 @@ export async function handlePullRequestEvent(action: string, pullRequest: any, r
 // Issues (Issues & Pull Requests unified)
 // ============================================================================
 
-async function upsertIssue(item: any, repositoryId: number, _repositoryFullName: string, isPullRequest: boolean, _installationId?: number) {
+async function upsertIssue(item: GitHubIssueOrPR, repositoryId: number, _repositoryFullName: string, isPullRequest: boolean) {
   // Ensure author exists as shadow user
   if (item.user) {
     await ensureUser({
@@ -206,7 +223,7 @@ async function upsertIssue(item: any, repositoryId: number, _repositoryFullName:
 }
 
 // Helper: sync issue assignees
-async function syncIssueAssignees(issueId: number, assignees: { id: number, login: string, avatar_url: string }[]) {
+async function syncIssueAssignees(issueId: number, assignees: GitHubUser[]) {
   const newAssigneeIds = new Set(assignees.map(a => a.id))
 
   // Get existing assignees
@@ -288,7 +305,7 @@ async function syncIssueLabels(issueId: number, labelIds: number[]) {
 }
 
 // Helper: sync issue requested reviewers
-async function syncIssueRequestedReviewers(issueId: number, reviewers: { id: number, login: string, avatar_url?: string }[]) {
+async function syncIssueRequestedReviewers(issueId: number, reviewers: GitHubUser[]) {
   const newReviewerIds = new Set(reviewers.map(r => r.id))
 
   // Get existing reviewers
@@ -334,7 +351,7 @@ async function syncIssueRequestedReviewers(issueId: number, reviewers: { id: num
 // Comments
 // ============================================================================
 
-export async function handleCommentEvent(action: string, comment: any, issue: any, repository: any, _installationId?: number) {
+export async function handleCommentEvent(action: string, comment: GitHubComment, issue: GitHubIssue, repository: GitHubRepository, _installationId?: number) {
   // Check if repository is synced
   const [repo] = await db.select().from(schema.repositories).where(eq(schema.repositories.id, repository.id))
   if (!repo) {
@@ -367,7 +384,7 @@ export async function handleCommentEvent(action: string, comment: any, issue: an
   }
 }
 
-async function upsertComment(comment: any, issueId: number) {
+async function upsertComment(comment: GitHubComment, issueId: number) {
   // Ensure author exists as shadow user
   if (comment.user) {
     await ensureUser({
@@ -402,7 +419,7 @@ async function upsertComment(comment: any, issueId: number) {
 // PR Reviews
 // ============================================================================
 
-export async function handleReviewEvent(action: string, review: any, pullRequest: any, repository: any, _installationId?: number) {
+export async function handleReviewEvent(action: string, review: GitHubReview, pullRequest: GitHubPullRequest, repository: GitHubRepository, _installationId?: number) {
   // Check if repository is synced
   const [repo] = await db.select().from(schema.repositories).where(eq(schema.repositories.id, repository.id))
   if (!repo) {
@@ -437,7 +454,7 @@ export async function handleReviewEvent(action: string, review: any, pullRequest
   }
 }
 
-async function upsertReview(review: any, issueId: number) {
+async function upsertReview(review: GitHubReview, issueId: number) {
   if (review.user) {
     await ensureUser({
       id: review.user.id,
@@ -450,7 +467,7 @@ async function upsertReview(review: any, issueId: number) {
     issueId,
     userId: review.user?.id,
     body: review.body,
-    state: review.state as any,
+    state: review.state as ReviewState,
     htmlUrl: review.html_url,
     commitId: review.commit_id,
     submittedAt: review.submitted_at ? new Date(review.submitted_at) : null,
@@ -473,7 +490,7 @@ async function upsertReview(review: any, issueId: number) {
 // PR Review Comments
 // ============================================================================
 
-export async function handleReviewCommentEvent(action: string, comment: any, pullRequest: any, repository: any, _installationId?: number) {
+export async function handleReviewCommentEvent(action: string, comment: GitHubReviewComment, pullRequest: GitHubPullRequest, repository: GitHubRepository, _installationId?: number) {
   // Check if repository is synced
   const [repo] = await db.select().from(schema.repositories).where(eq(schema.repositories.id, repository.id))
   if (!repo) {
@@ -499,7 +516,7 @@ export async function handleReviewCommentEvent(action: string, comment: any, pul
   }
 }
 
-async function upsertReviewComment(comment: any, issueId: number) {
+async function upsertReviewComment(comment: GitHubReviewComment, issueId: number) {
   if (comment.user) {
     await ensureUser({
       id: comment.user.id,
@@ -539,7 +556,7 @@ async function upsertReviewComment(comment: any, issueId: number) {
 // Labels
 // ============================================================================
 
-export async function handleLabelEvent(action: string, label: any, repository: any) {
+export async function handleLabelEvent(action: string, label: GitHubLabel, repository: GitHubRepository) {
   // Check if repository is synced
   const [repo] = await db.select().from(schema.repositories).where(eq(schema.repositories.id, repository.id))
   if (!repo) {
@@ -558,7 +575,7 @@ export async function handleLabelEvent(action: string, label: any, repository: a
   }
 }
 
-async function upsertLabel(label: any, repositoryId: number) {
+async function upsertLabel(label: GitHubLabel, repositoryId: number) {
   const labelData = {
     repositoryId,
     name: label.name,
@@ -584,7 +601,7 @@ async function upsertLabel(label: any, repositoryId: number) {
 // Milestones
 // ============================================================================
 
-export async function handleMilestoneEvent(action: string, milestone: any, repository: any) {
+export async function handleMilestoneEvent(action: string, milestone: GitHubMilestone, repository: GitHubRepository) {
   // Check if repository is synced
   const [repo] = await db.select().from(schema.repositories).where(eq(schema.repositories.id, repository.id))
   if (!repo) {
@@ -605,7 +622,7 @@ export async function handleMilestoneEvent(action: string, milestone: any, repos
   }
 }
 
-async function upsertMilestone(milestone: any, repositoryId: number) {
+async function upsertMilestone(milestone: GitHubMilestone, repositoryId: number) {
   const milestoneData = {
     repositoryId,
     number: milestone.number,
@@ -637,7 +654,7 @@ async function upsertMilestone(milestone: any, repositoryId: number) {
 // Note: Requires organization "Members" permission to receive these events
 // ============================================================================
 
-export async function handleMemberEvent(action: string, member: any, repository: any) {
+export async function handleMemberEvent(action: string, member: GitHubUser, repository: GitHubRepository) {
   // Check if repository is synced
   const [repo] = await db.select().from(schema.repositories).where(eq(schema.repositories.id, repository.id))
   if (!repo) {
@@ -718,7 +735,7 @@ export async function handleMemberEvent(action: string, member: any, repository:
 // Repositories
 // ============================================================================
 
-export async function handleRepositoryEvent(action: string, repository: any) {
+export async function handleRepositoryEvent(action: string, repository: GitHubRepository) {
   switch (action) {
     case 'edited':
     case 'renamed':
@@ -745,7 +762,7 @@ export async function handleRepositoryEvent(action: string, repository: any) {
   }
 }
 
-async function updateRepository(repository: any) {
+async function updateRepository(repository: GitHubRepository) {
   const [existing] = await db.select().from(schema.repositories).where(eq(schema.repositories.id, repository.id))
 
   if (existing) {
@@ -767,7 +784,7 @@ async function updateRepository(repository: any) {
 // Installations
 // ============================================================================
 
-export async function handleInstallationEvent(action: string, installation: any, repositories?: any[]) {
+export async function handleInstallationEvent(action: string, installation: GitHubInstallation, repositories?: GitHubInstallationRepository[]) {
   switch (action) {
     case 'created':
       await createInstallation(installation, repositories || [])
@@ -795,7 +812,7 @@ export async function handleInstallationEvent(action: string, installation: any,
   }
 }
 
-async function createInstallation(installation: any, repositories: any[]) {
+async function createInstallation(installation: GitHubInstallation, repositories: GitHubInstallationRepository[]) {
   const account = installation.account
 
   // Check if installation exists
@@ -836,7 +853,7 @@ async function createInstallation(installation: any, repositories: any[]) {
   }
 }
 
-export async function handleInstallationRepositoriesEvent(action: string, installation: any, repositoriesAdded?: any[], repositoriesRemoved?: any[]) {
+export async function handleInstallationRepositoriesEvent(action: string, installation: GitHubInstallation, repositoriesAdded?: GitHubInstallationRepository[], repositoriesRemoved?: GitHubInstallationRepository[]) {
   switch (action) {
     case 'added':
       for (const repo of repositoriesAdded || []) {
@@ -864,7 +881,7 @@ export async function handleInstallationRepositoriesEvent(action: string, instal
 // Releases
 // ============================================================================
 
-export async function handleReleaseEvent(action: string, release: any, repository: any) {
+export async function handleReleaseEvent(action: string, release: GitHubRelease, repository: GitHubRepository) {
   // Check if repository is synced
   const [repo] = await db.select().from(schema.repositories).where(eq(schema.repositories.id, repository.id))
   if (!repo) {
@@ -917,7 +934,7 @@ export async function handleReleaseEvent(action: string, release: any, repositor
 // Workflow Runs
 // ============================================================================
 
-export async function handleWorkflowRunEvent(action: string, workflowRun: any, repository: any) {
+export async function handleWorkflowRunEvent(action: string, workflowRun: GitHubWorkflowRun, repository: GitHubRepository) {
   // Check if repository is synced
   const [repo] = await db.select().from(schema.repositories).where(eq(schema.repositories.id, repository.id))
   if (!repo) {

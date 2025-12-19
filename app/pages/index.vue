@@ -34,8 +34,11 @@ const { data: needsTriage, refresh: refreshNeedsTriage, status: needsTriageStatu
 const { data: canBeClosed, refresh: refreshCanBeClosed, status: canBeClosedStatus } = await useLazyFetch('/api/dashboard/can-be-closed')
 
 // We also need to check if user has favorites
-const { data: favoriteRepos, refresh: refreshFavoriteRepos } = await useFetch('/api/favorites/repositories', { default: () => [] })
-const hasFavorites = computed(() => favoriteRepos.value && favoriteRepos.value.length > 0)
+const { data: favorites, refresh: refreshFavorites } = await useFetch('/api/favorites/repositories', { default: () => [] })
+const hasFavorites = computed(() => favorites.value && favorites.value.length > 0)
+
+// Fetch synced repositories to check if user has any
+const { data: repositories } = await useFetch('/api/repositories/synced')
 
 const isInitialLoading = computed(() =>
   myPRsStatus.value === 'pending'
@@ -51,7 +54,7 @@ const isInitialLoading = computed(() =>
 )
 
 function refresh() {
-  refreshFavoriteRepos()
+  refreshFavorites()
   refreshMyPRs()
   refreshReviewRequested()
   refreshDependencyUpdates()
@@ -77,6 +80,10 @@ const favoritesOpen = ref(false)
 
 function openFavorites() {
   favoritesOpen.value = true
+}
+
+function goToSettings() {
+  navigateTo('/settings')
 }
 </script>
 
@@ -105,7 +112,7 @@ function openFavorites() {
             color="neutral"
             variant="soft"
             icon="i-lucide-star"
-            :label="!hasFavorites ? 'Select favorites' : `${favoriteRepos.length} favorites`"
+            :label="!hasFavorites ? 'Select favorites' : `${favorites.length} favorites`"
             @click="favoritesOpen = true"
           />
         </template>
@@ -113,10 +120,35 @@ function openFavorites() {
     </template>
 
     <template #body>
-      <LazyDashboardFavorites v-model:open="favoritesOpen" :favorites="favoriteRepos ?? []" @change="refresh" />
+      <LazyDashboardFavorites
+        v-model:open="favoritesOpen"
+        :favorites="favorites ?? []"
+        :repositories="repositories ?? []"
+        @change="refresh"
+      />
+
+      <!-- No synced repositories -->
+      <UEmpty
+        v-if="!repositories?.length"
+        icon="i-lucide-package"
+        title="No synced repositories"
+        description="You have to install the GitHub App on your account or organization to get started."
+        variant="naked"
+        size="lg"
+        class="flex-1"
+        :actions="[{
+          label: 'Import repositories',
+          to: '/settings',
+          icon: 'i-lucide-download',
+          color: 'neutral',
+          variant: 'soft',
+          size: 'sm',
+          onClick: goToSettings
+        }]"
+      />
 
       <!-- Loading state -->
-      <div v-if="isInitialLoading" class="flex-1 flex flex-col items-center justify-center">
+      <div v-else-if="isInitialLoading" class="flex-1 flex flex-col items-center justify-center">
         <UIcon name="i-lucide-loader-2" class="size-6 animate-spin text-muted" />
       </div>
 

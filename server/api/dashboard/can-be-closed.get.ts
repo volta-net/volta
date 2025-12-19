@@ -4,17 +4,16 @@ import { db, schema } from 'hub:db'
 export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
 
-  const favoriteRepoIds = await getUserFavoriteRepoIds(user!.id)
-  if (favoriteRepoIds.length === 0) return []
+  const favoriteRepoIdsSubquery = getUserFavoriteRepoIdsSubquery(user!.id)
 
-  // Get collaborators for all favorite repos (batch query)
+  // Get collaborators for favorite repos (needed for filtering)
   const collaborators = await db
     .select({
       repositoryId: schema.repositoryCollaborators.repositoryId,
       userId: schema.repositoryCollaborators.userId
     })
     .from(schema.repositoryCollaborators)
-    .where(inArray(schema.repositoryCollaborators.repositoryId, favoriteRepoIds))
+    .where(inArray(schema.repositoryCollaborators.repositoryId, favoriteRepoIdsSubquery))
 
   // Create a map of repo -> set of collaborator user IDs
   const collaboratorsByRepo = new Map<number, Set<number>>()
@@ -25,12 +24,12 @@ export default defineEventHandler(async (event) => {
     collaboratorsByRepo.get(c.repositoryId)!.add(c.userId)
   }
 
-  // Get open issues with comments, labels, type (single query with relations)
+  // Get open issues with comments, labels, type
   const issues = await db.query.issues.findMany({
     where: and(
       eq(schema.issues.pullRequest, false),
       eq(schema.issues.state, 'open'),
-      inArray(schema.issues.repositoryId, favoriteRepoIds),
+      inArray(schema.issues.repositoryId, favoriteRepoIdsSubquery),
       gt(schema.issues.commentCount, 0)
     ),
     orderBy: desc(schema.issues.updatedAt),
@@ -45,26 +44,17 @@ export default defineEventHandler(async (event) => {
     }
   })
 
-  const twoDaysAgo = new Date()
-  twoDaysAgo.setDate(twoDaysAgo.getDate() - 2)
-
-  // Filter to issues where last comment is from a maintainer (older than 2 days)
+  // Filter to issues where last comment is from a maintainer
   return issues
     .filter((issue) => {
       const repoCollaborators = collaboratorsByRepo.get(issue.repositoryId)
       if (!repoCollaborators?.size) return false
 
       const lastComment = issue.comments[0]
-      console.log(lastComment)
       if (!lastComment?.userId) return false
 
       // Check if commenter is a collaborator
-      if (!repoCollaborators.has(lastComment.userId)) return false
-
-      // Skip if recent (give author time to respond)
-      // if (lastComment.createdAt && lastComment.createdAt > twoDaysAgo) return false
-
-      return true
+      return repoCollaborators.has(lastComment.userId)
     })
     .map(issue => ({
       ...issue,

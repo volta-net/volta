@@ -4,26 +4,22 @@ import { db, schema } from 'hub:db'
 export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
 
-  const favoriteRepoIds = await getUserFavoriteRepoIds(user!.id)
-  if (favoriteRepoIds.length === 0) return []
-
-  // Get bot user IDs (renovate/dependabot)
-  const botUsers = await db
-    .select({ id: schema.users.id })
-    .from(schema.users)
-    .where(or(
-      ilike(schema.users.login, '%renovate%'),
-      ilike(schema.users.login, '%dependabot%')
-    ))
-
-  if (botUsers.length === 0) return []
-
+  // Use subqueries for single-query filtering
   const prs = await db.query.issues.findMany({
     where: and(
       eq(schema.issues.pullRequest, true),
       eq(schema.issues.state, 'open'),
-      inArray(schema.issues.repositoryId, favoriteRepoIds),
-      inArray(schema.issues.userId, botUsers.map(u => u.id))
+      eq(schema.issues.merged, false),
+      inArray(schema.issues.repositoryId, getUserFavoriteRepoIdsSubquery(user!.id)),
+      inArray(
+        schema.issues.userId,
+        db.select({ id: schema.users.id })
+          .from(schema.users)
+          .where(or(
+            ilike(schema.users.login, '%renovate%'),
+            ilike(schema.users.login, '%dependabot%')
+          ))
+      )
     ),
     orderBy: desc(schema.issues.updatedAt),
     limit: 20,
@@ -33,6 +29,8 @@ export default defineEventHandler(async (event) => {
       labels: { with: { label: true } }
     }
   })
+
+  if (prs.length === 0) return []
 
   // Get CI status (batch query)
   const ciByHeadSha = await getCIStatusForPRs(prs.map(pr => ({ repositoryId: pr.repositoryId, headSha: pr.headSha })))

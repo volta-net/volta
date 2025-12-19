@@ -433,7 +433,9 @@ async function syncComments(accessToken: string, owner: string, repo: string, is
       updatedAt: new Date(comment.updated_at)
     }
 
-    const [existing] = await db.select().from(schema.issueComments).where(eq(schema.issueComments.id, comment.id))
+    const existing = await db.query.issueComments.findFirst({
+      where: eq(schema.issueComments.id, comment.id)
+    })
 
     if (existing) {
       await db.update(schema.issueComments).set(commentData).where(eq(schema.issueComments.id, comment.id))
@@ -477,7 +479,9 @@ async function syncReviews(accessToken: string, owner: string, repo: string, prN
       submittedAt: review.submitted_at ? new Date(review.submitted_at) : null
     }
 
-    const [existing] = await db.select().from(schema.issueReviews).where(eq(schema.issueReviews.id, review.id))
+    const existing = await db.query.issueReviews.findFirst({
+      where: eq(schema.issueReviews.id, review.id)
+    })
 
     if (existing) {
       await db.update(schema.issueReviews).set(reviewData).where(eq(schema.issueReviews.id, review.id))
@@ -524,7 +528,9 @@ async function syncReviewComments(accessToken: string, owner: string, repo: stri
       updatedAt: new Date(comment.updated_at)
     }
 
-    const [existing] = await db.select().from(schema.issueReviewComments).where(eq(schema.issueReviewComments.id, comment.id))
+    const existing = await db.query.issueReviewComments.findFirst({
+      where: eq(schema.issueReviewComments.id, comment.id)
+    })
 
     if (existing) {
       await db.update(schema.issueReviewComments).set(commentData).where(eq(schema.issueReviewComments.id, comment.id))

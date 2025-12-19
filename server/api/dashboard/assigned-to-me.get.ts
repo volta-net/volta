@@ -5,23 +5,18 @@ export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
   const userId = user!.id
 
-  const favoriteRepoIds = await getUserFavoriteRepoIds(userId)
-  if (favoriteRepoIds.length === 0) return []
-
-  // Get issue IDs where user is assigned
-  const assignedIds = await db
-    .select({ issueId: schema.issueAssignees.issueId })
-    .from(schema.issueAssignees)
-    .where(eq(schema.issueAssignees.userId, userId))
-
-  if (assignedIds.length === 0) return []
-
+  // Use subqueries for single-query filtering
   const issues = await db.query.issues.findMany({
     where: and(
-      inArray(schema.issues.id, assignedIds.map(a => a.issueId)),
+      inArray(
+        schema.issues.id,
+        db.select({ id: schema.issueAssignees.issueId })
+          .from(schema.issueAssignees)
+          .where(eq(schema.issueAssignees.userId, userId))
+      ),
       eq(schema.issues.pullRequest, false),
       eq(schema.issues.state, 'open'),
-      inArray(schema.issues.repositoryId, favoriteRepoIds)
+      inArray(schema.issues.repositoryId, getUserFavoriteRepoIdsSubquery(userId))
     ),
     orderBy: desc(schema.issues.updatedAt),
     with: {

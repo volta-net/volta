@@ -1,55 +1,52 @@
-import { eq, and } from 'drizzle-orm'
+import { eq, and, inArray } from 'drizzle-orm'
 import { db, schema } from 'hub:db'
 
 export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
+  const userId = user.id
 
-  // Get favorites joined with collaborator check to only return accessible ones
-  const favorites = await db
-    .select({
-      id: schema.favoriteIssues.id,
-      issueId: schema.favoriteIssues.issueId,
-      issue: {
-        id: schema.issues.id,
-        pullRequest: schema.issues.pullRequest,
-        number: schema.issues.number,
-        title: schema.issues.title,
-        state: schema.issues.state,
-        stateReason: schema.issues.stateReason,
-        draft: schema.issues.draft,
-        merged: schema.issues.merged,
-        htmlUrl: schema.issues.htmlUrl
-      },
-      repository: {
-        id: schema.repositories.id,
-        name: schema.repositories.name,
-        fullName: schema.repositories.fullName
-      },
-      createdAt: schema.favoriteIssues.createdAt
-    })
-    .from(schema.favoriteIssues)
-    .innerJoin(
-      schema.issues,
-      eq(schema.favoriteIssues.issueId, schema.issues.id)
-    )
-    .innerJoin(
-      schema.repositories,
-      eq(schema.issues.repositoryId, schema.repositories.id)
-    )
-    .innerJoin(
-      schema.repositoryCollaborators,
-      and(
-        eq(schema.repositoryCollaborators.repositoryId, schema.repositories.id),
-        eq(schema.repositoryCollaborators.userId, user!.id)
+  // Subquery: repositories where user is a collaborator
+  const accessibleRepoIds = db
+    .select({ repositoryId: schema.repositoryCollaborators.repositoryId })
+    .from(schema.repositoryCollaborators)
+    .where(eq(schema.repositoryCollaborators.userId, userId))
+
+  // Get favorites with relations, filtered to accessible repositories
+  const favorites = await db.query.favoriteIssues.findMany({
+    where: and(
+      eq(schema.favoriteIssues.userId, userId),
+      inArray(
+        schema.favoriteIssues.issueId,
+        db.select({ issueId: schema.issues.id })
+          .from(schema.issues)
+          .where(inArray(schema.issues.repositoryId, accessibleRepoIds))
       )
-    )
-    .where(eq(schema.favoriteIssues.userId, user!.id))
+    ),
+    with: {
+      issue: {
+        columns: {
+          id: true,
+          pullRequest: true,
+          number: true,
+          title: true,
+          state: true,
+          stateReason: true,
+          draft: true,
+          merged: true,
+          htmlUrl: true
+        },
+        with: {
+          repository: {
+            columns: {
+              id: true,
+              name: true,
+              fullName: true
+            }
+          }
+        }
+      }
+    }
+  })
 
-  return favorites.map(f => ({
-    id: f.id,
-    issueId: f.issueId,
-    issue: f.issue,
-    repository: f.repository,
-    createdAt: f.createdAt
-  }))
+  return favorites
 })

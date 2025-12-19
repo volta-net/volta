@@ -7,6 +7,7 @@ import type {
   workflowRuns,
   labels,
   milestones,
+  types,
   issues,
   issueAssignees,
   issueLabels,
@@ -24,6 +25,19 @@ import type {
   WorkflowConclusion
 } from '../../server/db/schema'
 
+/**
+ * Utility type to convert Date to string (for JSON serialized API responses)
+ */
+export type Serialized<T> = {
+  [K in keyof T]: T[K] extends Date
+    ? string
+    : T[K] extends Date | null
+      ? string | null
+      : T[K] extends object
+        ? Serialized<T[K]>
+        : T[K]
+}
+
 // Base types inferred from Drizzle schema
 export type DBUser = typeof users.$inferSelect
 export type DBNotification = typeof notifications.$inferSelect
@@ -33,6 +47,7 @@ export type DBRelease = typeof releases.$inferSelect
 export type DBWorkflowRun = typeof workflowRuns.$inferSelect
 export type DBLabel = typeof labels.$inferSelect
 export type DBMilestone = typeof milestones.$inferSelect
+export type DBType = typeof types.$inferSelect
 export type DBIssue = typeof issues.$inferSelect
 export type DBIssueAssignee = typeof issueAssignees.$inferSelect
 export type DBIssueLabel = typeof issueLabels.$inferSelect

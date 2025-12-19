@@ -5,7 +5,7 @@ useSeoMeta({
   titleTemplate: '%s - Volta'
 })
 
-const { data: favoriteIssues } = await useFetch('/api/favorites/issues', {
+const { data: favoriteIssues } = await useLazyFetch('/api/favorites/issues', {
   default: () => []
 })
 
@@ -15,7 +15,7 @@ const favoriteIssueItems = computed<NavigationMenuItem[]>(() => {
   }
 
   return favoriteIssues.value.map(fav => ({
-    label: `${fav.repository.fullName}#${fav.issue.number} ${fav.issue.title}`,
+    label: `${fav.issue.repository.fullName}#${fav.issue.number} ${fav.issue.title}`,
     icon: getIssueStateIcon(fav.issue),
     to: fav.issue.htmlUrl || '#',
     target: '_blank' as const

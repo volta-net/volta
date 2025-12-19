@@ -1,6 +1,16 @@
 import { eq, and, inArray } from 'drizzle-orm'
 import { db, schema } from 'hub:db'
 import type { NotificationType, NotificationAction } from '../db/schema'
+import type {
+  GitHubUser,
+  GitHubRepository,
+  GitHubIssue,
+  GitHubPullRequest,
+  GitHubComment,
+  GitHubReview,
+  GitHubRelease,
+  GitHubWorkflowRun
+} from '../types/github'
 
 // In development, allow self-notifications for testing
 function shouldSkipSelfNotification(actorId: number, recipientId: number): boolean {
@@ -184,9 +194,9 @@ async function getActivitySubscribersForIssue(repositoryId: number, issueId: num
 // ============================================================================
 
 export async function notifyIssueOpened(
-  issue: any,
-  repository: any,
-  actor: any,
+  issue: GitHubIssue,
+  repository: GitHubRepository,
+  actor: GitHubUser,
   _installationId?: number
 ) {
   const notifiedIds = new Set<number>()
@@ -230,10 +240,10 @@ export async function notifyIssueOpened(
 }
 
 export async function notifyIssueAssigned(
-  issue: any,
-  repository: any,
-  assignee: any,
-  actor: any
+  issue: GitHubIssue,
+  repository: GitHubRepository,
+  assignee: GitHubUser,
+  actor: GitHubUser
 ) {
   // Don't notify if user assigned themselves - except in dev
   if (shouldSkipSelfNotification(actor.id, assignee.id)) return
@@ -249,9 +259,9 @@ export async function notifyIssueAssigned(
 }
 
 export async function notifyIssueClosed(
-  issue: any,
-  repository: any,
-  actor: any
+  issue: GitHubIssue,
+  repository: GitHubRepository,
+  actor: GitHubUser
 ) {
   const notifiedIds = new Set<number>()
 
@@ -303,9 +313,9 @@ export async function notifyIssueClosed(
 }
 
 export async function notifyIssueReopened(
-  issue: any,
-  repository: any,
-  actor: any
+  issue: GitHubIssue,
+  repository: GitHubRepository,
+  actor: GitHubUser
 ) {
   const notifiedIds = new Set<number>()
 
@@ -357,10 +367,10 @@ export async function notifyIssueReopened(
 }
 
 export async function notifyIssueComment(
-  issue: any,
-  comment: any,
-  repository: any,
-  actor: any
+  issue: GitHubIssue,
+  comment: GitHubComment,
+  repository: GitHubRepository,
+  actor: GitHubUser
 ) {
   const notifiedIds = new Set<number>()
 
@@ -441,9 +451,9 @@ export async function notifyIssueComment(
 // ============================================================================
 
 export async function notifyPROpened(
-  pullRequest: any,
-  repository: any,
-  actor: any
+  pullRequest: GitHubPullRequest,
+  repository: GitHubRepository,
+  actor: GitHubUser
 ) {
   const notifiedIds = new Set<number>()
 
@@ -486,9 +496,9 @@ export async function notifyPROpened(
 }
 
 export async function notifyPRReopened(
-  pullRequest: any,
-  repository: any,
-  actor: any
+  pullRequest: GitHubPullRequest,
+  repository: GitHubRepository,
+  actor: GitHubUser
 ) {
   const notifiedIds = new Set<number>()
 
@@ -540,10 +550,10 @@ export async function notifyPRReopened(
 }
 
 export async function notifyPRAssigned(
-  pullRequest: any,
-  repository: any,
-  assignee: any,
-  actor: any
+  pullRequest: GitHubPullRequest,
+  repository: GitHubRepository,
+  assignee: GitHubUser,
+  actor: GitHubUser
 ) {
   // Don't notify if user assigned themselves - except in dev
   if (shouldSkipSelfNotification(actor.id, assignee.id)) return
@@ -559,10 +569,10 @@ export async function notifyPRAssigned(
 }
 
 export async function notifyPRReviewRequested(
-  pullRequest: any,
-  repository: any,
-  reviewer: any,
-  actor: any
+  pullRequest: GitHubPullRequest,
+  repository: GitHubRepository,
+  reviewer: GitHubUser,
+  actor: GitHubUser
 ) {
   // Don't notify if user requested review from themselves - except in dev
   if (shouldSkipSelfNotification(actor.id, reviewer.id)) return
@@ -578,9 +588,9 @@ export async function notifyPRReviewRequested(
 }
 
 export async function notifyPRReadyForReview(
-  pullRequest: any,
-  repository: any,
-  actor: any
+  pullRequest: GitHubPullRequest,
+  repository: GitHubRepository,
+  actor: GitHubUser
 ) {
   // Notify requested reviewers that the PR is ready
   const requestedReviewers = pullRequest.requested_reviewers || []
@@ -600,10 +610,10 @@ export async function notifyPRReadyForReview(
 }
 
 export async function notifyPRReviewDismissed(
-  pullRequest: any,
-  review: any,
-  repository: any,
-  actor: any
+  pullRequest: GitHubPullRequest,
+  review: GitHubReview,
+  repository: GitHubRepository,
+  actor: GitHubUser
 ) {
   // Notify the reviewer whose review was dismissed
   if (!review.user) return
@@ -620,10 +630,10 @@ export async function notifyPRReviewDismissed(
 }
 
 export async function notifyPRReviewSubmitted(
-  pullRequest: any,
-  review: any,
-  repository: any,
-  actor: any
+  pullRequest: GitHubPullRequest,
+  review: GitHubReview,
+  repository: GitHubRepository,
+  actor: GitHubUser
 ) {
   const notifiedIds = new Set<number>()
 
@@ -683,10 +693,10 @@ export async function notifyPRReviewSubmitted(
 }
 
 export async function notifyPRComment(
-  pullRequest: any,
-  comment: any,
-  repository: any,
-  actor: any
+  pullRequest: GitHubPullRequest,
+  comment: GitHubComment,
+  repository: GitHubRepository,
+  actor: GitHubUser
 ) {
   const notifiedIds = new Set<number>()
 
@@ -763,9 +773,9 @@ export async function notifyPRComment(
 }
 
 export async function notifyPRMerged(
-  pullRequest: any,
-  repository: any,
-  actor: any
+  pullRequest: GitHubPullRequest,
+  repository: GitHubRepository,
+  actor: GitHubUser
 ) {
   const notifiedIds = new Set<number>()
 
@@ -817,9 +827,9 @@ export async function notifyPRMerged(
 }
 
 export async function notifyPRClosed(
-  pullRequest: any,
-  repository: any,
-  actor: any
+  pullRequest: GitHubPullRequest,
+  repository: GitHubRepository,
+  actor: GitHubUser
 ) {
   // Don't notify if merged (separate notification)
   if (pullRequest.merged) return
@@ -878,9 +888,9 @@ export async function notifyPRClosed(
 // ============================================================================
 
 export async function notifyReleasePublished(
-  release: any,
-  repository: any,
-  actor: any
+  release: GitHubRelease,
+  repository: GitHubRepository,
+  actor: GitHubUser
 ) {
   // Notify subscribers who want release notifications
   const subscribers = await getSubscribers(repository.id, 'releases')
@@ -904,9 +914,9 @@ export async function notifyReleasePublished(
 // ============================================================================
 
 export async function notifyWorkflowFailed(
-  workflowRun: any,
-  repository: any,
-  actor: any
+  workflowRun: GitHubWorkflowRun,
+  repository: GitHubRepository,
+  actor: GitHubUser
 ) {
   // Notify subscribers who want CI failure notifications
   const subscribers = await getSubscribers(repository.id, 'ci')
@@ -925,9 +935,9 @@ export async function notifyWorkflowFailed(
 }
 
 export async function notifyWorkflowSuccess(
-  _workflowRun: any,
-  _repository: any,
-  _actor: any
+  _workflowRun: GitHubWorkflowRun,
+  _repository: GitHubRepository,
+  _actor: GitHubUser
 ) {
   // Only notify after a previous failure (recovery notification)
   // This would require tracking previous state - for now, skip success notifications
