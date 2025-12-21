@@ -14,30 +14,31 @@
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.3.14",
-    "@iconify-json/lucide": "^1.2.81",
+    "@iconify-json/lucide": "^1.2.82",
     "@iconify-json/simple-icons": "^1.2.63",
     "@nuxt/ui": "^4.3.0",
     "@nuxthub/core": "^0.10.3",
     "@octokit/auth-app": "^8.1.2",
     "@vueuse/core": "^14.1.0",
     "@vueuse/nuxt": "^14.1.0",
+    "ai": "^5.0.116",
     "drizzle-kit": "^0.31.8",
     "drizzle-orm": "^0.45.1",
     "nuxt": "^4.2.2",
     "nuxt-auth-utils": "^0.5.26",
     "octokit": "^5.0.5",
     "postgres": "^3.4.7",
-    "workflow": "4.0.1-beta.32"
+    "workflow": "4.0.1-beta.35"
   },
   "devDependencies": {
     "@nuxt/eslint": "^1.12.1",
     "@types/node": "^25.0.3",
     "eslint": "^9.39.2",
     "typescript": "^5.9.3",
-    "vue-tsc": "^3.1.8"
+    "vue-tsc": "^3.2.0"
   },
   "resolutions": {
     "unimport": "4.1.1"
   },
-  "packageManager": "pnpm@10.26.0"
+  "packageManager": "pnpm@10.26.1"
 }
