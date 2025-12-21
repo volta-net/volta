@@ -101,7 +101,7 @@ export async function handlePullRequestEvent(action: string, pullRequest: GitHub
 // Issues (Issues & Pull Requests unified)
 // ============================================================================
 
-async function upsertIssue(item: GitHubIssueOrPR, repositoryId: number, _repositoryFullName: string, isPullRequest: boolean) {
+async function upsertIssue(item: GitHubIssueOrPR, repositoryId: number, _repositoryFullName: string, isPullRequest: boolean): Promise<number> {
   // Ensure author exists as shadow user
   if (item.user) {
     await ensureUser({
@@ -220,6 +220,8 @@ async function upsertIssue(item: GitHubIssueOrPR, repositoryId: number, _reposit
     const reviewers = item.requested_reviewers?.filter((r: any) => r.id) || []
     await syncIssueRequestedReviewers(itemId, reviewers)
   }
+
+  return itemId
 }
 
 // Helper: sync issue assignees
@@ -359,11 +361,22 @@ export async function handleCommentEvent(action: string, comment: GitHubComment,
     return
   }
 
-  // Check if the issue exists in our DB
-  const [existingIssue] = await db.select().from(schema.issues).where(eq(schema.issues.id, issue.id))
+  // Check if the issue exists in our DB (lookup by repositoryId + number, not id)
+  let [existingIssue] = await db.select().from(schema.issues).where(
+    and(
+      eq(schema.issues.repositoryId, repository.id),
+      eq(schema.issues.number, issue.number)
+    )
+  )
+
+  // If issue doesn't exist, sync it on-demand (e.g., comment on closed issue)
   if (!existingIssue) {
-    console.log(`[Webhook] Issue ${issue.id} not synced, skipping comment event`)
-    return
+    console.log(`[Webhook] Issue #${issue.number} not synced, syncing on-demand for comment event`)
+    const isPullRequest = 'pull_request' in issue && issue.pull_request !== undefined
+    const issueId = await upsertIssue(issue as GitHubIssueOrPR, repository.id, repository.full_name, isPullRequest)
+
+    const [newIssue] = await db.select().from(schema.issues).where(eq(schema.issues.id, issueId))
+    existingIssue = newIssue
   }
 
   // Upsert the comment
@@ -427,11 +440,21 @@ export async function handleReviewEvent(action: string, review: GitHubReview, pu
     return
   }
 
-  // Check if the PR exists in our DB
-  const [existingPR] = await db.select().from(schema.issues).where(eq(schema.issues.id, pullRequest.id))
+  // Check if the PR exists in our DB (lookup by repositoryId + number, not id)
+  let [existingPR] = await db.select().from(schema.issues).where(
+    and(
+      eq(schema.issues.repositoryId, repository.id),
+      eq(schema.issues.number, pullRequest.number)
+    )
+  )
+
+  // If PR doesn't exist, sync it on-demand (e.g., review on closed PR)
   if (!existingPR) {
-    console.log(`[Webhook] PR ${pullRequest.id} not synced, skipping review event`)
-    return
+    console.log(`[Webhook] PR #${pullRequest.number} not synced, syncing on-demand for review event`)
+    const prId = await upsertIssue(pullRequest as GitHubIssueOrPR, repository.id, repository.full_name, true)
+
+    const [newPR] = await db.select().from(schema.issues).where(eq(schema.issues.id, prId))
+    existingPR = newPR
   }
 
   switch (action) {
@@ -498,11 +521,21 @@ export async function handleReviewCommentEvent(action: string, comment: GitHubRe
     return
   }
 
-  // Check if the PR exists in our DB
-  const [existingPR] = await db.select().from(schema.issues).where(eq(schema.issues.id, pullRequest.id))
+  // Check if the PR exists in our DB (lookup by repositoryId + number, not id)
+  let [existingPR] = await db.select().from(schema.issues).where(
+    and(
+      eq(schema.issues.repositoryId, repository.id),
+      eq(schema.issues.number, pullRequest.number)
+    )
+  )
+
+  // If PR doesn't exist, sync it on-demand (e.g., review comment on closed PR)
   if (!existingPR) {
-    console.log(`[Webhook] PR ${pullRequest.id} not synced, skipping review comment event`)
-    return
+    console.log(`[Webhook] PR #${pullRequest.number} not synced, syncing on-demand for review comment event`)
+    const prId = await upsertIssue(pullRequest as GitHubIssueOrPR, repository.id, repository.full_name, true)
+
+    const [newPR] = await db.select().from(schema.issues).where(eq(schema.issues.id, prId))
+    existingPR = newPR
   }
 
   switch (action) {
@@ -523,6 +556,9 @@ async function upsertReviewComment(comment: GitHubReviewComment, issueId: number
       login: comment.user.login,
       avatar_url: comment.user.avatar_url
     })
+
+    // Subscribe review commenter to the PR
+    await subscribeUserToIssue(issueId, comment.user.id)
   }
 
   const commentData = {

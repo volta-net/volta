@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { IssueListItem } from '#shared/types/issue'
+
 useSeoMeta({
   title: 'Dashboard'
 })
@@ -19,52 +21,90 @@ const tabs = [
   { label: 'Pull Requests', value: 'pull-requests', icon: 'i-octicon-git-pull-request-16' }
 ]
 
-// Fetch all endpoints in parallel
-// PR endpoints
-const { data: myPullRequests, refresh: refreshMyPRs, status: myPRsStatus } = await useLazyFetch('/api/dashboard/my-pull-requests')
-const { data: reviewRequested, refresh: refreshReviewRequested, status: reviewRequestedStatus } = await useLazyFetch('/api/dashboard/review-requested')
-const { data: dependencyUpdates, refresh: refreshDependencyUpdates, status: dependencyUpdatesStatus } = await useLazyFetch('/api/dashboard/dependency-updates')
-const { data: readyToMerge, refresh: refreshReadyToMerge, status: readyToMergeStatus } = await useLazyFetch('/api/dashboard/ready-to-merge')
-const { data: waitingOnAuthor, refresh: refreshWaitingOnAuthor, status: waitingOnAuthorStatus } = await useLazyFetch('/api/dashboard/waiting-on-author')
-// Issue endpoints
-const { data: assignedToMe, refresh: refreshAssignedToMe, status: assignedToMeStatus } = await useLazyFetch('/api/dashboard/assigned-to-me')
-const { data: hotIssues, refresh: refreshHotIssues, status: hotIssuesStatus } = await useLazyFetch('/api/dashboard/hot-issues')
-const { data: priorityBugs, refresh: refreshPriorityBugs, status: priorityBugsStatus } = await useLazyFetch('/api/dashboard/priority-bugs')
-const { data: needsTriage, refresh: refreshNeedsTriage, status: needsTriageStatus } = await useLazyFetch('/api/dashboard/needs-triage')
-const { data: canBeClosed, refresh: refreshCanBeClosed, status: canBeClosedStatus } = await useLazyFetch('/api/dashboard/can-be-closed')
+const issueSections = [
+  { label: 'My Issues', value: 'my-issues', icon: 'i-lucide-user', api: '/api/dashboard/mine?pullRequest=false', empty: 'No open issues' },
+  { label: 'Assigned to Me', value: 'assigned-to-me', icon: 'i-lucide-user-check', api: '/api/dashboard/assigned-to-me?pullRequest=false', empty: 'No issues assigned to you' },
+  { label: 'Hot Issues', value: 'hot-issues', icon: 'i-lucide-flame', api: '/api/dashboard/hot-issues', empty: 'No hot issues' },
+  { label: 'Priority Bugs', value: 'priority-bugs', icon: 'i-lucide-bug', api: '/api/dashboard/priority-bugs', empty: 'No priority bugs' },
+  { label: 'Needs Triage', value: 'needs-triage', icon: 'i-lucide-inbox', api: '/api/dashboard/needs-triage', empty: 'No issues need triage' },
+  { label: 'Waiting Confirmation', value: 'waiting-confirmation', icon: 'i-lucide-message-circle-question', api: '/api/dashboard/waiting-confirmation', empty: 'No issues waiting confirmation' },
+  { label: 'Ready to Close', value: 'ready-to-close', icon: 'i-lucide-check-circle', api: '/api/dashboard/answered', empty: 'No issues ready to close' }
+]
+
+const prSections = [
+  { label: 'My PRs', value: 'my-prs', icon: 'i-lucide-git-pull-request', api: '/api/dashboard/mine?pullRequest=true', empty: 'No open PRs' },
+  { label: 'Review Requested', value: 'review-requested', icon: 'i-lucide-eye', api: '/api/dashboard/review-requested', empty: 'No reviews requested' },
+  { label: 'Ready to Merge', value: 'ready-to-merge', icon: 'i-lucide-git-merge', api: '/api/dashboard/ready-to-merge', empty: 'No PRs ready to merge' },
+  { label: 'Waiting on Author', value: 'waiting-on-author', icon: 'i-lucide-clock', api: '/api/dashboard/waiting-on-author', empty: 'No PRs waiting on author' },
+  { label: 'Dependency Updates', value: 'dependency-updates', icon: 'i-lucide-package', api: '/api/dashboard/dependency-updates', empty: 'No dependency updates' }
+]
+
+const currentSections = computed(() => activeTab.value === 'issues' ? issueSections : prSections)
+
+// Active section (defaults to first section of current tab)
+const activeSection = computed({
+  get: () => (route.query.section as string) || currentSections.value[0]?.value,
+  set: (value) => {
+    router.replace({ query: { ...route.query, section: value } })
+  }
+})
+
+// Current section config
+const currentSectionConfig = computed(() =>
+  currentSections.value.find(s => s.value === activeSection.value) || currentSections.value[0]
+)
+
+// All sections data (fetched in parallel)
+const sectionsData = ref<Record<string, IssueListItem[]>>({})
+const loading = ref(false)
+
+// Current section items (from cached data)
+const items = computed(() => activeSection.value ? sectionsData.value[activeSection.value] ?? [] : [])
+const status = computed(() => loading.value ? 'pending' : 'success')
+
+// Section counts (computed from cached data)
+const sectionCounts = computed(() => {
+  const counts: Record<string, number> = {}
+  for (const [key, data] of Object.entries(sectionsData.value)) {
+    counts[key] = data.length
+  }
+  return counts
+})
+
+async function fetchAllSections(sections: typeof issueSections) {
+  loading.value = true
+  const data: Record<string, IssueListItem[]> = {}
+
+  await Promise.all(
+    sections.map(async (section) => {
+      try {
+        data[section.value] = await $fetch<IssueListItem[]>(section.api) ?? []
+      } catch {
+        data[section.value] = []
+      }
+    })
+  )
+
+  sectionsData.value = data
+  loading.value = false
+}
+
+// Fetch all sections when tab changes or on mount
+watch(() => activeTab.value, () => {
+  activeSection.value = currentSections.value[0]?.value
+  fetchAllSections(currentSections.value)
+}, { immediate: true })
+
+// Fetch synced repositories to check if user has any
+const { data: repositories } = await useFetch('/api/repositories/synced')
 
 // We also need to check if user has favorites
 const { data: favorites, refresh: refreshFavorites } = await useFetch('/api/favorites/repositories', { default: () => [] })
 const hasFavorites = computed(() => favorites.value && favorites.value.length > 0)
 
-// Fetch synced repositories to check if user has any
-const { data: repositories } = await useFetch('/api/repositories/synced')
-
-const isInitialLoading = computed(() =>
-  myPRsStatus.value === 'pending'
-  && reviewRequestedStatus.value === 'pending'
-  && dependencyUpdatesStatus.value === 'pending'
-  && readyToMergeStatus.value === 'pending'
-  && waitingOnAuthorStatus.value === 'pending'
-  && assignedToMeStatus.value === 'pending'
-  && hotIssuesStatus.value === 'pending'
-  && priorityBugsStatus.value === 'pending'
-  && needsTriageStatus.value === 'pending'
-  && canBeClosedStatus.value === 'pending'
-)
-
 function refresh() {
   refreshFavorites()
-  refreshMyPRs()
-  refreshReviewRequested()
-  refreshDependencyUpdates()
-  refreshReadyToMerge()
-  refreshWaitingOnAuthor()
-  refreshAssignedToMe()
-  refreshHotIssues()
-  refreshPriorityBugs()
-  refreshNeedsTriage()
-  refreshCanBeClosed()
+  fetchAllSections(currentSections.value)
 }
 
 // Refresh data when window gains focus
@@ -88,7 +128,7 @@ function goToSettings() {
 </script>
 
 <template>
-  <UDashboardPanel id="dashboard" :ui="{ body: 'overflow-hidden' }">
+  <UDashboardPanel id="dashboard" :ui="{ body: 'overflow-hidden p-0!' }">
     <template #header>
       <UDashboardNavbar title="Dashboard" :ui="{ left: 'gap-3' }">
         <template v-if="hasFavorites" #trailing>
@@ -117,6 +157,33 @@ function goToSettings() {
           />
         </template>
       </UDashboardNavbar>
+
+      <UDashboardToolbar v-if="hasFavorites">
+        <UFieldGroup>
+          <UButton
+            v-for="section in currentSections"
+            :key="section.value"
+            :icon="section.icon"
+            :label="section.label"
+            color="neutral"
+            variant="outline"
+            active-variant="subtle"
+            :active="activeSection === section.value"
+            :class="[activeSection === section.value ? 'hover:bg-elevated' : '']"
+            @click="activeSection = section.value"
+          >
+            <template #trailing>
+              <UBadge
+                v-if="(sectionCounts[section.value] ?? 0) > 0"
+                :label="String(sectionCounts[section.value])"
+                color="neutral"
+                variant="subtle"
+                size="xs"
+              />
+            </template>
+          </UButton>
+        </UFieldGroup>
+      </UDashboardToolbar>
     </template>
 
     <template #body>
@@ -147,11 +214,6 @@ function goToSettings() {
         }]"
       />
 
-      <!-- Loading state -->
-      <div v-else-if="isInitialLoading" class="flex-1 flex flex-col items-center justify-center">
-        <UIcon name="i-lucide-loader-2" class="size-6 animate-spin text-muted" />
-      </div>
-
       <!-- No favorites selected -->
       <UEmpty
         v-else-if="!hasFavorites"
@@ -172,154 +234,29 @@ function goToSettings() {
         }]"
       />
 
-      <!-- Pull Requests Tab -->
-      <div v-else-if="activeTab === 'pull-requests'" class="grid grid-cols-5 gap-4 min-h-0 flex-1">
-        <DashboardSection
-          title="My Pull Requests"
-          icon="i-octicon-git-pull-request-16"
-          :count="myPullRequests?.length"
-          :loading="myPRsStatus === 'pending'"
-          empty-text="No open PRs authored by you"
-        >
-          <DashboardItem
-            v-for="pr in myPullRequests"
-            :key="pr.id"
-            :item="pr"
-          />
-        </DashboardSection>
-
-        <DashboardSection
-          title="Review Requested"
-          icon="i-octicon-code-review-16"
-          :count="reviewRequested?.length"
-          :loading="reviewRequestedStatus === 'pending'"
-          empty-text="No pending review requests"
-        >
-          <DashboardItem
-            v-for="pr in reviewRequested"
-            :key="pr.id"
-            :item="pr"
-            show-author
-          />
-        </DashboardSection>
-
-        <DashboardSection
-          title="Ready to Merge"
-          icon="i-lucide-check-circle"
-          :count="readyToMerge?.length"
-          :loading="readyToMergeStatus === 'pending'"
-          empty-text="No PRs ready to merge"
-        >
-          <DashboardItem
-            v-for="pr in readyToMerge"
-            :key="pr.id"
-            :item="pr"
-            show-author
-          />
-        </DashboardSection>
-
-        <DashboardSection
-          title="Waiting on Author"
-          icon="i-lucide-clock"
-          :count="waitingOnAuthor?.length"
-          :loading="waitingOnAuthorStatus === 'pending'"
-          empty-text="No PRs waiting on author"
-        >
-          <DashboardItem
-            v-for="pr in waitingOnAuthor"
-            :key="pr.id"
-            :item="pr"
-            show-author
-          />
-        </DashboardSection>
-
-        <DashboardSection
-          title="Dependency Updates"
-          icon="i-octicon-dependabot-16"
-          :count="dependencyUpdates?.length"
-          :loading="dependencyUpdatesStatus === 'pending'"
-          empty-text="No dependency update PRs"
-        >
-          <DashboardItem
-            v-for="pr in dependencyUpdates"
-            :key="pr.id"
-            :item="pr"
-            show-author
-          />
-        </DashboardSection>
+      <!-- Loading state -->
+      <div v-else-if="status === 'pending'" class="flex-1 flex items-center justify-center">
+        <UIcon name="i-lucide-loader-2" class="size-6 animate-spin text-muted" />
       </div>
 
-      <!-- Issues Tab -->
-      <div v-else-if="activeTab === 'issues'" class="grid grid-cols-5 gap-4 min-h-0 flex-1">
-        <DashboardSection
-          title="Assigned to Me"
-          icon="i-lucide-user-check"
-          :count="assignedToMe?.length"
-          :loading="assignedToMeStatus === 'pending'"
-          empty-text="No issues assigned to you"
-        >
-          <DashboardItem
-            v-for="item in assignedToMe"
-            :key="item.id"
-            :item="item"
-          />
-        </DashboardSection>
+      <!-- Empty state -->
+      <UEmpty
+        v-else-if="!items?.length"
+        :icon="currentSectionConfig?.icon"
+        :title="currentSectionConfig?.empty"
+        variant="naked"
+        size="lg"
+        class="flex-1"
+      />
 
-        <DashboardSection
-          title="Needs Triage"
-          icon="i-lucide-tag"
-          :count="needsTriage?.length"
-          :loading="needsTriageStatus === 'pending'"
-          empty-text="No issues need triage"
-        >
-          <DashboardItem
-            v-for="issue in needsTriage"
-            :key="issue.id"
-            :item="issue"
-          />
-        </DashboardSection>
-
-        <DashboardSection
-          title="Hot Issues"
-          icon="i-lucide-flame"
-          :count="hotIssues?.length"
-          :loading="hotIssuesStatus === 'pending'"
-          empty-text="No issues with high engagement"
-        >
-          <DashboardItem
-            v-for="issue in hotIssues"
-            :key="issue.id"
-            :item="issue"
-          />
-        </DashboardSection>
-
-        <DashboardSection
-          title="Priority Bugs"
-          icon="i-lucide-bug"
-          :count="priorityBugs?.length"
-          :loading="priorityBugsStatus === 'pending'"
-          empty-text="No priority bugs found"
-        >
-          <DashboardItem
-            v-for="issue in priorityBugs"
-            :key="issue.id"
-            :item="issue"
-          />
-        </DashboardSection>
-
-        <DashboardSection
-          title="Can Be Closed"
-          icon="i-lucide-check-circle"
-          :count="canBeClosed?.length"
-          :loading="canBeClosedStatus === 'pending'"
-          empty-text="No issues ready to close"
-        >
-          <DashboardItem
-            v-for="issue in canBeClosed"
-            :key="issue.id"
-            :item="issue"
-          />
-        </DashboardSection>
+      <!-- Items list -->
+      <div v-else class="flex-1 overflow-y-auto divide-y divide-default">
+        <Issue
+          v-for="item in items"
+          :key="item.id"
+          :item="item"
+          show-author
+        />
       </div>
     </template>
   </UDashboardPanel>

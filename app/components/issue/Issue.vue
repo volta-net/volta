@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import type { DashboardItem } from '#shared/types/dashboard'
+import type { IssueListItem } from '#shared/types/issue'
 
 const props = defineProps<{
-  item: DashboardItem
+  item: IssueListItem
   showAuthor?: boolean
 }>()
 
@@ -18,10 +18,6 @@ const stateIcon = computed(() => getIssueStateIcon(issueState.value))
 const stateColor = computed(() => getIssueStateColor(issueState.value))
 
 const authorLogin = computed(() => props.item.user?.login)
-
-// Labels (limited to first 3 for display)
-const displayLabels = computed(() => (props.item.labels || []).slice(0, 3))
-const hasMoreLabels = computed(() => (props.item.labels || []).length > 3)
 
 const ciStatusConfig = computed(() => {
   const ciStatus = props.item.ciStatus
@@ -65,18 +61,36 @@ function formatTimeAgo(date: Date | string) {
   <NuxtLink
     :to="item.htmlUrl || '#'"
     target="_blank"
-    class="flex items-center gap-3 px-3 py-2.5 hover:bg-elevated/50 transition-colors border-b border-default last:border-b-0"
+    class="flex items-center gap-3 px-4 py-2.5 hover:bg-elevated/50 transition-colors border-b border-default last:border-b-0"
   >
     <!-- State icon -->
     <UIcon :name="stateIcon" :class="stateColor" class="size-4 shrink-0" />
 
     <!-- Content -->
-    <div class="flex-1 min-w-0">
+    <div class="flex-1 flex items-center gap-3 min-w-0">
       <div class="flex items-center gap-2">
-        <span class="text-sm font-medium truncate">{{ item.title }}</span>
+        <span class="text-sm font-medium truncate">#{{ item.number }} {{ item.title }}</span>
       </div>
+
       <div class="flex items-center gap-2 mt-0.5 text-xs text-muted">
-        <span>{{ item.repository.name }}#{{ item.number }}</span>
+        <!-- Type Badge -->
+        <UBadge
+          v-if="item.type"
+          :label="item.type.name"
+          :style="item.type.color ? { backgroundColor: `#${item.type.color}20`, color: `#${item.type.color}` } : {}"
+          variant="subtle"
+          size="xs"
+          class="shrink-0"
+        />
+
+        <!-- Labels -->
+        <div v-if="item.labels.length" class="flex items-center gap-1 shrink-0">
+          <IssueLabel v-for="label in item.labels" :key="label.id" :label="label" />
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 mt-0.5 text-xs text-muted">
+        <span>{{ item.repository.fullName }}</span>
         <template v-if="showAuthor && authorLogin">
           <span>·</span>
           <span>{{ authorLogin }}</span>
@@ -95,28 +109,13 @@ function formatTimeAgo(date: Date | string) {
       </div>
     </div>
 
-    <!-- Type Badge -->
-    <UBadge
-      v-if="item.type"
-      :label="item.type.name"
-      :style="item.type.color ? { backgroundColor: `#${item.type.color}20`, color: `#${item.type.color}` } : {}"
-      variant="subtle"
-      size="xs"
-      class="shrink-0"
-    />
-
-    <!-- Labels -->
-    <div v-if="displayLabels.length" class="flex items-center gap-1 shrink-0">
-      <UBadge
-        v-for="label in displayLabels"
-        :key="label.id"
-        :label="label.name"
-        :style="{ backgroundColor: `#${label.color}20`, color: `#${label.color}` }"
-        variant="subtle"
-        size="xs"
-      />
-      <span v-if="hasMoreLabels" class="text-xs text-muted">+{{ item.labels.length - 3 }}</span>
-    </div>
+    <!-- AI Analysis Status (issues only) -->
+    <UTooltip v-if="item.analyzing" text="Analyzing...">
+      <UIcon name="i-lucide-sparkles" class="size-4 shrink-0 text-amber-500 animate-pulse" />
+    </UTooltip>
+    <UTooltip v-else-if="item.answered" text="AI confirmed answered">
+      <UIcon name="i-lucide-sparkles" class="size-4 shrink-0 text-emerald-500" />
+    </UTooltip>
 
     <!-- CI Status -->
     <UTooltip

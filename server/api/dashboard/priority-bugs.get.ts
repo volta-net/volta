@@ -6,6 +6,12 @@ export default defineEventHandler(async (event) => {
 
   const favoriteRepoIdsSubquery = getUserFavoriteRepoIdsSubquery(user!.id)
 
+  // Bot users subquery
+  const botUserIdsSubquery = db
+    .select({ id: schema.users.id })
+    .from(schema.users)
+    .where(ilike(schema.users.login, '%[bot]%'))
+
   // Get issue IDs with bug labels (using subqueries)
   const bugLabelIdsSubquery = db
     .select({ id: schema.labels.id })
@@ -44,12 +50,13 @@ export default defineEventHandler(async (event) => {
     .from(schema.issueLabels)
     .where(inArray(schema.issueLabels.labelId, triageLabelIdsSubquery))
 
-  // Query issues that have Bug type or bug label, excluding triage
+  // Query issues that have Bug type or bug label, excluding triage and bots
   const issues = await db.query.issues.findMany({
     where: and(
       eq(schema.issues.pullRequest, false),
       eq(schema.issues.state, 'open'),
       inArray(schema.issues.repositoryId, favoriteRepoIdsSubquery),
+      notInArray(schema.issues.userId, botUserIdsSubquery),
       sql`(${inArray(schema.issues.id, bugIssueIdsFromLabels)} OR ${inArray(schema.issues.id, bugIssueIdsFromType)})`,
       notInArray(schema.issues.id, triageIssueIdsSubquery)
     ),
@@ -59,6 +66,7 @@ export default defineEventHandler(async (event) => {
     ],
     with: {
       repository: true,
+      user: true,
       type: true,
       labels: { with: { label: true } }
     }

@@ -8,6 +8,27 @@
       "when": 1766082521933,
       "tag": "0000_right_morlun",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1766314661108,
+      "tag": "0001_spooky_plazm",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1766327549149,
+      "tag": "0002_slimy_veda",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1766328163987,
+      "tag": "0003_thankful_exiles",
+      "breakpoints": true
     }
   ]
 }

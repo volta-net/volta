@@ -1,7 +1,7 @@
 import { and, inArray, eq, desc } from 'drizzle-orm'
 import { db, schema } from 'hub:db'
 
-// Issues/PRs assigned to the current user
+// Issues/PRs created by the current user
 // Query params:
 // - pullRequest: 'true' | 'false' (required)
 export default defineEventHandler(async (event) => {
@@ -13,12 +13,7 @@ export default defineEventHandler(async (event) => {
 
   const items = await db.query.issues.findMany({
     where: and(
-      inArray(
-        schema.issues.id,
-        db.select({ id: schema.issueAssignees.issueId })
-          .from(schema.issueAssignees)
-          .where(eq(schema.issueAssignees.userId, userId))
-      ),
+      eq(schema.issues.userId, userId),
       eq(schema.issues.pullRequest, pullRequest),
       eq(schema.issues.state, 'open'),
       pullRequest ? eq(schema.issues.merged, false) : undefined,

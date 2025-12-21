@@ -1,0 +1,1 @@
+ALTER TABLE "issues" RENAME COLUMN "answered_at" TO "analyzed_at";

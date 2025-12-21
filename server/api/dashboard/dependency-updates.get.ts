@@ -1,15 +1,14 @@
 import { and, inArray, eq, desc, or, ilike } from 'drizzle-orm'
 import { db, schema } from 'hub:db'
 
+// Dependency update PRs (renovate, dependabot)
 export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
 
-  // Use subqueries for single-query filtering
   const prs = await db.query.issues.findMany({
     where: and(
       eq(schema.issues.pullRequest, true),
       eq(schema.issues.state, 'open'),
-      eq(schema.issues.merged, false),
       inArray(schema.issues.repositoryId, getUserFavoriteRepoIdsSubquery(user!.id)),
       inArray(
         schema.issues.userId,
@@ -32,14 +31,11 @@ export default defineEventHandler(async (event) => {
 
   if (prs.length === 0) return []
 
-  // Get CI status (batch query)
   const ciByHeadSha = await getCIStatusForPRs(prs.map(pr => ({ repositoryId: pr.repositoryId, headSha: pr.headSha })))
 
   return prs.map(pr => ({
     ...pr,
     labels: pr.labels.map(l => l.label),
-    ciStatus: pr.headSha
-      ? ciByHeadSha.get(pr.headSha) || null
-      : null
+    ciStatus: pr.headSha ? ciByHeadSha.get(pr.headSha) || null : null
   }))
 })

@@ -199,7 +199,12 @@ export const issues = pgTable('issues', {
   // Sync status - false until full data (comments, reactions, etc.) has been fetched from GitHub
   synced: boolean().default(false).notNull(),
   // When we last synced this issue from GitHub (for staleness checks)
-  syncedAt: timestamp('synced_at')
+  syncedAt: timestamp('synced_at'),
+  // AI analysis - whether issue has been answered/resolved
+  answered: boolean().default(false),
+  answerCommentId: bigint('answer_comment_id', { mode: 'number' }), // Comment that answered the issue
+  analyzedAt: timestamp('analyzed_at'), // When AI last analyzed this issue
+  analyzingAt: timestamp('analyzing_at') // When AI analysis started (null = not analyzing)
 })
 
 // Issue Assignees (many-to-many: issues <-> users)
@@ -358,7 +363,11 @@ export const issuesRelations = relations(issues, ({ one, many }) => ({
   reviews: many(issueReviews),
   reviewComments: many(issueReviewComments),
   subscriptions: many(issueSubscriptions),
-  favorites: many(favoriteIssues)
+  favorites: many(favoriteIssues),
+  answerComment: one(issueComments, {
+    fields: [issues.answerCommentId],
+    references: [issueComments.id]
+  })
 }))
 
 export const labelsRelations = relations(labels, ({ one, many }) => ({

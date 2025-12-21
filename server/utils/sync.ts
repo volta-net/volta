@@ -257,6 +257,7 @@ export async function syncIssues(accessToken: string, owner: string, repo: strin
     const issueData = {
       pullRequest: false,
       repositoryId,
+      milestoneId: issue.milestone?.id,
       typeId: issue.type?.id,
       userId: issue.user?.id,
       number: issue.number,
@@ -336,12 +337,10 @@ export async function syncIssues(accessToken: string, owner: string, repo: strin
       )
     )
 
-    const milestoneId = pr.milestone?.id ?? null
-
     const prData = {
       pullRequest: true,
       repositoryId,
-      milestoneId,
+      milestoneId: pr.milestone?.id,
       userId: pr.user?.id,
       number: pr.number,
       title: pr.title,
@@ -394,6 +393,17 @@ export async function syncIssues(accessToken: string, owner: string, repo: strin
 
     // Sync comments
     await syncIssueComments(octokit, owner, repo, pr.number, prId)
+
+    // Sync PR reviews
+    await syncPRReviews(octokit, owner, repo, pr.number, prId)
+
+    // Sync PR review comments (inline code comments)
+    await syncPRReviewComments(octokit, owner, repo, pr.number, prId)
+
+    // Sync workflow runs for this PR's head commit
+    if (pr.head?.sha) {
+      await syncPRWorkflowRuns(octokit, owner, repo, repositoryId, pr.head.sha)
+    }
 
     // Mark as synced
     await db.update(schema.issues).set({ synced: true, syncedAt: new Date() }).where(eq(schema.issues.id, prId))
@@ -569,6 +579,179 @@ async function syncIssueComments(octokit: Octokit, owner: string, repo: string, 
     console.log(`[Sync] Synced ${comments.length} comments for issue #${issueNumber}`)
   } catch (error) {
     console.error(`[Sync] Failed to sync comments for issue #${issueNumber}:`, error)
+  }
+}
+
+// Helper: sync PR reviews
+async function syncPRReviews(octokit: Octokit, owner: string, repo: string, prNumber: number, issueId: number) {
+  try {
+    const reviews = await octokit.paginate(octokit.rest.pulls.listReviews, {
+      owner,
+      repo,
+      pull_number: prNumber,
+      per_page: 100
+    })
+
+    for (const review of reviews) {
+      if (review.user) {
+        await ensureUser({
+          id: review.user.id,
+          login: review.user.login,
+          avatar_url: review.user.avatar_url
+        })
+
+        // Subscribe reviewer to the PR
+        await subscribeUserToIssue(issueId, review.user.id)
+      }
+
+      const reviewData = {
+        issueId,
+        userId: review.user?.id,
+        body: review.body,
+        state: review.state as 'APPROVED' | 'CHANGES_REQUESTED' | 'COMMENTED' | 'DISMISSED' | 'PENDING',
+        htmlUrl: review.html_url,
+        commitId: review.commit_id,
+        submittedAt: review.submitted_at ? new Date(review.submitted_at) : null,
+        updatedAt: new Date()
+      }
+
+      const [existing] = await db.select().from(schema.issueReviews).where(eq(schema.issueReviews.id, review.id))
+
+      if (existing) {
+        await db.update(schema.issueReviews).set(reviewData).where(eq(schema.issueReviews.id, review.id))
+      } else {
+        await db.insert(schema.issueReviews).values({
+          id: review.id,
+          ...reviewData
+        })
+      }
+    }
+
+    console.log(`[Sync] Synced ${reviews.length} reviews for PR #${prNumber}`)
+  } catch (error) {
+    console.error(`[Sync] Failed to sync reviews for PR #${prNumber}:`, error)
+  }
+}
+
+// Helper: sync PR review comments (inline code comments)
+async function syncPRReviewComments(octokit: Octokit, owner: string, repo: string, prNumber: number, issueId: number) {
+  try {
+    const comments = await octokit.paginate(octokit.rest.pulls.listReviewComments, {
+      owner,
+      repo,
+      pull_number: prNumber,
+      per_page: 100
+    })
+
+    for (const comment of comments) {
+      if (comment.user) {
+        await ensureUser({
+          id: comment.user.id,
+          login: comment.user.login,
+          avatar_url: comment.user.avatar_url
+        })
+
+        // Subscribe review commenter to the PR
+        await subscribeUserToIssue(issueId, comment.user.id)
+      }
+
+      const commentData = {
+        issueId,
+        reviewId: comment.pull_request_review_id,
+        userId: comment.user?.id,
+        body: comment.body,
+        path: comment.path,
+        line: comment.line,
+        side: comment.side,
+        commitId: comment.commit_id,
+        diffHunk: comment.diff_hunk,
+        htmlUrl: comment.html_url,
+        updatedAt: new Date(comment.updated_at)
+      }
+
+      const [existing] = await db.select().from(schema.issueReviewComments).where(eq(schema.issueReviewComments.id, comment.id))
+
+      if (existing) {
+        await db.update(schema.issueReviewComments).set(commentData).where(eq(schema.issueReviewComments.id, comment.id))
+      } else {
+        await db.insert(schema.issueReviewComments).values({
+          id: comment.id,
+          ...commentData,
+          createdAt: new Date(comment.created_at)
+        })
+      }
+    }
+
+    console.log(`[Sync] Synced ${comments.length} review comments for PR #${prNumber}`)
+  } catch (error) {
+    console.error(`[Sync] Failed to sync review comments for PR #${prNumber}:`, error)
+  }
+}
+
+// Helper: sync workflow runs for a PR's head commit
+async function syncPRWorkflowRuns(octokit: Octokit, owner: string, repo: string, repositoryId: number, headSha: string) {
+  try {
+    // Fetch workflow runs for this specific commit
+    const { data } = await octokit.rest.actions.listWorkflowRunsForRepo({
+      owner,
+      repo,
+      head_sha: headSha,
+      per_page: 100
+    })
+
+    for (const run of data.workflow_runs) {
+      // Ensure actor exists as shadow user
+      if (run.actor) {
+        await ensureUser({
+          id: run.actor.id,
+          login: run.actor.login,
+          avatar_url: run.actor.avatar_url
+        })
+      }
+
+      type WorkflowConclusion = 'success' | 'failure' | 'cancelled' | 'skipped' | 'timed_out' | 'action_required' | 'stale' | 'neutral' | 'startup_failure'
+
+      const runData = {
+        repositoryId,
+        actorId: run.actor?.id,
+        workflowId: run.workflow_id,
+        workflowName: run.name,
+        name: run.display_title || run.name,
+        headBranch: run.head_branch,
+        headSha: run.head_sha,
+        event: run.event,
+        status: run.status,
+        conclusion: run.conclusion as WorkflowConclusion | null,
+        htmlUrl: run.html_url,
+        runNumber: run.run_number,
+        runAttempt: run.run_attempt,
+        startedAt: run.run_started_at ? new Date(run.run_started_at) : null,
+        completedAt: run.updated_at ? new Date(run.updated_at) : null,
+        updatedAt: new Date()
+      }
+
+      const [existing] = await db.select().from(schema.workflowRuns).where(eq(schema.workflowRuns.id, run.id))
+
+      if (existing) {
+        await db.update(schema.workflowRuns).set(runData).where(eq(schema.workflowRuns.id, run.id))
+      } else {
+        await db.insert(schema.workflowRuns).values({
+          id: run.id,
+          ...runData
+        })
+      }
+    }
+
+    if (data.workflow_runs.length > 0) {
+      console.log(`[Sync] Synced ${data.workflow_runs.length} workflow runs for commit ${headSha.slice(0, 7)}`)
+    }
+  } catch (error: any) {
+    // Actions API may not be available for all repositories
+    if (error.status === 403 || error.status === 404) {
+      console.log(`[Sync] Workflow runs not available for ${owner}/${repo}`)
+      return
+    }
+    console.error(`[Sync] Failed to sync workflow runs for commit ${headSha}:`, error)
   }
 }
 

@@ -38,30 +38,6 @@ function stripMarkdown(text: string | null | undefined): string {
     .replace(/\s+/g, ' ')
     .trim()
 }
-
-function getTooltipText(notification: Notification): string {
-  let text = ''
-
-  if (notification.actor?.login) {
-    text += notification.actor.login
-  }
-
-  text += ` ${getActionVerb(notification.action)}`
-
-  if (notification.action !== 'comment' && getSubjectLabel(notification.type)) {
-    text += ` ${getSubjectLabel(notification.type)}`
-  }
-
-  if (notification.repository) {
-    text += ` in ${notification.repository.fullName}`
-  }
-
-  if (notification.action === 'comment' && notification.body) {
-    text += `: ${stripMarkdown(notification.body)}`
-  }
-
-  return text.trim()
-}
 </script>
 
 <template>
@@ -99,20 +75,13 @@ function getTooltipText(notification: Notification): string {
 
       <!-- Second line: actor verb body ... repo · time -->
       <div class="flex items-center gap-1 mt-0.5 text-muted" :class="[notification.read && 'opacity-60']">
-        <UTooltip
-          :text="getTooltipText(notification)"
-          :disabled="!notification.body"
-          :content="{ side: 'right', align: 'start' }"
-          :ui="{ content: 'max-w-48 h-auto', text: 'text-clip text-pretty wrap-anywhere' }"
-        >
-          <span class="truncate">
-            <span v-if="notification.actor" class="text-default">{{ notification.actor.login }}</span>
-            {{ getActionVerb(notification.action) }}
-            <template v-if="notification.action !== 'comment' && getSubjectLabel(notification.type)">{{ getSubjectLabel(notification.type) }}</template>
-            <template v-if="notification.repository"> in <span class="text-default hover:text-primary transition-colors">{{ notification.repository.fullName }}</span></template>
-            <span v-if="notification.action === 'comment' && notification.body">: {{ stripMarkdown(notification.body) }}</span>
-          </span>
-        </UTooltip>
+        <span class="truncate" :title="notification.body ?? undefined">
+          <span v-if="notification.actor" class="text-default">{{ notification.actor.login }}</span>
+          {{ getActionVerb(notification.action) }}
+          <template v-if="notification.action !== 'comment' && getSubjectLabel(notification.type)">{{ getSubjectLabel(notification.type) }}</template>
+          <template v-if="notification.repository"> in <span class="text-default hover:text-primary transition-colors">{{ notification.repository.fullName }}</span></template>
+          <span v-if="notification.action === 'comment' && notification.body">: {{ stripMarkdown(notification.body) }}</span>
+        </span>
         <span class="shrink-0 ms-auto flex items-center gap-1 text-sm text-dimmed">
           {{ formatTimeAgo(new Date(notification.createdAt)) }}
         </span>

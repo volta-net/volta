@@ -1,15 +1,14 @@
 import { and, inArray, eq, desc } from 'drizzle-orm'
 import { db, schema } from 'hub:db'
 
+// PRs where changes are requested (waiting on author)
 export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
 
-  // Get open PRs with reviews and labels
   const prs = await db.query.issues.findMany({
     where: and(
       eq(schema.issues.pullRequest, true),
       eq(schema.issues.state, 'open'),
-      eq(schema.issues.merged, false),
       inArray(schema.issues.repositoryId, getUserFavoriteRepoIdsSubquery(user!.id))
     ),
     orderBy: desc(schema.issues.updatedAt),
@@ -27,7 +26,6 @@ export default defineEventHandler(async (event) => {
 
   if (prs.length === 0) return []
 
-  // Get CI status for all PRs (batch query)
   const ciByHeadSha = await getCIStatusForPRs(prs.map(pr => ({ repositoryId: pr.repositoryId, headSha: pr.headSha })))
 
   // Filter to PRs where latest review is CHANGES_REQUESTED
@@ -45,9 +43,7 @@ export default defineEventHandler(async (event) => {
           reviewer: latestReview.user
         },
         labels: pr.labels.map(l => l.label),
-        ciStatus: pr.headSha
-          ? ciByHeadSha.get(pr.headSha) || null
-          : null
+        ciStatus: pr.headSha ? ciByHeadSha.get(pr.headSha) || null : null
       }
     })
 })

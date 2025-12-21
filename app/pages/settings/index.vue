@@ -639,7 +639,6 @@ function getSubscriptionSummary(repo: InstallationRepository): { label: string, 
                   :icon="favoriteRepoIds.has(repo.id) ? 'i-lucide-star' : 'i-lucide-star'"
                   color="neutral"
                   variant="soft"
-                  :loading="updatingFavorite.has(repo.id)"
                   :class="favoriteRepoIds.has(repo.id) ? 'text-yellow-500' : 'text-muted'"
                   @click="toggleFavorite(repo.id)"
                 />
@@ -657,7 +656,6 @@ function getSubscriptionSummary(repo: InstallationRepository): { label: string, 
                   variant="soft"
                   v-bind="getSubscriptionSummary(repo)"
                   trailing-icon="i-lucide-chevron-down"
-                  :loading="updatingSubscription === repo.fullName"
                   square
                   :ui="{
                     trailingIcon: 'group-data-[state=open]/button:rotate-180 transition-transform duration-200'
@@ -695,7 +693,6 @@ function getSubscriptionSummary(repo: InstallationRepository): { label: string, 
                   color="neutral"
                   variant="soft"
                   icon="i-lucide-ellipsis-vertical"
-                  :loading="syncing.has(repo.fullName) || deleting.has(repo.fullName)"
                   class="data-[state=open]:bg-accented/75"
                 />
               </UDropdownMenu>
