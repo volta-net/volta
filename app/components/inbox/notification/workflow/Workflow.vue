@@ -41,14 +41,14 @@ defineProps<{
       <!-- Header -->
       <div class="flex items-start justify-between gap-4">
         <div class="flex items-center gap-3 min-w-0">
-          <div class="flex items-center justify-center size-10 rounded-full shrink-0" :class="getWorkflowStateColor(notification.workflowRun?.conclusion).replace('text-', 'bg-') + '/10'">
-            <UIcon :name="getWorkflowStateIcon(notification.workflowRun?.conclusion)" class="size-5" :class="getWorkflowStateColor(notification.workflowRun?.conclusion)" />
+          <div class="flex items-center justify-center size-10 rounded-full shrink-0" :class="getCIStateColor(notification.workflowRun?.conclusion).replace('text-', 'bg-') + '/10'">
+            <UIcon :name="getCIStateIcon(notification.workflowRun?.conclusion)" class="size-5" :class="getCIStateColor(notification.workflowRun?.conclusion)" />
           </div>
           <div class="min-w-0">
             <h2 class="font-semibold text-highlighted truncate">
               {{ notification.workflowRun?.name }}
             </h2>
-            <UBadge v-bind="getWorkflowStateBadge(notification.workflowRun?.conclusion)" variant="subtle" class="mt-1" />
+            <UBadge v-bind="getCIStateBadge(notification.workflowRun?.conclusion)" variant="subtle" class="mt-1" />
           </div>
         </div>
       </div>

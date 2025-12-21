@@ -33,15 +33,20 @@ export default defineEventHandler(async (event) => {
 
       if (hasChangesRequested || !hasApproval) return false
 
-      // Check CI status (pass if no CI or CI passed)
-      const ciStatus = pr.headSha ? ciByHeadSha.get(pr.headSha) : null
-      if (ciStatus && ciStatus.conclusion !== 'success') return false
+      // Check CI status (pass if no CI or ALL checks passed)
+      const ciStatuses = pr.headSha ? ciByHeadSha.get(pr.headSha) : null
+      if (ciStatuses && ciStatuses.length > 0) {
+        const allPassed = ciStatuses.every(ci =>
+          ci.conclusion === 'success' || ci.conclusion === 'skipped'
+        )
+        if (!allPassed) return false
+      }
 
       return true
     })
     .map(pr => ({
       ...pr,
       labels: pr.labels.map(l => l.label),
-      ciStatus: pr.headSha ? ciByHeadSha.get(pr.headSha) || null : null
+      ciStatuses: pr.headSha ? ciByHeadSha.get(pr.headSha) || [] : []
     }))
 })

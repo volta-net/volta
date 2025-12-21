@@ -214,6 +214,29 @@ export interface GitHubWorkflowRun {
 }
 
 // ============================================================================
+// Check Run Types (third-party integrations like Vercel, CircleCI)
+// ============================================================================
+
+export interface GitHubCheckRunApp {
+  id: number
+  slug: string
+  name: string
+}
+
+export interface GitHubCheckRun {
+  id: number
+  head_sha: string
+  name: string
+  status: 'queued' | 'in_progress' | 'completed'
+  conclusion: GitHubWorkflowConclusion
+  html_url?: string | null
+  details_url?: string | null
+  started_at?: string | null
+  completed_at?: string | null
+  app?: GitHubCheckRunApp | null
+}
+
+// ============================================================================
 // Installation Types
 // ============================================================================
 

@@ -54,6 +54,7 @@ const links = computed<NavigationMenuItem[][]>(() => [[{
       id="default"
       collapsed
       class="border-r-0 py-4"
+      :menu="{ inset: true, overlay: false }"
     >
       <template #header>
         <NuxtLink to="/" class="mx-auto">
@@ -87,7 +88,7 @@ const links = computed<NavigationMenuItem[][]>(() => [[{
       </template>
     </UDashboardSidebar>
 
-    <div class="flex-1 flex m-4 lg:ml-0 rounded-lg ring ring-default bg-default/75 shadow">
+    <div class="flex-1 flex m-4 lg:ml-0 rounded-lg ring ring-default bg-default/75 shadow min-w-0">
       <slot />
     </div>
 

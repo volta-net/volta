@@ -59,7 +59,7 @@ export interface IssueListItem extends Pick<Serialized<DBIssue>, 'id' | 'pullReq
   user?: User | null
   labels: Label[]
   type?: Type | null
-  ciStatus?: CIStatus | null
+  ciStatuses?: CIStatus[]
   // AI analysis status (issues only)
   answered?: boolean
   analyzing?: boolean

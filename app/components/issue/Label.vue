@@ -7,7 +7,12 @@ defineProps<{
 </script>
 
 <template>
-  <div class="px-2 py-0.5 rounded-full shrink-0 ring ring-default ring-inset" :style="{ backgroundColor: `#${label.color}` }">
+  <UBadge
+    color="neutral"
+    variant="outline"
+    class="rounded-full"
+  >
+    <span class="size-2 rounded-full" :style="{ backgroundColor: `#${label.color}` }" />
     <span class="text-xs text-white invert">{{ label.name }}</span>
-  </div>
+  </UBadge>
 </template>

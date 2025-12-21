@@ -18,7 +18,16 @@ export default defineAppConfig({
     },
     dashboardSidebar: {
       slots: {
-        header: 'lg:h-12'
+        header: 'h-12'
+      },
+      variants: {
+        menu: {
+          true: {
+            header: 'sm:px-4',
+            body: 'sm:px-4',
+            footer: 'sm:px-4'
+          }
+        }
       }
     },
     dashboardNavbar: {

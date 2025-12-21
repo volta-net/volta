@@ -179,13 +179,15 @@ export async function syncTypes(accessToken: string, owner: string, repo: string
   const octokit = new Octokit({ auth: accessToken })
 
   try {
-    // GitHub issue types API (may not be available for all repositories)
-    const { data: typesData } = await octokit.request('GET /repos/{owner}/{repo}/issue-types', {
-      owner,
-      repo
+    // GitHub issue types are organization-level, not repository-level
+    // See: https://docs.github.com/en/rest/orgs/issue-types
+    const typesData = await octokit.paginate(octokit.rest.orgs.listIssueTypes, {
+      org: owner
     })
 
     for (const type of typesData) {
+      if (!type) continue
+
       const [existingType] = await db.select().from(schema.types).where(eq(schema.types.id, type.id))
 
       if (existingType) {
@@ -208,9 +210,9 @@ export async function syncTypes(accessToken: string, owner: string, repo: string
 
     return typesData.length
   } catch (error: any) {
-    // Issue types API may not be available for all repositories
+    // Issue types API only available for organizations with the feature enabled
     if (error.status === 404) {
-      console.log(`[Sync] Issue types not available for ${owner}/${repo}`)
+      console.log(`[Sync] Issue types not available for ${owner}`)
       return 0
     }
     throw error
@@ -400,9 +402,11 @@ export async function syncIssues(accessToken: string, owner: string, repo: strin
     // Sync PR review comments (inline code comments)
     await syncPRReviewComments(octokit, owner, repo, pr.number, prId)
 
-    // Sync workflow runs for this PR's head commit
+    // Sync CI status for this PR's head commit (check runs + commit statuses)
+    // Note: Check runs include GitHub Actions jobs, commit statuses include Vercel deployments
     if (pr.head?.sha) {
-      await syncPRWorkflowRuns(octokit, owner, repo, repositoryId, pr.head.sha)
+      await syncPRCheckRuns(octokit, owner, repo, repositoryId, pr.head.sha)
+      await syncPRCommitStatuses(octokit, owner, repo, repositoryId, pr.head.sha)
     }
 
     // Mark as synced
@@ -575,8 +579,6 @@ async function syncIssueComments(octokit: Octokit, owner: string, repo: string, 
         })
       }
     }
-
-    console.log(`[Sync] Synced ${comments.length} comments for issue #${issueNumber}`)
   } catch (error) {
     console.error(`[Sync] Failed to sync comments for issue #${issueNumber}:`, error)
   }
@@ -626,8 +628,6 @@ async function syncPRReviews(octokit: Octokit, owner: string, repo: string, prNu
         })
       }
     }
-
-    console.log(`[Sync] Synced ${reviews.length} reviews for PR #${prNumber}`)
   } catch (error) {
     console.error(`[Sync] Failed to sync reviews for PR #${prNumber}:`, error)
   }
@@ -681,77 +681,114 @@ async function syncPRReviewComments(octokit: Octokit, owner: string, repo: strin
         })
       }
     }
-
-    console.log(`[Sync] Synced ${comments.length} review comments for PR #${prNumber}`)
   } catch (error) {
     console.error(`[Sync] Failed to sync review comments for PR #${prNumber}:`, error)
   }
 }
 
-// Helper: sync workflow runs for a PR's head commit
-async function syncPRWorkflowRuns(octokit: Octokit, owner: string, repo: string, repositoryId: number, headSha: string) {
+// Sync check runs (third-party integrations like Vercel) for a specific commit
+async function syncPRCheckRuns(octokit: Octokit, owner: string, repo: string, repositoryId: number, headSha: string) {
   try {
-    // Fetch workflow runs for this specific commit
-    const { data } = await octokit.rest.actions.listWorkflowRunsForRepo({
+    // Fetch check runs for this specific commit (paginated)
+    const checkRuns = await octokit.paginate(octokit.rest.checks.listForRef, {
       owner,
       repo,
-      head_sha: headSha,
+      ref: headSha,
       per_page: 100
     })
 
-    for (const run of data.workflow_runs) {
-      // Ensure actor exists as shadow user
-      if (run.actor) {
-        await ensureUser({
-          id: run.actor.id,
-          login: run.actor.login,
-          avatar_url: run.actor.avatar_url
-        })
-      }
+    type WorkflowConclusion = 'success' | 'failure' | 'cancelled' | 'skipped' | 'timed_out' | 'action_required' | 'stale' | 'neutral' | 'startup_failure'
 
-      type WorkflowConclusion = 'success' | 'failure' | 'cancelled' | 'skipped' | 'timed_out' | 'action_required' | 'stale' | 'neutral' | 'startup_failure'
-
-      const runData = {
+    for (const check of checkRuns) {
+      const checkData = {
         repositoryId,
-        actorId: run.actor?.id,
-        workflowId: run.workflow_id,
-        workflowName: run.name,
-        name: run.display_title || run.name,
-        headBranch: run.head_branch,
-        headSha: run.head_sha,
-        event: run.event,
-        status: run.status,
-        conclusion: run.conclusion as WorkflowConclusion | null,
-        htmlUrl: run.html_url,
-        runNumber: run.run_number,
-        runAttempt: run.run_attempt,
-        startedAt: run.run_started_at ? new Date(run.run_started_at) : null,
-        completedAt: run.updated_at ? new Date(run.updated_at) : null,
+        headSha,
+        name: check.name,
+        status: check.status,
+        conclusion: check.conclusion as WorkflowConclusion | null,
+        htmlUrl: check.html_url,
+        detailsUrl: check.details_url,
+        appSlug: check.app?.slug || null,
+        appName: check.app?.name || null,
+        startedAt: check.started_at ? new Date(check.started_at) : null,
+        completedAt: check.completed_at ? new Date(check.completed_at) : null,
         updatedAt: new Date()
       }
 
-      const [existing] = await db.select().from(schema.workflowRuns).where(eq(schema.workflowRuns.id, run.id))
+      const [existing] = await db.select().from(schema.checkRuns).where(eq(schema.checkRuns.id, check.id))
 
       if (existing) {
-        await db.update(schema.workflowRuns).set(runData).where(eq(schema.workflowRuns.id, run.id))
+        await db.update(schema.checkRuns).set(checkData).where(eq(schema.checkRuns.id, check.id))
       } else {
-        await db.insert(schema.workflowRuns).values({
-          id: run.id,
-          ...runData
+        await db.insert(schema.checkRuns).values({
+          id: check.id,
+          ...checkData
         })
       }
     }
-
-    if (data.workflow_runs.length > 0) {
-      console.log(`[Sync] Synced ${data.workflow_runs.length} workflow runs for commit ${headSha.slice(0, 7)}`)
-    }
   } catch (error: any) {
-    // Actions API may not be available for all repositories
+    // Checks API may not be available for all repositories
     if (error.status === 403 || error.status === 404) {
-      console.log(`[Sync] Workflow runs not available for ${owner}/${repo}`)
+      console.log(`[Sync] Check runs not available for ${owner}/${repo} (status: ${error.status})`)
       return
     }
-    console.error(`[Sync] Failed to sync workflow runs for commit ${headSha}:`, error)
+    console.error(`[Sync] Failed to sync check runs for commit ${headSha}:`, error)
+  }
+}
+
+// Sync commit statuses (GitHub Status API - used by Vercel deployments, etc.) for a specific commit
+async function syncPRCommitStatuses(octokit: Octokit, owner: string, repo: string, repositoryId: number, headSha: string) {
+  try {
+    // Fetch commit statuses for this specific commit (paginated)
+    const statuses = await octokit.paginate(octokit.rest.repos.listCommitStatusesForRef, {
+      owner,
+      repo,
+      ref: headSha,
+      per_page: 100
+    })
+
+    // GitHub returns statuses in reverse chronological order, we only want the latest per context
+    const seenContexts = new Set<string>()
+    const latestStatuses = []
+
+    for (const status of statuses) {
+      if (!seenContexts.has(status.context)) {
+        seenContexts.add(status.context)
+        latestStatuses.push(status)
+      }
+    }
+
+    type CommitStatusState = 'error' | 'failure' | 'pending' | 'success'
+
+    for (const status of latestStatuses) {
+      const statusData = {
+        repositoryId,
+        sha: headSha,
+        state: status.state as CommitStatusState,
+        context: status.context,
+        description: status.description || null,
+        targetUrl: status.target_url || null,
+        updatedAt: new Date()
+      }
+
+      const [existing] = await db.select().from(schema.commitStatuses).where(eq(schema.commitStatuses.id, status.id))
+
+      if (existing) {
+        await db.update(schema.commitStatuses).set(statusData).where(eq(schema.commitStatuses.id, status.id))
+      } else {
+        await db.insert(schema.commitStatuses).values({
+          id: status.id,
+          ...statusData
+        })
+      }
+    }
+  } catch (error: any) {
+    // Statuses API may not be available for all repositories
+    if (error.status === 403 || error.status === 404) {
+      console.log(`[Sync] Commit statuses not available for ${owner}/${repo} (status: ${error.status})`)
+      return
+    }
+    console.error(`[Sync] Failed to sync commit statuses for commit ${headSha}:`, error)
   }
 }
 
@@ -766,8 +803,8 @@ export async function syncCollaborators(accessToken: string, owner: string, repo
   const octokit = new Octokit({ auth: accessToken })
 
   try {
-    // Fetch collaborators with write access or higher
-    const { data: collaborators } = await octokit.rest.repos.listCollaborators({
+    // Fetch collaborators with write access or higher (paginated)
+    const collaborators = await octokit.paginate(octokit.rest.repos.listCollaborators, {
       owner,
       repo,
       affiliation: 'all',

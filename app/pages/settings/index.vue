@@ -672,6 +672,7 @@ function getSubscriptionSummary(repo: InstallationRepository): { label: string, 
                     label: 'Sync now',
                     icon: 'i-lucide-refresh-cw',
                     loading: syncing.has(repo.fullName),
+                    disabled: syncing.has(repo.fullName) || deleting.has(repo.fullName),
                     onSelect: (e) => {
                       e.preventDefault()
                       syncRepository(repo.fullName)
@@ -682,6 +683,7 @@ function getSubscriptionSummary(repo: InstallationRepository): { label: string, 
                     icon: 'i-lucide-trash-2',
                     color: 'error' as const,
                     loading: deleting.has(repo.fullName),
+                    disabled: syncing.has(repo.fullName) || deleting.has(repo.fullName),
                     onSelect: (e) => {
                       e.preventDefault()
                       deleteRepository(repo.fullName)

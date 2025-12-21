@@ -2,14 +2,14 @@ import type { WorkflowConclusion } from '#shared/types/db'
 
 type BadgeColor = 'success' | 'error' | 'neutral' | 'warning'
 
-interface WorkflowStateConfig {
+interface CIStateConfig {
   icon: string
   color: string
   label: string
   badgeColor: BadgeColor
 }
 
-const workflowStates: Record<string, WorkflowStateConfig> = {
+const ciStates: Record<string, CIStateConfig> = {
   success: {
     icon: 'i-octicon-check-circle-fill-16',
     color: 'text-emerald-500 dark:text-emerald-400',
@@ -66,7 +66,7 @@ const workflowStates: Record<string, WorkflowStateConfig> = {
   }
 }
 
-const defaultState: WorkflowStateConfig = {
+const defaultState: CIStateConfig = {
   icon: 'i-octicon-clock-16',
   color: 'text-yellow-500 dark:text-yellow-400',
   label: 'Running',
@@ -74,22 +74,22 @@ const defaultState: WorkflowStateConfig = {
 }
 
 // Get full state config
-export function getWorkflowState(conclusion: WorkflowConclusion | null | undefined): WorkflowStateConfig {
+export function getCIState(conclusion: WorkflowConclusion | null | undefined): CIStateConfig {
   if (!conclusion) return defaultState
-  return workflowStates[conclusion] || defaultState
+  return ciStates[conclusion] || defaultState
 }
 
 // Individual getters for convenience
-export const getWorkflowStateIcon = (conclusion: WorkflowConclusion | null | undefined) => getWorkflowState(conclusion).icon
-export const getWorkflowStateColor = (conclusion: WorkflowConclusion | null | undefined) => getWorkflowState(conclusion).color
-export const getWorkflowStateBadge = (conclusion: WorkflowConclusion | null | undefined) => {
-  const state = getWorkflowState(conclusion)
+export const getCIStateIcon = (conclusion: WorkflowConclusion | null | undefined) => getCIState(conclusion).icon
+export const getCIStateColor = (conclusion: WorkflowConclusion | null | undefined) => getCIState(conclusion).color
+export const getCIStateBadge = (conclusion: WorkflowConclusion | null | undefined) => {
+  const state = getCIState(conclusion)
   return { label: state.label, color: state.badgeColor }
 }
 
 // Composable for reactive use
-export function useWorkflowState(conclusion: Ref<WorkflowConclusion | null | undefined>) {
-  const state = computed(() => getWorkflowState(conclusion.value))
+export function useCIState(conclusion: Ref<WorkflowConclusion | null | undefined>) {
+  const state = computed(() => getCIState(conclusion.value))
 
   return {
     state,

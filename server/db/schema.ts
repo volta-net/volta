@@ -119,6 +119,40 @@ export const workflowRuns = pgTable('workflow_runs', {
   updatedAt: timestamp('updated_at').notNull().defaultNow()
 })
 
+// Check Runs (third-party integrations like Vercel, CircleCI, etc.)
+export const checkRuns = pgTable('check_runs', {
+  id: bigint({ mode: 'number' }).primaryKey(), // GitHub check run ID
+  repositoryId: bigint('repository_id', { mode: 'number' }).notNull().references(() => repositories.id, { onDelete: 'cascade' }),
+  headSha: text('head_sha').notNull(),
+  name: text().notNull(), // Check name (e.g., "Vercel – my-app")
+  status: text(), // queued, in_progress, completed
+  conclusion: text().$type<WorkflowConclusion>(), // success, failure, etc.
+  htmlUrl: text('html_url'),
+  detailsUrl: text('details_url'), // External URL (e.g., Vercel deployment URL)
+  appSlug: text('app_slug'), // App identifier (e.g., "vercel", "circleci")
+  appName: text('app_name'), // App display name
+  startedAt: timestamp('started_at'),
+  completedAt: timestamp('completed_at'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow()
+})
+
+// Commit Status state (from GitHub Status API - older API used by Vercel deployments, etc.)
+export type CommitStatusState = 'error' | 'failure' | 'pending' | 'success'
+
+// Commit Statuses (GitHub Status API - used by Vercel deployments, external CI, etc.)
+export const commitStatuses = pgTable('commit_statuses', {
+  id: bigint({ mode: 'number' }).primaryKey(), // GitHub status ID
+  repositoryId: bigint('repository_id', { mode: 'number' }).notNull().references(() => repositories.id, { onDelete: 'cascade' }),
+  sha: text().notNull(), // Commit SHA
+  state: text().$type<CommitStatusState>().notNull(), // error, failure, pending, success
+  context: text().notNull(), // Status context (e.g., "Vercel", "continuous-integration/travis-ci")
+  description: text(), // Short description
+  targetUrl: text('target_url'), // Link to external service
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow()
+})
+
 // Labels (matches GitHub API)
 export const labels = pgTable('labels', {
   id: bigint({ mode: 'number' }).primaryKey(), // GitHub label ID
@@ -303,6 +337,8 @@ export const repositoriesRelations = relations(repositories, ({ one, many }) => 
   milestones: many(milestones),
   releases: many(releases),
   workflowRuns: many(workflowRuns),
+  checkRuns: many(checkRuns),
+  commitStatuses: many(commitStatuses),
   favorites: many(favoriteRepositories),
   collaborators: many(repositoryCollaborators)
 }))
@@ -326,6 +362,20 @@ export const workflowRunsRelations = relations(workflowRuns, ({ one }) => ({
   actor: one(users, {
     fields: [workflowRuns.actorId],
     references: [users.id]
+  })
+}))
+
+export const checkRunsRelations = relations(checkRuns, ({ one }) => ({
+  repository: one(repositories, {
+    fields: [checkRuns.repositoryId],
+    references: [repositories.id]
+  })
+}))
+
+export const commitStatusesRelations = relations(commitStatuses, ({ one }) => ({
+  repository: one(repositories, {
+    fields: [commitStatuses.repositoryId],
+    references: [repositories.id]
   })
 }))
 

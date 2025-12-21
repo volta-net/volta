@@ -29,6 +29,20 @@
       "when": 1766328163987,
       "tag": "0003_thankful_exiles",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1766336633839,
+      "tag": "0004_whole_christian_walker",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1766338511641,
+      "tag": "0005_odd_outlaw_kid",
+      "breakpoints": true
     }
   ]
 }

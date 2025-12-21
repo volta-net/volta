@@ -57,43 +57,113 @@ export async function getTypesForIssues(typeIds: number[]): Promise<Map<number, 
 }
 
 /**
- * Batch get CI status for multiple PRs (single query)
+ * Batch get CI status for multiple PRs
+ * Returns all check runs + commit statuses per headSha
+ * Includes GitHub Actions, Vercel Agent Review (Checks API) + Vercel deployments (Status API)
  */
-export async function getCIStatusForPRs(prs: { repositoryId: number, headSha: string | null }[]): Promise<Map<string, CIStatus>> {
+export async function getCIStatusForPRs(prs: { repositoryId: number, headSha: string | null }[]): Promise<Map<string, CIStatus[]>> {
   const validPRs = prs.filter(pr => pr.headSha)
-  if (validPRs.length === 0) return new Map<string, CIStatus>()
+  if (validPRs.length === 0) return new Map<string, CIStatus[]>()
 
   const headShas = validPRs.map(pr => pr.headSha!)
 
-  const runs = await db
-    .select({
-      id: schema.workflowRuns.id,
-      status: schema.workflowRuns.status,
-      conclusion: schema.workflowRuns.conclusion,
-      htmlUrl: schema.workflowRuns.htmlUrl,
-      name: schema.workflowRuns.name,
-      headSha: schema.workflowRuns.headSha,
-      createdAt: schema.workflowRuns.createdAt
-    })
-    .from(schema.workflowRuns)
-    .where(inArray(schema.workflowRuns.headSha, headShas))
-    .orderBy(desc(schema.workflowRuns.createdAt))
+  // Fetch check runs (GitHub Actions, Vercel Agent Review, etc.) and commit statuses (Vercel deployments, etc.) in parallel
+  const [checkRuns, commitStatuses] = await Promise.all([
+    db
+      .select({
+        id: schema.checkRuns.id,
+        status: schema.checkRuns.status,
+        conclusion: schema.checkRuns.conclusion,
+        htmlUrl: schema.checkRuns.htmlUrl,
+        detailsUrl: schema.checkRuns.detailsUrl,
+        name: schema.checkRuns.name,
+        headSha: schema.checkRuns.headSha,
+        appSlug: schema.checkRuns.appSlug,
+        createdAt: schema.checkRuns.createdAt
+      })
+      .from(schema.checkRuns)
+      .where(inArray(schema.checkRuns.headSha, headShas))
+      .orderBy(desc(schema.checkRuns.createdAt)),
+    db
+      .select({
+        id: schema.commitStatuses.id,
+        state: schema.commitStatuses.state,
+        context: schema.commitStatuses.context,
+        targetUrl: schema.commitStatuses.targetUrl,
+        sha: schema.commitStatuses.sha,
+        createdAt: schema.commitStatuses.createdAt
+      })
+      .from(schema.commitStatuses)
+      .where(inArray(schema.commitStatuses.sha, headShas))
+      .orderBy(desc(schema.commitStatuses.createdAt))
+  ])
 
-  // Keep only the latest run per headSha
-  const ciByHeadSha = new Map<string, CIStatus>()
-  for (const run of runs) {
-    if (run.headSha && !ciByHeadSha.has(run.headSha)) {
-      ciByHeadSha.set(run.headSha, {
-        id: run.id,
-        status: run.status,
-        conclusion: run.conclusion,
-        htmlUrl: run.htmlUrl,
-        name: run.name
+  // Group runs by headSha, keeping only the latest run per check
+  const runsByHeadSha = new Map<string, CIStatus[]>()
+  const seenChecks = new Map<string, Set<string>>() // headSha -> Set of check keys
+
+  // Process check runs (Checks API)
+  for (const check of checkRuns) {
+    if (!check.headSha) continue
+
+    if (!runsByHeadSha.has(check.headSha)) {
+      runsByHeadSha.set(check.headSha, [])
+      seenChecks.set(check.headSha, new Set())
+    }
+
+    // Only keep the latest run per check (name + appSlug combination)
+    const checkKey = `check:${check.name}:${check.appSlug || ''}`
+    const seen = seenChecks.get(check.headSha)!
+    if (!seen.has(checkKey)) {
+      seen.add(checkKey)
+      runsByHeadSha.get(check.headSha)!.push({
+        id: check.id,
+        status: check.status,
+        conclusion: check.conclusion,
+        htmlUrl: check.detailsUrl || check.htmlUrl,
+        name: check.name
       })
     }
   }
 
-  return ciByHeadSha
+  // Process commit statuses (Status API - used by Vercel deployments, etc.)
+  for (const status of commitStatuses) {
+    if (!status.sha) continue
+
+    if (!runsByHeadSha.has(status.sha)) {
+      runsByHeadSha.set(status.sha, [])
+      seenChecks.set(status.sha, new Set())
+    }
+
+    // Only keep the latest status per context
+    const statusKey = `status:${status.context}`
+    const seen = seenChecks.get(status.sha)!
+    if (!seen.has(statusKey)) {
+      seen.add(statusKey)
+
+      // Convert Status API state to Checks API format
+      // Status API: error, failure, pending, success
+      // Checks API status: queued, in_progress, completed
+      // Checks API conclusion: success, failure, neutral, cancelled, skipped, timed_out, action_required
+      const isCompleted = status.state !== 'pending'
+      let conclusion: string | null = null
+      if (status.state === 'success') {
+        conclusion = 'success'
+      } else if (status.state === 'failure' || status.state === 'error') {
+        conclusion = 'failure'
+      }
+
+      runsByHeadSha.get(status.sha)!.push({
+        id: status.id,
+        status: isCompleted ? 'completed' : 'in_progress',
+        conclusion,
+        htmlUrl: status.targetUrl,
+        name: status.context
+      })
+    }
+  }
+
+  return runsByHeadSha
 }
 
 /**
@@ -127,7 +197,7 @@ export async function enrichIssuesWithMetadata<T extends { id: number, repositor
     }
 
     if (includeCIStatus && 'headSha' in item && item.headSha) {
-      enriched.ciStatus = ciByHeadSha.get(item.headSha) || null
+      enriched.ciStatuses = ciByHeadSha.get(item.headSha) || []
     }
 
     return enriched

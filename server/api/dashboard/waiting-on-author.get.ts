@@ -43,7 +43,7 @@ export default defineEventHandler(async (event) => {
           reviewer: latestReview.user
         },
         labels: pr.labels.map(l => l.label),
-        ciStatus: pr.headSha ? ciByHeadSha.get(pr.headSha) || null : null
+        ciStatuses: pr.headSha ? ciByHeadSha.get(pr.headSha) || [] : []
       }
     })
 })

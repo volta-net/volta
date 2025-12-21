@@ -37,7 +37,7 @@ export default defineEventHandler(async (event) => {
     return items.map(item => ({
       ...item,
       labels: item.labels.map(l => l.label),
-      ciStatus: item.headSha ? ciByHeadSha.get(item.headSha) || null : null
+      ciStatuses: item.headSha ? ciByHeadSha.get(item.headSha) || [] : []
     }))
   }
 

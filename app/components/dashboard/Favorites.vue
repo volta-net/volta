@@ -50,7 +50,7 @@ async function toggleFavorite(repositoryId: number) {
     inset
     :modal="false"
     :ui="{
-      content: 'rounded-l-none sm:shadow-none',
+      content: 'lg:rounded-l-none sm:shadow-none',
       header: 'min-h-0 h-12 flex items-center justify-between',
       close: 'static',
       body: 'flex flex-col'

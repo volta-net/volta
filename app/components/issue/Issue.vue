@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { IssueListItem } from '#shared/types/issue'
+import type { WorkflowConclusion } from '#shared/types/db'
 
 const props = defineProps<{
   item: IssueListItem
@@ -19,28 +20,59 @@ const stateColor = computed(() => getIssueStateColor(issueState.value))
 
 const authorLogin = computed(() => props.item.user?.login)
 
+// Aggregate CI statuses from all workflow runs
 const ciStatusConfig = computed(() => {
-  const ciStatus = props.item.ciStatus
-  if (!ciStatus) return null
+  const statuses = props.item.ciStatuses
+  if (!statuses || statuses.length === 0) return null
 
-  const status = ciStatus.status
-  const conclusion = ciStatus.conclusion
+  const total = statuses.length
 
-  if (status === 'in_progress' || status === 'queued') {
-    return { icon: 'i-lucide-loader-2', color: 'text-yellow-500', label: 'Running', animate: true }
+  // Count by status
+  let inProgress = 0
+  let passed = 0
+  let failed = 0
+  let failedRun = null as typeof statuses[0] | null
+
+  for (const ci of statuses) {
+    if (ci.status === 'in_progress' || ci.status === 'queued') {
+      inProgress++
+    } else if (ci.conclusion === 'success' || ci.conclusion === 'skipped') {
+      passed++
+    } else {
+      failed++
+      if (!failedRun) failedRun = ci
+    }
   }
 
-  switch (conclusion) {
-    case 'success':
-      return { icon: 'i-lucide-check-circle', color: 'text-emerald-500', label: 'Passed', animate: false }
-    case 'failure':
-      return { icon: 'i-lucide-x-circle', color: 'text-red-500', label: 'Failed', animate: false }
-    case 'cancelled':
-      return { icon: 'i-lucide-circle-slash', color: 'text-neutral-500', label: 'Cancelled', animate: false }
-    case 'skipped':
-      return { icon: 'i-lucide-circle-minus', color: 'text-neutral-500', label: 'Skipped', animate: false }
-    default:
-      return { icon: 'i-lucide-circle-help', color: 'text-neutral-500', label: 'Unknown', animate: false }
+  // Determine aggregate conclusion for styling
+  let aggregateConclusion: WorkflowConclusion | null = null
+  if (inProgress > 0) {
+    aggregateConclusion = null // Running
+  } else if (failed > 0) {
+    aggregateConclusion = 'failure'
+  } else {
+    aggregateConclusion = 'success'
+  }
+
+  const state = getCIState(aggregateConclusion)
+
+  // Build label: "2 / 3 passed" or "Running 1 / 3"
+  let label: string
+  if (inProgress > 0) {
+    label = `Running ${passed} / ${total}`
+  } else {
+    label = `${passed} / ${total} passed`
+  }
+
+  // Link to failed run if any, otherwise first run
+  const representativeRun = failedRun || statuses[0]!
+
+  return {
+    icon: state.icon,
+    color: state.color,
+    label,
+    animate: inProgress > 0,
+    htmlUrl: representativeRun.htmlUrl
   }
 })
 
@@ -59,18 +91,16 @@ function formatTimeAgo(date: Date | string) {
 
 <template>
   <NuxtLink
-    :to="item.htmlUrl || '#'"
+    :to="item.htmlUrl ?? undefined"
     target="_blank"
-    class="flex items-center gap-3 px-4 py-2.5 hover:bg-elevated/50 transition-colors border-b border-default last:border-b-0"
+    class="flex items-center gap-3 px-4 py-2.5 hover:bg-elevated/50 transition-colors"
   >
     <!-- State icon -->
     <UIcon :name="stateIcon" :class="stateColor" class="size-4 shrink-0" />
 
     <!-- Content -->
     <div class="flex-1 flex items-center gap-3 min-w-0">
-      <div class="flex items-center gap-2">
-        <span class="text-sm font-medium truncate">#{{ item.number }} {{ item.title }}</span>
-      </div>
+      <span class="text-sm font-medium truncate">#{{ item.number }} {{ item.title }}</span>
 
       <div class="flex items-center gap-2 mt-0.5 text-xs text-muted">
         <!-- Type Badge -->

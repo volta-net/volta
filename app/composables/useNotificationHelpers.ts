@@ -1,6 +1,6 @@
 import type { Notification } from '#shared/types/notification'
 import { getIssueStateIcon, getIssueStateColor } from './useIssueState'
-import { getWorkflowStateIcon, getWorkflowStateColor } from './useWorkflowState'
+import { getCIStateIcon, getCIStateColor } from './useCIState'
 import { getReleaseStateIcon, getReleaseStateColor } from './useReleaseState'
 
 export function useNotificationHelpers() {
@@ -14,7 +14,7 @@ export function useNotificationHelpers() {
 
     // Workflow run notifications
     if (type === 'workflow_run' && notification.workflowRun) {
-      return getWorkflowStateIcon(notification.workflowRun.conclusion)
+      return getCIStateIcon(notification.workflowRun.conclusion)
     }
 
     // Issue/PR - reuse shared utility
@@ -32,7 +32,7 @@ export function useNotificationHelpers() {
 
     // Workflow run notifications
     if (type === 'workflow_run' && notification.workflowRun) {
-      return getWorkflowStateColor(notification.workflowRun.conclusion)
+      return getCIStateColor(notification.workflowRun.conclusion)
     }
 
     // Issue/PR - reuse shared utility

@@ -30,19 +30,23 @@ pnpm install
 | **Repository permissions** | |
 | Actions | Read-only |
 | Administration | Read-only |
+| Checks | Read-only |
 | Contents | Read-only |
 | Issues | Read & write |
 | Metadata | Read-only |
 | Pull requests | Read & write |
+| **Organization permissions** | |
+| Issue Types | Read-only |
 
 4. Subscribe to **events**:
+   - Check run
    - Installation target
-   - Meta
    - Issue comment
    - Issues
    - Label
-   - Milestone
    - Member
+   - Meta
+   - Milestone
    - Public
    - Pull request
    - Pull request review
@@ -50,6 +54,7 @@ pnpm install
    - Pull request review thread
    - Release
    - Repository
+   - Status
    - Workflow run
 
 5. For **"Where can this GitHub App be installed?"**, select **Any account** (or **Only on this account** for development)

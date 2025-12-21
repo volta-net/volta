@@ -14,6 +14,7 @@ import type {
   GitHubMilestone,
   GitHubRelease,
   GitHubWorkflowRun,
+  GitHubCheckRun,
   GitHubInstallation,
   GitHubInstallationRepository
 } from '../types/github'
@@ -1018,4 +1019,89 @@ export async function handleWorkflowRunEvent(action: string, workflowRun: GitHub
       })
     }
   }
+}
+
+export async function handleCheckRunEvent(action: string, checkRun: GitHubCheckRun, repository: GitHubRepository) {
+  // Check if repository is synced
+  const [repo] = await db.select().from(schema.repositories).where(eq(schema.repositories.id, repository.id))
+  if (!repo) {
+    console.log(`[Webhook] Repository ${repository.full_name} not synced, skipping check run event`)
+    return
+  }
+
+  // Handle created, completed, and rerequested actions
+  if (action === 'created' || action === 'completed' || action === 'rerequested') {
+    const checkData = {
+      repositoryId: repository.id,
+      headSha: checkRun.head_sha,
+      name: checkRun.name,
+      status: checkRun.status,
+      conclusion: checkRun.conclusion,
+      htmlUrl: checkRun.html_url,
+      detailsUrl: checkRun.details_url,
+      appSlug: checkRun.app?.slug || null,
+      appName: checkRun.app?.name || null,
+      startedAt: checkRun.started_at ? new Date(checkRun.started_at) : null,
+      completedAt: checkRun.completed_at ? new Date(checkRun.completed_at) : null,
+      updatedAt: new Date()
+    }
+
+    const [existing] = await db.select().from(schema.checkRuns).where(eq(schema.checkRuns.id, checkRun.id))
+
+    if (existing) {
+      await db.update(schema.checkRuns).set(checkData).where(eq(schema.checkRuns.id, checkRun.id))
+    } else {
+      await db.insert(schema.checkRuns).values({
+        id: checkRun.id,
+        ...checkData
+      })
+    }
+
+    console.log(`[Webhook] Check run ${checkRun.name} ${action} for ${repository.full_name}`)
+  }
+}
+
+// Commit Status state type (from GitHub Status API)
+type CommitStatusState = 'error' | 'failure' | 'pending' | 'success'
+
+// GitHub Status Event payload
+interface GitHubStatusPayload {
+  id: number
+  sha: string
+  state: CommitStatusState
+  context: string
+  description: string | null
+  target_url: string | null
+}
+
+export async function handleStatusEvent(payload: GitHubStatusPayload, repository: GitHubRepository) {
+  // Check if repository is synced
+  const [repo] = await db.select().from(schema.repositories).where(eq(schema.repositories.id, repository.id))
+  if (!repo) {
+    console.log(`[Webhook] Repository ${repository.full_name} not synced, skipping status event`)
+    return
+  }
+
+  const statusData = {
+    repositoryId: repository.id,
+    sha: payload.sha,
+    state: payload.state,
+    context: payload.context,
+    description: payload.description,
+    targetUrl: payload.target_url,
+    updatedAt: new Date()
+  }
+
+  const [existing] = await db.select().from(schema.commitStatuses).where(eq(schema.commitStatuses.id, payload.id))
+
+  if (existing) {
+    await db.update(schema.commitStatuses).set(statusData).where(eq(schema.commitStatuses.id, payload.id))
+  } else {
+    await db.insert(schema.commitStatuses).values({
+      id: payload.id,
+      ...statusData
+    })
+  }
+
+  console.log(`[Webhook] Commit status ${payload.context}: ${payload.state} for ${repository.full_name}`)
 }

@@ -314,6 +314,20 @@ export default defineEventHandler(async (event) => {
         }
         break
 
+      case 'check_run':
+        console.log(`[Webhook] Check run ${payload.action}: ${payload.check_run?.name} (${payload.check_run?.conclusion})`)
+        if (payload.check_run) {
+          await handleCheckRunEvent(payload.action, payload.check_run, payload.repository)
+        }
+        break
+
+      case 'status':
+        console.log(`[Webhook] Commit status ${payload.state}: ${payload.context} for ${payload.sha?.slice(0, 7)}`)
+        if (payload.id && payload.sha && payload.context) {
+          await handleStatusEvent(payload, payload.repository)
+        }
+        break
+
       default:
         console.log(`[Webhook] Unhandled event: ${githubEvent}`)
     }

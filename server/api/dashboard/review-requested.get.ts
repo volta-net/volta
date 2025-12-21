@@ -32,6 +32,6 @@ export default defineEventHandler(async (event) => {
   return prs.map(pr => ({
     ...pr,
     labels: pr.labels.map(l => l.label),
-    ciStatus: pr.headSha ? ciByHeadSha.get(pr.headSha) || null : null
+    ciStatuses: pr.headSha ? ciByHeadSha.get(pr.headSha) || [] : []
   }))
 })
