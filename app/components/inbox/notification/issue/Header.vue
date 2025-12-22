@@ -17,7 +17,7 @@ const isEditing = ref(false)
 const isSaving = ref(false)
 
 // Favorite functionality
-const { data: favoriteIssues, refresh: refreshFavorites } = await useFetch('/api/favorites/issues', {
+const { data: favoriteIssues, refresh: refreshFavorites } = await useLazyFetch('/api/favorites/issues', {
   default: () => []
 })
 
@@ -142,7 +142,7 @@ function cancelEdit() {
         color="neutral"
         variant="ghost"
         :loading="updatingFavorite"
-        :class="isFavorited ? 'text-yellow-500' : 'text-muted'"
+        :class="isFavorited ? 'text-warning' : 'text-muted'"
         @click="toggleFavorite"
       />
     </UTooltip>

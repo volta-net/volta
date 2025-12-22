@@ -44,7 +44,6 @@ export async function createNotification(data: NotificationData) {
       .where(eq(schema.users.id, data.userId))
 
     if (!user || !user.registered) {
-      console.debug('[notifications] Skipping notification for non-registered user:', data.userId)
       return
     }
 

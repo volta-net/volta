@@ -2,7 +2,7 @@ import type { DBRelease } from '#shared/types/db'
 
 export type ReleaseStateLike = Pick<DBRelease, 'draft' | 'prerelease'>
 
-type BadgeColor = 'success' | 'info' | 'neutral'
+type BadgeColor = 'success' | 'warning' | 'neutral'
 
 interface ReleaseStateConfig {
   icon: string
@@ -14,19 +14,19 @@ interface ReleaseStateConfig {
 const releaseStates: Record<string, ReleaseStateConfig> = {
   draft: {
     icon: 'i-octicon-tag-16',
-    color: 'text-neutral-500 dark:text-neutral-400',
+    color: 'text-muted',
     label: 'Draft',
     badgeColor: 'neutral'
   },
   prerelease: {
     icon: 'i-octicon-tag-16',
-    color: 'text-yellow-500 dark:text-yellow-400',
+    color: 'text-warning',
     label: 'Pre-release',
-    badgeColor: 'info'
+    badgeColor: 'warning'
   },
   published: {
     icon: 'i-octicon-tag-16',
-    color: 'text-blue-500 dark:text-blue-400',
+    color: 'text-success',
     label: 'Published',
     badgeColor: 'success'
   }

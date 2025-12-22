@@ -12,55 +12,55 @@ interface CIStateConfig {
 const ciStates: Record<string, CIStateConfig> = {
   success: {
     icon: 'i-octicon-check-circle-fill-16',
-    color: 'text-emerald-500 dark:text-emerald-400',
+    color: 'text-success',
     label: 'Success',
     badgeColor: 'success'
   },
   neutral: {
     icon: 'i-octicon-check-circle-fill-16',
-    color: 'text-emerald-500 dark:text-emerald-400',
+    color: 'text-success',
     label: 'Success',
     badgeColor: 'success'
   },
   failure: {
     icon: 'i-octicon-x-circle-fill-16',
-    color: 'text-red-500 dark:text-red-400',
+    color: 'text-error',
     label: 'Failed',
     badgeColor: 'error'
   },
   timed_out: {
     icon: 'i-octicon-x-circle-fill-16',
-    color: 'text-red-500 dark:text-red-400',
+    color: 'text-error',
     label: 'Timed out',
     badgeColor: 'error'
   },
   startup_failure: {
     icon: 'i-octicon-x-circle-fill-16',
-    color: 'text-red-500 dark:text-red-400',
+    color: 'text-error',
     label: 'Startup failure',
     badgeColor: 'error'
   },
   cancelled: {
     icon: 'i-octicon-stop-16',
-    color: 'text-neutral-500 dark:text-neutral-400',
+    color: 'text-muted',
     label: 'Cancelled',
     badgeColor: 'neutral'
   },
   skipped: {
     icon: 'i-octicon-skip-16',
-    color: 'text-neutral-500 dark:text-neutral-400',
+    color: 'text-muted',
     label: 'Skipped',
     badgeColor: 'neutral'
   },
   stale: {
     icon: 'i-octicon-skip-16',
-    color: 'text-neutral-500 dark:text-neutral-400',
+    color: 'text-muted',
     label: 'Stale',
     badgeColor: 'neutral'
   },
   action_required: {
     icon: 'i-octicon-alert-16',
-    color: 'text-yellow-500 dark:text-yellow-400',
+    color: 'text-warning',
     label: 'Action required',
     badgeColor: 'warning'
   }
@@ -68,7 +68,7 @@ const ciStates: Record<string, CIStateConfig> = {
 
 const defaultState: CIStateConfig = {
   icon: 'i-octicon-clock-16',
-  color: 'text-yellow-500 dark:text-yellow-400',
+  color: 'text-warning',
   label: 'Running',
   badgeColor: 'warning'
 }

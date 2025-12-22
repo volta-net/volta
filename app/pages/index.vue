@@ -8,21 +8,21 @@ useSeoMeta({
 const route = useRoute()
 const router = useRouter()
 
-// Tab state from URL query
-const activeTab = computed({
-  get: () => (route.query.tab as string) || 'issues',
-  set: (value) => {
-    router.replace({ query: { ...route.query, tab: value } })
-  }
-})
-
 const tabs = [
   { label: 'Issues', value: 'issues', icon: 'i-octicon-issue-opened-16' },
   { label: 'Pull Requests', value: 'pull-requests', icon: 'i-octicon-git-pull-request-16' }
 ]
 
+// Tab state from URL query
+const activeTab = computed({
+  get: () => (route.query.tab as string) || tabs[0]?.value,
+  set: (tab) => {
+    router.replace({ query: { ...route.query, tab } })
+  }
+})
+
 const issueSections = [
-  { label: 'My Issues', value: 'my-issues', icon: 'i-lucide-user', api: '/api/dashboard/mine?pullRequest=false', empty: 'No open issues' },
+  { label: 'Created by Me', value: 'created-by-me', icon: 'i-lucide-user', api: '/api/dashboard/created-by-me?pullRequest=false', empty: 'No open issues' },
   { label: 'Assigned to Me', value: 'assigned-to-me', icon: 'i-lucide-user-check', api: '/api/dashboard/assigned-to-me?pullRequest=false', empty: 'No issues assigned to you' },
   { label: 'Hot Issues', value: 'hot-issues', icon: 'i-lucide-flame', api: '/api/dashboard/hot-issues', empty: 'No hot issues' },
   { label: 'Priority Bugs', value: 'priority-bugs', icon: 'i-lucide-bug', api: '/api/dashboard/priority-bugs', empty: 'No priority bugs' },
@@ -32,10 +32,10 @@ const issueSections = [
 ]
 
 const prSections = [
-  { label: 'My PRs', value: 'my-prs', icon: 'i-lucide-git-pull-request', api: '/api/dashboard/mine?pullRequest=true', empty: 'No open PRs' },
+  { label: 'Created by Me', value: 'created-by-me', icon: 'i-lucide-user', api: '/api/dashboard/created-by-me?pullRequest=true', empty: 'No open PRs' },
   { label: 'Review Requested', value: 'review-requested', icon: 'i-lucide-eye', api: '/api/dashboard/review-requested', empty: 'No reviews requested' },
-  { label: 'Ready to Merge', value: 'ready-to-merge', icon: 'i-lucide-git-merge', api: '/api/dashboard/ready-to-merge', empty: 'No PRs ready to merge' },
   { label: 'Waiting on Author', value: 'waiting-on-author', icon: 'i-lucide-clock', api: '/api/dashboard/waiting-on-author', empty: 'No PRs waiting on author' },
+  { label: 'Ready to Merge', value: 'ready-to-merge', icon: 'i-lucide-git-merge', api: '/api/dashboard/ready-to-merge', empty: 'No PRs ready to merge' },
   { label: 'Dependency Updates', value: 'dependency-updates', icon: 'i-lucide-package', api: '/api/dashboard/dependency-updates', empty: 'No dependency updates' }
 ]
 
@@ -44,8 +44,8 @@ const currentSections = computed(() => activeTab.value === 'issues' ? issueSecti
 // Active section (defaults to first section of current tab)
 const activeSection = computed({
   get: () => (route.query.section as string) || currentSections.value[0]?.value,
-  set: (value) => {
-    router.replace({ query: { ...route.query, section: value } })
+  set: (section) => {
+    router.replace({ query: { ...route.query, section } })
   }
 })
 
@@ -96,10 +96,14 @@ watch(() => activeTab.value, () => {
 }, { immediate: true })
 
 // Fetch synced repositories to check if user has any
-const { data: repositories } = await useFetch('/api/repositories/synced')
+const { data: repositories } = await useFetch('/api/repositories/synced', {
+  default: () => []
+})
 
 // We also need to check if user has favorites
-const { data: favorites, refresh: refreshFavorites } = await useFetch('/api/favorites/repositories', { default: () => [] })
+const { data: favorites, refresh: refreshFavorites } = await useFetch('/api/favorites/repositories', {
+  default: () => []
+})
 const hasFavorites = computed(() => favorites.value && favorites.value.length > 0)
 
 function refresh() {
@@ -179,6 +183,7 @@ function goToSettings() {
                 color="neutral"
                 variant="subtle"
                 size="xs"
+                class="rounded-full! size-4.5 justify-center p-0 -my-1"
               />
             </template>
           </UButton>
@@ -187,13 +192,6 @@ function goToSettings() {
     </template>
 
     <template #body>
-      <LazyDashboardFavorites
-        v-model:open="favoritesOpen"
-        :favorites="favorites ?? []"
-        :repositories="repositories ?? []"
-        @change="refresh"
-      />
-
       <!-- No synced repositories -->
       <UEmpty
         v-if="!repositories?.length"
@@ -260,4 +258,11 @@ function goToSettings() {
       </div>
     </template>
   </UDashboardPanel>
+
+  <LazyDashboardFavorites
+    v-model:open="favoritesOpen"
+    :favorites="favorites"
+    :repositories="repositories"
+    @change="refresh"
+  />
 </template>

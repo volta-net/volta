@@ -27,10 +27,10 @@ defineProps<{
         <UIcon name="i-octicon-git-commit-16" class="size-4 text-muted" />
         <span>{{ issue.commits }} commit{{ issue.commits !== 1 ? 's' : '' }}</span>
       </div>
-      <div class="flex items-center gap-1 text-emerald-500 dark:text-emerald-400">
+      <div class="flex items-center gap-1 text-success">
         <span>+{{ issue.additions }}</span>
       </div>
-      <div class="flex items-center gap-1 text-red-500 dark:text-red-400">
+      <div class="flex items-center gap-1 text-error">
         <span>-{{ issue.deletions }}</span>
       </div>
       <div class="flex items-center gap-1">

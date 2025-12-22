@@ -21,7 +21,6 @@ export default defineEventHandler(async (event) => {
       )
     ),
     orderBy: desc(schema.issues.updatedAt),
-    limit: 20,
     with: {
       repository: true,
       user: true,

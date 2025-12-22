@@ -21,7 +21,7 @@ const issueStates: Record<string, IssueStateConfig> = {
   // Pull Request states
   pr_draft: {
     icon: 'i-octicon-git-pull-request-draft-16',
-    color: 'text-neutral-500 dark:text-neutral-400',
+    color: 'text-muted',
     label: 'Draft',
     badgeColor: 'neutral'
   },
@@ -33,32 +33,32 @@ const issueStates: Record<string, IssueStateConfig> = {
   },
   pr_closed: {
     icon: 'i-octicon-git-pull-request-closed-16',
-    color: 'text-red-500 dark:text-red-400',
+    color: 'text-error',
     label: 'Closed',
     badgeColor: 'error'
   },
   pr_open: {
     icon: 'i-octicon-git-pull-request-16',
-    color: 'text-emerald-500 dark:text-emerald-400',
+    color: 'text-success',
     label: 'Open',
     badgeColor: 'success'
   },
   // Issue states
   issue_open: {
     icon: 'i-octicon-issue-opened-16',
-    color: 'text-emerald-500 dark:text-emerald-400',
+    color: 'text-success',
     label: 'Open',
     badgeColor: 'success'
   },
   issue_not_planned: {
     icon: 'i-octicon-skip-16',
-    color: 'text-neutral-500 dark:text-neutral-400',
+    color: 'text-muted',
     label: 'Not planned',
     badgeColor: 'neutral'
   },
   issue_closed: {
     icon: 'i-octicon-issue-closed-16',
-    color: 'text-purple-500 dark:text-purple-400',
+    color: 'text-important',
     label: 'Closed',
     badgeColor: 'info'
   }

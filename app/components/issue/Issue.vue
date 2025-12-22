@@ -141,10 +141,10 @@ function formatTimeAgo(date: Date | string) {
 
     <!-- AI Analysis Status (issues only) -->
     <UTooltip v-if="item.analyzing" text="Analyzing...">
-      <UIcon name="i-lucide-sparkles" class="size-4 shrink-0 text-amber-500 animate-pulse" />
+      <UIcon name="i-lucide-sparkles" class="size-4 shrink-0 text-warning animate-pulse" />
     </UTooltip>
     <UTooltip v-else-if="item.answered" text="AI confirmed answered">
-      <UIcon name="i-lucide-sparkles" class="size-4 shrink-0 text-emerald-500" />
+      <UIcon name="i-lucide-sparkles" class="size-4 shrink-0 text-success" />
     </UTooltip>
 
     <!-- CI Status -->
@@ -160,7 +160,7 @@ function formatTimeAgo(date: Date | string) {
     </UTooltip>
 
     <!-- Time -->
-    <span class="text-xs text-muted shrink-0">
+    <span class="text-xs text-muted shrink-0 w-8 text-end">
       {{ formatTimeAgo(item.updatedAt) }}
     </span>
   </NuxtLink>

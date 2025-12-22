@@ -203,9 +203,11 @@ export async function analyzeIssuesAnswered(issues: IssueForAnalysis[]): Promise
   if (needsAnalysis.length === 0) return results
 
   console.log(`[AI] Analyzing ${needsAnalysis.length} issues`)
-  return results
   // Mark issues as analyzing in DB
   await Promise.all(needsAnalysis.map(issue => _markAnalyzing(issue.id)))
+
+  // TODO: Remove this to test the AI analysis
+  return results
 
   // Analyze issues in parallel with concurrency limit
   const BATCH_SIZE = 5

@@ -639,7 +639,7 @@ function getSubscriptionSummary(repo: InstallationRepository): { label: string, 
                   :icon="favoriteRepoIds.has(repo.id) ? 'i-lucide-star' : 'i-lucide-star'"
                   color="neutral"
                   variant="soft"
-                  :class="favoriteRepoIds.has(repo.id) ? 'text-yellow-500' : 'text-muted'"
+                  :class="favoriteRepoIds.has(repo.id) ? 'text-warning' : 'text-muted'"
                   @click="toggleFavorite(repo.id)"
                 />
               </UTooltip>

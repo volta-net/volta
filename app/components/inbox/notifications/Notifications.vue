@@ -144,7 +144,7 @@ defineShortcuts({
 </script>
 
 <template>
-  <div class="overflow-y-auto p-1 isolate">
+  <div class="overflow-y-auto p-1 scroll-py-1 isolate">
     <template v-for="notification in notifications" :key="notification.id">
       <InboxNotificationsItem
         v-if="!pendingDeleteIds.has(notification.id)"
