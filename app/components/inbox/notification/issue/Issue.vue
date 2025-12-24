@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { Notification } from '#shared/types/notification'
-import type { Issue } from '#shared/types/issue'
+import type { IssueDetail } from '#shared/types/issue'
 
 const props = defineProps<{
   notification: Notification
@@ -13,7 +13,7 @@ const emit = defineEmits<{
 const toast = useToast()
 
 // Fetch full issue details (includes isSubscribed)
-const { data: issue, status, refresh: refreshIssue } = await useLazyFetch<Issue & { isSubscribed: boolean }>(() =>
+const { data: issue, status, refresh: refreshIssue } = await useLazyFetch<IssueDetail & { isSubscribed: boolean }>(() =>
   props.notification.issue?.id ? `/api/issues/${props.notification.issue.id}` : null as unknown as string, {
   watch: [() => props.notification.issue?.id],
   immediate: !!props.notification.issue?.id
@@ -42,6 +42,42 @@ async function toggleSubscription() {
   }
 }
 
+// Favorite functionality
+const { data: favoriteIssues, refresh: refreshFavorites } = await useLazyFetch('/api/favorites/issues', {
+  default: () => []
+})
+
+const isFavorited = computed(() => favoriteIssues.value?.some(f => f.issueId === issue.value?.id) || false)
+const updatingFavorite = ref(false)
+
+async function toggleFavorite() {
+  if (!issue.value) return
+
+  updatingFavorite.value = true
+
+  try {
+    if (isFavorited.value) {
+      await $fetch(`/api/favorites/issues/${issue.value.id}`, { method: 'DELETE' })
+      toast.add({ title: 'Removed from favorites', icon: 'i-lucide-star' })
+    } else {
+      await $fetch('/api/favorites/issues', {
+        method: 'POST',
+        body: { issueId: issue.value.id }
+      })
+      toast.add({ title: 'Added to favorites', icon: 'i-lucide-star' })
+    }
+    await refreshFavorites()
+  } catch (error: any) {
+    toast.add({
+      title: 'Failed to update favorites',
+      description: error.data?.message || 'An error occurred',
+      color: 'error'
+    })
+  } finally {
+    updatingFavorite.value = false
+  }
+}
+
 // Handle refresh from child components
 async function handleRefresh() {
   await refreshIssue()
@@ -51,7 +87,7 @@ async function handleRefresh() {
 
 <template>
   <!-- Navbar -->
-  <UDashboardNavbar :ui="{ title: 'text-sm font-semibold' }">
+  <UDashboardNavbar :title="`#${notification.issue?.number}`" :ui="{ title: 'text-sm font-semibold' }">
     <template v-if="notification.repository" #leading>
       <UButton
         :label="notification.repository.fullName"
@@ -67,8 +103,18 @@ async function handleRefresh() {
       <UIcon name="i-lucide-chevron-right" class="size-4 text-muted" />
     </template>
 
-    <template #title>
-      #{{ notification.issue?.number }}
+    <template #trailing>
+      <!-- Favorite button -->
+      <UTooltip :text="isFavorited ? 'Remove from favorites' : 'Add to favorites'">
+        <UButton
+          :icon="isFavorited ? 'i-lucide-star' : 'i-lucide-star'"
+          color="neutral"
+          variant="ghost"
+          :loading="updatingFavorite"
+          :class="isFavorited ? 'text-warning' : 'text-muted'"
+          @click="toggleFavorite"
+        />
+      </UTooltip>
     </template>
 
     <template #right>
@@ -80,6 +126,7 @@ async function handleRefresh() {
         square
         @click="toggleSubscription"
       />
+
       <UTooltip text="Open on GitHub" :kbds="['meta', 'g']">
         <UButton
           v-if="notification.issue?.htmlUrl"
@@ -100,29 +147,18 @@ async function handleRefresh() {
 
   <!-- Issue/PR View -->
   <template v-else-if="issue">
-    <div class="flex-1 overflow-y-auto p-4">
-      <div class="space-y-6">
-        <!-- Header -->
-        <InboxNotificationIssueHeader
-          :issue="issue"
-          @update:title="handleRefresh"
-        />
+    <div class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 flex flex-col gap-4">
+      <InboxNotificationIssueTitle :issue="issue" @update:title="handleRefresh" />
 
-        <!-- Labels -->
-        <InboxNotificationIssueLabels :issue="issue" @refresh="handleRefresh" />
+      <!-- <InboxNotificationIssueLabels :issue="issue" @refresh="handleRefresh" /> -->
 
-        <!-- Meta (Assignees, PR stats, Reviewers) -->
-        <InboxNotificationIssueMeta :issue="issue" />
+      <!-- <InboxNotificationIssueMeta :issue="issue" /> -->
 
-        <!-- Body -->
-        <InboxNotificationIssueBody :issue="issue" @refresh="handleRefresh" />
+      <InboxNotificationIssueBody :issue="issue" @refresh="handleRefresh" />
 
-        <!-- Activity Timeline -->
-        <InboxNotificationIssueTimeline :issue="issue" />
+      <!-- <InboxNotificationIssueTimeline :issue="issue" /> -->
 
-        <!-- Add Comment -->
-        <InboxNotificationIssueCommentForm :issue="issue" @refresh="handleRefresh" />
-      </div>
+      <!-- <InboxNotificationIssueCommentForm :issue="issue" @refresh="handleRefresh" /> -->
     </div>
   </template>
 

@@ -1,3 +1,32 @@
+CREATE TABLE "check_runs" (
+	"id" bigint PRIMARY KEY NOT NULL,
+	"repository_id" bigint NOT NULL,
+	"head_sha" text NOT NULL,
+	"name" text NOT NULL,
+	"status" text,
+	"conclusion" text,
+	"html_url" text,
+	"details_url" text,
+	"app_slug" text,
+	"app_name" text,
+	"started_at" timestamp,
+	"completed_at" timestamp,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "commit_statuses" (
+	"id" bigint PRIMARY KEY NOT NULL,
+	"repository_id" bigint NOT NULL,
+	"sha" text NOT NULL,
+	"state" text NOT NULL,
+	"context" text NOT NULL,
+	"description" text,
+	"target_url" text,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE "favorite_issues" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"user_id" bigint NOT NULL,
@@ -41,6 +70,11 @@ CREATE TABLE "issue_comments" (
 CREATE TABLE "issue_labels" (
 	"issue_id" bigint NOT NULL,
 	"label_id" bigint NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "issue_linked_prs" (
+	"issue_id" bigint NOT NULL,
+	"pr_id" bigint NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "issue_requested_reviewers" (
@@ -256,6 +290,8 @@ CREATE TABLE "workflow_runs" (
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+ALTER TABLE "check_runs" ADD CONSTRAINT "check_runs_repository_id_repositories_id_fk" FOREIGN KEY ("repository_id") REFERENCES "public"."repositories"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "commit_statuses" ADD CONSTRAINT "commit_statuses_repository_id_repositories_id_fk" FOREIGN KEY ("repository_id") REFERENCES "public"."repositories"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "favorite_issues" ADD CONSTRAINT "favorite_issues_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "favorite_issues" ADD CONSTRAINT "favorite_issues_issue_id_issues_id_fk" FOREIGN KEY ("issue_id") REFERENCES "public"."issues"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "favorite_repositories" ADD CONSTRAINT "favorite_repositories_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -266,6 +302,8 @@ ALTER TABLE "issue_comments" ADD CONSTRAINT "issue_comments_issue_id_issues_id_f
 ALTER TABLE "issue_comments" ADD CONSTRAINT "issue_comments_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "issue_labels" ADD CONSTRAINT "issue_labels_issue_id_issues_id_fk" FOREIGN KEY ("issue_id") REFERENCES "public"."issues"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "issue_labels" ADD CONSTRAINT "issue_labels_label_id_labels_id_fk" FOREIGN KEY ("label_id") REFERENCES "public"."labels"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "issue_linked_prs" ADD CONSTRAINT "issue_linked_prs_issue_id_issues_id_fk" FOREIGN KEY ("issue_id") REFERENCES "public"."issues"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "issue_linked_prs" ADD CONSTRAINT "issue_linked_prs_pr_id_issues_id_fk" FOREIGN KEY ("pr_id") REFERENCES "public"."issues"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "issue_requested_reviewers" ADD CONSTRAINT "issue_requested_reviewers_issue_id_issues_id_fk" FOREIGN KEY ("issue_id") REFERENCES "public"."issues"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "issue_requested_reviewers" ADD CONSTRAINT "issue_requested_reviewers_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "issue_review_comments" ADD CONSTRAINT "issue_review_comments_issue_id_issues_id_fk" FOREIGN KEY ("issue_id") REFERENCES "public"."issues"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint

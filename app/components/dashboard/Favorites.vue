@@ -105,7 +105,8 @@ async function setFavorite(repositoryId: number, value: boolean) {
           group: 'p-1.5',
           item: 'items-center pl-2.5 pr-4',
           itemLeadingIcon: 'size-4',
-          itemTrailingIcon: 'size-4 text-warning'
+          itemTrailingIcon: 'size-4 text-warning',
+          input: '[&>input]:h-11'
         }"
         :fuse="{
           resultLimit: 1000

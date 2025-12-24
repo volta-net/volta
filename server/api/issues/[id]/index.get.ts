@@ -192,7 +192,7 @@ async function syncIssueFromGitHub(accessToken: string, issue: any) {
       })
     }
 
-    // Update issue data
+    // Update issue data (skip reactionCount - not available in PR endpoint)
     await db.update(schema.issues).set({
       title: ghPr.title,
       body: ghPr.body,
@@ -211,8 +211,8 @@ async function syncIssueFromGitHub(accessToken: string, issue: any) {
       mergedAt: ghPr.merged_at ? new Date(ghPr.merged_at) : null,
       mergedById: ghPr.merged_by?.id ?? null,
       closedAt: ghPr.closed_at ? new Date(ghPr.closed_at) : null,
-      // For PRs, if merged, the merger is also the closer
       closedById: ghPr.merged_by?.id ?? null,
+      commentCount: ghPr.comments,
       updatedAt: new Date()
     }).where(eq(schema.issues.id, issue.id))
 
@@ -269,6 +269,8 @@ async function syncIssueFromGitHub(accessToken: string, issue: any) {
       locked: ghIssue.locked,
       closedAt: ghIssue.closed_at ? new Date(ghIssue.closed_at) : null,
       closedById: ghIssue.closed_by?.id ?? null,
+      commentCount: ghIssue.comments,
+      reactionCount: ghIssue.reactions?.total_count ?? 0,
       updatedAt: new Date()
     }).where(eq(schema.issues.id, issue.id))
 
@@ -320,10 +322,9 @@ async function syncAssignees(issueId: number, assignees: { id: number, login: st
         login: assignee.login,
         avatar_url: assignee.avatar_url
       })
-      await db.insert(schema.issueAssignees).values({
-        issueId,
-        userId: assignee.id
-      })
+      await db.insert(schema.issueAssignees)
+        .values({ issueId, userId: assignee.id })
+        .onConflictDoNothing()
     }
   }
 }
@@ -355,10 +356,9 @@ async function syncLabels(issueId: number, labelIds: number[]) {
   for (const labelId of labelIds) {
     if (!existingIds.has(labelId)) {
       try {
-        await db.insert(schema.issueLabels).values({
-          issueId,
-          labelId
-        })
+        await db.insert(schema.issueLabels)
+          .values({ issueId, labelId })
+          .onConflictDoNothing()
       } catch {
         // Label may not exist in our DB
       }
@@ -397,10 +397,9 @@ async function syncRequestedReviewers(issueId: number, reviewers: { id: number, 
         login: reviewer.login,
         avatar_url: reviewer.avatar_url
       })
-      await db.insert(schema.issueRequestedReviewers).values({
-        issueId,
-        userId: reviewer.id
-      })
+      await db.insert(schema.issueRequestedReviewers)
+        .values({ issueId, userId: reviewer.id })
+        .onConflictDoNothing()
     }
   }
 }

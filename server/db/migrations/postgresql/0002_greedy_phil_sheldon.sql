@@ -1,0 +1,2 @@
+ALTER TABLE "workflow_runs" ADD COLUMN "issue_id" bigint;--> statement-breakpoint
+ALTER TABLE "workflow_runs" ADD CONSTRAINT "workflow_runs_issue_id_issues_id_fk" FOREIGN KEY ("issue_id") REFERENCES "public"."issues"("id") ON DELETE set null ON UPDATE no action;

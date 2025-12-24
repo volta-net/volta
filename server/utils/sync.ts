@@ -3,6 +3,98 @@ import { db, schema } from 'hub:db'
 import { Octokit } from 'octokit'
 import { ensureUser } from './users'
 
+/**
+ * Fetch linked issues for a PR using GitHub's GraphQL API (closingIssuesReferences)
+ */
+export async function fetchLinkedIssueNumbers(octokit: Octokit, owner: string, repo: string, prNumber: number): Promise<number[]> {
+  try {
+    const response = await octokit.graphql<{
+      repository: {
+        pullRequest: {
+          closingIssuesReferences: {
+            nodes: Array<{ number: number }>
+          }
+        }
+      }
+    }>(`
+      query($owner: String!, $repo: String!, $prNumber: Int!) {
+        repository(owner: $owner, name: $repo) {
+          pullRequest(number: $prNumber) {
+            closingIssuesReferences(first: 50) {
+              nodes {
+                number
+              }
+            }
+          }
+        }
+      }
+    `, { owner, repo, prNumber })
+
+    return response.repository.pullRequest.closingIssuesReferences.nodes.map(n => n.number)
+  } catch (error) {
+    console.warn(`[sync] Failed to fetch linked issues for PR #${prNumber}:`, error)
+    return []
+  }
+}
+
+/**
+ * Update the issue-PR links based on GitHub's closingIssuesReferences
+ * Handles many-to-many: a PR can link multiple issues, an issue can be linked by multiple PRs
+ */
+export async function updateLinkedIssues(prId: number, repositoryId: number, linkedIssueNumbers: number[]) {
+  // Get current linked issue IDs for this PR
+  const currentLinks = await db
+    .select({ issueId: schema.issueLinkedPrs.issueId })
+    .from(schema.issueLinkedPrs)
+    .where(eq(schema.issueLinkedPrs.prId, prId))
+
+  const currentIssueIds = new Set(currentLinks.map(l => l.issueId))
+
+  // Get issue IDs from issue numbers
+  const linkedIssues = linkedIssueNumbers.length > 0
+    ? await db
+        .select({ id: schema.issues.id, number: schema.issues.number })
+        .from(schema.issues)
+        .where(and(
+          eq(schema.issues.repositoryId, repositoryId),
+          eq(schema.issues.pullRequest, false)
+        ))
+    : []
+
+  const issueNumberToId = new Map(linkedIssues.map(i => [i.number, i.id]))
+  const newIssueIds = new Set(
+    linkedIssueNumbers
+      .map(n => issueNumberToId.get(n))
+      .filter((id): id is number => id !== undefined)
+  )
+
+  // Remove links that no longer exist
+  for (const currentIssueId of currentIssueIds) {
+    if (!newIssueIds.has(currentIssueId)) {
+      await db.delete(schema.issueLinkedPrs).where(and(
+        eq(schema.issueLinkedPrs.prId, prId),
+        eq(schema.issueLinkedPrs.issueId, currentIssueId)
+      ))
+    }
+  }
+
+  // Add new links
+  for (const newIssueId of newIssueIds) {
+    if (!currentIssueIds.has(newIssueId)) {
+      await db.insert(schema.issueLinkedPrs)
+        .values({ prId, issueId: newIssueId })
+        .onConflictDoNothing()
+    }
+  }
+}
+
+/**
+ * Clear all linked issues when a PR is deleted
+ */
+export async function clearLinkedIssues(prId: number) {
+  await db.delete(schema.issueLinkedPrs).where(eq(schema.issueLinkedPrs.prId, prId))
+}
+
 // Helper: ensure type exists in the database
 export async function ensureType(repositoryId: number, type: { id: number, name: string, color?: string | null, description?: string | null }) {
   const [existing] = await db
@@ -34,20 +126,9 @@ export async function ensureType(repositoryId: number, type: { id: number, name:
 // Helper: subscribe a user to an issue (idempotent)
 export async function subscribeUserToIssue(issueId: number, userId: number) {
   try {
-    const [existing] = await db
-      .select()
-      .from(schema.issueSubscriptions)
-      .where(and(
-        eq(schema.issueSubscriptions.issueId, issueId),
-        eq(schema.issueSubscriptions.userId, userId)
-      ))
-
-    if (!existing) {
-      await db.insert(schema.issueSubscriptions).values({
-        issueId,
-        userId
-      })
-    }
+    await db.insert(schema.issueSubscriptions)
+      .values({ issueId, userId })
+      .onConflictDoNothing()
   } catch (error) {
     // Foreign key constraint failure is expected for users not in our system
     console.debug('[sync] Skipped issue subscription for user:', userId, error)
@@ -409,6 +490,10 @@ export async function syncIssues(accessToken: string, owner: string, repo: strin
       await syncPRCommitStatuses(octokit, owner, repo, repositoryId, pr.head.sha)
     }
 
+    // Update linked issues using GitHub's closingIssuesReferences API
+    const linkedIssueNumbers = await fetchLinkedIssueNumbers(octokit, owner, repo, pr.number)
+    await updateLinkedIssues(prId, repositoryId, linkedIssueNumbers)
+
     // Mark as synced
     await db.update(schema.issues).set({ synced: true, syncedAt: new Date() }).where(eq(schema.issues.id, prId))
   }
@@ -448,10 +533,9 @@ async function syncIssueAssignees(issueId: number, assignees: { id: number, logi
         login: assignee.login,
         avatar_url: assignee.avatar_url
       })
-      await db.insert(schema.issueAssignees).values({
-        issueId,
-        userId: assignee.id
-      })
+      await db.insert(schema.issueAssignees)
+        .values({ issueId, userId: assignee.id })
+        .onConflictDoNothing()
     }
 
     // Auto-subscribe assignee to the issue
@@ -486,10 +570,9 @@ async function syncIssueLabels(issueId: number, labelIds: number[]) {
   // Insert new labels
   for (const labelId of labelIds) {
     if (!existingIds.has(labelId)) {
-      await db.insert(schema.issueLabels).values({
-        issueId,
-        labelId
-      })
+      await db.insert(schema.issueLabels)
+        .values({ issueId, labelId })
+        .onConflictDoNothing()
     }
   }
 }
@@ -526,10 +609,9 @@ async function syncIssueRequestedReviewers(issueId: number, reviewers: { id: num
         login: reviewer.login,
         avatar_url: reviewer.avatar_url
       })
-      await db.insert(schema.issueRequestedReviewers).values({
-        issueId,
-        userId: reviewer.id
-      })
+      await db.insert(schema.issueRequestedReviewers)
+        .values({ issueId, userId: reviewer.id })
+        .onConflictDoNothing()
     }
 
     // Auto-subscribe reviewer to the PR
@@ -863,23 +945,12 @@ export async function syncCollaborators(accessToken: string, owner: string, repo
             : 'write'
 
         // Insert or update collaborator
-        if (existingCollaboratorIds.has(maintainer.id)) {
-          await db.update(schema.repositoryCollaborators).set({
-            permission,
-            updatedAt: new Date()
-          }).where(
-            and(
-              eq(schema.repositoryCollaborators.repositoryId, repositoryId),
-              eq(schema.repositoryCollaborators.userId, maintainer.id)
-            )
-          )
-        } else {
-          await db.insert(schema.repositoryCollaborators).values({
-            repositoryId,
-            userId: maintainer.id,
-            permission
+        await db.insert(schema.repositoryCollaborators)
+          .values({ repositoryId, userId: maintainer.id, permission })
+          .onConflictDoUpdate({
+            target: [schema.repositoryCollaborators.repositoryId, schema.repositoryCollaborators.userId],
+            set: { permission, updatedAt: new Date() }
           })
-        }
 
         // Subscribe if not already subscribed
         if (!subscribedUserIds.has(maintainer.id)) {

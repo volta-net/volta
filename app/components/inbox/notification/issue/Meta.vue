@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import type { Issue } from '#shared/types/issue'
+import type { IssueDetail } from '#shared/types/issue'
 
 defineProps<{
-  issue: Issue
+  issue: IssueDetail
 }>()
 </script>
 

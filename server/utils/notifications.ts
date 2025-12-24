@@ -917,6 +917,21 @@ export async function notifyWorkflowFailed(
   repository: GitHubRepository,
   actor: GitHubUser
 ) {
+  // Find the related PR if this workflow was triggered by a pull_request event
+  let issueId: number | undefined
+  if (workflowRun.pull_requests?.length) {
+    const prNumber = workflowRun.pull_requests[0].number
+    const [relatedPR] = await db.select({ id: schema.issues.id }).from(schema.issues).where(
+      and(
+        eq(schema.issues.repositoryId, repository.id),
+        eq(schema.issues.number, prNumber)
+      )
+    )
+    if (relatedPR) {
+      issueId = relatedPR.id
+    }
+  }
+
   // Notify subscribers who want CI failure notifications
   const subscribers = await getSubscribers(repository.id, 'ci')
   for (const subscriber of subscribers) {
@@ -927,6 +942,7 @@ export async function notifyWorkflowFailed(
       action: 'failed',
       body: workflowRun.name || workflowRun.display_title || workflowRun.workflow?.name,
       repositoryId: repository.id,
+      issueId,
       workflowRunId: workflowRun.id,
       actor
     })

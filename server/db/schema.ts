@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, bigint, boolean, serial } from 'drizzle-orm/pg-core'
+import { pgTable, text, timestamp, bigint, boolean, serial, primaryKey } from 'drizzle-orm/pg-core'
 import { relations } from 'drizzle-orm'
 
 // Users (GitHub users - both registered and shadow users from imports)
@@ -101,6 +101,7 @@ export type WorkflowConclusion = 'success' | 'failure' | 'cancelled' | 'skipped'
 export const workflowRuns = pgTable('workflow_runs', {
   id: bigint({ mode: 'number' }).primaryKey(), // GitHub workflow run ID
   repositoryId: bigint('repository_id', { mode: 'number' }).notNull().references(() => repositories.id, { onDelete: 'cascade' }),
+  issueId: bigint('issue_id', { mode: 'number' }).references(() => issues.id, { onDelete: 'set null' }), // Related PR (if triggered by pull_request event)
   actorId: bigint('actor_id', { mode: 'number' }).references(() => users.id, { onDelete: 'set null' }),
   workflowId: bigint('workflow_id', { mode: 'number' }).notNull(),
   workflowName: text('workflow_name'),
@@ -233,31 +234,41 @@ export const issues = pgTable('issues', {
   // Sync status - false until full data (comments, reactions, etc.) has been fetched from GitHub
   synced: boolean().default(false).notNull(),
   // When we last synced this issue from GitHub (for staleness checks)
-  syncedAt: timestamp('synced_at'),
-  // AI analysis - whether issue has been answered/resolved
-  answered: boolean().default(false),
-  answerCommentId: bigint('answer_comment_id', { mode: 'number' }), // Comment that answered the issue
-  analyzedAt: timestamp('analyzed_at'), // When AI last analyzed this issue
-  analyzingAt: timestamp('analyzing_at') // When AI analysis started (null = not analyzing)
+  syncedAt: timestamp('synced_at')
 })
 
 // Issue Assignees (many-to-many: issues <-> users)
 export const issueAssignees = pgTable('issue_assignees', {
   issueId: bigint('issue_id', { mode: 'number' }).notNull().references(() => issues.id, { onDelete: 'cascade' }),
   userId: bigint('user_id', { mode: 'number' }).notNull().references(() => users.id, { onDelete: 'cascade' })
-})
+}, (table) => ([
+  primaryKey({ columns: [table.issueId, table.userId] })
+]))
 
 // Issue Labels (many-to-many: issues <-> labels)
 export const issueLabels = pgTable('issue_labels', {
   issueId: bigint('issue_id', { mode: 'number' }).notNull().references(() => issues.id, { onDelete: 'cascade' }),
   labelId: bigint('label_id', { mode: 'number' }).notNull().references(() => labels.id, { onDelete: 'cascade' })
-})
+}, (table) => ([
+  primaryKey({ columns: [table.issueId, table.labelId] })
+]))
 
 // Issue Requested Reviewers (many-to-many: issues <-> users, for PRs)
 export const issueRequestedReviewers = pgTable('issue_requested_reviewers', {
   issueId: bigint('issue_id', { mode: 'number' }).notNull().references(() => issues.id, { onDelete: 'cascade' }),
   userId: bigint('user_id', { mode: 'number' }).notNull().references(() => users.id, { onDelete: 'cascade' })
-})
+}, (table) => ([
+  primaryKey({ columns: [table.issueId, table.userId] })
+]))
+
+// Issue Linked PRs (many-to-many: issues <-> PRs)
+// Links issues to PRs that reference them with closing keywords (fixes #, closes #, etc.)
+export const issueLinkedPrs = pgTable('issue_linked_prs', {
+  issueId: bigint('issue_id', { mode: 'number' }).notNull().references(() => issues.id, { onDelete: 'cascade' }),
+  prId: bigint('pr_id', { mode: 'number' }).notNull().references(() => issues.id, { onDelete: 'cascade' })
+}, (table) => ([
+  primaryKey({ columns: [table.issueId, table.prId] })
+]))
 
 // Issue Comments (general comments on issues/PRs)
 export const issueComments = pgTable('issue_comments', {
@@ -359,6 +370,10 @@ export const workflowRunsRelations = relations(workflowRuns, ({ one }) => ({
     fields: [workflowRuns.repositoryId],
     references: [repositories.id]
   }),
+  issue: one(issues, {
+    fields: [workflowRuns.issueId],
+    references: [issues.id]
+  }),
   actor: one(users, {
     fields: [workflowRuns.actorId],
     references: [users.id]
@@ -409,15 +424,13 @@ export const issuesRelations = relations(issues, ({ one, many }) => ({
   assignees: many(issueAssignees),
   labels: many(issueLabels),
   requestedReviewers: many(issueRequestedReviewers),
+  linkedPrs: many(issueLinkedPrs, { relationName: 'issueToLinkedPrs' }),
+  linkedIssues: many(issueLinkedPrs, { relationName: 'prToLinkedIssues' }),
   comments: many(issueComments),
   reviews: many(issueReviews),
   reviewComments: many(issueReviewComments),
   subscriptions: many(issueSubscriptions),
-  favorites: many(favoriteIssues),
-  answerComment: one(issueComments, {
-    fields: [issues.answerCommentId],
-    references: [issueComments.id]
-  })
+  favorites: many(favoriteIssues)
 }))
 
 export const labelsRelations = relations(labels, ({ one, many }) => ({
@@ -466,6 +479,19 @@ export const issueRequestedReviewersRelations = relations(issueRequestedReviewer
   user: one(users, {
     fields: [issueRequestedReviewers.userId],
     references: [users.id]
+  })
+}))
+
+export const issueLinkedPrsRelations = relations(issueLinkedPrs, ({ one }) => ({
+  issue: one(issues, {
+    fields: [issueLinkedPrs.issueId],
+    references: [issues.id],
+    relationName: 'issueToLinkedPrs'
+  }),
+  pr: one(issues, {
+    fields: [issueLinkedPrs.prId],
+    references: [issues.id],
+    relationName: 'prToLinkedIssues'
   })
 }))
 
@@ -575,7 +601,9 @@ export const issueSubscriptions = pgTable('issue_subscriptions', {
   issueId: bigint('issue_id', { mode: 'number' }).notNull().references(() => issues.id, { onDelete: 'cascade' }),
   userId: bigint('user_id', { mode: 'number' }).notNull().references(() => users.id, { onDelete: 'cascade' }),
   createdAt: timestamp('created_at').notNull().defaultNow()
-})
+}, (table) => ([
+  primaryKey({ columns: [table.issueId, table.userId] })
+]))
 
 export const issueSubscriptionsRelations = relations(issueSubscriptions, ({ one }) => ({
   issue: one(issues, {
@@ -616,7 +644,9 @@ export const repositoryCollaborators = pgTable('repository_collaborators', {
   permission: text().$type<CollaboratorPermission>().notNull(),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow()
-})
+}, (table) => ([
+  primaryKey({ columns: [table.repositoryId, table.userId] })
+]))
 
 export const repositoryCollaboratorsRelations = relations(repositoryCollaborators, ({ one }) => ({
   repository: one(repositories, {

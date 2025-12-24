@@ -58,6 +58,12 @@ export default defineNuxtConfig({
     db: 'postgresql'
   },
 
+  vite: {
+    optimizeDeps: {
+      include: ['prosemirror-state']
+    }
+  },
+
   auth: {
     loadStrategy: 'client-only'
   },

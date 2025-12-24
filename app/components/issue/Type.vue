@@ -10,9 +10,9 @@ defineProps<{
   <UBadge
     color="neutral"
     variant="outline"
-    class="rounded-full"
+    class="rounded-full -my-1"
   >
     <span class="size-2 rounded-full" :style="{ backgroundColor: `#${type.color}` }" />
-    <span class="text-xs text-white invert">{{ type.name }}</span>
+    <span class="text-xs text-inverted invert">{{ type.name }}</span>
   </UBadge>
 </template>

@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import type { Issue } from '#shared/types/issue'
+import type { IssueDetail } from '#shared/types/issue'
 import type { TimelineItem } from '@nuxt/ui'
 
 const props = defineProps<{
-  issue: Issue
+  issue: IssueDetail
 }>()
 
 interface ActivityItem extends TimelineItem {

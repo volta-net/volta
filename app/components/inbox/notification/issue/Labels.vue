@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import type { Issue, Label } from '#shared/types/issue'
+import type { IssueDetail, Label } from '#shared/types/issue'
 
 const props = defineProps<{
-  issue: Issue
+  issue: IssueDetail
 }>()
 
 const emit = defineEmits<{

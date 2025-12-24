@@ -57,21 +57,10 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  // Check if already exists in database
-  const existing = await db.query.issueLabels.findFirst({
-    where: and(
-      eq(schema.issueLabels.issueId, issueId),
-      eq(schema.issueLabels.labelId, body.labelId)
-    )
-  })
-
-  if (!existing) {
-    // Add to database
-    await db.insert(schema.issueLabels).values({
-      issueId,
-      labelId: body.labelId
-    })
-  }
+  // Add to database (ignore if already exists)
+  await db.insert(schema.issueLabels)
+    .values({ issueId, labelId: body.labelId })
+    .onConflictDoNothing()
 
   return { success: true }
 })

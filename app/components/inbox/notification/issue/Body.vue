@@ -1,32 +1,62 @@
 <script setup lang="ts">
-import type { Issue } from '#shared/types/issue'
+import type { Editor } from '@tiptap/vue-3'
+import type { EditorCustomHandlers } from '@nuxt/ui'
+import type { IssueDetail } from '#shared/types/issue'
+import ImageUpload from '~/components/editor/ImageUpload'
+import { Emoji } from '@tiptap/extension-emoji'
 
 const props = defineProps<{
-  issue: Issue
+  issue: IssueDetail
 }>()
 
 const emit = defineEmits<{
   (e: 'refresh'): void
 }>()
 
-const toast = useToast()
-const { items: editorToolbarItems } = useEditorToolbar()
+const editorRef = useTemplateRef('editorRef')
 
-const editedBody = ref(props.issue.body || '')
+const toast = useToast()
+
+const { extension: completionExtension, handlers: aiHandlers, isLoading: aiLoading } = useEditorCompletion(editorRef)
+
+// Custom handlers for editor (merged with AI handlers)
+const customHandlers = {
+  imageUpload: {
+    canExecute: (editor: Editor) => editor.can().insertContent({ type: 'imageUpload' }),
+    execute: (editor: Editor) => editor.chain().focus().insertContent({ type: 'imageUpload' }),
+    isActive: (editor: Editor) => editor.isActive('imageUpload'),
+    isDisabled: undefined
+  },
+  ...aiHandlers
+} satisfies EditorCustomHandlers
+
+const { items: emojiItems } = useEditorEmojis()
+const { items: mentionItems } = useEditorMentions(ref([]))
+const { items: suggestionItems } = useEditorSuggestions(customHandlers)
+const { items: toolbarItems, getImageToolbarItems } = useEditorToolbar(customHandlers, { aiLoading })
+
+const extensions = computed(() => [
+  Emoji,
+  ImageUpload,
+  completionExtension
+])
+
+const body = ref(props.issue.body || '')
 const isEditing = ref(false)
 const isSaving = ref(false)
 
 watch(() => props.issue.body, (newBody) => {
-  editedBody.value = newBody || ''
+  body.value = newBody || ''
 })
 
 async function saveBody() {
   isSaving.value = true
+
   try {
     const [owner, repo] = props.issue.repository!.fullName.split('/')
     await $fetch(`/api/issues/${props.issue.id}/body`, {
       method: 'PATCH',
-      body: { body: editedBody.value, owner, repo, issueNumber: props.issue.number }
+      body: { body: body.value, owner, repo, issueNumber: props.issue.number }
     })
     emit('refresh')
     toast.add({ title: 'Description updated', icon: 'i-lucide-check' })
@@ -37,60 +67,56 @@ async function saveBody() {
     isEditing.value = false
   }
 }
-
-function cancelEdit() {
-  isEditing.value = false
-  editedBody.value = props.issue.body || ''
-}
 </script>
 
 <template>
-  <div class="border border-muted rounded-lg overflow-hidden">
-    <div class="flex items-center justify-between px-3 py-2 bg-elevated border-b border-muted">
-      <span class="text-sm font-medium">Description</span>
-      <UButton
-        v-if="!isEditing"
-        icon="i-lucide-pencil"
-        color="neutral"
-        variant="ghost"
-        size="xs"
-        @click="isEditing = true"
-      />
-    </div>
-    <div class="p-3">
-      <template v-if="isEditing">
-        <UEditor
-          v-slot="{ editor }"
-          v-model="editedBody"
-          content-type="markdown"
-          placeholder="Add a description..."
-          class="min-h-32"
-        >
-          <UEditorToolbar :editor="editor" :items="editorToolbarItems" class="border-b border-muted mb-2 pb-2" />
-        </UEditor>
-        <div class="flex justify-end gap-2 mt-3">
-          <UButton
-            label="Cancel"
-            color="neutral"
-            variant="ghost"
-            @click="cancelEdit"
-          />
-          <UButton
-            label="Save"
-            color="primary"
-            :loading="isSaving"
-            @click="saveBody"
-          />
-        </div>
+  <UEditor
+    v-slot="{ editor }"
+    ref="editorRef"
+    v-model="body"
+    :handlers="customHandlers"
+    :extensions="extensions"
+    content-type="markdown"
+    placeholder="Add a description..."
+    :ui="{ base: 'sm:px-0 pb-12' }"
+  >
+    <UEditorToolbar
+      :editor="editor"
+      :items="toolbarItems"
+      layout="bubble"
+      :should-show="({ editor, view, state }: any) => {
+        if (editor.isActive('imageUpload') || editor.isActive('image')) {
+          return false
+        }
+        const { selection } = state
+        return view.hasFocus() && !selection.empty
+      }"
+    >
+      <template #link>
+        <EditorLinkPopover :editor="editor" />
       </template>
-      <div
-        v-else-if="issue.body"
-        class="prose prose-sm dark:prose-invert max-w-none"
-        v-html="issue.body"
-      />
-      <p v-else class="text-muted text-sm italic">
-        No description provided.
-      </p>
-    </div>
-  </div>
+    </UEditorToolbar>
+
+    <UEditorToolbar
+      :editor="editor"
+      :items="getImageToolbarItems(editor)"
+      layout="bubble"
+      :should-show="({ editor, view }: any) => {
+        return editor.isActive('image') && view.hasFocus()
+      }"
+    />
+
+    <UEditorEmojiMenu
+      :editor="editor"
+      :items="emojiItems"
+    />
+    <UEditorMentionMenu
+      :editor="editor"
+      :items="mentionItems"
+    />
+    <UEditorSuggestionMenu
+      :editor="editor"
+      :items="suggestionItems"
+    />
+  </UEditor>
 </template>

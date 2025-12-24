@@ -1,4 +1,4 @@
-import { eq, and } from 'drizzle-orm'
+import { eq, and, sql } from 'drizzle-orm'
 import { db, schema } from 'hub:db'
 import type { ReviewState } from '../db/schema'
 import type {
@@ -19,7 +19,8 @@ import type {
   GitHubInstallationRepository
 } from '../types/github'
 import { ensureUser } from './users'
-import { subscribeUserToIssue, ensureType } from './sync'
+import { subscribeUserToIssue, ensureType, updateLinkedIssues, fetchLinkedIssueNumbers } from './sync'
+import { useOctokitAsInstallation } from './octokit'
 
 // ============================================================================
 // Issues
@@ -67,7 +68,7 @@ export async function handleIssueEvent(action: string, issue: GitHubIssue, repos
 // Pull Requests
 // ============================================================================
 
-export async function handlePullRequestEvent(action: string, pullRequest: GitHubPullRequest, repository: GitHubRepository, _installationId?: number) {
+export async function handlePullRequestEvent(action: string, pullRequest: GitHubPullRequest, repository: GitHubRepository, installationId?: number) {
   // Check if repository is synced
   const [repo] = await db.select().from(schema.repositories).where(eq(schema.repositories.id, repository.id))
   if (!repo) {
@@ -92,9 +93,22 @@ export async function handlePullRequestEvent(action: string, pullRequest: GitHub
     case 'converted_to_draft':
     case 'review_requested':
     case 'review_request_removed':
-    case 'synchronize':
-      await upsertIssue(pullRequest, repository.id, repository.full_name, true)
+    case 'synchronize': {
+      const prId = await upsertIssue(pullRequest, repository.id, repository.full_name, true)
+
+      // Update linked issues using GitHub's closingIssuesReferences API
+      if (installationId && (action === 'opened' || action === 'edited' || action === 'reopened')) {
+        try {
+          const [owner, repoName] = repository.full_name.split('/')
+          const octokit = await useOctokitAsInstallation(installationId)
+          const linkedIssueNumbers = await fetchLinkedIssueNumbers(octokit, owner, repoName, pullRequest.number)
+          await updateLinkedIssues(prId, repository.id, linkedIssueNumbers)
+        } catch (error) {
+          console.warn(`[Webhook] Failed to update linked issues for PR #${pullRequest.number}:`, error)
+        }
+      }
       break
+    }
   }
 }
 
@@ -257,10 +271,9 @@ async function syncIssueAssignees(issueId: number, assignees: GitHubUser[]) {
         login: assignee.login,
         avatar_url: assignee.avatar_url
       })
-      await db.insert(schema.issueAssignees).values({
-        issueId,
-        userId: assignee.id
-      })
+      await db.insert(schema.issueAssignees)
+        .values({ issueId, userId: assignee.id })
+        .onConflictDoNothing()
     }
 
     // Auto-subscribe assignee to the issue
@@ -296,10 +309,9 @@ async function syncIssueLabels(issueId: number, labelIds: number[]) {
   for (const labelId of labelIds) {
     if (!existingIds.has(labelId)) {
       try {
-        await db.insert(schema.issueLabels).values({
-          issueId,
-          labelId
-        })
+        await db.insert(schema.issueLabels)
+          .values({ issueId, labelId })
+          .onConflictDoNothing()
       } catch {
         // Label may not exist in our DB yet - skip
       }
@@ -339,10 +351,9 @@ async function syncIssueRequestedReviewers(issueId: number, reviewers: GitHubUse
         login: reviewer.login,
         avatar_url: reviewer.avatar_url
       })
-      await db.insert(schema.issueRequestedReviewers).values({
-        issueId,
-        userId: reviewer.id
-      })
+      await db.insert(schema.issueRequestedReviewers)
+        .values({ issueId, userId: reviewer.id })
+        .onConflictDoNothing()
     }
 
     // Auto-subscribe reviewer to the PR
@@ -380,10 +391,14 @@ export async function handleCommentEvent(action: string, comment: GitHubComment,
     existingIssue = newIssue
   }
 
-  // Upsert the comment
+  // Upsert the comment and update comment count
   switch (action) {
     case 'created':
       await upsertComment(comment, existingIssue.id)
+      // Increment comment count
+      await db.update(schema.issues)
+        .set({ commentCount: sql`${schema.issues.commentCount} + 1` })
+        .where(eq(schema.issues.id, existingIssue.id))
       // Subscribe commenter to the issue
       if (comment.user?.id) {
         await subscribeUserToIssue(existingIssue.id, comment.user.id)
@@ -394,6 +409,10 @@ export async function handleCommentEvent(action: string, comment: GitHubComment,
       break
     case 'deleted':
       await db.delete(schema.issueComments).where(eq(schema.issueComments.id, comment.id))
+      // Decrement comment count
+      await db.update(schema.issues)
+        .set({ commentCount: sql`GREATEST(${schema.issues.commentCount} - 1, 0)` })
+        .where(eq(schema.issues.id, existingIssue.id))
       break
   }
 }
@@ -718,11 +737,9 @@ export async function handleMemberEvent(action: string, member: GitHubUser, repo
         ))
 
       if (!existingCollaborator) {
-        await db.insert(schema.repositoryCollaborators).values({
-          repositoryId: repository.id,
-          userId: member.id,
-          permission: 'write'
-        })
+        await db.insert(schema.repositoryCollaborators)
+          .values({ repositoryId: repository.id, userId: member.id, permission: 'write' })
+          .onConflictDoNothing()
         console.log(`[Webhook] Added collaborator ${member.login} to ${repository.full_name}`)
       }
 
@@ -989,10 +1006,27 @@ export async function handleWorkflowRunEvent(action: string, workflowRun: GitHub
       })
     }
 
+    // Find the related PR if this workflow was triggered by a pull_request event
+    let issueId: number | null = null
+    if (workflowRun.pull_requests?.length) {
+      // Use the first PR number to find the related issue in our DB
+      const prNumber = workflowRun.pull_requests[0].number
+      const [relatedPR] = await db.select().from(schema.issues).where(
+        and(
+          eq(schema.issues.repositoryId, repository.id),
+          eq(schema.issues.number, prNumber)
+        )
+      )
+      if (relatedPR) {
+        issueId = relatedPR.id
+      }
+    }
+
     const [existing] = await db.select().from(schema.workflowRuns).where(eq(schema.workflowRuns.id, workflowRun.id))
 
     if (existing) {
       await db.update(schema.workflowRuns).set({
+        issueId,
         status: workflowRun.status,
         conclusion: workflowRun.conclusion,
         completedAt: workflowRun.updated_at ? new Date(workflowRun.updated_at) : null,
@@ -1002,6 +1036,7 @@ export async function handleWorkflowRunEvent(action: string, workflowRun: GitHub
       await db.insert(schema.workflowRuns).values({
         id: workflowRun.id,
         repositoryId: repository.id,
+        issueId,
         actorId: workflowRun.actor?.id,
         workflowId: workflowRun.workflow_id,
         workflowName: workflowRun.workflow?.name || workflowRun.name,

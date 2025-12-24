@@ -66,35 +66,31 @@ interface GitHubUser {
 /**
  * Ensure a user exists in the database.
  * Creates a shadow user if they don't exist (registered: false).
- * Does NOT update registered users to preserve their data.
+ * Updates shadow users with latest info, but does NOT update registered users.
  */
 export async function ensureUser(user: GitHubUser) {
   try {
-    const existing = await db.query.users.findFirst({
-      where: eq(schema.users.id, user.id)
-    })
-
-    if (!existing) {
-      // Create shadow user
-      await db.insert(schema.users).values({
-        id: user.id,
-        login: user.login,
-        avatarUrl: user.avatar_url,
-        name: user.name,
-        email: user.email,
-        registered: false // Shadow user
-      })
-    } else if (!existing.registered) {
-      // Update shadow user with latest info
-      await db.update(schema.users).set({
+    // Use upsert to handle race conditions
+    // On conflict: only update if NOT registered (preserve OAuth user data)
+    await db.insert(schema.users).values({
+      id: user.id,
+      login: user.login,
+      avatarUrl: user.avatar_url,
+      name: user.name,
+      email: user.email,
+      registered: false // Shadow user
+    }).onConflictDoUpdate({
+      target: schema.users.id,
+      set: {
         login: user.login,
         avatarUrl: user.avatar_url,
         name: user.name,
         email: user.email,
         updatedAt: new Date()
-      }).where(eq(schema.users.id, user.id))
-    }
-    // Don't update registered users - they have their own data from OAuth
+      },
+      // Only update shadow users (registered = false)
+      setWhere: eq(schema.users.registered, false)
+    })
   } catch (error) {
     console.debug('[users] Failed to ensure user:', user.id, error)
   }

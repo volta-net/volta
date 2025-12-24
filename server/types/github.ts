@@ -192,6 +192,19 @@ export interface GitHubRelease {
 
 export type GitHubWorkflowConclusion = 'success' | 'failure' | 'cancelled' | 'skipped' | 'timed_out' | 'action_required' | 'stale' | 'neutral' | 'startup_failure' | null
 
+export interface GitHubWorkflowRunPullRequest {
+  id: number
+  number: number
+  head: {
+    sha: string
+    ref: string
+  }
+  base: {
+    sha: string
+    ref: string
+  }
+}
+
 export interface GitHubWorkflowRun {
   id: number
   name?: string | null
@@ -211,6 +224,7 @@ export interface GitHubWorkflowRun {
   run_started_at?: string | null
   updated_at?: string | null
   actor?: GitHubUser | null
+  pull_requests?: GitHubWorkflowRunPullRequest[]
 }
 
 // ============================================================================

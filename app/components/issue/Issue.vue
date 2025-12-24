@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import type { IssueListItem } from '#shared/types/issue'
+import type { Issue } from '#shared/types/issue'
 import type { WorkflowConclusion } from '#shared/types/db'
 
 const props = defineProps<{
-  item: IssueListItem
-  showAuthor?: boolean
+  item: Issue
 }>()
 
 const issueState = computed(() => ({
@@ -17,8 +16,6 @@ const issueState = computed(() => ({
 
 const stateIcon = computed(() => getIssueStateIcon(issueState.value))
 const stateColor = computed(() => getIssueStateColor(issueState.value))
-
-const authorLogin = computed(() => props.item.user?.login)
 
 // Aggregate CI statuses from all workflow runs
 const ciStatusConfig = computed(() => {
@@ -93,7 +90,7 @@ function formatTimeAgo(date: Date | string) {
   <NuxtLink
     :to="item.htmlUrl ?? undefined"
     target="_blank"
-    class="flex items-center gap-3 px-4 py-2.5 hover:bg-elevated/50 transition-colors"
+    class="flex items-center gap-3 px-4 py-3 hover:bg-elevated/50 transition-colors"
   >
     <!-- State icon -->
     <UIcon :name="stateIcon" :class="stateColor" class="size-4 shrink-0" />
@@ -102,49 +99,44 @@ function formatTimeAgo(date: Date | string) {
     <div class="flex-1 flex items-center gap-3 min-w-0">
       <span class="text-sm font-medium truncate">#{{ item.number }} {{ item.title }}</span>
 
-      <div class="flex items-center gap-2 mt-0.5 text-xs text-muted">
-        <!-- Type Badge -->
-        <UBadge
-          v-if="item.type"
-          :label="item.type.name"
-          :style="item.type.color ? { backgroundColor: `#${item.type.color}20`, color: `#${item.type.color}` } : {}"
-          variant="subtle"
-          size="xs"
-          class="shrink-0"
-        />
-
-        <!-- Labels -->
-        <div v-if="item.labels.length" class="flex items-center gap-1 shrink-0">
-          <IssueLabel v-for="label in item.labels" :key="label.id" :label="label" />
-        </div>
+      <div class="flex items-center gap-1">
+        <IssueType v-if="item.type" :type="item.type" />
+        <IssueLabel v-for="label in item.labels" :key="label.id" :label="label" />
+        <IssueRepository :repository="item.repository" />
+        <IssueUser v-if="item.user" :user="item.user" />
       </div>
 
-      <div class="flex items-center gap-2 mt-0.5 text-xs text-muted">
-        <span>{{ item.repository.fullName }}</span>
-        <template v-if="showAuthor && authorLogin">
-          <span>·</span>
-          <span>{{ authorLogin }}</span>
-        </template>
-        <template v-if="(item.reactionCount ?? 0) > 0 || (item.commentCount ?? 0) > 0">
-          <span>·</span>
-          <span v-if="(item.reactionCount ?? 0) > 0" class="flex items-center gap-0.5">
-            <UIcon name="i-lucide-heart" class="size-3" />
-            {{ item.reactionCount }}
-          </span>
-          <span v-if="(item.commentCount ?? 0) > 0" class="flex items-center gap-0.5">
-            <UIcon name="i-lucide-message-circle" class="size-3" />
-            {{ item.commentCount }}
-          </span>
-        </template>
-      </div>
+      <div class="flex items-center gap-2 text-xs text-muted" />
     </div>
 
-    <!-- AI Analysis Status (issues only) -->
-    <UTooltip v-if="item.analyzing" text="Analyzing...">
-      <UIcon name="i-lucide-sparkles" class="size-4 shrink-0 text-warning animate-pulse" />
+    <template v-if="(item.reactionCount ?? 0) > 0 || (item.commentCount ?? 0) > 0">
+      <span v-if="(item.reactionCount ?? 0) > 0" class="flex items-center gap-0.5 text-muted">
+        <UIcon name="i-lucide-heart" class="size-4 shrink-0" />
+        <span class="text-xs">{{ item.reactionCount }}</span>
+      </span>
+      <span v-if="(item.commentCount ?? 0) > 0" class="flex items-center gap-0.5 text-muted">
+        <UIcon name="i-lucide-message-circle" class="size-4 shrink-0" />
+        <span class="text-xs">{{ item.commentCount }}</span>
+      </span>
+    </template>
+
+    <!-- Maintainer replied (for issues) -->
+    <UTooltip
+      v-if="item.hasMaintainerComment"
+      text="Maintainer replied"
+    >
+      <UIcon name="i-lucide-message-circle-reply" class="size-4 shrink-0 text-success" />
     </UTooltip>
-    <UTooltip v-else-if="item.answered" text="AI confirmed answered">
-      <UIcon name="i-lucide-sparkles" class="size-4 shrink-0 text-success" />
+
+    <!-- Linked PRs (for issues) -->
+    <UTooltip
+      v-if="item.linkedPrs?.length"
+      :text="`${item.linkedPrs.length} linked PR${item.linkedPrs.length > 1 ? 's' : ''}`"
+    >
+      <div class="flex items-center gap-0.5 text-muted">
+        <UIcon name="i-lucide-git-pull-request" class="size-4 shrink-0" />
+        <span class="text-xs">{{ item.linkedPrs.length }}</span>
+      </div>
     </UTooltip>
 
     <!-- CI Status -->

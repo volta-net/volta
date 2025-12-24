@@ -1,6 +1,6 @@
-import { inArray, desc, eq } from 'drizzle-orm'
+import { inArray, desc, eq, and } from 'drizzle-orm'
 import { db, schema } from 'hub:db'
-import type { CIStatus, Label, Type } from '#shared/types/issue'
+import type { CIStatus, Label, Type, LinkedPR, LinkedIssue } from '#shared/types/issue'
 
 /**
  * Batch get labels for multiple issues (single query)
@@ -164,6 +164,84 @@ export async function getCIStatusForPRs(prs: { repositoryId: number, headSha: st
   }
 
   return runsByHeadSha
+}
+
+/**
+ * Batch get linked PRs for multiple issues (PRs that reference these issues)
+ * Only returns open PRs
+ */
+export async function getLinkedPRsForIssues(issueIds: number[]): Promise<Map<number, LinkedPR[]>> {
+  if (issueIds.length === 0) return new Map<number, LinkedPR[]>()
+
+  const linkedPRs = await db
+    .select({
+      issueId: schema.issueLinkedPrs.issueId,
+      id: schema.issues.id,
+      number: schema.issues.number,
+      title: schema.issues.title,
+      state: schema.issues.state,
+      htmlUrl: schema.issues.htmlUrl
+    })
+    .from(schema.issueLinkedPrs)
+    .innerJoin(schema.issues, eq(schema.issueLinkedPrs.prId, schema.issues.id))
+    .where(and(
+      inArray(schema.issueLinkedPrs.issueId, issueIds),
+      eq(schema.issues.state, 'open') // Only show open PRs
+    ))
+
+  // Group by issue ID
+  const prsByIssue = new Map<number, LinkedPR[]>()
+  for (const pr of linkedPRs) {
+    if (!prsByIssue.has(pr.issueId)) {
+      prsByIssue.set(pr.issueId, [])
+    }
+    prsByIssue.get(pr.issueId)!.push({
+      id: pr.id,
+      number: pr.number,
+      title: pr.title,
+      state: pr.state,
+      htmlUrl: pr.htmlUrl
+    })
+  }
+
+  return prsByIssue
+}
+
+/**
+ * Batch get linked issues for multiple PRs (issues that these PRs reference)
+ */
+export async function getLinkedIssuesForPRs(prIds: number[]): Promise<Map<number, LinkedIssue[]>> {
+  if (prIds.length === 0) return new Map<number, LinkedIssue[]>()
+
+  const linkedIssues = await db
+    .select({
+      prId: schema.issueLinkedPrs.prId,
+      id: schema.issues.id,
+      number: schema.issues.number,
+      title: schema.issues.title,
+      state: schema.issues.state,
+      htmlUrl: schema.issues.htmlUrl
+    })
+    .from(schema.issueLinkedPrs)
+    .innerJoin(schema.issues, eq(schema.issueLinkedPrs.issueId, schema.issues.id))
+    .where(inArray(schema.issueLinkedPrs.prId, prIds))
+
+  // Group by PR ID
+  const issuesByPR = new Map<number, LinkedIssue[]>()
+  for (const issue of linkedIssues) {
+    if (!issuesByPR.has(issue.prId)) {
+      issuesByPR.set(issue.prId, [])
+    }
+    issuesByPR.get(issue.prId)!.push({
+      id: issue.id,
+      number: issue.number,
+      title: issue.title,
+      state: issue.state,
+      htmlUrl: issue.htmlUrl
+    })
+  }
+
+  return issuesByPR
 }
 
 /**

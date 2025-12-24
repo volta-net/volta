@@ -1,4 +1,4 @@
-import type { DBUser, DBLabel, DBMilestone, DBIssueComment, DBIssue, DBRepository, Serialized } from './db'
+import type { DBUser, DBLabel, DBMilestone, DBIssueComment, DBIssue, Serialized } from './db'
 import type { Repository } from './repository'
 
 // User with selected fields for API responses
@@ -31,8 +31,8 @@ export interface Comment extends Pick<DBIssueComment, 'id' | 'body' | 'htmlUrl' 
   user: User | null
 }
 
-// Issue with all relations populated
-export interface Issue extends Omit<DBIssue, 'repositoryId' | 'milestoneId' | 'typeId' | 'userId' | 'closedById' | 'mergedById' | 'synced'> {
+// Full issue with all relations populated (for detail views)
+export interface IssueDetail extends Omit<DBIssue, 'repositoryId' | 'milestoneId' | 'typeId' | 'userId' | 'closedById' | 'mergedById' | 'synced'> {
   pullRequest: boolean
   repository: Repository | null
   milestone: Milestone | null
@@ -46,21 +46,34 @@ export interface Issue extends Omit<DBIssue, 'repositoryId' | 'milestoneId' | 't
   comments: Comment[]
 }
 
-// ============================================================================
-// List Item Types (for dashboard, search results, etc.)
-// ============================================================================
+// Linked PR/Issue reference (minimal info for display)
+export interface LinkedPR {
+  id: number
+  number: number
+  title: string
+  state: string
+  htmlUrl: string | null
+}
 
-// Repository fields needed for list items (serialized)
-type ListRepository = Pick<Serialized<DBRepository>, 'id' | 'name' | 'fullName' | 'private' | 'htmlUrl'>
+export interface LinkedIssue {
+  id: number
+  number: number
+  title: string
+  state: string
+  htmlUrl: string | null
+}
 
-// Issue/PR list item (serialized for API responses)
-export interface IssueListItem extends Pick<Serialized<DBIssue>, 'id' | 'pullRequest' | 'number' | 'title' | 'state' | 'stateReason' | 'draft' | 'merged' | 'htmlUrl' | 'createdAt' | 'updatedAt' | 'reactionCount' | 'commentCount'> {
-  repository: ListRepository
+// Issue/PR for list views (serialized for API responses)
+export interface Issue extends Pick<Serialized<DBIssue>, 'id' | 'pullRequest' | 'number' | 'title' | 'state' | 'stateReason' | 'draft' | 'merged' | 'htmlUrl' | 'createdAt' | 'updatedAt' | 'reactionCount' | 'commentCount'> {
+  repository: Repository
   user?: User | null
   labels: Label[]
   type?: Type | null
   ciStatuses?: CIStatus[]
-  // AI analysis status (issues only)
-  answered?: boolean
-  analyzing?: boolean
+  // Linked PRs (for issues) - PRs that will close this issue
+  linkedPrs?: LinkedPR[]
+  // Linked Issues (for PRs) - Issues this PR will close
+  linkedIssues?: LinkedIssue[]
+  // Whether a maintainer has commented on this issue
+  hasMaintainerComment?: boolean
 }
