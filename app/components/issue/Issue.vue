@@ -109,17 +109,6 @@ function formatTimeAgo(date: Date | string) {
       <div class="flex items-center gap-2 text-xs text-muted" />
     </div>
 
-    <template v-if="(item.reactionCount ?? 0) > 0 || (item.commentCount ?? 0) > 0">
-      <span v-if="(item.reactionCount ?? 0) > 0" class="flex items-center gap-0.5 text-muted">
-        <UIcon name="i-lucide-heart" class="size-4 shrink-0" />
-        <span class="text-xs">{{ item.reactionCount }}</span>
-      </span>
-      <span v-if="(item.commentCount ?? 0) > 0" class="flex items-center gap-0.5 text-muted">
-        <UIcon name="i-lucide-message-circle" class="size-4 shrink-0" />
-        <span class="text-xs">{{ item.commentCount }}</span>
-      </span>
-    </template>
-
     <!-- Maintainer replied (for issues) -->
     <UTooltip
       v-if="item.hasMaintainerComment"
@@ -127,6 +116,16 @@ function formatTimeAgo(date: Date | string) {
     >
       <UIcon name="i-lucide-message-circle-reply" class="size-4 shrink-0 text-success" />
     </UTooltip>
+
+    <span v-if="(item.reactionCount ?? 0) > 0" class="flex items-center gap-0.5 text-muted">
+      <UIcon name="i-lucide-heart" class="size-4 shrink-0" />
+      <span class="text-xs">{{ item.reactionCount }}</span>
+    </span>
+
+    <span v-if="(item.commentCount ?? 0) > 0" class="flex items-center gap-0.5 text-muted">
+      <UIcon name="i-lucide-message-circle" class="size-4 shrink-0" />
+      <span class="text-xs">{{ item.commentCount }}</span>
+    </span>
 
     <!-- Linked PRs (for issues) -->
     <UTooltip

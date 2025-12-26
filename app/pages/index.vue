@@ -105,9 +105,9 @@ onMounted(() => {
 })
 
 // Refresh data when window gains focus
-const visibility = useDocumentVisibility()
-watch(visibility, (isVisible) => {
-  if (isVisible && hasFavorites.value) {
+const focused = useWindowFocus()
+watch(focused, (isFocused) => {
+  if (isFocused && hasFavorites.value) {
     refresh()
   }
 })

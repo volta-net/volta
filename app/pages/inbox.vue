@@ -8,7 +8,7 @@ const selectedNotification = ref<Notification | null>()
 
 const unreadNotifications = computed(() => notifications.value?.filter(notification => !notification.read) ?? [])
 
-// Refetch notifications when window regains focus
+// Refetch notifications when window gains focus
 const focused = useWindowFocus()
 watch(focused, (isFocused) => {
   if (isFocused) {

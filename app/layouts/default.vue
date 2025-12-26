@@ -23,7 +23,7 @@ const favoriteIssueItems = computed<NavigationMenuItem[]>(() => {
 })
 
 const links = computed<NavigationMenuItem[][]>(() => [[{
-  label: 'Dashboard',
+  label: 'Home',
   icon: 'i-lucide-activity',
   to: '/'
 }, {
@@ -92,6 +92,6 @@ const links = computed<NavigationMenuItem[][]>(() => [[{
       <slot />
     </div>
 
-    <UDashboardSearch />
+    <UDashboardSearch :groups="[{ id: 'links', items: links.flat() }]" />
   </UDashboardGroup>
 </template>

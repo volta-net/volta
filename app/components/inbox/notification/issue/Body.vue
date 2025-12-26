@@ -49,7 +49,7 @@ watch(() => props.issue.body, (newBody) => {
   body.value = newBody || ''
 })
 
-async function saveBody() {
+async function _saveBody() {
   isSaving.value = true
 
   try {
