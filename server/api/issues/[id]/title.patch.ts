@@ -25,7 +25,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Check user has access to this repository
-  await requireRepositoryAccess(user!.id, issue.repositoryId)
+  await requireRepositoryAccess(user.id, issue.repositoryId)
 
   const body = await readBody<{ title: string, owner: string, repo: string, issueNumber: number }>(event)
 

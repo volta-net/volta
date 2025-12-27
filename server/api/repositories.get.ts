@@ -3,7 +3,7 @@ import { db, schema } from 'hub:db'
 
 export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
-  const userId = user!.id
+  const userId = user.id
 
   // Subquery: repositories where user is a collaborator
   const accessibleRepoIds = db

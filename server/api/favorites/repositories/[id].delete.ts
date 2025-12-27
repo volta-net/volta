@@ -15,7 +15,7 @@ export default defineEventHandler(async (event) => {
   await db
     .delete(schema.favoriteRepositories)
     .where(and(
-      eq(schema.favoriteRepositories.userId, user!.id),
+      eq(schema.favoriteRepositories.userId, user.id),
       eq(schema.favoriteRepositories.repositoryId, repositoryId)
     ))
 

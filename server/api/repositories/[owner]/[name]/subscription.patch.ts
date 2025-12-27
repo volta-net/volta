@@ -23,13 +23,13 @@ export default defineEventHandler(async (event) => {
   }
 
   // Verify user has access to this repository
-  await requireRepositoryAccess(user!.id, repository.id)
+  await requireRepositoryAccess(user.id, repository.id)
 
   // Check if subscription exists
   const existing = await db.query.repositorySubscriptions.findFirst({
     where: and(
       eq(schema.repositorySubscriptions.repositoryId, repository.id),
-      eq(schema.repositorySubscriptions.userId, user!.id)
+      eq(schema.repositorySubscriptions.userId, user.id)
     )
   })
 
@@ -69,7 +69,7 @@ export default defineEventHandler(async (event) => {
   } else {
     // Create new subscription with defaults (all enabled for maintainers)
     const newSubscription = {
-      userId: user!.id,
+      userId: user.id,
       repositoryId: repository.id,
       issues: updates.issues ?? true,
       pullRequests: updates.pullRequests ?? true,

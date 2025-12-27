@@ -25,12 +25,12 @@ export default defineEventHandler(async (event) => {
   }
 
   // Check user has access to this repository
-  await requireRepositoryAccess(user!.id, issue.repositoryId)
+  await requireRepositoryAccess(user.id, issue.repositoryId)
 
   await db
     .delete(schema.favoriteIssues)
     .where(and(
-      eq(schema.favoriteIssues.userId, user!.id),
+      eq(schema.favoriteIssues.userId, user.id),
       eq(schema.favoriteIssues.issueId, issueId)
     ))
 

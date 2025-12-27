@@ -24,13 +24,13 @@ export default defineEventHandler(async (event) => {
   }
 
   // Check user has access to this repository
-  await requireRepositoryAccess(user!.id, issue.repositoryId)
+  await requireRepositoryAccess(user.id, issue.repositoryId)
 
   // Check if already subscribed
   const existing = await db.query.issueSubscriptions.findFirst({
     where: and(
       eq(schema.issueSubscriptions.issueId, issueId),
-      eq(schema.issueSubscriptions.userId, user!.id)
+      eq(schema.issueSubscriptions.userId, user.id)
     )
   })
 
@@ -41,7 +41,7 @@ export default defineEventHandler(async (event) => {
   // Subscribe
   await db.insert(schema.issueSubscriptions).values({
     issueId,
-    userId: user!.id
+    userId: user.id
   })
 
   return { subscribed: true }

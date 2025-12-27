@@ -1,6 +1,8 @@
 import { eq, and } from 'drizzle-orm'
 import { db, schema } from 'hub:db'
 import { Octokit } from 'octokit'
+import { ensureUser } from '../../../utils/users'
+import { getDbLabelId } from '../../../utils/sync'
 
 export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
@@ -66,7 +68,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Check user has access to this repository
-  await requireRepositoryAccess(user!.id, issue.repositoryId)
+  await requireRepositoryAccess(user.id, issue.repositoryId)
 
   // Get valid access token (refreshes if expired)
   const accessToken = await getValidAccessToken(event)
@@ -79,7 +81,7 @@ export default defineEventHandler(async (event) => {
       readAt: new Date()
     })
     .where(and(
-      eq(schema.notifications.userId, user!.id),
+      eq(schema.notifications.userId, user.id),
       eq(schema.notifications.issueId, issueId),
       eq(schema.notifications.read, false)
     ))
@@ -88,7 +90,7 @@ export default defineEventHandler(async (event) => {
   const subscription = await db.query.issueSubscriptions.findFirst({
     where: and(
       eq(schema.issueSubscriptions.issueId, issueId),
-      eq(schema.issueSubscriptions.userId, user!.id)
+      eq(schema.issueSubscriptions.userId, user.id)
     )
   })
   const isSubscribed = !!subscription
@@ -174,7 +176,7 @@ async function syncIssueFromGitHub(accessToken: string, issue: any) {
       pull_number: issue.number
     })
 
-    // Ensure author exists
+    // Ensure author exists in database
     if (ghPr.user) {
       await ensureUser({
         id: ghPr.user.id,
@@ -183,9 +185,10 @@ async function syncIssueFromGitHub(accessToken: string, issue: any) {
       })
     }
 
-    // Ensure merged_by user exists
+    // Ensure merged_by user exists and get internal ID
+    let mergedById: number | null = null
     if (ghPr.merged_by) {
-      await ensureUser({
+      mergedById = await ensureUser({
         id: ghPr.merged_by.id,
         login: ghPr.merged_by.login,
         avatar_url: ghPr.merged_by.avatar_url
@@ -209,9 +212,9 @@ async function syncIssueFromGitHub(accessToken: string, issue: any) {
       baseRef: ghPr.base.ref,
       baseSha: ghPr.base.sha,
       mergedAt: ghPr.merged_at ? new Date(ghPr.merged_at) : null,
-      mergedById: ghPr.merged_by?.id ?? null,
+      mergedById,
       closedAt: ghPr.closed_at ? new Date(ghPr.closed_at) : null,
-      closedById: ghPr.merged_by?.id ?? null,
+      closedById: mergedById, // If merged, merged_by is the closer
       commentCount: ghPr.comments,
       updatedAt: new Date()
     }).where(eq(schema.issues.id, issue.id))
@@ -242,7 +245,7 @@ async function syncIssueFromGitHub(accessToken: string, issue: any) {
       issue_number: issue.number
     })
 
-    // Ensure author exists
+    // Ensure author exists in database
     if (ghIssue.user) {
       await ensureUser({
         id: ghIssue.user.id,
@@ -251,9 +254,10 @@ async function syncIssueFromGitHub(accessToken: string, issue: any) {
       })
     }
 
-    // Ensure closed_by user exists
+    // Ensure closed_by user exists and get internal ID
+    let closedById: number | null = null
     if (ghIssue.closed_by) {
-      await ensureUser({
+      closedById = await ensureUser({
         id: ghIssue.closed_by.id,
         login: ghIssue.closed_by.login,
         avatar_url: ghIssue.closed_by.avatar_url
@@ -268,7 +272,7 @@ async function syncIssueFromGitHub(accessToken: string, issue: any) {
       stateReason: ghIssue.state_reason,
       locked: ghIssue.locked,
       closedAt: ghIssue.closed_at ? new Date(ghIssue.closed_at) : null,
-      closedById: ghIssue.closed_by?.id ?? null,
+      closedById,
       commentCount: ghIssue.comments,
       reactionCount: ghIssue.reactions?.total_count ?? 0,
       updatedAt: new Date()
@@ -278,10 +282,10 @@ async function syncIssueFromGitHub(accessToken: string, issue: any) {
     await syncAssignees(issue.id, ghIssue.assignees || [])
 
     // Sync labels
-    const labelIds = ghIssue.labels
+    const labelGithubIds = ghIssue.labels
       .filter((l): l is { id: number } => typeof l === 'object' && 'id' in l)
       .map(l => l.id)
-    await syncLabels(issue.id, labelIds)
+    await syncLabels(issue.id, labelGithubIds)
 
     // Sync comments
     await syncComments(accessToken, owner, repo, issue.number, issue.id)
@@ -292,19 +296,32 @@ async function syncIssueFromGitHub(accessToken: string, issue: any) {
 }
 
 async function syncAssignees(issueId: number, assignees: { id: number, login: string, avatar_url: string }[]) {
-  const newAssigneeIds = new Set(assignees.map(a => a.id))
-
   // Get existing assignees
   const existingAssignees = await db
     .select()
     .from(schema.issueAssignees)
     .where(eq(schema.issueAssignees.issueId, issueId))
 
-  const existingIds = new Set(existingAssignees.map(a => a.userId))
+  const existingDbIds = new Set(existingAssignees.map(a => a.userId))
+
+  // Build map of GitHub ID -> internal ID for new assignees
+  const newAssigneeDbIds = new Map<number, number>()
+  for (const assignee of assignees) {
+    const dbUserId = await ensureUser({
+      id: assignee.id,
+      login: assignee.login,
+      avatar_url: assignee.avatar_url
+    })
+    if (dbUserId) {
+      newAssigneeDbIds.set(assignee.id, dbUserId)
+    }
+  }
+
+  const newDbIds = new Set(newAssigneeDbIds.values())
 
   // Delete removed assignees
   for (const existing of existingAssignees) {
-    if (!newAssigneeIds.has(existing.userId)) {
+    if (!newDbIds.has(existing.userId)) {
       await db.delete(schema.issueAssignees).where(
         and(
           eq(schema.issueAssignees.issueId, issueId),
@@ -315,34 +332,36 @@ async function syncAssignees(issueId: number, assignees: { id: number, login: st
   }
 
   // Insert new assignees
-  for (const assignee of assignees) {
-    if (!existingIds.has(assignee.id)) {
-      await ensureUser({
-        id: assignee.id,
-        login: assignee.login,
-        avatar_url: assignee.avatar_url
-      })
+  for (const [_githubId, dbUserId] of newAssigneeDbIds) {
+    if (!existingDbIds.has(dbUserId)) {
       await db.insert(schema.issueAssignees)
-        .values({ issueId, userId: assignee.id })
+        .values({ issueId, userId: dbUserId })
         .onConflictDoNothing()
     }
   }
 }
 
-async function syncLabels(issueId: number, labelIds: number[]) {
-  const newLabelIds = new Set(labelIds)
-
+async function syncLabels(issueId: number, labelGithubIds: number[]) {
   // Get existing labels
   const existingLabels = await db
     .select()
     .from(schema.issueLabels)
     .where(eq(schema.issueLabels.issueId, issueId))
 
-  const existingIds = new Set(existingLabels.map(l => l.labelId))
+  const existingDbIds = new Set(existingLabels.map(l => l.labelId))
+
+  // Convert GitHub IDs to internal IDs
+  const newDbIds = new Set<number>()
+  for (const githubId of labelGithubIds) {
+    const dbId = await getDbLabelId(githubId)
+    if (dbId) {
+      newDbIds.add(dbId)
+    }
+  }
 
   // Delete removed labels
   for (const existing of existingLabels) {
-    if (!newLabelIds.has(existing.labelId)) {
+    if (!newDbIds.has(existing.labelId)) {
       await db.delete(schema.issueLabels).where(
         and(
           eq(schema.issueLabels.issueId, issueId),
@@ -353,11 +372,11 @@ async function syncLabels(issueId: number, labelIds: number[]) {
   }
 
   // Insert new labels
-  for (const labelId of labelIds) {
-    if (!existingIds.has(labelId)) {
+  for (const dbLabelId of newDbIds) {
+    if (!existingDbIds.has(dbLabelId)) {
       try {
         await db.insert(schema.issueLabels)
-          .values({ issueId, labelId })
+          .values({ issueId, labelId: dbLabelId })
           .onConflictDoNothing()
       } catch {
         // Label may not exist in our DB
@@ -367,19 +386,32 @@ async function syncLabels(issueId: number, labelIds: number[]) {
 }
 
 async function syncRequestedReviewers(issueId: number, reviewers: { id: number, login: string, avatar_url?: string }[]) {
-  const newReviewerIds = new Set(reviewers.map(r => r.id))
-
   // Get existing reviewers
   const existingReviewers = await db
     .select()
     .from(schema.issueRequestedReviewers)
     .where(eq(schema.issueRequestedReviewers.issueId, issueId))
 
-  const existingIds = new Set(existingReviewers.map(r => r.userId))
+  const existingDbIds = new Set(existingReviewers.map(r => r.userId))
+
+  // Build map of GitHub ID -> internal ID for new reviewers
+  const newReviewerDbIds = new Map<number, number>()
+  for (const reviewer of reviewers) {
+    const dbUserId = await ensureUser({
+      id: reviewer.id,
+      login: reviewer.login,
+      avatar_url: reviewer.avatar_url
+    })
+    if (dbUserId) {
+      newReviewerDbIds.set(reviewer.id, dbUserId)
+    }
+  }
+
+  const newDbIds = new Set(newReviewerDbIds.values())
 
   // Delete removed reviewers
   for (const existing of existingReviewers) {
-    if (!newReviewerIds.has(existing.userId)) {
+    if (!newDbIds.has(existing.userId)) {
       await db.delete(schema.issueRequestedReviewers).where(
         and(
           eq(schema.issueRequestedReviewers.issueId, issueId),
@@ -390,15 +422,10 @@ async function syncRequestedReviewers(issueId: number, reviewers: { id: number, 
   }
 
   // Insert new reviewers
-  for (const reviewer of reviewers) {
-    if (!existingIds.has(reviewer.id)) {
-      await ensureUser({
-        id: reviewer.id,
-        login: reviewer.login,
-        avatar_url: reviewer.avatar_url
-      })
+  for (const [_githubId, dbUserId] of newReviewerDbIds) {
+    if (!existingDbIds.has(dbUserId)) {
       await db.insert(schema.issueRequestedReviewers)
-        .values({ issueId, userId: reviewer.id })
+        .values({ issueId, userId: dbUserId })
         .onConflictDoNothing()
     }
   }
@@ -416,8 +443,9 @@ async function syncComments(accessToken: string, owner: string, repo: string, is
 
   // Upsert comments
   for (const comment of comments) {
+    let userId: number | null = null
     if (comment.user) {
-      await ensureUser({
+      userId = await ensureUser({
         id: comment.user.id,
         login: comment.user.login,
         avatar_url: comment.user.avatar_url
@@ -426,21 +454,22 @@ async function syncComments(accessToken: string, owner: string, repo: string, is
 
     const commentData = {
       issueId,
-      userId: comment.user?.id,
+      userId,
       body: comment.body || '',
       htmlUrl: comment.html_url,
       updatedAt: new Date(comment.updated_at)
     }
 
+    // Look up by GitHub ID
     const existing = await db.query.issueComments.findFirst({
-      where: eq(schema.issueComments.id, comment.id)
+      where: eq(schema.issueComments.githubId, comment.id)
     })
 
     if (existing) {
-      await db.update(schema.issueComments).set(commentData).where(eq(schema.issueComments.id, comment.id))
+      await db.update(schema.issueComments).set(commentData).where(eq(schema.issueComments.id, existing.id))
     } else {
       await db.insert(schema.issueComments).values({
-        id: comment.id,
+        githubId: comment.id,
         ...commentData,
         createdAt: new Date(comment.created_at)
       })
@@ -460,8 +489,9 @@ async function syncReviews(accessToken: string, owner: string, repo: string, prN
 
   // Upsert reviews
   for (const review of reviews) {
+    let userId: number | null = null
     if (review.user) {
-      await ensureUser({
+      userId = await ensureUser({
         id: review.user.id,
         login: review.user.login,
         avatar_url: review.user.avatar_url
@@ -470,7 +500,7 @@ async function syncReviews(accessToken: string, owner: string, repo: string, prN
 
     const reviewData = {
       issueId,
-      userId: review.user?.id,
+      userId,
       body: review.body,
       state: review.state as any,
       htmlUrl: review.html_url,
@@ -478,15 +508,16 @@ async function syncReviews(accessToken: string, owner: string, repo: string, prN
       submittedAt: review.submitted_at ? new Date(review.submitted_at) : null
     }
 
+    // Look up by GitHub ID
     const existing = await db.query.issueReviews.findFirst({
-      where: eq(schema.issueReviews.id, review.id)
+      where: eq(schema.issueReviews.githubId, review.id)
     })
 
     if (existing) {
-      await db.update(schema.issueReviews).set(reviewData).where(eq(schema.issueReviews.id, review.id))
+      await db.update(schema.issueReviews).set(reviewData).where(eq(schema.issueReviews.id, existing.id))
     } else {
       await db.insert(schema.issueReviews).values({
-        id: review.id,
+        githubId: review.id,
         ...reviewData
       })
     }
@@ -505,18 +536,28 @@ async function syncReviewComments(accessToken: string, owner: string, repo: stri
 
   // Upsert review comments
   for (const comment of comments) {
+    let userId: number | null = null
     if (comment.user) {
-      await ensureUser({
+      userId = await ensureUser({
         id: comment.user.id,
         login: comment.user.login,
         avatar_url: comment.user.avatar_url
       })
     }
 
+    // Get review ID if present
+    let reviewId: number | null = null
+    if (comment.pull_request_review_id) {
+      const [review] = await db.select({ id: schema.issueReviews.id })
+        .from(schema.issueReviews)
+        .where(eq(schema.issueReviews.githubId, comment.pull_request_review_id))
+      reviewId = review?.id ?? null
+    }
+
     const commentData = {
       issueId,
-      reviewId: comment.pull_request_review_id,
-      userId: comment.user?.id,
+      reviewId,
+      userId,
       body: comment.body,
       path: comment.path,
       line: comment.line,
@@ -527,15 +568,16 @@ async function syncReviewComments(accessToken: string, owner: string, repo: stri
       updatedAt: new Date(comment.updated_at)
     }
 
+    // Look up by GitHub ID
     const existing = await db.query.issueReviewComments.findFirst({
-      where: eq(schema.issueReviewComments.id, comment.id)
+      where: eq(schema.issueReviewComments.githubId, comment.id)
     })
 
     if (existing) {
-      await db.update(schema.issueReviewComments).set(commentData).where(eq(schema.issueReviewComments.id, comment.id))
+      await db.update(schema.issueReviewComments).set(commentData).where(eq(schema.issueReviewComments.id, existing.id))
     } else {
       await db.insert(schema.issueReviewComments).values({
-        id: comment.id,
+        githubId: comment.id,
         ...commentData,
         createdAt: new Date(comment.created_at)
       })

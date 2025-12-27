@@ -8,7 +8,7 @@ export default defineEventHandler(async (event) => {
   const unreadOnly = query.unread === 'true'
 
   // Build query conditions
-  const conditions = [eq(schema.notifications.userId, user!.id)]
+  const conditions = [eq(schema.notifications.userId, user.id)]
   if (unreadOnly) {
     conditions.push(eq(schema.notifications.read, false))
   }

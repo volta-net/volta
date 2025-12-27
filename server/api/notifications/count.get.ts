@@ -8,7 +8,7 @@ export default defineEventHandler(async (event) => {
     .select({ count: count() })
     .from(schema.notifications)
     .where(and(
-      eq(schema.notifications.userId, user!.id),
+      eq(schema.notifications.userId, user.id),
       eq(schema.notifications.read, false)
     ))
 

@@ -22,13 +22,13 @@ export default defineEventHandler(async (event) => {
   }
 
   // Verify user has access to this repository
-  await requireRepositoryAccess(user!.id, repository.id)
+  await requireRepositoryAccess(user.id, repository.id)
 
   // Get user's subscription
   const subscription = await db.query.repositorySubscriptions.findFirst({
     where: and(
       eq(schema.repositorySubscriptions.repositoryId, repository.id),
-      eq(schema.repositorySubscriptions.userId, user!.id)
+      eq(schema.repositorySubscriptions.userId, user.id)
     )
   })
 

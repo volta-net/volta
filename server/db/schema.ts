@@ -1,9 +1,10 @@
-import { pgTable, text, timestamp, bigint, boolean, serial, primaryKey } from 'drizzle-orm/pg-core'
+import { pgTable, text, timestamp, bigint, boolean, serial, primaryKey, uniqueIndex, integer } from 'drizzle-orm/pg-core'
 import { relations } from 'drizzle-orm'
 
 // Users (GitHub users - both registered and shadow users from imports)
 export const users = pgTable('users', {
-  id: bigint({ mode: 'number' }).primaryKey(), // GitHub user ID
+  id: serial().primaryKey(), // Auto-generated stable ID
+  githubId: bigint('github_id', { mode: 'number' }).notNull(), // GitHub user ID (for lookups)
   login: text().notNull(),
   name: text(),
   email: text(),
@@ -12,7 +13,9 @@ export const users = pgTable('users', {
   registered: boolean().default(false).notNull(),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow()
-})
+}, table => ([
+  uniqueIndex('users_github_id_idx').on(table.githubId)
+]))
 
 // Notification types (what entity the notification is about)
 export type NotificationType = 'issue' | 'pull_request' | 'release' | 'workflow_run'
@@ -30,18 +33,18 @@ export type NotificationAction
 export const notifications = pgTable('notifications', {
   id: serial().primaryKey(),
   // Who this notification is for
-  userId: bigint('user_id', { mode: 'number' }).notNull().references(() => users.id, { onDelete: 'cascade' }),
+  userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   // Notification content
   type: text().$type<NotificationType>().notNull(),
   action: text().$type<NotificationAction>().notNull(),
   body: text(), // Optional extra context (e.g., comment body)
   // Relations (populated via Drizzle)
-  repositoryId: bigint('repository_id', { mode: 'number' }).references(() => repositories.id, { onDelete: 'cascade' }),
-  issueId: bigint('issue_id', { mode: 'number' }).references(() => issues.id, { onDelete: 'cascade' }),
-  releaseId: bigint('release_id', { mode: 'number' }).references(() => releases.id, { onDelete: 'cascade' }),
-  workflowRunId: bigint('workflow_run_id', { mode: 'number' }).references(() => workflowRuns.id, { onDelete: 'cascade' }),
+  repositoryId: integer('repository_id').references(() => repositories.id, { onDelete: 'cascade' }),
+  issueId: integer('issue_id').references(() => issues.id, { onDelete: 'cascade' }),
+  releaseId: integer('release_id').references(() => releases.id, { onDelete: 'cascade' }),
+  workflowRunId: integer('workflow_run_id').references(() => workflowRuns.id, { onDelete: 'cascade' }),
   // Actor (who triggered the notification)
-  actorId: bigint('actor_id', { mode: 'number' }).references(() => users.id, { onDelete: 'set null' }),
+  actorId: integer('actor_id').references(() => users.id, { onDelete: 'set null' }),
   // Status
   read: boolean().default(false),
   readAt: timestamp('read_at'),
@@ -50,7 +53,8 @@ export const notifications = pgTable('notifications', {
 
 // GitHub App Installations
 export const installations = pgTable('installations', {
-  id: bigint({ mode: 'number' }).primaryKey(), // GitHub installation ID
+  id: serial().primaryKey(), // Auto-generated stable ID
+  githubId: bigint('github_id', { mode: 'number' }).notNull(), // GitHub installation ID
   accountLogin: text('account_login').notNull(),
   accountId: bigint('account_id', { mode: 'number' }).notNull(),
   accountType: text('account_type').notNull(), // 'User' | 'Organization'
@@ -58,12 +62,15 @@ export const installations = pgTable('installations', {
   suspended: boolean().default(false),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow()
-})
+}, table => ([
+  uniqueIndex('installations_github_id_idx').on(table.githubId)
+]))
 
 // Repositories (matches GitHub API)
 export const repositories = pgTable('repositories', {
-  id: bigint({ mode: 'number' }).primaryKey(), // GitHub repo ID
-  installationId: bigint('installation_id', { mode: 'number' }).notNull().references(() => installations.id, { onDelete: 'cascade' }),
+  id: serial().primaryKey(), // Auto-generated stable ID
+  githubId: bigint('github_id', { mode: 'number' }).notNull(), // GitHub repo ID
+  installationId: integer('installation_id').notNull().references(() => installations.id, { onDelete: 'cascade' }),
   name: text().notNull(),
   fullName: text('full_name').notNull(),
   private: boolean().default(false),
@@ -77,13 +84,16 @@ export const repositories = pgTable('repositories', {
   lastSyncedAt: timestamp('last_synced_at'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow()
-})
+}, table => ([
+  uniqueIndex('repositories_github_id_idx').on(table.githubId)
+]))
 
 // Releases (matches GitHub API)
 export const releases = pgTable('releases', {
-  id: bigint({ mode: 'number' }).primaryKey(), // GitHub release ID
-  repositoryId: bigint('repository_id', { mode: 'number' }).notNull().references(() => repositories.id, { onDelete: 'cascade' }),
-  authorId: bigint('author_id', { mode: 'number' }).references(() => users.id, { onDelete: 'set null' }),
+  id: serial().primaryKey(), // Auto-generated stable ID
+  githubId: bigint('github_id', { mode: 'number' }).notNull(), // GitHub release ID
+  repositoryId: integer('repository_id').notNull().references(() => repositories.id, { onDelete: 'cascade' }),
+  authorId: integer('author_id').references(() => users.id, { onDelete: 'set null' }),
   tagName: text('tag_name').notNull(),
   name: text(),
   body: text(),
@@ -92,17 +102,20 @@ export const releases = pgTable('releases', {
   htmlUrl: text('html_url'),
   publishedAt: timestamp('published_at'),
   createdAt: timestamp('created_at').notNull().defaultNow()
-})
+}, table => ([
+  uniqueIndex('releases_github_id_idx').on(table.githubId)
+]))
 
 // Workflow run conclusions
 export type WorkflowConclusion = 'success' | 'failure' | 'cancelled' | 'skipped' | 'timed_out' | 'action_required' | 'stale' | 'neutral' | 'startup_failure'
 
 // Workflow Runs (GitHub Actions)
 export const workflowRuns = pgTable('workflow_runs', {
-  id: bigint({ mode: 'number' }).primaryKey(), // GitHub workflow run ID
-  repositoryId: bigint('repository_id', { mode: 'number' }).notNull().references(() => repositories.id, { onDelete: 'cascade' }),
-  issueId: bigint('issue_id', { mode: 'number' }).references(() => issues.id, { onDelete: 'set null' }), // Related PR (if triggered by pull_request event)
-  actorId: bigint('actor_id', { mode: 'number' }).references(() => users.id, { onDelete: 'set null' }),
+  id: serial().primaryKey(), // Auto-generated stable ID
+  githubId: bigint('github_id', { mode: 'number' }).notNull(), // GitHub workflow run ID
+  repositoryId: integer('repository_id').notNull().references(() => repositories.id, { onDelete: 'cascade' }),
+  issueId: integer('issue_id').references(() => issues.id, { onDelete: 'set null' }), // Related PR (if triggered by pull_request event)
+  actorId: integer('actor_id').references(() => users.id, { onDelete: 'set null' }),
   workflowId: bigint('workflow_id', { mode: 'number' }).notNull(),
   workflowName: text('workflow_name'),
   name: text(), // Run name (e.g., "CI" or "Build and Test")
@@ -118,12 +131,15 @@ export const workflowRuns = pgTable('workflow_runs', {
   completedAt: timestamp('completed_at'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow()
-})
+}, table => ([
+  uniqueIndex('workflow_runs_github_id_idx').on(table.githubId)
+]))
 
 // Check Runs (third-party integrations like Vercel, CircleCI, etc.)
 export const checkRuns = pgTable('check_runs', {
-  id: bigint({ mode: 'number' }).primaryKey(), // GitHub check run ID
-  repositoryId: bigint('repository_id', { mode: 'number' }).notNull().references(() => repositories.id, { onDelete: 'cascade' }),
+  id: serial().primaryKey(), // Auto-generated stable ID
+  githubId: bigint('github_id', { mode: 'number' }).notNull(), // GitHub check run ID
+  repositoryId: integer('repository_id').notNull().references(() => repositories.id, { onDelete: 'cascade' }),
   headSha: text('head_sha').notNull(),
   name: text().notNull(), // Check name (e.g., "Vercel – my-app")
   status: text(), // queued, in_progress, completed
@@ -136,15 +152,18 @@ export const checkRuns = pgTable('check_runs', {
   completedAt: timestamp('completed_at'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow()
-})
+}, table => ([
+  uniqueIndex('check_runs_github_id_idx').on(table.githubId)
+]))
 
 // Commit Status state (from GitHub Status API - older API used by Vercel deployments, etc.)
 export type CommitStatusState = 'error' | 'failure' | 'pending' | 'success'
 
 // Commit Statuses (GitHub Status API - used by Vercel deployments, external CI, etc.)
 export const commitStatuses = pgTable('commit_statuses', {
-  id: bigint({ mode: 'number' }).primaryKey(), // GitHub status ID
-  repositoryId: bigint('repository_id', { mode: 'number' }).notNull().references(() => repositories.id, { onDelete: 'cascade' }),
+  id: serial().primaryKey(), // Auto-generated stable ID
+  githubId: bigint('github_id', { mode: 'number' }).notNull(), // GitHub status ID
+  repositoryId: integer('repository_id').notNull().references(() => repositories.id, { onDelete: 'cascade' }),
   sha: text().notNull(), // Commit SHA
   state: text().$type<CommitStatusState>().notNull(), // error, failure, pending, success
   context: text().notNull(), // Status context (e.g., "Vercel", "continuous-integration/travis-ci")
@@ -152,35 +171,44 @@ export const commitStatuses = pgTable('commit_statuses', {
   targetUrl: text('target_url'), // Link to external service
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow()
-})
+}, table => ([
+  uniqueIndex('commit_statuses_github_id_idx').on(table.githubId)
+]))
 
 // Labels (matches GitHub API)
 export const labels = pgTable('labels', {
-  id: bigint({ mode: 'number' }).primaryKey(), // GitHub label ID
-  repositoryId: bigint('repository_id', { mode: 'number' }).notNull().references(() => repositories.id, { onDelete: 'cascade' }),
+  id: serial().primaryKey(), // Auto-generated stable ID
+  githubId: bigint('github_id', { mode: 'number' }).notNull(), // GitHub label ID
+  repositoryId: integer('repository_id').notNull().references(() => repositories.id, { onDelete: 'cascade' }),
   name: text().notNull(),
   color: text().notNull(),
   description: text(),
   default: boolean().default(false),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow()
-})
+}, table => ([
+  uniqueIndex('labels_github_id_idx').on(table.githubId)
+]))
 
 // Types (GitHub issue types - Bug, Feature, etc.)
 export const types = pgTable('types', {
-  id: bigint({ mode: 'number' }).primaryKey(), // GitHub issue type ID
-  repositoryId: bigint('repository_id', { mode: 'number' }).notNull().references(() => repositories.id, { onDelete: 'cascade' }),
+  id: serial().primaryKey(), // Auto-generated stable ID
+  githubId: bigint('github_id', { mode: 'number' }).notNull(), // GitHub issue type ID
+  repositoryId: integer('repository_id').notNull().references(() => repositories.id, { onDelete: 'cascade' }),
   name: text().notNull(),
   description: text(),
   color: text(),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow()
-})
+}, table => ([
+  uniqueIndex('types_github_id_idx').on(table.githubId)
+]))
 
 // Milestones (matches GitHub API)
 export const milestones = pgTable('milestones', {
-  id: bigint({ mode: 'number' }).primaryKey(), // GitHub milestone ID
-  repositoryId: bigint('repository_id', { mode: 'number' }).notNull().references(() => repositories.id, { onDelete: 'cascade' }),
+  id: serial().primaryKey(), // Auto-generated stable ID
+  githubId: bigint('github_id', { mode: 'number' }).notNull(), // GitHub milestone ID
+  repositoryId: integer('repository_id').notNull().references(() => repositories.id, { onDelete: 'cascade' }),
   number: bigint({ mode: 'number' }).notNull(),
   title: text().notNull(),
   description: text(),
@@ -192,17 +220,20 @@ export const milestones = pgTable('milestones', {
   closedAt: timestamp('closed_at'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow()
-})
+}, table => ([
+  uniqueIndex('milestones_github_id_idx').on(table.githubId)
+]))
 
 // Issues (Issues & Pull Requests unified)
 export const issues = pgTable('issues', {
-  id: bigint({ mode: 'number' }).primaryKey(), // GitHub issue/PR ID
+  id: serial().primaryKey(), // Auto-generated stable ID
+  githubId: bigint('github_id', { mode: 'number' }), // GitHub's ID (for reference only - not reliable as PK)
   pullRequest: boolean('pull_request').default(false).notNull(), // true for PRs, false for issues
-  repositoryId: bigint('repository_id', { mode: 'number' }).notNull().references(() => repositories.id, { onDelete: 'cascade' }),
-  milestoneId: bigint('milestone_id', { mode: 'number' }).references(() => milestones.id, { onDelete: 'set null' }),
-  typeId: bigint('type_id', { mode: 'number' }).references(() => types.id, { onDelete: 'set null' }), // GitHub issue type (Bug, Feature, etc.)
+  repositoryId: integer('repository_id').notNull().references(() => repositories.id, { onDelete: 'cascade' }),
+  milestoneId: integer('milestone_id').references(() => milestones.id, { onDelete: 'set null' }),
+  typeId: integer('type_id').references(() => types.id, { onDelete: 'set null' }), // GitHub issue type (Bug, Feature, etc.)
   // Author (relation to users - shadow user created if needed)
-  userId: bigint('user_id', { mode: 'number' }).references(() => users.id, { onDelete: 'set null' }),
+  userId: integer('user_id').references(() => users.id, { onDelete: 'set null' }),
   number: bigint({ mode: 'number' }).notNull(),
   title: text().notNull(),
   body: text(),
@@ -222,10 +253,10 @@ export const issues = pgTable('issues', {
   baseRef: text('base_ref'),
   baseSha: text('base_sha'),
   mergedAt: timestamp('merged_at'),
-  mergedById: bigint('merged_by_id', { mode: 'number' }).references(() => users.id, { onDelete: 'set null' }),
+  mergedById: integer('merged_by_id').references(() => users.id, { onDelete: 'set null' }),
   // Timestamps
   closedAt: timestamp('closed_at'),
-  closedById: bigint('closed_by_id', { mode: 'number' }).references(() => users.id, { onDelete: 'set null' }),
+  closedById: integer('closed_by_id').references(() => users.id, { onDelete: 'set null' }),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
   // Engagement metrics (from GitHub API)
@@ -235,60 +266,67 @@ export const issues = pgTable('issues', {
   synced: boolean().default(false).notNull(),
   // When we last synced this issue from GitHub (for staleness checks)
   syncedAt: timestamp('synced_at')
-})
+}, table => ([
+  // The true unique identifier is (repositoryId, number), not GitHub's ID
+  uniqueIndex('issues_repo_number_idx').on(table.repositoryId, table.number)
+]))
 
 // Issue Assignees (many-to-many: issues <-> users)
 export const issueAssignees = pgTable('issue_assignees', {
-  issueId: bigint('issue_id', { mode: 'number' }).notNull().references(() => issues.id, { onDelete: 'cascade' }),
-  userId: bigint('user_id', { mode: 'number' }).notNull().references(() => users.id, { onDelete: 'cascade' })
-}, (table) => ([
+  issueId: integer('issue_id').notNull().references(() => issues.id, { onDelete: 'cascade' }),
+  userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' })
+}, table => ([
   primaryKey({ columns: [table.issueId, table.userId] })
 ]))
 
 // Issue Labels (many-to-many: issues <-> labels)
 export const issueLabels = pgTable('issue_labels', {
-  issueId: bigint('issue_id', { mode: 'number' }).notNull().references(() => issues.id, { onDelete: 'cascade' }),
-  labelId: bigint('label_id', { mode: 'number' }).notNull().references(() => labels.id, { onDelete: 'cascade' })
-}, (table) => ([
+  issueId: integer('issue_id').notNull().references(() => issues.id, { onDelete: 'cascade' }),
+  labelId: integer('label_id').notNull().references(() => labels.id, { onDelete: 'cascade' })
+}, table => ([
   primaryKey({ columns: [table.issueId, table.labelId] })
 ]))
 
 // Issue Requested Reviewers (many-to-many: issues <-> users, for PRs)
 export const issueRequestedReviewers = pgTable('issue_requested_reviewers', {
-  issueId: bigint('issue_id', { mode: 'number' }).notNull().references(() => issues.id, { onDelete: 'cascade' }),
-  userId: bigint('user_id', { mode: 'number' }).notNull().references(() => users.id, { onDelete: 'cascade' })
-}, (table) => ([
+  issueId: integer('issue_id').notNull().references(() => issues.id, { onDelete: 'cascade' }),
+  userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' })
+}, table => ([
   primaryKey({ columns: [table.issueId, table.userId] })
 ]))
 
 // Issue Linked PRs (many-to-many: issues <-> PRs)
 // Links issues to PRs that reference them with closing keywords (fixes #, closes #, etc.)
 export const issueLinkedPrs = pgTable('issue_linked_prs', {
-  issueId: bigint('issue_id', { mode: 'number' }).notNull().references(() => issues.id, { onDelete: 'cascade' }),
-  prId: bigint('pr_id', { mode: 'number' }).notNull().references(() => issues.id, { onDelete: 'cascade' })
-}, (table) => ([
+  issueId: integer('issue_id').notNull().references(() => issues.id, { onDelete: 'cascade' }),
+  prId: integer('pr_id').notNull().references(() => issues.id, { onDelete: 'cascade' })
+}, table => ([
   primaryKey({ columns: [table.issueId, table.prId] })
 ]))
 
 // Issue Comments (general comments on issues/PRs)
 export const issueComments = pgTable('issue_comments', {
-  id: bigint({ mode: 'number' }).primaryKey(), // GitHub comment ID
-  issueId: bigint('issue_id', { mode: 'number' }).notNull().references(() => issues.id, { onDelete: 'cascade' }),
-  userId: bigint('user_id', { mode: 'number' }).references(() => users.id, { onDelete: 'set null' }),
+  id: serial().primaryKey(), // Auto-generated stable ID
+  githubId: bigint('github_id', { mode: 'number' }).notNull(), // GitHub comment ID
+  issueId: integer('issue_id').notNull().references(() => issues.id, { onDelete: 'cascade' }),
+  userId: integer('user_id').references(() => users.id, { onDelete: 'set null' }),
   body: text().notNull(),
   htmlUrl: text('html_url'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow()
-})
+}, table => ([
+  uniqueIndex('issue_comments_github_id_idx').on(table.githubId)
+]))
 
 // Review state
 export type ReviewState = 'APPROVED' | 'CHANGES_REQUESTED' | 'COMMENTED' | 'DISMISSED' | 'PENDING'
 
 // Issue Reviews (PR review submissions with state)
 export const issueReviews = pgTable('issue_reviews', {
-  id: bigint({ mode: 'number' }).primaryKey(), // GitHub review ID
-  issueId: bigint('issue_id', { mode: 'number' }).notNull().references(() => issues.id, { onDelete: 'cascade' }),
-  userId: bigint('user_id', { mode: 'number' }).references(() => users.id, { onDelete: 'set null' }),
+  id: serial().primaryKey(), // Auto-generated stable ID
+  githubId: bigint('github_id', { mode: 'number' }).notNull(), // GitHub review ID
+  issueId: integer('issue_id').notNull().references(() => issues.id, { onDelete: 'cascade' }),
+  userId: integer('user_id').references(() => users.id, { onDelete: 'set null' }),
   body: text(),
   state: text().$type<ReviewState>().notNull(),
   htmlUrl: text('html_url'),
@@ -296,14 +334,17 @@ export const issueReviews = pgTable('issue_reviews', {
   submittedAt: timestamp('submitted_at'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow()
-})
+}, table => ([
+  uniqueIndex('issue_reviews_github_id_idx').on(table.githubId)
+]))
 
 // Issue Review Comments (inline code comments on PRs)
 export const issueReviewComments = pgTable('issue_review_comments', {
-  id: bigint({ mode: 'number' }).primaryKey(), // GitHub comment ID
-  issueId: bigint('issue_id', { mode: 'number' }).notNull().references(() => issues.id, { onDelete: 'cascade' }),
-  reviewId: bigint('review_id', { mode: 'number' }).references(() => issueReviews.id, { onDelete: 'cascade' }),
-  userId: bigint('user_id', { mode: 'number' }).references(() => users.id, { onDelete: 'set null' }),
+  id: serial().primaryKey(), // Auto-generated stable ID
+  githubId: bigint('github_id', { mode: 'number' }).notNull(), // GitHub comment ID
+  issueId: integer('issue_id').notNull().references(() => issues.id, { onDelete: 'cascade' }),
+  reviewId: integer('review_id').references(() => issueReviews.id, { onDelete: 'cascade' }),
+  userId: integer('user_id').references(() => users.id, { onDelete: 'set null' }),
   body: text().notNull(),
   path: text(), // File path
   line: bigint({ mode: 'number' }), // Line number
@@ -313,7 +354,9 @@ export const issueReviewComments = pgTable('issue_review_comments', {
   htmlUrl: text('html_url'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow()
-})
+}, table => ([
+  uniqueIndex('issue_review_comments_github_id_idx').on(table.githubId)
+]))
 
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
@@ -573,8 +616,8 @@ export const notificationsRelations = relations(notifications, ({ one }) => ({
 // Repository Subscriptions - Users subscribe to repos for notifications
 export const repositorySubscriptions = pgTable('repository_subscriptions', {
   id: serial().primaryKey(),
-  userId: bigint('user_id', { mode: 'number' }).notNull().references(() => users.id, { onDelete: 'cascade' }),
-  repositoryId: bigint('repository_id', { mode: 'number' }).notNull().references(() => repositories.id, { onDelete: 'cascade' }),
+  userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  repositoryId: integer('repository_id').notNull().references(() => repositories.id, { onDelete: 'cascade' }),
   // Notification preferences (all enabled by default for maintainers)
   issues: boolean().default(true), // New issues
   pullRequests: boolean('pull_requests').default(true), // New PRs
@@ -598,10 +641,10 @@ export const repositorySubscriptionsRelations = relations(repositorySubscription
 
 // Issue Subscriptions - Users subscribe to specific issues for activity notifications
 export const issueSubscriptions = pgTable('issue_subscriptions', {
-  issueId: bigint('issue_id', { mode: 'number' }).notNull().references(() => issues.id, { onDelete: 'cascade' }),
-  userId: bigint('user_id', { mode: 'number' }).notNull().references(() => users.id, { onDelete: 'cascade' }),
+  issueId: integer('issue_id').notNull().references(() => issues.id, { onDelete: 'cascade' }),
+  userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   createdAt: timestamp('created_at').notNull().defaultNow()
-}, (table) => ([
+}, table => ([
   primaryKey({ columns: [table.issueId, table.userId] })
 ]))
 
@@ -619,8 +662,8 @@ export const issueSubscriptionsRelations = relations(issueSubscriptions, ({ one 
 // Favorite Repositories - repos user wants on dashboard
 export const favoriteRepositories = pgTable('favorite_repositories', {
   id: serial().primaryKey(),
-  userId: bigint('user_id', { mode: 'number' }).notNull().references(() => users.id, { onDelete: 'cascade' }),
-  repositoryId: bigint('repository_id', { mode: 'number' }).notNull().references(() => repositories.id, { onDelete: 'cascade' }),
+  userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  repositoryId: integer('repository_id').notNull().references(() => repositories.id, { onDelete: 'cascade' }),
   createdAt: timestamp('created_at').notNull().defaultNow()
 })
 
@@ -639,12 +682,12 @@ export const favoriteRepositoriesRelations = relations(favoriteRepositories, ({ 
 export type CollaboratorPermission = 'admin' | 'maintain' | 'write' | 'triage' | 'read'
 
 export const repositoryCollaborators = pgTable('repository_collaborators', {
-  repositoryId: bigint('repository_id', { mode: 'number' }).notNull().references(() => repositories.id, { onDelete: 'cascade' }),
-  userId: bigint('user_id', { mode: 'number' }).notNull().references(() => users.id, { onDelete: 'cascade' }),
+  repositoryId: integer('repository_id').notNull().references(() => repositories.id, { onDelete: 'cascade' }),
+  userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   permission: text().$type<CollaboratorPermission>().notNull(),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow()
-}, (table) => ([
+}, table => ([
   primaryKey({ columns: [table.repositoryId, table.userId] })
 ]))
 
@@ -662,8 +705,8 @@ export const repositoryCollaboratorsRelations = relations(repositoryCollaborator
 // Favorite Issues - issues for quick sidebar access
 export const favoriteIssues = pgTable('favorite_issues', {
   id: serial().primaryKey(),
-  userId: bigint('user_id', { mode: 'number' }).notNull().references(() => users.id, { onDelete: 'cascade' }),
-  issueId: bigint('issue_id', { mode: 'number' }).notNull().references(() => issues.id, { onDelete: 'cascade' }),
+  userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  issueId: integer('issue_id').notNull().references(() => issues.id, { onDelete: 'cascade' }),
   createdAt: timestamp('created_at').notNull().defaultNow()
 })
 

@@ -6,7 +6,7 @@ export default defineEventHandler(async (event) => {
 
   await db
     .delete(schema.notifications)
-    .where(eq(schema.notifications.userId, user!.id))
+    .where(eq(schema.notifications.userId, user.id))
 
   return { success: true }
 })

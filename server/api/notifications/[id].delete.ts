@@ -18,7 +18,7 @@ export default defineEventHandler(async (event) => {
     .delete(schema.notifications)
     .where(and(
       eq(schema.notifications.id, notificationId),
-      eq(schema.notifications.userId, user!.id)
+      eq(schema.notifications.userId, user.id)
     ))
     .returning()
 

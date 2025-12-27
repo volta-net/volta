@@ -19,11 +19,18 @@ export default defineOAuthGitHubEventHandler({
   async onSuccess(event, { user, tokens: _tokens }) {
     // Cast tokens to extended type that includes refresh token fields
     const tokens = _tokens as GitHubTokensWithRefresh
-    // Upsert user in database
+
+    // Upsert user in database - look up by GitHub ID, store internal ID in session
+    let dbUserId: number
     try {
-      const [existingUser] = await db.select().from(schema.users).where(eq(schema.users.id, user.id))
+      // Look up by GitHub ID
+      const [existingUser] = await db
+        .select()
+        .from(schema.users)
+        .where(eq(schema.users.githubId, user.id))
 
       if (existingUser) {
+        // Update existing user
         await db.update(schema.users).set({
           login: user.login,
           name: user.name,
@@ -31,19 +38,26 @@ export default defineOAuthGitHubEventHandler({
           avatarUrl: user.avatar_url,
           registered: true, // Mark as registered on login
           updatedAt: new Date()
-        }).where(eq(schema.users.id, user.id))
+        }).where(eq(schema.users.id, existingUser.id))
+        dbUserId = existingUser.id
       } else {
-        await db.insert(schema.users).values({
-          id: user.id,
+        // Insert new user (auto-generate ID)
+        const [newUser] = await db.insert(schema.users).values({
+          githubId: user.id, // Store GitHub ID for reference
           login: user.login,
           name: user.name,
           email: user.email,
           avatarUrl: user.avatar_url,
           registered: true // Mark as registered on login
-        })
+        }).returning({ id: schema.users.id })
+        dbUserId = newUser!.id
       }
     } catch (error) {
       console.warn('[auth] Failed to save user to database:', error)
+      throw createError({
+        statusCode: 500,
+        message: 'Failed to save user to database'
+      })
     }
 
     // Calculate token expiry (GitHub tokens expire in 8 hours = 28800 seconds)
@@ -53,7 +67,8 @@ export default defineOAuthGitHubEventHandler({
 
     await setUserSession(event, {
       user: {
-        id: user.id,
+        id: dbUserId,
+        githubId: user.id,
         username: user.login,
         avatar: user.avatar_url,
         registered: true

@@ -35,7 +35,7 @@ export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
   const query = getQuery(event)
 
-  const favoriteRepoIdsSubquery = getUserFavoriteRepoIdsSubquery(user!.id)
+  const favoriteRepoIdsSubquery = getUserFavoriteRepoIdsSubquery(user.id)
 
   // Parse query parameters
   const pullRequest = query.pullRequest === 'true' ? true : query.pullRequest === 'false' ? false : undefined
@@ -64,9 +64,9 @@ export default defineEventHandler(async (event) => {
   const limit = query.limit ? Math.min(parseInt(query.limit as string, 10), 500) : undefined
 
   // Resolve 'me' to current user ID
-  const authorId = authorParam === 'me' ? user!.id : authorParam ? parseInt(authorParam, 10) : undefined
-  const assigneeId = assigneeParam === 'me' ? user!.id : assigneeParam ? parseInt(assigneeParam, 10) : undefined
-  const reviewRequestedId = reviewRequestedParam === 'me' ? user!.id : reviewRequestedParam ? parseInt(reviewRequestedParam, 10) : undefined
+  const authorId = authorParam === 'me' ? user.id : authorParam ? parseInt(authorParam, 10) : undefined
+  const assigneeId = assigneeParam === 'me' ? user.id : assigneeParam ? parseInt(assigneeParam, 10) : undefined
+  const reviewRequestedId = reviewRequestedParam === 'me' ? user.id : reviewRequestedParam ? parseInt(reviewRequestedParam, 10) : undefined
 
   // Build where conditions
   const conditions: any[] = [

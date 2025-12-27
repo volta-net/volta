@@ -22,14 +22,14 @@ export default defineEventHandler(async (event) => {
   }
 
   // Verify user has access to this repository
-  await requireRepositoryAccess(user!.id, repository.id)
+  await requireRepositoryAccess(user.id, repository.id)
 
   // Delete subscription
   await db
     .delete(schema.repositorySubscriptions)
     .where(and(
       eq(schema.repositorySubscriptions.repositoryId, repository.id),
-      eq(schema.repositorySubscriptions.userId, user!.id)
+      eq(schema.repositorySubscriptions.userId, user.id)
     ))
 
   return { subscribed: false }

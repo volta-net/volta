@@ -1,3 +1,6 @@
+import { getDbRepositoryId, ensureUser } from '../utils/users'
+import { getDbIssueId, subscribeUserToIssue } from '../utils/sync'
+
 export default defineEventHandler(async (event) => {
   const { payload, event: githubEvent, deliveryId } = await parseWebhookEvent(event)
 
@@ -67,13 +70,19 @@ export default defineEventHandler(async (event) => {
             payload.assignee,
             payload.sender
           )
-          // Auto-subscribe assignee to the issue
-          await ensureUser({
+          // Auto-subscribe assignee to the issue (using internal IDs)
+          const assigneeDbId = await ensureUser({
             id: payload.assignee.id,
             login: payload.assignee.login,
             avatar_url: payload.assignee.avatar_url
           })
-          await subscribeUserToIssue(payload.issue.id, payload.assignee.id)
+          const dbRepoId = await getDbRepositoryId(payload.repository.id)
+          if (assigneeDbId && dbRepoId) {
+            const dbIssueId = await getDbIssueId(dbRepoId, payload.issue.number)
+            if (dbIssueId) {
+              await subscribeUserToIssue(dbIssueId, assigneeDbId)
+            }
+          }
         }
         break
 
@@ -154,13 +163,19 @@ export default defineEventHandler(async (event) => {
             payload.assignee,
             payload.sender
           )
-          // Auto-subscribe assignee to the PR
-          await ensureUser({
+          // Auto-subscribe assignee to the PR (using internal IDs)
+          const assigneeDbId = await ensureUser({
             id: payload.assignee.id,
             login: payload.assignee.login,
             avatar_url: payload.assignee.avatar_url
           })
-          await subscribeUserToIssue(payload.pull_request.id, payload.assignee.id)
+          const dbRepoId = await getDbRepositoryId(payload.repository.id)
+          if (assigneeDbId && dbRepoId) {
+            const dbPrId = await getDbIssueId(dbRepoId, payload.pull_request.number)
+            if (dbPrId) {
+              await subscribeUserToIssue(dbPrId, assigneeDbId)
+            }
+          }
         }
         if (payload.action === 'review_requested' && payload.requested_reviewer) {
           await notifyPRReviewRequested(
@@ -169,13 +184,19 @@ export default defineEventHandler(async (event) => {
             payload.requested_reviewer,
             payload.sender
           )
-          // Auto-subscribe requested reviewer to the PR
-          await ensureUser({
+          // Auto-subscribe requested reviewer to the PR (using internal IDs)
+          const reviewerDbId = await ensureUser({
             id: payload.requested_reviewer.id,
             login: payload.requested_reviewer.login,
             avatar_url: payload.requested_reviewer.avatar_url
           })
-          await subscribeUserToIssue(payload.pull_request.id, payload.requested_reviewer.id)
+          const dbRepoId = await getDbRepositoryId(payload.repository.id)
+          if (reviewerDbId && dbRepoId) {
+            const dbPrId = await getDbIssueId(dbRepoId, payload.pull_request.number)
+            if (dbPrId) {
+              await subscribeUserToIssue(dbPrId, reviewerDbId)
+            }
+          }
         }
         if (payload.action === 'ready_for_review') {
           await notifyPRReadyForReview(

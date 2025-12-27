@@ -1,6 +1,7 @@
 CREATE TABLE "check_runs" (
-	"id" bigint PRIMARY KEY NOT NULL,
-	"repository_id" bigint NOT NULL,
+	"id" serial PRIMARY KEY NOT NULL,
+	"github_id" bigint NOT NULL,
+	"repository_id" integer NOT NULL,
 	"head_sha" text NOT NULL,
 	"name" text NOT NULL,
 	"status" text,
@@ -16,8 +17,9 @@ CREATE TABLE "check_runs" (
 );
 --> statement-breakpoint
 CREATE TABLE "commit_statuses" (
-	"id" bigint PRIMARY KEY NOT NULL,
-	"repository_id" bigint NOT NULL,
+	"id" serial PRIMARY KEY NOT NULL,
+	"github_id" bigint NOT NULL,
+	"repository_id" integer NOT NULL,
 	"sha" text NOT NULL,
 	"state" text NOT NULL,
 	"context" text NOT NULL,
@@ -29,20 +31,21 @@ CREATE TABLE "commit_statuses" (
 --> statement-breakpoint
 CREATE TABLE "favorite_issues" (
 	"id" serial PRIMARY KEY NOT NULL,
-	"user_id" bigint NOT NULL,
-	"issue_id" bigint NOT NULL,
+	"user_id" integer NOT NULL,
+	"issue_id" integer NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "favorite_repositories" (
 	"id" serial PRIMARY KEY NOT NULL,
-	"user_id" bigint NOT NULL,
-	"repository_id" bigint NOT NULL,
+	"user_id" integer NOT NULL,
+	"repository_id" integer NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "installations" (
-	"id" bigint PRIMARY KEY NOT NULL,
+	"id" serial PRIMARY KEY NOT NULL,
+	"github_id" bigint NOT NULL,
 	"account_login" text NOT NULL,
 	"account_id" bigint NOT NULL,
 	"account_type" text NOT NULL,
@@ -53,14 +56,16 @@ CREATE TABLE "installations" (
 );
 --> statement-breakpoint
 CREATE TABLE "issue_assignees" (
-	"issue_id" bigint NOT NULL,
-	"user_id" bigint NOT NULL
+	"issue_id" integer NOT NULL,
+	"user_id" integer NOT NULL,
+	CONSTRAINT "issue_assignees_issue_id_user_id_pk" PRIMARY KEY("issue_id","user_id")
 );
 --> statement-breakpoint
 CREATE TABLE "issue_comments" (
-	"id" bigint PRIMARY KEY NOT NULL,
-	"issue_id" bigint NOT NULL,
-	"user_id" bigint,
+	"id" serial PRIMARY KEY NOT NULL,
+	"github_id" bigint NOT NULL,
+	"issue_id" integer NOT NULL,
+	"user_id" integer,
 	"body" text NOT NULL,
 	"html_url" text,
 	"created_at" timestamp DEFAULT now() NOT NULL,
@@ -68,25 +73,29 @@ CREATE TABLE "issue_comments" (
 );
 --> statement-breakpoint
 CREATE TABLE "issue_labels" (
-	"issue_id" bigint NOT NULL,
-	"label_id" bigint NOT NULL
+	"issue_id" integer NOT NULL,
+	"label_id" integer NOT NULL,
+	CONSTRAINT "issue_labels_issue_id_label_id_pk" PRIMARY KEY("issue_id","label_id")
 );
 --> statement-breakpoint
 CREATE TABLE "issue_linked_prs" (
-	"issue_id" bigint NOT NULL,
-	"pr_id" bigint NOT NULL
+	"issue_id" integer NOT NULL,
+	"pr_id" integer NOT NULL,
+	CONSTRAINT "issue_linked_prs_issue_id_pr_id_pk" PRIMARY KEY("issue_id","pr_id")
 );
 --> statement-breakpoint
 CREATE TABLE "issue_requested_reviewers" (
-	"issue_id" bigint NOT NULL,
-	"user_id" bigint NOT NULL
+	"issue_id" integer NOT NULL,
+	"user_id" integer NOT NULL,
+	CONSTRAINT "issue_requested_reviewers_issue_id_user_id_pk" PRIMARY KEY("issue_id","user_id")
 );
 --> statement-breakpoint
 CREATE TABLE "issue_review_comments" (
-	"id" bigint PRIMARY KEY NOT NULL,
-	"issue_id" bigint NOT NULL,
-	"review_id" bigint,
-	"user_id" bigint,
+	"id" serial PRIMARY KEY NOT NULL,
+	"github_id" bigint NOT NULL,
+	"issue_id" integer NOT NULL,
+	"review_id" integer,
+	"user_id" integer,
 	"body" text NOT NULL,
 	"path" text,
 	"line" bigint,
@@ -99,9 +108,10 @@ CREATE TABLE "issue_review_comments" (
 );
 --> statement-breakpoint
 CREATE TABLE "issue_reviews" (
-	"id" bigint PRIMARY KEY NOT NULL,
-	"issue_id" bigint NOT NULL,
-	"user_id" bigint,
+	"id" serial PRIMARY KEY NOT NULL,
+	"github_id" bigint NOT NULL,
+	"issue_id" integer NOT NULL,
+	"user_id" integer,
 	"body" text,
 	"state" text NOT NULL,
 	"html_url" text,
@@ -112,18 +122,20 @@ CREATE TABLE "issue_reviews" (
 );
 --> statement-breakpoint
 CREATE TABLE "issue_subscriptions" (
-	"issue_id" bigint NOT NULL,
-	"user_id" bigint NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL
+	"issue_id" integer NOT NULL,
+	"user_id" integer NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "issue_subscriptions_issue_id_user_id_pk" PRIMARY KEY("issue_id","user_id")
 );
 --> statement-breakpoint
 CREATE TABLE "issues" (
-	"id" bigint PRIMARY KEY NOT NULL,
+	"id" serial PRIMARY KEY NOT NULL,
+	"github_id" bigint,
 	"pull_request" boolean DEFAULT false NOT NULL,
-	"repository_id" bigint NOT NULL,
-	"milestone_id" bigint,
-	"type_id" bigint,
-	"user_id" bigint,
+	"repository_id" integer NOT NULL,
+	"milestone_id" integer,
+	"type_id" integer,
+	"user_id" integer,
 	"number" bigint NOT NULL,
 	"title" text NOT NULL,
 	"body" text,
@@ -142,9 +154,9 @@ CREATE TABLE "issues" (
 	"base_ref" text,
 	"base_sha" text,
 	"merged_at" timestamp,
-	"merged_by_id" bigint,
+	"merged_by_id" integer,
 	"closed_at" timestamp,
-	"closed_by_id" bigint,
+	"closed_by_id" integer,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"reaction_count" bigint DEFAULT 0,
@@ -154,8 +166,9 @@ CREATE TABLE "issues" (
 );
 --> statement-breakpoint
 CREATE TABLE "labels" (
-	"id" bigint PRIMARY KEY NOT NULL,
-	"repository_id" bigint NOT NULL,
+	"id" serial PRIMARY KEY NOT NULL,
+	"github_id" bigint NOT NULL,
+	"repository_id" integer NOT NULL,
 	"name" text NOT NULL,
 	"color" text NOT NULL,
 	"description" text,
@@ -165,8 +178,9 @@ CREATE TABLE "labels" (
 );
 --> statement-breakpoint
 CREATE TABLE "milestones" (
-	"id" bigint PRIMARY KEY NOT NULL,
-	"repository_id" bigint NOT NULL,
+	"id" serial PRIMARY KEY NOT NULL,
+	"github_id" bigint NOT NULL,
+	"repository_id" integer NOT NULL,
 	"number" bigint NOT NULL,
 	"title" text NOT NULL,
 	"description" text,
@@ -182,24 +196,25 @@ CREATE TABLE "milestones" (
 --> statement-breakpoint
 CREATE TABLE "notifications" (
 	"id" serial PRIMARY KEY NOT NULL,
-	"user_id" bigint NOT NULL,
+	"user_id" integer NOT NULL,
 	"type" text NOT NULL,
 	"action" text NOT NULL,
 	"body" text,
-	"repository_id" bigint,
-	"issue_id" bigint,
-	"release_id" bigint,
-	"workflow_run_id" bigint,
-	"actor_id" bigint,
+	"repository_id" integer,
+	"issue_id" integer,
+	"release_id" integer,
+	"workflow_run_id" integer,
+	"actor_id" integer,
 	"read" boolean DEFAULT false,
 	"read_at" timestamp,
 	"created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "releases" (
-	"id" bigint PRIMARY KEY NOT NULL,
-	"repository_id" bigint NOT NULL,
-	"author_id" bigint,
+	"id" serial PRIMARY KEY NOT NULL,
+	"github_id" bigint NOT NULL,
+	"repository_id" integer NOT NULL,
+	"author_id" integer,
 	"tag_name" text NOT NULL,
 	"name" text,
 	"body" text,
@@ -211,8 +226,9 @@ CREATE TABLE "releases" (
 );
 --> statement-breakpoint
 CREATE TABLE "repositories" (
-	"id" bigint PRIMARY KEY NOT NULL,
-	"installation_id" bigint NOT NULL,
+	"id" serial PRIMARY KEY NOT NULL,
+	"github_id" bigint NOT NULL,
+	"installation_id" integer NOT NULL,
 	"name" text NOT NULL,
 	"full_name" text NOT NULL,
 	"private" boolean DEFAULT false,
@@ -228,17 +244,18 @@ CREATE TABLE "repositories" (
 );
 --> statement-breakpoint
 CREATE TABLE "repository_collaborators" (
-	"repository_id" bigint NOT NULL,
-	"user_id" bigint NOT NULL,
+	"repository_id" integer NOT NULL,
+	"user_id" integer NOT NULL,
 	"permission" text NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "repository_collaborators_repository_id_user_id_pk" PRIMARY KEY("repository_id","user_id")
 );
 --> statement-breakpoint
 CREATE TABLE "repository_subscriptions" (
 	"id" serial PRIMARY KEY NOT NULL,
-	"user_id" bigint NOT NULL,
-	"repository_id" bigint NOT NULL,
+	"user_id" integer NOT NULL,
+	"repository_id" integer NOT NULL,
 	"issues" boolean DEFAULT true,
 	"pull_requests" boolean DEFAULT true,
 	"releases" boolean DEFAULT true,
@@ -249,8 +266,9 @@ CREATE TABLE "repository_subscriptions" (
 );
 --> statement-breakpoint
 CREATE TABLE "types" (
-	"id" bigint PRIMARY KEY NOT NULL,
-	"repository_id" bigint NOT NULL,
+	"id" serial PRIMARY KEY NOT NULL,
+	"github_id" bigint NOT NULL,
+	"repository_id" integer NOT NULL,
 	"name" text NOT NULL,
 	"description" text,
 	"color" text,
@@ -259,7 +277,8 @@ CREATE TABLE "types" (
 );
 --> statement-breakpoint
 CREATE TABLE "users" (
-	"id" bigint PRIMARY KEY NOT NULL,
+	"id" serial PRIMARY KEY NOT NULL,
+	"github_id" bigint NOT NULL,
 	"login" text NOT NULL,
 	"name" text,
 	"email" text,
@@ -270,9 +289,11 @@ CREATE TABLE "users" (
 );
 --> statement-breakpoint
 CREATE TABLE "workflow_runs" (
-	"id" bigint PRIMARY KEY NOT NULL,
-	"repository_id" bigint NOT NULL,
-	"actor_id" bigint,
+	"id" serial PRIMARY KEY NOT NULL,
+	"github_id" bigint NOT NULL,
+	"repository_id" integer NOT NULL,
+	"issue_id" integer,
+	"actor_id" integer,
 	"workflow_id" bigint NOT NULL,
 	"workflow_name" text,
 	"name" text,
@@ -336,4 +357,19 @@ ALTER TABLE "repository_subscriptions" ADD CONSTRAINT "repository_subscriptions_
 ALTER TABLE "repository_subscriptions" ADD CONSTRAINT "repository_subscriptions_repository_id_repositories_id_fk" FOREIGN KEY ("repository_id") REFERENCES "public"."repositories"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "types" ADD CONSTRAINT "types_repository_id_repositories_id_fk" FOREIGN KEY ("repository_id") REFERENCES "public"."repositories"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "workflow_runs" ADD CONSTRAINT "workflow_runs_repository_id_repositories_id_fk" FOREIGN KEY ("repository_id") REFERENCES "public"."repositories"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "workflow_runs" ADD CONSTRAINT "workflow_runs_actor_id_users_id_fk" FOREIGN KEY ("actor_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;
+ALTER TABLE "workflow_runs" ADD CONSTRAINT "workflow_runs_issue_id_issues_id_fk" FOREIGN KEY ("issue_id") REFERENCES "public"."issues"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "workflow_runs" ADD CONSTRAINT "workflow_runs_actor_id_users_id_fk" FOREIGN KEY ("actor_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+CREATE UNIQUE INDEX "check_runs_github_id_idx" ON "check_runs" USING btree ("github_id");--> statement-breakpoint
+CREATE UNIQUE INDEX "commit_statuses_github_id_idx" ON "commit_statuses" USING btree ("github_id");--> statement-breakpoint
+CREATE UNIQUE INDEX "installations_github_id_idx" ON "installations" USING btree ("github_id");--> statement-breakpoint
+CREATE UNIQUE INDEX "issue_comments_github_id_idx" ON "issue_comments" USING btree ("github_id");--> statement-breakpoint
+CREATE UNIQUE INDEX "issue_review_comments_github_id_idx" ON "issue_review_comments" USING btree ("github_id");--> statement-breakpoint
+CREATE UNIQUE INDEX "issue_reviews_github_id_idx" ON "issue_reviews" USING btree ("github_id");--> statement-breakpoint
+CREATE UNIQUE INDEX "issues_repo_number_idx" ON "issues" USING btree ("repository_id","number");--> statement-breakpoint
+CREATE UNIQUE INDEX "labels_github_id_idx" ON "labels" USING btree ("github_id");--> statement-breakpoint
+CREATE UNIQUE INDEX "milestones_github_id_idx" ON "milestones" USING btree ("github_id");--> statement-breakpoint
+CREATE UNIQUE INDEX "releases_github_id_idx" ON "releases" USING btree ("github_id");--> statement-breakpoint
+CREATE UNIQUE INDEX "repositories_github_id_idx" ON "repositories" USING btree ("github_id");--> statement-breakpoint
+CREATE UNIQUE INDEX "types_github_id_idx" ON "types" USING btree ("github_id");--> statement-breakpoint
+CREATE UNIQUE INDEX "users_github_id_idx" ON "users" USING btree ("github_id");--> statement-breakpoint
+CREATE UNIQUE INDEX "workflow_runs_github_id_idx" ON "workflow_runs" USING btree ("github_id");

@@ -25,12 +25,12 @@ export default defineEventHandler(async (event) => {
   }
 
   // Check user has access to this repository
-  await requireRepositoryAccess(user!.id, issue.repositoryId)
+  await requireRepositoryAccess(user.id, issue.repositoryId)
 
   // Check if already favorited
   const existing = await db.query.favoriteIssues.findFirst({
     where: and(
-      eq(schema.favoriteIssues.userId, user!.id),
+      eq(schema.favoriteIssues.userId, user.id),
       eq(schema.favoriteIssues.issueId, issueId)
     )
   })
@@ -43,7 +43,7 @@ export default defineEventHandler(async (event) => {
   const [favorite] = await db
     .insert(schema.favoriteIssues)
     .values({
-      userId: user!.id,
+      userId: user.id,
       issueId
     })
     .returning()

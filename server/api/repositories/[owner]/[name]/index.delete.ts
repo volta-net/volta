@@ -23,7 +23,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Verify user has access to this repository
-  await requireRepositoryAccess(user!.id, repository.id)
+  await requireRepositoryAccess(user.id, repository.id)
 
   // Delete the repository (cascade will handle issues, PRs, labels, milestones)
   await db.delete(schema.repositories).where(eq(schema.repositories.id, repository.id))

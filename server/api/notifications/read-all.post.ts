@@ -11,7 +11,7 @@ export default defineEventHandler(async (event) => {
       readAt: new Date()
     })
     .where(and(
-      eq(schema.notifications.userId, user!.id),
+      eq(schema.notifications.userId, user.id),
       eq(schema.notifications.read, false)
     ))
 

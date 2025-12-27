@@ -21,7 +21,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Verify user has access to this repository
-  await requireRepositoryAccess(user!.id, repository.id)
+  await requireRepositoryAccess(user.id, repository.id)
 
   const labels = await db.query.labels.findMany({
     where: eq(schema.labels.repositoryId, repository.id),

@@ -18,8 +18,8 @@ import type {
   GitHubInstallation,
   GitHubInstallationRepository
 } from '../types/github'
-import { ensureUser } from './users'
-import { subscribeUserToIssue, ensureType, updateLinkedIssues, fetchLinkedIssueNumbers } from './sync'
+import { ensureUser, getDbUserId, getDbRepositoryId, getDbInstallationId } from './users'
+import { subscribeUserToIssue, ensureType, updateLinkedIssues, fetchLinkedIssueNumbers, getDbLabelId, getDbMilestoneId } from './sync'
 import { useOctokitAsInstallation } from './octokit'
 
 // ============================================================================
@@ -27,9 +27,9 @@ import { useOctokitAsInstallation } from './octokit'
 // ============================================================================
 
 export async function handleIssueEvent(action: string, issue: GitHubIssue, repository: GitHubRepository, _installationId?: number) {
-  // Check if repository is synced
-  const [repo] = await db.select().from(schema.repositories).where(eq(schema.repositories.id, repository.id))
-  if (!repo) {
+  // Check if repository is synced (lookup by GitHub ID)
+  const dbRepoId = await getDbRepositoryId(repository.id)
+  if (!dbRepoId) {
     console.log(`[Webhook] Repository ${repository.full_name} not synced, skipping issue event`)
     return
   }
@@ -49,14 +49,14 @@ export async function handleIssueEvent(action: string, issue: GitHubIssue, repos
     case 'unlocked':
     case 'typed':
     case 'untyped':
-      await upsertIssue(issue, repository.id, repository.full_name, false)
+      await upsertIssue(issue, dbRepoId, repository.full_name, false)
       break
     case 'deleted':
     case 'transferred':
       // Delete by repositoryId + number to handle different ID sources
       await db.delete(schema.issues).where(
         and(
-          eq(schema.issues.repositoryId, repository.id),
+          eq(schema.issues.repositoryId, dbRepoId),
           eq(schema.issues.number, issue.number)
         )
       )
@@ -69,9 +69,9 @@ export async function handleIssueEvent(action: string, issue: GitHubIssue, repos
 // ============================================================================
 
 export async function handlePullRequestEvent(action: string, pullRequest: GitHubPullRequest, repository: GitHubRepository, installationId?: number) {
-  // Check if repository is synced
-  const [repo] = await db.select().from(schema.repositories).where(eq(schema.repositories.id, repository.id))
-  if (!repo) {
+  // Check if repository is synced (lookup by GitHub ID)
+  const dbRepoId = await getDbRepositoryId(repository.id)
+  if (!dbRepoId) {
     console.log(`[Webhook] Repository ${repository.full_name} not synced, skipping PR event`)
     return
   }
@@ -94,15 +94,15 @@ export async function handlePullRequestEvent(action: string, pullRequest: GitHub
     case 'review_requested':
     case 'review_request_removed':
     case 'synchronize': {
-      const prId = await upsertIssue(pullRequest, repository.id, repository.full_name, true)
+      const prId = await upsertIssue(pullRequest, dbRepoId, repository.full_name, true)
 
       // Update linked issues using GitHub's closingIssuesReferences API
       if (installationId && (action === 'opened' || action === 'edited' || action === 'reopened')) {
         try {
-          const [owner, repoName] = repository.full_name.split('/')
+          const [owner, repoName] = repository.full_name.split('/') as [string, string]
           const octokit = await useOctokitAsInstallation(installationId)
-          const linkedIssueNumbers = await fetchLinkedIssueNumbers(octokit, owner, repoName, pullRequest.number)
-          await updateLinkedIssues(prId, repository.id, linkedIssueNumbers)
+          const linkedIssueNumbers = await fetchLinkedIssueNumbers(octokit, owner!, repoName!, pullRequest.number)
+          await updateLinkedIssues(prId, dbRepoId, linkedIssueNumbers)
         } catch (error) {
           console.warn(`[Webhook] Failed to update linked issues for PR #${pullRequest.number}:`, error)
         }
@@ -117,27 +117,30 @@ export async function handlePullRequestEvent(action: string, pullRequest: GitHub
 // ============================================================================
 
 async function upsertIssue(item: GitHubIssueOrPR, repositoryId: number, _repositoryFullName: string, isPullRequest: boolean): Promise<number> {
-  // Ensure author exists as shadow user
+  // Ensure author exists as shadow user and get internal ID
+  let userId: number | null = null
   if (item.user) {
-    await ensureUser({
+    userId = await ensureUser({
       id: item.user.id,
       login: item.user.login,
       avatar_url: item.user.avatar_url
     })
   }
 
-  // Ensure closed_by user exists
+  // Ensure closed_by user exists and get internal ID
+  let closedById: number | null = null
   if (item.closed_by) {
-    await ensureUser({
+    closedById = await ensureUser({
       id: item.closed_by.id,
       login: item.closed_by.login,
       avatar_url: item.closed_by.avatar_url
     })
   }
 
-  // Ensure merged_by user exists (PRs only)
+  // Ensure merged_by user exists (PRs only) and get internal ID
+  let mergedById: number | null = null
   if (item.merged_by) {
-    await ensureUser({
+    mergedById = await ensureUser({
       id: item.merged_by.id,
       login: item.merged_by.login,
       avatar_url: item.merged_by.avatar_url
@@ -155,12 +158,19 @@ async function upsertIssue(item: GitHubIssueOrPR, repositoryId: number, _reposit
     })
   }
 
+  // Get milestone ID if present
+  let milestoneId: number | null = null
+  if (item.milestone?.id) {
+    milestoneId = await getDbMilestoneId(item.milestone.id)
+  }
+
   const itemData: any = {
+    githubId: item.id, // Store GitHub's ID for reference (not reliable as primary key)
     pullRequest: isPullRequest,
     repositoryId,
-    milestoneId: item.milestone?.id ?? null,
+    milestoneId,
     typeId,
-    userId: item.user?.id,
+    userId,
     number: item.number,
     title: item.title,
     body: item.body,
@@ -168,7 +178,7 @@ async function upsertIssue(item: GitHubIssueOrPR, repositoryId: number, _reposit
     htmlUrl: item.html_url,
     locked: item.locked,
     closedAt: item.closed_at ? new Date(item.closed_at) : null,
-    closedById: item.closed_by?.id ?? null,
+    closedById,
     // Engagement metrics from GitHub webhook payload
     reactionCount: item.reactions?.total_count ?? 0,
     commentCount: item.comments ?? 0,
@@ -195,7 +205,7 @@ async function upsertIssue(item: GitHubIssueOrPR, repositoryId: number, _reposit
     itemData.baseRef = item.base?.ref
     itemData.baseSha = item.base?.sha
     itemData.mergedAt = item.merged_at ? new Date(item.merged_at) : null
-    itemData.mergedById = item.merged_by?.id ?? null
+    itemData.mergedById = mergedById
   }
 
   // Look up by repositoryId + number (unique) instead of id
@@ -207,28 +217,28 @@ async function upsertIssue(item: GitHubIssueOrPR, repositoryId: number, _reposit
     )
   )
 
+  let itemId: number
+
   if (existing) {
     await db.update(schema.issues).set(itemData).where(eq(schema.issues.id, existing.id))
+    itemId = existing.id
   } else {
-    await db.insert(schema.issues).values({
-      id: item.id,
-      ...itemData
-    })
+    // Insert without specifying id - let serial auto-generate it
+    const [inserted] = await db.insert(schema.issues).values(itemData).returning({ id: schema.issues.id })
+    itemId = inserted!.id
 
     // Subscribe author to the new issue/PR
-    if (item.user?.id) {
-      await subscribeUserToIssue(item.id, item.user.id)
+    if (userId) {
+      await subscribeUserToIssue(itemId, userId)
     }
   }
-
-  const itemId = existing?.id ?? item.id
 
   // Sync assignees
   await syncIssueAssignees(itemId, item.assignees || [])
 
   // Sync labels
-  const labelIds = item.labels?.map((l: any) => l.id).filter(Boolean) || []
-  await syncIssueLabels(itemId, labelIds)
+  const labelGithubIds = item.labels?.map((l: any) => l.id).filter(Boolean) || []
+  await syncIssueLabels(itemId, labelGithubIds)
 
   // Sync requested reviewers (PRs only)
   if (isPullRequest) {
@@ -241,8 +251,6 @@ async function upsertIssue(item: GitHubIssueOrPR, repositoryId: number, _reposit
 
 // Helper: sync issue assignees
 async function syncIssueAssignees(issueId: number, assignees: GitHubUser[]) {
-  const newAssigneeIds = new Set(assignees.map(a => a.id))
-
   // Get existing assignees
   const existingAssignees = await db
     .select()
@@ -251,9 +259,24 @@ async function syncIssueAssignees(issueId: number, assignees: GitHubUser[]) {
 
   const existingIds = new Set(existingAssignees.map(a => a.userId))
 
+  // Build map of GitHub ID -> internal ID for new assignees
+  const newAssigneeDbIds = new Map<number, number>()
+  for (const assignee of assignees) {
+    const dbUserId = await ensureUser({
+      id: assignee.id,
+      login: assignee.login,
+      avatar_url: assignee.avatar_url
+    })
+    if (dbUserId) {
+      newAssigneeDbIds.set(assignee.id, dbUserId)
+    }
+  }
+
+  const newDbIds = new Set(newAssigneeDbIds.values())
+
   // Delete removed assignees
   for (const existing of existingAssignees) {
-    if (!newAssigneeIds.has(existing.userId)) {
+    if (!newDbIds.has(existing.userId)) {
       await db.delete(schema.issueAssignees).where(
         and(
           eq(schema.issueAssignees.issueId, issueId),
@@ -264,38 +287,40 @@ async function syncIssueAssignees(issueId: number, assignees: GitHubUser[]) {
   }
 
   // Insert new assignees
-  for (const assignee of assignees) {
-    if (!existingIds.has(assignee.id)) {
-      await ensureUser({
-        id: assignee.id,
-        login: assignee.login,
-        avatar_url: assignee.avatar_url
-      })
+  for (const [_githubId, dbUserId] of newAssigneeDbIds) {
+    if (!existingIds.has(dbUserId)) {
       await db.insert(schema.issueAssignees)
-        .values({ issueId, userId: assignee.id })
+        .values({ issueId, userId: dbUserId })
         .onConflictDoNothing()
     }
 
     // Auto-subscribe assignee to the issue
-    await subscribeUserToIssue(issueId, assignee.id)
+    await subscribeUserToIssue(issueId, dbUserId)
   }
 }
 
 // Helper: sync issue labels
-async function syncIssueLabels(issueId: number, labelIds: number[]) {
-  const newLabelIds = new Set(labelIds)
-
+async function syncIssueLabels(issueId: number, labelGithubIds: number[]) {
   // Get existing labels
   const existingLabels = await db
     .select()
     .from(schema.issueLabels)
     .where(eq(schema.issueLabels.issueId, issueId))
 
-  const existingIds = new Set(existingLabels.map(l => l.labelId))
+  const existingDbIds = new Set(existingLabels.map(l => l.labelId))
+
+  // Convert GitHub IDs to internal IDs
+  const newDbIds = new Set<number>()
+  for (const githubId of labelGithubIds) {
+    const dbId = await getDbLabelId(githubId)
+    if (dbId) {
+      newDbIds.add(dbId)
+    }
+  }
 
   // Delete removed labels
   for (const existing of existingLabels) {
-    if (!newLabelIds.has(existing.labelId)) {
+    if (!newDbIds.has(existing.labelId)) {
       await db.delete(schema.issueLabels).where(
         and(
           eq(schema.issueLabels.issueId, issueId),
@@ -306,11 +331,11 @@ async function syncIssueLabels(issueId: number, labelIds: number[]) {
   }
 
   // Insert new labels (only if label exists in our DB)
-  for (const labelId of labelIds) {
-    if (!existingIds.has(labelId)) {
+  for (const dbLabelId of newDbIds) {
+    if (!existingDbIds.has(dbLabelId)) {
       try {
         await db.insert(schema.issueLabels)
-          .values({ issueId, labelId })
+          .values({ issueId, labelId: dbLabelId })
           .onConflictDoNothing()
       } catch {
         // Label may not exist in our DB yet - skip
@@ -321,8 +346,6 @@ async function syncIssueLabels(issueId: number, labelIds: number[]) {
 
 // Helper: sync issue requested reviewers
 async function syncIssueRequestedReviewers(issueId: number, reviewers: GitHubUser[]) {
-  const newReviewerIds = new Set(reviewers.map(r => r.id))
-
   // Get existing reviewers
   const existingReviewers = await db
     .select()
@@ -331,9 +354,24 @@ async function syncIssueRequestedReviewers(issueId: number, reviewers: GitHubUse
 
   const existingIds = new Set(existingReviewers.map(r => r.userId))
 
+  // Build map of GitHub ID -> internal ID for new reviewers
+  const newReviewerDbIds = new Map<number, number>()
+  for (const reviewer of reviewers) {
+    const dbUserId = await ensureUser({
+      id: reviewer.id,
+      login: reviewer.login,
+      avatar_url: reviewer.avatar_url
+    })
+    if (dbUserId) {
+      newReviewerDbIds.set(reviewer.id, dbUserId)
+    }
+  }
+
+  const newDbIds = new Set(newReviewerDbIds.values())
+
   // Delete removed reviewers
   for (const existing of existingReviewers) {
-    if (!newReviewerIds.has(existing.userId)) {
+    if (!newDbIds.has(existing.userId)) {
       await db.delete(schema.issueRequestedReviewers).where(
         and(
           eq(schema.issueRequestedReviewers.issueId, issueId),
@@ -344,20 +382,15 @@ async function syncIssueRequestedReviewers(issueId: number, reviewers: GitHubUse
   }
 
   // Insert new reviewers
-  for (const reviewer of reviewers) {
-    if (!existingIds.has(reviewer.id)) {
-      await ensureUser({
-        id: reviewer.id,
-        login: reviewer.login,
-        avatar_url: reviewer.avatar_url
-      })
+  for (const [_githubId, dbUserId] of newReviewerDbIds) {
+    if (!existingIds.has(dbUserId)) {
       await db.insert(schema.issueRequestedReviewers)
-        .values({ issueId, userId: reviewer.id })
+        .values({ issueId, userId: dbUserId })
         .onConflictDoNothing()
     }
 
     // Auto-subscribe reviewer to the PR
-    await subscribeUserToIssue(issueId, reviewer.id)
+    await subscribeUserToIssue(issueId, dbUserId)
   }
 }
 
@@ -366,9 +399,9 @@ async function syncIssueRequestedReviewers(issueId: number, reviewers: GitHubUse
 // ============================================================================
 
 export async function handleCommentEvent(action: string, comment: GitHubComment, issue: GitHubIssue, repository: GitHubRepository, _installationId?: number) {
-  // Check if repository is synced
-  const [repo] = await db.select().from(schema.repositories).where(eq(schema.repositories.id, repository.id))
-  if (!repo) {
+  // Check if repository is synced (lookup by GitHub ID)
+  const dbRepoId = await getDbRepositoryId(repository.id)
+  if (!dbRepoId) {
     console.log(`[Webhook] Repository ${repository.full_name} not synced, skipping comment event`)
     return
   }
@@ -376,7 +409,7 @@ export async function handleCommentEvent(action: string, comment: GitHubComment,
   // Check if the issue exists in our DB (lookup by repositoryId + number, not id)
   let [existingIssue] = await db.select().from(schema.issues).where(
     and(
-      eq(schema.issues.repositoryId, repository.id),
+      eq(schema.issues.repositoryId, dbRepoId),
       eq(schema.issues.number, issue.number)
     )
   )
@@ -385,7 +418,7 @@ export async function handleCommentEvent(action: string, comment: GitHubComment,
   if (!existingIssue) {
     console.log(`[Webhook] Issue #${issue.number} not synced, syncing on-demand for comment event`)
     const isPullRequest = 'pull_request' in issue && issue.pull_request !== undefined
-    const issueId = await upsertIssue(issue as GitHubIssueOrPR, repository.id, repository.full_name, isPullRequest)
+    const issueId = await upsertIssue(issue as GitHubIssueOrPR, dbRepoId, repository.full_name, isPullRequest)
 
     const [newIssue] = await db.select().from(schema.issues).where(eq(schema.issues.id, issueId))
     existingIssue = newIssue
@@ -394,33 +427,37 @@ export async function handleCommentEvent(action: string, comment: GitHubComment,
   // Upsert the comment and update comment count
   switch (action) {
     case 'created':
-      await upsertComment(comment, existingIssue.id)
+      await upsertComment(comment, existingIssue!.id)
       // Increment comment count
       await db.update(schema.issues)
         .set({ commentCount: sql`${schema.issues.commentCount} + 1` })
-        .where(eq(schema.issues.id, existingIssue.id))
+        .where(eq(schema.issues.id, existingIssue!.id))
       // Subscribe commenter to the issue
       if (comment.user?.id) {
-        await subscribeUserToIssue(existingIssue.id, comment.user.id)
+        const dbUserId = await getDbUserId(comment.user.id)
+        if (dbUserId) {
+          await subscribeUserToIssue(existingIssue!.id, dbUserId)
+        }
       }
       break
     case 'edited':
-      await upsertComment(comment, existingIssue.id)
+      await upsertComment(comment, existingIssue!.id)
       break
     case 'deleted':
-      await db.delete(schema.issueComments).where(eq(schema.issueComments.id, comment.id))
+      await db.delete(schema.issueComments).where(eq(schema.issueComments.githubId, comment.id))
       // Decrement comment count
       await db.update(schema.issues)
         .set({ commentCount: sql`GREATEST(${schema.issues.commentCount} - 1, 0)` })
-        .where(eq(schema.issues.id, existingIssue.id))
+        .where(eq(schema.issues.id, existingIssue!.id))
       break
   }
 }
 
 async function upsertComment(comment: GitHubComment, issueId: number) {
-  // Ensure author exists as shadow user
+  // Ensure author exists as shadow user and get internal ID
+  let userId: number | null = null
   if (comment.user) {
-    await ensureUser({
+    userId = await ensureUser({
       id: comment.user.id,
       login: comment.user.login,
       avatar_url: comment.user.avatar_url
@@ -429,19 +466,19 @@ async function upsertComment(comment: GitHubComment, issueId: number) {
 
   const commentData = {
     issueId,
-    userId: comment.user?.id,
+    userId,
     body: comment.body || '',
     htmlUrl: comment.html_url,
     updatedAt: new Date(comment.updated_at)
   }
 
-  const [existing] = await db.select().from(schema.issueComments).where(eq(schema.issueComments.id, comment.id))
+  const [existing] = await db.select().from(schema.issueComments).where(eq(schema.issueComments.githubId, comment.id))
 
   if (existing) {
-    await db.update(schema.issueComments).set(commentData).where(eq(schema.issueComments.id, comment.id))
+    await db.update(schema.issueComments).set(commentData).where(eq(schema.issueComments.id, existing.id))
   } else {
     await db.insert(schema.issueComments).values({
-      id: comment.id,
+      githubId: comment.id,
       ...commentData,
       createdAt: new Date(comment.created_at)
     })
@@ -453,9 +490,9 @@ async function upsertComment(comment: GitHubComment, issueId: number) {
 // ============================================================================
 
 export async function handleReviewEvent(action: string, review: GitHubReview, pullRequest: GitHubPullRequest, repository: GitHubRepository, _installationId?: number) {
-  // Check if repository is synced
-  const [repo] = await db.select().from(schema.repositories).where(eq(schema.repositories.id, repository.id))
-  if (!repo) {
+  // Check if repository is synced (lookup by GitHub ID)
+  const dbRepoId = await getDbRepositoryId(repository.id)
+  if (!dbRepoId) {
     console.log(`[Webhook] Repository ${repository.full_name} not synced, skipping review event`)
     return
   }
@@ -463,7 +500,7 @@ export async function handleReviewEvent(action: string, review: GitHubReview, pu
   // Check if the PR exists in our DB (lookup by repositoryId + number, not id)
   let [existingPR] = await db.select().from(schema.issues).where(
     and(
-      eq(schema.issues.repositoryId, repository.id),
+      eq(schema.issues.repositoryId, dbRepoId),
       eq(schema.issues.number, pullRequest.number)
     )
   )
@@ -471,7 +508,7 @@ export async function handleReviewEvent(action: string, review: GitHubReview, pu
   // If PR doesn't exist, sync it on-demand (e.g., review on closed PR)
   if (!existingPR) {
     console.log(`[Webhook] PR #${pullRequest.number} not synced, syncing on-demand for review event`)
-    const prId = await upsertIssue(pullRequest as GitHubIssueOrPR, repository.id, repository.full_name, true)
+    const prId = await upsertIssue(pullRequest as GitHubIssueOrPR, dbRepoId, repository.full_name, true)
 
     const [newPR] = await db.select().from(schema.issues).where(eq(schema.issues.id, prId))
     existingPR = newPR
@@ -479,27 +516,31 @@ export async function handleReviewEvent(action: string, review: GitHubReview, pu
 
   switch (action) {
     case 'submitted':
-      await upsertReview(review, existingPR.id)
+      await upsertReview(review, existingPR!.id)
       // Subscribe reviewer to the PR
       if (review.user?.id) {
-        await subscribeUserToIssue(existingPR.id, review.user.id)
+        const dbUserId = await getDbUserId(review.user.id)
+        if (dbUserId) {
+          await subscribeUserToIssue(existingPR!.id, dbUserId)
+        }
       }
       break
     case 'edited':
-      await upsertReview(review, existingPR.id)
+      await upsertReview(review, existingPR!.id)
       break
     case 'dismissed':
       await db.update(schema.issueReviews).set({
         state: 'DISMISSED',
         updatedAt: new Date()
-      }).where(eq(schema.issueReviews.id, review.id))
+      }).where(eq(schema.issueReviews.githubId, review.id))
       break
   }
 }
 
 async function upsertReview(review: GitHubReview, issueId: number) {
+  let userId: number | null = null
   if (review.user) {
-    await ensureUser({
+    userId = await ensureUser({
       id: review.user.id,
       login: review.user.login,
       avatar_url: review.user.avatar_url
@@ -508,7 +549,7 @@ async function upsertReview(review: GitHubReview, issueId: number) {
 
   const reviewData = {
     issueId,
-    userId: review.user?.id,
+    userId,
     body: review.body,
     state: review.state as ReviewState,
     htmlUrl: review.html_url,
@@ -517,13 +558,13 @@ async function upsertReview(review: GitHubReview, issueId: number) {
     updatedAt: new Date()
   }
 
-  const [existing] = await db.select().from(schema.issueReviews).where(eq(schema.issueReviews.id, review.id))
+  const [existing] = await db.select().from(schema.issueReviews).where(eq(schema.issueReviews.githubId, review.id))
 
   if (existing) {
-    await db.update(schema.issueReviews).set(reviewData).where(eq(schema.issueReviews.id, review.id))
+    await db.update(schema.issueReviews).set(reviewData).where(eq(schema.issueReviews.id, existing.id))
   } else {
     await db.insert(schema.issueReviews).values({
-      id: review.id,
+      githubId: review.id,
       ...reviewData
     })
   }
@@ -534,9 +575,9 @@ async function upsertReview(review: GitHubReview, issueId: number) {
 // ============================================================================
 
 export async function handleReviewCommentEvent(action: string, comment: GitHubReviewComment, pullRequest: GitHubPullRequest, repository: GitHubRepository, _installationId?: number) {
-  // Check if repository is synced
-  const [repo] = await db.select().from(schema.repositories).where(eq(schema.repositories.id, repository.id))
-  if (!repo) {
+  // Check if repository is synced (lookup by GitHub ID)
+  const dbRepoId = await getDbRepositoryId(repository.id)
+  if (!dbRepoId) {
     console.log(`[Webhook] Repository ${repository.full_name} not synced, skipping review comment event`)
     return
   }
@@ -544,7 +585,7 @@ export async function handleReviewCommentEvent(action: string, comment: GitHubRe
   // Check if the PR exists in our DB (lookup by repositoryId + number, not id)
   let [existingPR] = await db.select().from(schema.issues).where(
     and(
-      eq(schema.issues.repositoryId, repository.id),
+      eq(schema.issues.repositoryId, dbRepoId),
       eq(schema.issues.number, pullRequest.number)
     )
   )
@@ -552,7 +593,7 @@ export async function handleReviewCommentEvent(action: string, comment: GitHubRe
   // If PR doesn't exist, sync it on-demand (e.g., review comment on closed PR)
   if (!existingPR) {
     console.log(`[Webhook] PR #${pullRequest.number} not synced, syncing on-demand for review comment event`)
-    const prId = await upsertIssue(pullRequest as GitHubIssueOrPR, repository.id, repository.full_name, true)
+    const prId = await upsertIssue(pullRequest as GitHubIssueOrPR, dbRepoId, repository.full_name, true)
 
     const [newPR] = await db.select().from(schema.issues).where(eq(schema.issues.id, prId))
     existingPR = newPR
@@ -561,30 +602,42 @@ export async function handleReviewCommentEvent(action: string, comment: GitHubRe
   switch (action) {
     case 'created':
     case 'edited':
-      await upsertReviewComment(comment, existingPR.id)
+      await upsertReviewComment(comment, existingPR!.id)
       break
     case 'deleted':
-      await db.delete(schema.issueReviewComments).where(eq(schema.issueReviewComments.id, comment.id))
+      await db.delete(schema.issueReviewComments).where(eq(schema.issueReviewComments.githubId, comment.id))
       break
   }
 }
 
 async function upsertReviewComment(comment: GitHubReviewComment, issueId: number) {
+  let userId: number | null = null
   if (comment.user) {
-    await ensureUser({
+    userId = await ensureUser({
       id: comment.user.id,
       login: comment.user.login,
       avatar_url: comment.user.avatar_url
     })
 
     // Subscribe review commenter to the PR
-    await subscribeUserToIssue(issueId, comment.user.id)
+    if (userId) {
+      await subscribeUserToIssue(issueId, userId)
+    }
+  }
+
+  // Get review ID if present
+  let reviewId: number | null = null
+  if (comment.pull_request_review_id) {
+    const [review] = await db.select({ id: schema.issueReviews.id })
+      .from(schema.issueReviews)
+      .where(eq(schema.issueReviews.githubId, comment.pull_request_review_id))
+    reviewId = review?.id ?? null
   }
 
   const commentData = {
     issueId,
-    reviewId: comment.pull_request_review_id,
-    userId: comment.user?.id,
+    reviewId,
+    userId,
     body: comment.body,
     path: comment.path,
     line: comment.line,
@@ -595,13 +648,13 @@ async function upsertReviewComment(comment: GitHubReviewComment, issueId: number
     updatedAt: new Date(comment.updated_at)
   }
 
-  const [existing] = await db.select().from(schema.issueReviewComments).where(eq(schema.issueReviewComments.id, comment.id))
+  const [existing] = await db.select().from(schema.issueReviewComments).where(eq(schema.issueReviewComments.githubId, comment.id))
 
   if (existing) {
-    await db.update(schema.issueReviewComments).set(commentData).where(eq(schema.issueReviewComments.id, comment.id))
+    await db.update(schema.issueReviewComments).set(commentData).where(eq(schema.issueReviewComments.id, existing.id))
   } else {
     await db.insert(schema.issueReviewComments).values({
-      id: comment.id,
+      githubId: comment.id,
       ...commentData,
       createdAt: new Date(comment.created_at)
     })
@@ -613,9 +666,9 @@ async function upsertReviewComment(comment: GitHubReviewComment, issueId: number
 // ============================================================================
 
 export async function handleLabelEvent(action: string, label: GitHubLabel, repository: GitHubRepository) {
-  // Check if repository is synced
-  const [repo] = await db.select().from(schema.repositories).where(eq(schema.repositories.id, repository.id))
-  if (!repo) {
+  // Check if repository is synced (lookup by GitHub ID)
+  const dbRepoId = await getDbRepositoryId(repository.id)
+  if (!dbRepoId) {
     console.log(`[Webhook] Repository ${repository.full_name} not synced, skipping label event`)
     return
   }
@@ -623,10 +676,10 @@ export async function handleLabelEvent(action: string, label: GitHubLabel, repos
   switch (action) {
     case 'created':
     case 'edited':
-      await upsertLabel(label, repository.id)
+      await upsertLabel(label, dbRepoId)
       break
     case 'deleted':
-      await db.delete(schema.labels).where(eq(schema.labels.id, label.id))
+      await db.delete(schema.labels).where(eq(schema.labels.githubId, label.id))
       break
   }
 }
@@ -641,13 +694,13 @@ async function upsertLabel(label: GitHubLabel, repositoryId: number) {
     updatedAt: new Date()
   }
 
-  const [existing] = await db.select().from(schema.labels).where(eq(schema.labels.id, label.id))
+  const [existing] = await db.select().from(schema.labels).where(eq(schema.labels.githubId, label.id))
 
   if (existing) {
-    await db.update(schema.labels).set(labelData).where(eq(schema.labels.id, label.id))
+    await db.update(schema.labels).set(labelData).where(eq(schema.labels.id, existing.id))
   } else {
     await db.insert(schema.labels).values({
-      id: label.id,
+      githubId: label.id,
       ...labelData
     })
   }
@@ -658,9 +711,9 @@ async function upsertLabel(label: GitHubLabel, repositoryId: number) {
 // ============================================================================
 
 export async function handleMilestoneEvent(action: string, milestone: GitHubMilestone, repository: GitHubRepository) {
-  // Check if repository is synced
-  const [repo] = await db.select().from(schema.repositories).where(eq(schema.repositories.id, repository.id))
-  if (!repo) {
+  // Check if repository is synced (lookup by GitHub ID)
+  const dbRepoId = await getDbRepositoryId(repository.id)
+  if (!dbRepoId) {
     console.log(`[Webhook] Repository ${repository.full_name} not synced, skipping milestone event`)
     return
   }
@@ -670,10 +723,10 @@ export async function handleMilestoneEvent(action: string, milestone: GitHubMile
     case 'edited':
     case 'opened':
     case 'closed':
-      await upsertMilestone(milestone, repository.id)
+      await upsertMilestone(milestone, dbRepoId)
       break
     case 'deleted':
-      await db.delete(schema.milestones).where(eq(schema.milestones.id, milestone.id))
+      await db.delete(schema.milestones).where(eq(schema.milestones.githubId, milestone.id))
       break
   }
 }
@@ -693,13 +746,13 @@ async function upsertMilestone(milestone: GitHubMilestone, repositoryId: number)
     updatedAt: new Date()
   }
 
-  const [existing] = await db.select().from(schema.milestones).where(eq(schema.milestones.id, milestone.id))
+  const [existing] = await db.select().from(schema.milestones).where(eq(schema.milestones.githubId, milestone.id))
 
   if (existing) {
-    await db.update(schema.milestones).set(milestoneData).where(eq(schema.milestones.id, milestone.id))
+    await db.update(schema.milestones).set(milestoneData).where(eq(schema.milestones.id, existing.id))
   } else {
     await db.insert(schema.milestones).values({
-      id: milestone.id,
+      githubId: milestone.id,
       ...milestoneData
     })
   }
@@ -711,34 +764,35 @@ async function upsertMilestone(milestone: GitHubMilestone, repositoryId: number)
 // ============================================================================
 
 export async function handleMemberEvent(action: string, member: GitHubUser, repository: GitHubRepository) {
-  // Check if repository is synced
-  const [repo] = await db.select().from(schema.repositories).where(eq(schema.repositories.id, repository.id))
-  if (!repo) {
+  // Check if repository is synced (lookup by GitHub ID)
+  const dbRepoId = await getDbRepositoryId(repository.id)
+  if (!dbRepoId) {
     console.log(`[Webhook] Repository ${repository.full_name} not synced, skipping member event`)
     return
   }
 
   switch (action) {
     case 'added': {
-      // Ensure user exists
-      await ensureUser({
+      // Ensure user exists and get internal ID
+      const dbUserId = await ensureUser({
         id: member.id,
         login: member.login,
         avatar_url: member.avatar_url
       })
+      if (!dbUserId) return
 
       // Add as collaborator (we don't get permission level from webhook, default to 'write')
       const [existingCollaborator] = await db
         .select()
         .from(schema.repositoryCollaborators)
         .where(and(
-          eq(schema.repositoryCollaborators.repositoryId, repository.id),
-          eq(schema.repositoryCollaborators.userId, member.id)
+          eq(schema.repositoryCollaborators.repositoryId, dbRepoId),
+          eq(schema.repositoryCollaborators.userId, dbUserId)
         ))
 
       if (!existingCollaborator) {
         await db.insert(schema.repositoryCollaborators)
-          .values({ repositoryId: repository.id, userId: member.id, permission: 'write' })
+          .values({ repositoryId: dbRepoId, userId: dbUserId, permission: 'write' })
           .onConflictDoNothing()
         console.log(`[Webhook] Added collaborator ${member.login} to ${repository.full_name}`)
       }
@@ -748,14 +802,14 @@ export async function handleMemberEvent(action: string, member: GitHubUser, repo
         .select()
         .from(schema.repositorySubscriptions)
         .where(and(
-          eq(schema.repositorySubscriptions.repositoryId, repository.id),
-          eq(schema.repositorySubscriptions.userId, member.id)
+          eq(schema.repositorySubscriptions.repositoryId, dbRepoId),
+          eq(schema.repositorySubscriptions.userId, dbUserId)
         ))
 
       if (!existingSub) {
         await db.insert(schema.repositorySubscriptions).values({
-          repositoryId: repository.id,
-          userId: member.id,
+          repositoryId: dbRepoId,
+          userId: dbUserId,
           issues: true,
           pullRequests: true,
           releases: true,
@@ -767,16 +821,20 @@ export async function handleMemberEvent(action: string, member: GitHubUser, repo
       break
     }
 
-    case 'removed':
+    case 'removed': {
+      const dbUserId = await getDbUserId(member.id)
+      if (!dbUserId) return
+
       // Remove from collaborators
       await db.delete(schema.repositoryCollaborators).where(
         and(
-          eq(schema.repositoryCollaborators.repositoryId, repository.id),
-          eq(schema.repositoryCollaborators.userId, member.id)
+          eq(schema.repositoryCollaborators.repositoryId, dbRepoId),
+          eq(schema.repositoryCollaborators.userId, dbUserId)
         )
       )
       console.log(`[Webhook] Removed collaborator ${member.login} from ${repository.full_name}`)
       break
+    }
 
     case 'edited':
       // Permission changed - we could update permission level here if needed
@@ -790,48 +848,54 @@ export async function handleMemberEvent(action: string, member: GitHubUser, repo
 // ============================================================================
 
 export async function handleRepositoryEvent(action: string, repository: GitHubRepository) {
+  const dbRepoId = await getDbRepositoryId(repository.id)
+
   switch (action) {
     case 'edited':
     case 'renamed':
-      await updateRepository(repository)
+      if (dbRepoId) {
+        await updateRepository(repository, dbRepoId)
+      }
       break
     case 'archived':
     case 'unarchived':
-      await db.update(schema.repositories).set({
-        archived: repository.archived,
-        updatedAt: new Date()
-      }).where(eq(schema.repositories.id, repository.id))
+      if (dbRepoId) {
+        await db.update(schema.repositories).set({
+          archived: repository.archived,
+          updatedAt: new Date()
+        }).where(eq(schema.repositories.id, dbRepoId))
+      }
       break
     case 'deleted':
-      // Cascade will handle related data
-      await db.delete(schema.repositories).where(eq(schema.repositories.id, repository.id))
+      if (dbRepoId) {
+        // Cascade will handle related data
+        await db.delete(schema.repositories).where(eq(schema.repositories.id, dbRepoId))
+      }
       break
     case 'privatized':
     case 'publicized':
-      await db.update(schema.repositories).set({
-        private: repository.private,
-        updatedAt: new Date()
-      }).where(eq(schema.repositories.id, repository.id))
+      if (dbRepoId) {
+        await db.update(schema.repositories).set({
+          private: repository.private,
+          updatedAt: new Date()
+        }).where(eq(schema.repositories.id, dbRepoId))
+      }
       break
   }
 }
 
-async function updateRepository(repository: GitHubRepository) {
-  const [existing] = await db.select().from(schema.repositories).where(eq(schema.repositories.id, repository.id))
-
-  if (existing) {
-    await db.update(schema.repositories).set({
-      name: repository.name,
-      fullName: repository.full_name,
-      description: repository.description,
-      htmlUrl: repository.html_url,
-      defaultBranch: repository.default_branch,
-      archived: repository.archived,
-      disabled: repository.disabled,
-      private: repository.private,
-      updatedAt: new Date()
-    }).where(eq(schema.repositories.id, repository.id))
-  }
+async function updateRepository(repository: GitHubRepository, dbRepoId: number) {
+  await db.update(schema.repositories).set({
+    name: repository.name,
+    fullName: repository.full_name,
+    description: repository.description,
+    htmlUrl: repository.html_url,
+    defaultBranch: repository.default_branch,
+    archived: repository.archived,
+    disabled: repository.disabled,
+    private: repository.private,
+    updatedAt: new Date()
+  }).where(eq(schema.repositories.id, dbRepoId))
 }
 
 // ============================================================================
@@ -839,25 +903,33 @@ async function updateRepository(repository: GitHubRepository) {
 // ============================================================================
 
 export async function handleInstallationEvent(action: string, installation: GitHubInstallation, repositories?: GitHubInstallationRepository[]) {
+  const dbInstallationId = await getDbInstallationId(installation.id)
+
   switch (action) {
     case 'created':
       await createInstallation(installation, repositories || [])
       break
     case 'deleted':
-      // Cascade will handle related data
-      await db.delete(schema.installations).where(eq(schema.installations.id, installation.id))
+      if (dbInstallationId) {
+        // Cascade will handle related data
+        await db.delete(schema.installations).where(eq(schema.installations.id, dbInstallationId))
+      }
       break
     case 'suspend':
-      await db.update(schema.installations).set({
-        suspended: true,
-        updatedAt: new Date()
-      }).where(eq(schema.installations.id, installation.id))
+      if (dbInstallationId) {
+        await db.update(schema.installations).set({
+          suspended: true,
+          updatedAt: new Date()
+        }).where(eq(schema.installations.id, dbInstallationId))
+      }
       break
     case 'unsuspend':
-      await db.update(schema.installations).set({
-        suspended: false,
-        updatedAt: new Date()
-      }).where(eq(schema.installations.id, installation.id))
+      if (dbInstallationId) {
+        await db.update(schema.installations).set({
+          suspended: false,
+          updatedAt: new Date()
+        }).where(eq(schema.installations.id, dbInstallationId))
+      }
       break
     case 'new_permissions_accepted':
       // Just log for now
@@ -870,32 +942,35 @@ async function createInstallation(installation: GitHubInstallation, repositories
   const account = installation.account
 
   // Check if installation exists
-  const [existing] = await db.select().from(schema.installations).where(eq(schema.installations.id, installation.id))
+  const [existing] = await db.select().from(schema.installations).where(eq(schema.installations.githubId, installation.id))
 
+  let installationId: number
   if (existing) {
     await db.update(schema.installations).set({
       accountLogin: account.login,
       avatarUrl: account.avatar_url,
       suspended: false,
       updatedAt: new Date()
-    }).where(eq(schema.installations.id, installation.id))
+    }).where(eq(schema.installations.id, existing.id))
+    installationId = existing.id
   } else {
-    await db.insert(schema.installations).values({
-      id: installation.id,
+    const [inserted] = await db.insert(schema.installations).values({
+      githubId: installation.id,
       accountId: account.id,
       accountLogin: account.login,
       accountType: account.type,
       avatarUrl: account.avatar_url
-    })
+    }).returning({ id: schema.installations.id })
+    installationId = inserted!.id
   }
 
   // Create repositories
   for (const repo of repositories) {
-    const [existingRepo] = await db.select().from(schema.repositories).where(eq(schema.repositories.id, repo.id))
+    const [existingRepo] = await db.select().from(schema.repositories).where(eq(schema.repositories.githubId, repo.id))
     if (!existingRepo) {
       await db.insert(schema.repositories).values({
-        id: repo.id,
-        installationId: installation.id,
+        githubId: repo.id,
+        installationId,
         name: repo.name,
         fullName: repo.full_name,
         private: repo.private,
@@ -908,14 +983,17 @@ async function createInstallation(installation: GitHubInstallation, repositories
 }
 
 export async function handleInstallationRepositoriesEvent(action: string, installation: GitHubInstallation, repositoriesAdded?: GitHubInstallationRepository[], repositoriesRemoved?: GitHubInstallationRepository[]) {
+  const dbInstallationId = await getDbInstallationId(installation.id)
+  if (!dbInstallationId) return
+
   switch (action) {
     case 'added':
       for (const repo of repositoriesAdded || []) {
-        const [existing] = await db.select().from(schema.repositories).where(eq(schema.repositories.id, repo.id))
+        const [existing] = await db.select().from(schema.repositories).where(eq(schema.repositories.githubId, repo.id))
         if (!existing) {
           await db.insert(schema.repositories).values({
-            id: repo.id,
-            installationId: installation.id,
+            githubId: repo.id,
+            installationId: dbInstallationId,
             name: repo.name,
             fullName: repo.full_name,
             private: repo.private
@@ -925,7 +1003,7 @@ export async function handleInstallationRepositoriesEvent(action: string, instal
       break
     case 'removed':
       for (const repo of repositoriesRemoved || []) {
-        await db.delete(schema.repositories).where(eq(schema.repositories.id, repo.id))
+        await db.delete(schema.repositories).where(eq(schema.repositories.githubId, repo.id))
       }
       break
   }
@@ -936,24 +1014,25 @@ export async function handleInstallationRepositoriesEvent(action: string, instal
 // ============================================================================
 
 export async function handleReleaseEvent(action: string, release: GitHubRelease, repository: GitHubRepository) {
-  // Check if repository is synced
-  const [repo] = await db.select().from(schema.repositories).where(eq(schema.repositories.id, repository.id))
-  if (!repo) {
+  // Check if repository is synced (lookup by GitHub ID)
+  const dbRepoId = await getDbRepositoryId(repository.id)
+  if (!dbRepoId) {
     console.log(`[Webhook] Repository ${repository.full_name} not synced, skipping release event`)
     return
   }
 
   if (action === 'published') {
-    // Ensure author exists as shadow user
+    // Ensure author exists as shadow user and get internal ID
+    let authorId: number | null = null
     if (release.author) {
-      await ensureUser({
+      authorId = await ensureUser({
         id: release.author.id,
         login: release.author.login,
         avatar_url: release.author.avatar_url
       })
     }
 
-    const [existing] = await db.select().from(schema.releases).where(eq(schema.releases.id, release.id))
+    const [existing] = await db.select().from(schema.releases).where(eq(schema.releases.githubId, release.id))
 
     if (existing) {
       await db.update(schema.releases).set({
@@ -964,12 +1043,12 @@ export async function handleReleaseEvent(action: string, release: GitHubRelease,
         prerelease: release.prerelease,
         htmlUrl: release.html_url,
         publishedAt: release.published_at ? new Date(release.published_at) : null
-      }).where(eq(schema.releases.id, release.id))
+      }).where(eq(schema.releases.id, existing.id))
     } else {
       await db.insert(schema.releases).values({
-        id: release.id,
-        repositoryId: repository.id,
-        authorId: release.author?.id,
+        githubId: release.id,
+        repositoryId: dbRepoId,
+        authorId,
         tagName: release.tag_name,
         name: release.name,
         body: release.body,
@@ -980,7 +1059,7 @@ export async function handleReleaseEvent(action: string, release: GitHubRelease,
       })
     }
   } else if (action === 'deleted') {
-    await db.delete(schema.releases).where(eq(schema.releases.id, release.id))
+    await db.delete(schema.releases).where(eq(schema.releases.githubId, release.id))
   }
 }
 
@@ -989,17 +1068,18 @@ export async function handleReleaseEvent(action: string, release: GitHubRelease,
 // ============================================================================
 
 export async function handleWorkflowRunEvent(action: string, workflowRun: GitHubWorkflowRun, repository: GitHubRepository) {
-  // Check if repository is synced
-  const [repo] = await db.select().from(schema.repositories).where(eq(schema.repositories.id, repository.id))
-  if (!repo) {
+  // Check if repository is synced (lookup by GitHub ID)
+  const dbRepoId = await getDbRepositoryId(repository.id)
+  if (!dbRepoId) {
     console.log(`[Webhook] Repository ${repository.full_name} not synced, skipping workflow run event`)
     return
   }
 
   if (action === 'completed') {
-    // Ensure actor exists as shadow user
+    // Ensure actor exists as shadow user and get internal ID
+    let actorId: number | null = null
     if (workflowRun.actor) {
-      await ensureUser({
+      actorId = await ensureUser({
         id: workflowRun.actor.id,
         login: workflowRun.actor.login,
         avatar_url: workflowRun.actor.avatar_url
@@ -1008,12 +1088,12 @@ export async function handleWorkflowRunEvent(action: string, workflowRun: GitHub
 
     // Find the related PR if this workflow was triggered by a pull_request event
     let issueId: number | null = null
-    if (workflowRun.pull_requests?.length) {
+    if (workflowRun.pull_requests?.length && workflowRun.pull_requests.length > 0) {
       // Use the first PR number to find the related issue in our DB
-      const prNumber = workflowRun.pull_requests[0].number
+      const prNumber = workflowRun.pull_requests[0]!.number
       const [relatedPR] = await db.select().from(schema.issues).where(
         and(
-          eq(schema.issues.repositoryId, repository.id),
+          eq(schema.issues.repositoryId, dbRepoId),
           eq(schema.issues.number, prNumber)
         )
       )
@@ -1022,7 +1102,7 @@ export async function handleWorkflowRunEvent(action: string, workflowRun: GitHub
       }
     }
 
-    const [existing] = await db.select().from(schema.workflowRuns).where(eq(schema.workflowRuns.id, workflowRun.id))
+    const [existing] = await db.select().from(schema.workflowRuns).where(eq(schema.workflowRuns.githubId, workflowRun.id))
 
     if (existing) {
       await db.update(schema.workflowRuns).set({
@@ -1031,13 +1111,13 @@ export async function handleWorkflowRunEvent(action: string, workflowRun: GitHub
         conclusion: workflowRun.conclusion,
         completedAt: workflowRun.updated_at ? new Date(workflowRun.updated_at) : null,
         updatedAt: new Date()
-      }).where(eq(schema.workflowRuns.id, workflowRun.id))
+      }).where(eq(schema.workflowRuns.id, existing.id))
     } else {
       await db.insert(schema.workflowRuns).values({
-        id: workflowRun.id,
-        repositoryId: repository.id,
+        githubId: workflowRun.id,
+        repositoryId: dbRepoId,
         issueId,
-        actorId: workflowRun.actor?.id,
+        actorId,
         workflowId: workflowRun.workflow_id,
         workflowName: workflowRun.workflow?.name || workflowRun.name,
         name: workflowRun.name || workflowRun.display_title,
@@ -1057,9 +1137,9 @@ export async function handleWorkflowRunEvent(action: string, workflowRun: GitHub
 }
 
 export async function handleCheckRunEvent(action: string, checkRun: GitHubCheckRun, repository: GitHubRepository) {
-  // Check if repository is synced
-  const [repo] = await db.select().from(schema.repositories).where(eq(schema.repositories.id, repository.id))
-  if (!repo) {
+  // Check if repository is synced (lookup by GitHub ID)
+  const dbRepoId = await getDbRepositoryId(repository.id)
+  if (!dbRepoId) {
     console.log(`[Webhook] Repository ${repository.full_name} not synced, skipping check run event`)
     return
   }
@@ -1067,7 +1147,7 @@ export async function handleCheckRunEvent(action: string, checkRun: GitHubCheckR
   // Handle created, completed, and rerequested actions
   if (action === 'created' || action === 'completed' || action === 'rerequested') {
     const checkData = {
-      repositoryId: repository.id,
+      repositoryId: dbRepoId,
       headSha: checkRun.head_sha,
       name: checkRun.name,
       status: checkRun.status,
@@ -1081,13 +1161,13 @@ export async function handleCheckRunEvent(action: string, checkRun: GitHubCheckR
       updatedAt: new Date()
     }
 
-    const [existing] = await db.select().from(schema.checkRuns).where(eq(schema.checkRuns.id, checkRun.id))
+    const [existing] = await db.select().from(schema.checkRuns).where(eq(schema.checkRuns.githubId, checkRun.id))
 
     if (existing) {
-      await db.update(schema.checkRuns).set(checkData).where(eq(schema.checkRuns.id, checkRun.id))
+      await db.update(schema.checkRuns).set(checkData).where(eq(schema.checkRuns.id, existing.id))
     } else {
       await db.insert(schema.checkRuns).values({
-        id: checkRun.id,
+        githubId: checkRun.id,
         ...checkData
       })
     }
@@ -1110,15 +1190,15 @@ interface GitHubStatusPayload {
 }
 
 export async function handleStatusEvent(payload: GitHubStatusPayload, repository: GitHubRepository) {
-  // Check if repository is synced
-  const [repo] = await db.select().from(schema.repositories).where(eq(schema.repositories.id, repository.id))
-  if (!repo) {
+  // Check if repository is synced (lookup by GitHub ID)
+  const dbRepoId = await getDbRepositoryId(repository.id)
+  if (!dbRepoId) {
     console.log(`[Webhook] Repository ${repository.full_name} not synced, skipping status event`)
     return
   }
 
   const statusData = {
-    repositoryId: repository.id,
+    repositoryId: dbRepoId,
     sha: payload.sha,
     state: payload.state,
     context: payload.context,
@@ -1127,13 +1207,13 @@ export async function handleStatusEvent(payload: GitHubStatusPayload, repository
     updatedAt: new Date()
   }
 
-  const [existing] = await db.select().from(schema.commitStatuses).where(eq(schema.commitStatuses.id, payload.id))
+  const [existing] = await db.select().from(schema.commitStatuses).where(eq(schema.commitStatuses.githubId, payload.id))
 
   if (existing) {
-    await db.update(schema.commitStatuses).set(statusData).where(eq(schema.commitStatuses.id, payload.id))
+    await db.update(schema.commitStatuses).set(statusData).where(eq(schema.commitStatuses.id, existing.id))
   } else {
     await db.insert(schema.commitStatuses).values({
-      id: payload.id,
+      githubId: payload.id,
       ...statusData
     })
   }

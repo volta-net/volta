@@ -28,62 +28,14 @@ export default defineEventHandler(async (event) => {
       const account = installation.account
       const accountId = account?.id
 
-      // Get synced repositories for this installation from database
-      // Note: We use accountId as installationId when syncing (not the GitHub App installation ID)
-      let syncedRepoMap = new Map<number, { lastSyncedAt: Date | null }>()
-      let subscriptionMap = new Map<number, RepositorySubscription>()
-
-      if (accountId) {
-        try {
-          const syncedRepos = await db.select({
-            id: schema.repositories.id,
-            lastSyncedAt: schema.repositories.lastSyncedAt
-          }).from(schema.repositories).where(eq(schema.repositories.installationId, accountId))
-
-          syncedRepoMap = new Map(syncedRepos.map(r => [r.id, { lastSyncedAt: r.lastSyncedAt }]))
-
-          // Get subscriptions for synced repos (filter by repo IDs and user)
-          if (syncedRepos.length > 0) {
-            const syncedRepoIds = syncedRepos.map(r => r.id)
-            const subscriptions = await db.select({
-              repositoryId: schema.repositorySubscriptions.repositoryId,
-              issues: schema.repositorySubscriptions.issues,
-              pullRequests: schema.repositorySubscriptions.pullRequests,
-              releases: schema.repositorySubscriptions.releases,
-              ci: schema.repositorySubscriptions.ci,
-              mentions: schema.repositorySubscriptions.mentions,
-              activity: schema.repositorySubscriptions.activity
-            })
-              .from(schema.repositorySubscriptions)
-              .where(and(
-                eq(schema.repositorySubscriptions.userId, user!.id),
-                inArray(schema.repositorySubscriptions.repositoryId, syncedRepoIds)
-              ))
-
-            subscriptionMap = new Map(subscriptions.map(s => [s.repositoryId, {
-              issues: s.issues ?? true,
-              pullRequests: s.pullRequests ?? true,
-              releases: s.releases ?? true,
-              ci: s.ci ?? true,
-              mentions: s.mentions ?? true,
-              activity: s.activity ?? true
-            }]))
-          }
-        } catch (error) {
-          console.warn(`[installations] Failed to fetch synced repos for account ${accountId}:`, error)
-        }
-      }
       // Account can be a User or Enterprise - extract common fields
       const login = account && 'login' in account ? account.login : account?.name
       const type = account && 'type' in account ? account.type : 'Enterprise'
 
-      return {
+      // Default response for unsynced installation
+      const defaultResponse = {
         id: installation.id,
-        account: {
-          login,
-          avatar: account?.avatar_url,
-          type
-        },
+        account: { login, avatar: account?.avatar_url, type },
         repositories: allRepos.map(repo => ({
           id: repo.id,
           name: repo.name,
@@ -95,12 +47,84 @@ export default defineEventHandler(async (event) => {
           archived: repo.archived,
           disabled: repo.disabled,
           syncEnabled: null,
-          lastSyncedAt: syncedRepoMap.get(repo.id)?.lastSyncedAt?.toISOString() ?? null,
+          lastSyncedAt: null,
           createdAt: repo.created_at,
           updatedAt: repo.updated_at,
-          synced: syncedRepoMap.has(repo.id),
-          subscription: subscriptionMap.get(repo.id)
+          synced: false,
+          subscription: undefined
         }))
+      }
+
+      if (!accountId) return defaultResponse
+
+      try {
+        // Use db.query to fetch installation with repositories in one go
+        const dbInstallation = await db.query.installations.findFirst({
+          where: eq(schema.installations.accountId, accountId),
+          with: {
+            repositories: true
+          }
+        })
+
+        if (!dbInstallation) return defaultResponse
+
+        // Map synced repos by GitHub ID for quick lookup
+        const syncedRepoMap = new Map(
+          dbInstallation.repositories.map(r => [r.githubId, { id: r.id, lastSyncedAt: r.lastSyncedAt }])
+        )
+
+        // Get subscriptions for synced repos
+        const subscriptionMap = new Map<number, RepositorySubscription>()
+        if (dbInstallation.repositories.length > 0) {
+          const repoIds = dbInstallation.repositories.map(r => r.id)
+          const subscriptions = await db.query.repositorySubscriptions.findMany({
+            where: and(
+              eq(schema.repositorySubscriptions.userId, user.id),
+              inArray(schema.repositorySubscriptions.repositoryId, repoIds)
+            )
+          })
+
+          // Map subscriptions: internal repo ID -> GitHub ID
+          const internalToGithubId = new Map(dbInstallation.repositories.map(r => [r.id, r.githubId]))
+          for (const sub of subscriptions) {
+            const githubId = internalToGithubId.get(sub.repositoryId)
+            if (githubId) {
+              subscriptionMap.set(githubId, {
+                issues: sub.issues ?? true,
+                pullRequests: sub.pullRequests ?? true,
+                releases: sub.releases ?? true,
+                ci: sub.ci ?? true,
+                mentions: sub.mentions ?? true,
+                activity: sub.activity ?? true
+              })
+            }
+          }
+        }
+
+        return {
+          id: installation.id,
+          account: { login, avatar: account?.avatar_url, type },
+          repositories: allRepos.map(repo => ({
+            id: repo.id,
+            name: repo.name,
+            fullName: repo.full_name,
+            private: repo.private,
+            description: repo.description,
+            htmlUrl: repo.html_url,
+            defaultBranch: repo.default_branch,
+            archived: repo.archived,
+            disabled: repo.disabled,
+            syncEnabled: null,
+            lastSyncedAt: syncedRepoMap.get(repo.id)?.lastSyncedAt?.toISOString() ?? null,
+            createdAt: repo.created_at,
+            updatedAt: repo.updated_at,
+            synced: syncedRepoMap.has(repo.id),
+            subscription: subscriptionMap.get(repo.id)
+          }))
+        }
+      } catch (error) {
+        console.warn(`[installations] Failed to fetch synced repos for account ${accountId}:`, error)
+        return defaultResponse
       }
     })
   )

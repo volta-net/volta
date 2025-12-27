@@ -5,22 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1766508859561,
-      "tag": "0000_volatile_domino",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1766509381131,
-      "tag": "0001_ambiguous_magneto",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1766513903173,
-      "tag": "0002_greedy_phil_sheldon",
+      "when": 1766759743729,
+      "tag": "0000_lame_kylun",
       "breakpoints": true
     }
   ]

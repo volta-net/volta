@@ -20,7 +20,7 @@ export default defineEventHandler(async (event) => {
   const collaboratorsCount = await syncCollaborators(accessToken, owner, repo, repository.id)
 
   // Verify user has access to this repository (must be after syncCollaborators for first-time sync)
-  await requireRepositoryAccess(user!.id, repository.id)
+  await requireRepositoryAccess(user.id, repository.id)
   const labelsCount = await syncLabels(accessToken, owner, repo, repository.id)
   const milestonesCount = await syncMilestones(accessToken, owner, repo, repository.id)
   const typesCount = await syncTypes(accessToken, owner, repo, repository.id)

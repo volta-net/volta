@@ -25,7 +25,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Check user has access to this repository
-  await requireRepositoryAccess(user!.id, issue.repositoryId)
+  await requireRepositoryAccess(user.id, issue.repositoryId)
 
   const body = await readBody<{ body: string, owner: string, repo: string, issueNumber: number }>(event)
 
@@ -60,9 +60,9 @@ export default defineEventHandler(async (event) => {
   // Store comment in database
   const now = new Date()
   await db.insert(schema.issueComments).values({
-    id: commentId,
+    githubId: commentId,
     issueId,
-    userId: user!.id,
+    userId: user.id,
     body: body.body.trim(),
     htmlUrl: commentHtmlUrl,
     createdAt: now,

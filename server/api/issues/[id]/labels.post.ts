@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import { db, schema } from 'hub:db'
 import { Octokit } from 'octokit'
 
@@ -25,7 +25,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Check user has access to this repository
-  await requireRepositoryAccess(user!.id, issue.repositoryId)
+  await requireRepositoryAccess(user.id, issue.repositoryId)
 
   const body = await readBody<{ labelId: number, owner: string, repo: string, issueNumber: number }>(event)
 

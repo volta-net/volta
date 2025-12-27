@@ -67,32 +67,44 @@ interface GitHubUser {
  * Ensure a user exists in the database.
  * Creates a shadow user if they don't exist (registered: false).
  * Updates shadow users with latest info, but does NOT update registered users.
+ * Returns the internal database ID.
  */
-export async function ensureUser(user: GitHubUser) {
+export async function ensureUser(user: GitHubUser): Promise<number | null> {
   try {
-    // Use upsert to handle race conditions
-    // On conflict: only update if NOT registered (preserve OAuth user data)
-    await db.insert(schema.users).values({
-      id: user.id,
+    // Look up by GitHub ID
+    const [existing] = await db
+      .select({ id: schema.users.id, registered: schema.users.registered })
+      .from(schema.users)
+      .where(eq(schema.users.githubId, user.id))
+
+    if (existing) {
+      // Only update shadow users (registered = false)
+      if (!existing.registered) {
+        await db.update(schema.users).set({
+          login: user.login,
+          avatarUrl: user.avatar_url,
+          name: user.name,
+          email: user.email,
+          updatedAt: new Date()
+        }).where(eq(schema.users.id, existing.id))
+      }
+      return existing.id
+    }
+
+    // Insert new shadow user
+    const [inserted] = await db.insert(schema.users).values({
+      githubId: user.id,
       login: user.login,
       avatarUrl: user.avatar_url,
       name: user.name,
       email: user.email,
       registered: false // Shadow user
-    }).onConflictDoUpdate({
-      target: schema.users.id,
-      set: {
-        login: user.login,
-        avatarUrl: user.avatar_url,
-        name: user.name,
-        email: user.email,
-        updatedAt: new Date()
-      },
-      // Only update shadow users (registered = false)
-      setWhere: eq(schema.users.registered, false)
-    })
+    }).returning({ id: schema.users.id })
+
+    return inserted!.id
   } catch (error) {
     console.debug('[users] Failed to ensure user:', user.id, error)
+    return null
   }
 }
 
@@ -102,5 +114,53 @@ export async function ensureUser(user: GitHubUser) {
 export async function ensureUsers(users: GitHubUser[]) {
   for (const user of users) {
     await ensureUser(user)
+  }
+}
+
+/**
+ * Get the internal database user ID from a GitHub user ID.
+ */
+export async function getDbUserId(githubUserId: number): Promise<number | null> {
+  try {
+    const [user] = await db
+      .select({ id: schema.users.id })
+      .from(schema.users)
+      .where(eq(schema.users.githubId, githubUserId))
+    return user?.id ?? null
+  } catch (error) {
+    console.error('[users] Failed to get user ID:', error)
+    return null
+  }
+}
+
+/**
+ * Get the internal database repository ID from a GitHub repository ID.
+ */
+export async function getDbRepositoryId(githubRepoId: number): Promise<number | null> {
+  try {
+    const [repo] = await db
+      .select({ id: schema.repositories.id })
+      .from(schema.repositories)
+      .where(eq(schema.repositories.githubId, githubRepoId))
+    return repo?.id ?? null
+  } catch (error) {
+    console.error('[users] Failed to get repository ID:', error)
+    return null
+  }
+}
+
+/**
+ * Get the internal database installation ID from a GitHub installation ID.
+ */
+export async function getDbInstallationId(githubInstallationId: number): Promise<number | null> {
+  try {
+    const [installation] = await db
+      .select({ id: schema.installations.id })
+      .from(schema.installations)
+      .where(eq(schema.installations.githubId, githubInstallationId))
+    return installation?.id ?? null
+  } catch (error) {
+    console.error('[users] Failed to get installation ID:', error)
+    return null
   }
 }

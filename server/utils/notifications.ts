@@ -11,11 +11,13 @@ import type {
   GitHubRelease,
   GitHubWorkflowRun
 } from '../types/github'
+import { ensureUser, getDbUserId, getDbRepositoryId } from './users'
+import { getDbIssueId } from './sync'
 
 // In development, allow self-notifications for testing
-function shouldSkipSelfNotification(actorId: number, recipientId: number): boolean {
+function shouldSkipSelfNotification(actorDbId: number, recipientDbId: number): boolean {
   if (import.meta.dev) return false // Allow self-notifications in dev
-  return actorId === recipientId
+  return actorDbId === recipientDbId
 }
 
 interface NotificationData {
@@ -27,16 +29,11 @@ interface NotificationData {
   issueId?: number
   releaseId?: number
   workflowRunId?: number
-  actor?: { id: number, login: string, avatar_url?: string }
+  actorId?: number
 }
 
 export async function createNotification(data: NotificationData) {
   try {
-    // Ensure actor exists as shadow user
-    if (data.actor) {
-      await ensureUser(data.actor)
-    }
-
     // Only notify users who have actually logged in (not shadow users)
     const [user] = await db
       .select({ registered: schema.users.registered })
@@ -63,7 +60,7 @@ export async function createNotification(data: NotificationData) {
           type: data.type,
           action: data.action,
           body: data.body,
-          actorId: data.actor?.id,
+          actorId: data.actorId,
           read: false, // Mark as unread
           readAt: null,
           createdAt: new Date() // Update timestamp to show as new
@@ -82,7 +79,7 @@ export async function createNotification(data: NotificationData) {
       issueId: data.issueId,
       releaseId: data.releaseId,
       workflowRunId: data.workflowRunId,
-      actorId: data.actor?.id
+      actorId: data.actorId
     })
   } catch (error) {
     // Foreign key constraint failure is expected for users not in our system
@@ -112,7 +109,7 @@ function findMentionedUsernames(text: string | null | undefined): string[] {
   return Array.from(usernames)
 }
 
-// Get user IDs for mentioned usernames (only returns users that exist in our DB)
+// Get internal user IDs for mentioned usernames (only returns users that exist in our DB)
 async function getMentionedUserIds(text: string | null | undefined): Promise<number[]> {
   const usernames = findMentionedUsernames(text)
   if (usernames.length === 0) return []
@@ -198,32 +195,54 @@ export async function notifyIssueOpened(
   actor: GitHubUser,
   _installationId?: number
 ) {
+  // Get internal repository ID
+  const dbRepoId = await getDbRepositoryId(repository.id)
+  if (!dbRepoId) {
+    console.warn(`[notifications] Repository ${repository.full_name} not found in DB, skipping opened notification`)
+    return
+  }
+
+  // Look up the database issue ID
+  const dbIssueId = await getDbIssueId(dbRepoId, issue.number)
+  if (!dbIssueId) {
+    console.warn(`[notifications] Issue #${issue.number} not found in DB, skipping opened notification`)
+    return
+  }
+
+  // Get actor's internal ID
+  const actorDbId = await ensureUser({
+    id: actor.id,
+    login: actor.login,
+    avatar_url: actor.avatar_url
+  })
+  if (!actorDbId) return
+
   const notifiedIds = new Set<number>()
 
   // Notify subscribers who want issue notifications
-  const subscribers = await getSubscribers(repository.id, 'issues')
+  const subscribers = await getSubscribers(dbRepoId, 'issues')
   for (const subscriber of subscribers) {
-    if (shouldSkipSelfNotification(actor.id, subscriber.userId)) continue
+    if (shouldSkipSelfNotification(actorDbId, subscriber.userId)) continue
     notifiedIds.add(subscriber.userId)
 
     await createNotification({
       userId: subscriber.userId,
       type: 'issue',
       action: 'opened',
-      repositoryId: repository.id,
-      issueId: issue.id,
-      actor
+      repositoryId: dbRepoId,
+      issueId: dbIssueId,
+      actorId: actorDbId
     })
   }
 
   // Notify mentioned users (who have mentions enabled)
   const mentionedUserIds = await getMentionedUserIds(issue.body)
-  const mentionSubscribers = await getSubscribers(repository.id, 'mentions')
+  const mentionSubscribers = await getSubscribers(dbRepoId, 'mentions')
   const mentionSubscriberIds = new Set(mentionSubscribers.map(s => s.userId))
 
   for (const userId of mentionedUserIds) {
     if (notifiedIds.has(userId)) continue
-    if (shouldSkipSelfNotification(actor.id, userId)) continue
+    if (shouldSkipSelfNotification(actorDbId, userId)) continue
     if (!mentionSubscriberIds.has(userId)) continue
     notifiedIds.add(userId)
 
@@ -231,9 +250,9 @@ export async function notifyIssueOpened(
       userId,
       type: 'issue',
       action: 'mentioned',
-      repositoryId: repository.id,
-      issueId: issue.id,
-      actor
+      repositoryId: dbRepoId,
+      issueId: dbIssueId,
+      actorId: actorDbId
     })
   }
 }
@@ -244,16 +263,42 @@ export async function notifyIssueAssigned(
   assignee: GitHubUser,
   actor: GitHubUser
 ) {
+  // Get internal repository ID
+  const dbRepoId = await getDbRepositoryId(repository.id)
+  if (!dbRepoId) return
+
+  // Get internal user IDs
+  const actorDbId = await ensureUser({
+    id: actor.id,
+    login: actor.login,
+    avatar_url: actor.avatar_url
+  })
+  if (!actorDbId) return
+
+  const assigneeDbId = await ensureUser({
+    id: assignee.id,
+    login: assignee.login,
+    avatar_url: assignee.avatar_url
+  })
+  if (!assigneeDbId) return
+
   // Don't notify if user assigned themselves - except in dev
-  if (shouldSkipSelfNotification(actor.id, assignee.id)) return
+  if (shouldSkipSelfNotification(actorDbId, assigneeDbId)) return
+
+  // Look up the database issue ID
+  const dbIssueId = await getDbIssueId(dbRepoId, issue.number)
+  if (!dbIssueId) {
+    console.warn(`[notifications] Issue #${issue.number} not found in DB, skipping assigned notification`)
+    return
+  }
 
   await createNotification({
-    userId: assignee.id,
+    userId: assigneeDbId,
     type: 'issue',
     action: 'assigned',
-    repositoryId: repository.id,
-    issueId: issue.id,
-    actor
+    repositoryId: dbRepoId,
+    issueId: dbIssueId,
+    actorId: actorDbId
   })
 }
 
@@ -262,51 +307,75 @@ export async function notifyIssueClosed(
   repository: GitHubRepository,
   actor: GitHubUser
 ) {
+  // Get internal repository ID
+  const dbRepoId = await getDbRepositoryId(repository.id)
+  if (!dbRepoId) return
+
+  // Look up the database issue ID
+  const dbIssueId = await getDbIssueId(dbRepoId, issue.number)
+  if (!dbIssueId) {
+    console.warn(`[notifications] Issue #${issue.number} not found in DB, skipping closed notification`)
+    return
+  }
+
+  // Get actor's internal ID
+  const actorDbId = await ensureUser({
+    id: actor.id,
+    login: actor.login,
+    avatar_url: actor.avatar_url
+  })
+  if (!actorDbId) return
+
   const notifiedIds = new Set<number>()
 
   // Notify issue author
-  if (issue.user && !shouldSkipSelfNotification(actor.id, issue.user.id)) {
-    notifiedIds.add(issue.user.id)
-    await createNotification({
-      userId: issue.user.id,
-      type: 'issue',
-      action: 'closed',
-      repositoryId: repository.id,
-      issueId: issue.id,
-      actor
-    })
+  if (issue.user) {
+    const authorDbId = await getDbUserId(issue.user.id)
+    if (authorDbId && !shouldSkipSelfNotification(actorDbId, authorDbId)) {
+      notifiedIds.add(authorDbId)
+      await createNotification({
+        userId: authorDbId,
+        type: 'issue',
+        action: 'closed',
+        repositoryId: dbRepoId,
+        issueId: dbIssueId,
+        actorId: actorDbId
+      })
+    }
   }
 
   // Notify assignees
   for (const assignee of issue.assignees || []) {
-    if (notifiedIds.has(assignee.id)) continue
-    if (shouldSkipSelfNotification(actor.id, assignee.id)) continue
-    notifiedIds.add(assignee.id)
+    const assigneeDbId = await getDbUserId(assignee.id)
+    if (!assigneeDbId) continue
+    if (notifiedIds.has(assigneeDbId)) continue
+    if (shouldSkipSelfNotification(actorDbId, assigneeDbId)) continue
+    notifiedIds.add(assigneeDbId)
 
     await createNotification({
-      userId: assignee.id,
+      userId: assigneeDbId,
       type: 'issue',
       action: 'closed',
-      repositoryId: repository.id,
-      issueId: issue.id,
-      actor
+      repositoryId: dbRepoId,
+      issueId: dbIssueId,
+      actorId: actorDbId
     })
   }
 
   // Notify activity subscribers who are subscribed to this issue
-  const activitySubscribers = await getActivitySubscribersForIssue(repository.id, issue.id)
+  const activitySubscribers = await getActivitySubscribersForIssue(dbRepoId, dbIssueId)
   for (const userId of activitySubscribers) {
     if (notifiedIds.has(userId)) continue
-    if (shouldSkipSelfNotification(actor.id, userId)) continue
+    if (shouldSkipSelfNotification(actorDbId, userId)) continue
     notifiedIds.add(userId)
 
     await createNotification({
       userId,
       type: 'issue',
       action: 'closed',
-      repositoryId: repository.id,
-      issueId: issue.id,
-      actor
+      repositoryId: dbRepoId,
+      issueId: dbIssueId,
+      actorId: actorDbId
     })
   }
 }
@@ -316,51 +385,75 @@ export async function notifyIssueReopened(
   repository: GitHubRepository,
   actor: GitHubUser
 ) {
+  // Get internal repository ID
+  const dbRepoId = await getDbRepositoryId(repository.id)
+  if (!dbRepoId) return
+
+  // Look up the database issue ID
+  const dbIssueId = await getDbIssueId(dbRepoId, issue.number)
+  if (!dbIssueId) {
+    console.warn(`[notifications] Issue #${issue.number} not found in DB, skipping reopened notification`)
+    return
+  }
+
+  // Get actor's internal ID
+  const actorDbId = await ensureUser({
+    id: actor.id,
+    login: actor.login,
+    avatar_url: actor.avatar_url
+  })
+  if (!actorDbId) return
+
   const notifiedIds = new Set<number>()
 
   // Notify issue author
-  if (issue.user && !shouldSkipSelfNotification(actor.id, issue.user.id)) {
-    notifiedIds.add(issue.user.id)
-    await createNotification({
-      userId: issue.user.id,
-      type: 'issue',
-      action: 'reopened',
-      repositoryId: repository.id,
-      issueId: issue.id,
-      actor
-    })
+  if (issue.user) {
+    const authorDbId = await getDbUserId(issue.user.id)
+    if (authorDbId && !shouldSkipSelfNotification(actorDbId, authorDbId)) {
+      notifiedIds.add(authorDbId)
+      await createNotification({
+        userId: authorDbId,
+        type: 'issue',
+        action: 'reopened',
+        repositoryId: dbRepoId,
+        issueId: dbIssueId,
+        actorId: actorDbId
+      })
+    }
   }
 
   // Notify assignees
   for (const assignee of issue.assignees || []) {
-    if (notifiedIds.has(assignee.id)) continue
-    if (shouldSkipSelfNotification(actor.id, assignee.id)) continue
-    notifiedIds.add(assignee.id)
+    const assigneeDbId = await getDbUserId(assignee.id)
+    if (!assigneeDbId) continue
+    if (notifiedIds.has(assigneeDbId)) continue
+    if (shouldSkipSelfNotification(actorDbId, assigneeDbId)) continue
+    notifiedIds.add(assigneeDbId)
 
     await createNotification({
-      userId: assignee.id,
+      userId: assigneeDbId,
       type: 'issue',
       action: 'reopened',
-      repositoryId: repository.id,
-      issueId: issue.id,
-      actor
+      repositoryId: dbRepoId,
+      issueId: dbIssueId,
+      actorId: actorDbId
     })
   }
 
   // Notify activity subscribers who are subscribed to this issue
-  const activitySubscribers = await getActivitySubscribersForIssue(repository.id, issue.id)
+  const activitySubscribers = await getActivitySubscribersForIssue(dbRepoId, dbIssueId)
   for (const userId of activitySubscribers) {
     if (notifiedIds.has(userId)) continue
-    if (shouldSkipSelfNotification(actor.id, userId)) continue
+    if (shouldSkipSelfNotification(actorDbId, userId)) continue
     notifiedIds.add(userId)
 
     await createNotification({
       userId,
       type: 'issue',
       action: 'reopened',
-      repositoryId: repository.id,
-      issueId: issue.id,
-      actor
+      repositoryId: dbRepoId,
+      issueId: dbIssueId,
+      actorId: actorDbId
     })
   }
 }
@@ -371,47 +464,71 @@ export async function notifyIssueComment(
   repository: GitHubRepository,
   actor: GitHubUser
 ) {
+  // Get internal repository ID
+  const dbRepoId = await getDbRepositoryId(repository.id)
+  if (!dbRepoId) return
+
+  // Look up the database issue ID
+  const dbIssueId = await getDbIssueId(dbRepoId, issue.number)
+  if (!dbIssueId) {
+    console.warn(`[notifications] Issue #${issue.number} not found in DB, skipping comment notification`)
+    return
+  }
+
+  // Get actor's internal ID
+  const actorDbId = await ensureUser({
+    id: actor.id,
+    login: actor.login,
+    avatar_url: actor.avatar_url
+  })
+  if (!actorDbId) return
+
   const notifiedIds = new Set<number>()
 
   // Notify issue author
-  if (issue.user && !shouldSkipSelfNotification(actor.id, issue.user.id)) {
-    notifiedIds.add(issue.user.id)
-    await createNotification({
-      userId: issue.user.id,
-      type: 'issue',
-      action: 'comment',
-      body: truncate(comment.body, 200),
-      repositoryId: repository.id,
-      issueId: issue.id,
-      actor
-    })
+  if (issue.user) {
+    const authorDbId = await getDbUserId(issue.user.id)
+    if (authorDbId && !shouldSkipSelfNotification(actorDbId, authorDbId)) {
+      notifiedIds.add(authorDbId)
+      await createNotification({
+        userId: authorDbId,
+        type: 'issue',
+        action: 'comment',
+        body: truncate(comment.body, 200),
+        repositoryId: dbRepoId,
+        issueId: dbIssueId,
+        actorId: actorDbId
+      })
+    }
   }
 
   // Notify assignees
   for (const assignee of issue.assignees || []) {
-    if (notifiedIds.has(assignee.id)) continue
-    if (shouldSkipSelfNotification(actor.id, assignee.id)) continue
-    notifiedIds.add(assignee.id)
+    const assigneeDbId = await getDbUserId(assignee.id)
+    if (!assigneeDbId) continue
+    if (notifiedIds.has(assigneeDbId)) continue
+    if (shouldSkipSelfNotification(actorDbId, assigneeDbId)) continue
+    notifiedIds.add(assigneeDbId)
 
     await createNotification({
-      userId: assignee.id,
+      userId: assigneeDbId,
       type: 'issue',
       action: 'comment',
       body: truncate(comment.body, 200),
-      repositoryId: repository.id,
-      issueId: issue.id,
-      actor
+      repositoryId: dbRepoId,
+      issueId: dbIssueId,
+      actorId: actorDbId
     })
   }
 
   // Notify mentioned users (who have mentions enabled)
   const mentionedUserIds = await getMentionedUserIds(comment.body)
-  const mentionSubscribers = await getSubscribers(repository.id, 'mentions')
+  const mentionSubscribers = await getSubscribers(dbRepoId, 'mentions')
   const mentionSubscriberIds = new Set(mentionSubscribers.map(s => s.userId))
 
   for (const userId of mentionedUserIds) {
     if (notifiedIds.has(userId)) continue
-    if (shouldSkipSelfNotification(actor.id, userId)) continue
+    if (shouldSkipSelfNotification(actorDbId, userId)) continue
     if (!mentionSubscriberIds.has(userId)) continue
     notifiedIds.add(userId)
 
@@ -420,17 +537,17 @@ export async function notifyIssueComment(
       type: 'issue',
       action: 'mentioned',
       body: truncate(comment.body, 200),
-      repositoryId: repository.id,
-      issueId: issue.id,
-      actor
+      repositoryId: dbRepoId,
+      issueId: dbIssueId,
+      actorId: actorDbId
     })
   }
 
   // Notify activity subscribers who are subscribed to this issue
-  const activitySubscribers = await getActivitySubscribersForIssue(repository.id, issue.id)
+  const activitySubscribers = await getActivitySubscribersForIssue(dbRepoId, dbIssueId)
   for (const userId of activitySubscribers) {
     if (notifiedIds.has(userId)) continue
-    if (shouldSkipSelfNotification(actor.id, userId)) continue
+    if (shouldSkipSelfNotification(actorDbId, userId)) continue
     notifiedIds.add(userId)
 
     await createNotification({
@@ -438,9 +555,9 @@ export async function notifyIssueComment(
       type: 'issue',
       action: 'comment',
       body: truncate(comment.body, 200),
-      repositoryId: repository.id,
-      issueId: issue.id,
-      actor
+      repositoryId: dbRepoId,
+      issueId: dbIssueId,
+      actorId: actorDbId
     })
   }
 }
@@ -454,32 +571,51 @@ export async function notifyPROpened(
   repository: GitHubRepository,
   actor: GitHubUser
 ) {
+  // Get internal repository ID
+  const dbRepoId = await getDbRepositoryId(repository.id)
+  if (!dbRepoId) return
+
+  // Look up the database issue ID
+  const dbIssueId = await getDbIssueId(dbRepoId, pullRequest.number)
+  if (!dbIssueId) {
+    console.warn(`[notifications] PR #${pullRequest.number} not found in DB, skipping opened notification`)
+    return
+  }
+
+  // Get actor's internal ID
+  const actorDbId = await ensureUser({
+    id: actor.id,
+    login: actor.login,
+    avatar_url: actor.avatar_url
+  })
+  if (!actorDbId) return
+
   const notifiedIds = new Set<number>()
 
   // Notify subscribers who want PR notifications
-  const subscribers = await getSubscribers(repository.id, 'pullRequests')
+  const subscribers = await getSubscribers(dbRepoId, 'pullRequests')
   for (const subscriber of subscribers) {
-    if (shouldSkipSelfNotification(actor.id, subscriber.userId)) continue
+    if (shouldSkipSelfNotification(actorDbId, subscriber.userId)) continue
     notifiedIds.add(subscriber.userId)
 
     await createNotification({
       userId: subscriber.userId,
       type: 'pull_request',
       action: 'opened',
-      repositoryId: repository.id,
-      issueId: pullRequest.id,
-      actor
+      repositoryId: dbRepoId,
+      issueId: dbIssueId,
+      actorId: actorDbId
     })
   }
 
   // Notify mentioned users (who have mentions enabled)
   const mentionedUserIds = await getMentionedUserIds(pullRequest.body)
-  const mentionSubscribers = await getSubscribers(repository.id, 'mentions')
+  const mentionSubscribers = await getSubscribers(dbRepoId, 'mentions')
   const mentionSubscriberIds = new Set(mentionSubscribers.map(s => s.userId))
 
   for (const userId of mentionedUserIds) {
     if (notifiedIds.has(userId)) continue
-    if (shouldSkipSelfNotification(actor.id, userId)) continue
+    if (shouldSkipSelfNotification(actorDbId, userId)) continue
     if (!mentionSubscriberIds.has(userId)) continue
     notifiedIds.add(userId)
 
@@ -487,9 +623,9 @@ export async function notifyPROpened(
       userId,
       type: 'pull_request',
       action: 'mentioned',
-      repositoryId: repository.id,
-      issueId: pullRequest.id,
-      actor
+      repositoryId: dbRepoId,
+      issueId: dbIssueId,
+      actorId: actorDbId
     })
   }
 }
@@ -499,51 +635,75 @@ export async function notifyPRReopened(
   repository: GitHubRepository,
   actor: GitHubUser
 ) {
+  // Get internal repository ID
+  const dbRepoId = await getDbRepositoryId(repository.id)
+  if (!dbRepoId) return
+
+  // Look up the database issue ID
+  const dbIssueId = await getDbIssueId(dbRepoId, pullRequest.number)
+  if (!dbIssueId) {
+    console.warn(`[notifications] PR #${pullRequest.number} not found in DB, skipping reopened notification`)
+    return
+  }
+
+  // Get actor's internal ID
+  const actorDbId = await ensureUser({
+    id: actor.id,
+    login: actor.login,
+    avatar_url: actor.avatar_url
+  })
+  if (!actorDbId) return
+
   const notifiedIds = new Set<number>()
 
   // Notify PR author
-  if (pullRequest.user && !shouldSkipSelfNotification(actor.id, pullRequest.user.id)) {
-    notifiedIds.add(pullRequest.user.id)
-    await createNotification({
-      userId: pullRequest.user.id,
-      type: 'pull_request',
-      action: 'reopened',
-      repositoryId: repository.id,
-      issueId: pullRequest.id,
-      actor
-    })
+  if (pullRequest.user) {
+    const authorDbId = await getDbUserId(pullRequest.user.id)
+    if (authorDbId && !shouldSkipSelfNotification(actorDbId, authorDbId)) {
+      notifiedIds.add(authorDbId)
+      await createNotification({
+        userId: authorDbId,
+        type: 'pull_request',
+        action: 'reopened',
+        repositoryId: dbRepoId,
+        issueId: dbIssueId,
+        actorId: actorDbId
+      })
+    }
   }
 
   // Notify assignees
   for (const assignee of pullRequest.assignees || []) {
-    if (notifiedIds.has(assignee.id)) continue
-    if (shouldSkipSelfNotification(actor.id, assignee.id)) continue
-    notifiedIds.add(assignee.id)
+    const assigneeDbId = await getDbUserId(assignee.id)
+    if (!assigneeDbId) continue
+    if (notifiedIds.has(assigneeDbId)) continue
+    if (shouldSkipSelfNotification(actorDbId, assigneeDbId)) continue
+    notifiedIds.add(assigneeDbId)
 
     await createNotification({
-      userId: assignee.id,
+      userId: assigneeDbId,
       type: 'pull_request',
       action: 'reopened',
-      repositoryId: repository.id,
-      issueId: pullRequest.id,
-      actor
+      repositoryId: dbRepoId,
+      issueId: dbIssueId,
+      actorId: actorDbId
     })
   }
 
   // Notify activity subscribers who are subscribed to this PR
-  const activitySubscribers = await getActivitySubscribersForIssue(repository.id, pullRequest.id)
+  const activitySubscribers = await getActivitySubscribersForIssue(dbRepoId, dbIssueId)
   for (const userId of activitySubscribers) {
     if (notifiedIds.has(userId)) continue
-    if (shouldSkipSelfNotification(actor.id, userId)) continue
+    if (shouldSkipSelfNotification(actorDbId, userId)) continue
     notifiedIds.add(userId)
 
     await createNotification({
       userId,
       type: 'pull_request',
       action: 'reopened',
-      repositoryId: repository.id,
-      issueId: pullRequest.id,
-      actor
+      repositoryId: dbRepoId,
+      issueId: dbIssueId,
+      actorId: actorDbId
     })
   }
 }
@@ -554,16 +714,42 @@ export async function notifyPRAssigned(
   assignee: GitHubUser,
   actor: GitHubUser
 ) {
+  // Get internal repository ID
+  const dbRepoId = await getDbRepositoryId(repository.id)
+  if (!dbRepoId) return
+
+  // Get internal user IDs
+  const actorDbId = await ensureUser({
+    id: actor.id,
+    login: actor.login,
+    avatar_url: actor.avatar_url
+  })
+  if (!actorDbId) return
+
+  const assigneeDbId = await ensureUser({
+    id: assignee.id,
+    login: assignee.login,
+    avatar_url: assignee.avatar_url
+  })
+  if (!assigneeDbId) return
+
   // Don't notify if user assigned themselves - except in dev
-  if (shouldSkipSelfNotification(actor.id, assignee.id)) return
+  if (shouldSkipSelfNotification(actorDbId, assigneeDbId)) return
+
+  // Look up the database issue ID
+  const dbIssueId = await getDbIssueId(dbRepoId, pullRequest.number)
+  if (!dbIssueId) {
+    console.warn(`[notifications] PR #${pullRequest.number} not found in DB, skipping assigned notification`)
+    return
+  }
 
   await createNotification({
-    userId: assignee.id,
+    userId: assigneeDbId,
     type: 'pull_request',
     action: 'assigned',
-    repositoryId: repository.id,
-    issueId: pullRequest.id,
-    actor
+    repositoryId: dbRepoId,
+    issueId: dbIssueId,
+    actorId: actorDbId
   })
 }
 
@@ -573,16 +759,42 @@ export async function notifyPRReviewRequested(
   reviewer: GitHubUser,
   actor: GitHubUser
 ) {
+  // Get internal repository ID
+  const dbRepoId = await getDbRepositoryId(repository.id)
+  if (!dbRepoId) return
+
+  // Get internal user IDs
+  const actorDbId = await ensureUser({
+    id: actor.id,
+    login: actor.login,
+    avatar_url: actor.avatar_url
+  })
+  if (!actorDbId) return
+
+  const reviewerDbId = await ensureUser({
+    id: reviewer.id,
+    login: reviewer.login,
+    avatar_url: reviewer.avatar_url
+  })
+  if (!reviewerDbId) return
+
   // Don't notify if user requested review from themselves - except in dev
-  if (shouldSkipSelfNotification(actor.id, reviewer.id)) return
+  if (shouldSkipSelfNotification(actorDbId, reviewerDbId)) return
+
+  // Look up the database issue ID
+  const dbIssueId = await getDbIssueId(dbRepoId, pullRequest.number)
+  if (!dbIssueId) {
+    console.warn(`[notifications] PR #${pullRequest.number} not found in DB, skipping review_requested notification`)
+    return
+  }
 
   await createNotification({
-    userId: reviewer.id,
+    userId: reviewerDbId,
     type: 'pull_request',
     action: 'review_requested',
-    repositoryId: repository.id,
-    issueId: pullRequest.id,
-    actor
+    repositoryId: dbRepoId,
+    issueId: dbIssueId,
+    actorId: actorDbId
   })
 }
 
@@ -593,17 +805,39 @@ export async function notifyPRReadyForReview(
 ) {
   // Notify requested reviewers that the PR is ready
   const requestedReviewers = pullRequest.requested_reviewers || []
+  if (requestedReviewers.length === 0) return
+
+  // Get internal repository ID
+  const dbRepoId = await getDbRepositoryId(repository.id)
+  if (!dbRepoId) return
+
+  // Look up the database issue ID
+  const dbIssueId = await getDbIssueId(dbRepoId, pullRequest.number)
+  if (!dbIssueId) {
+    console.warn(`[notifications] PR #${pullRequest.number} not found in DB, skipping ready_for_review notification`)
+    return
+  }
+
+  // Get actor's internal ID
+  const actorDbId = await ensureUser({
+    id: actor.id,
+    login: actor.login,
+    avatar_url: actor.avatar_url
+  })
+  if (!actorDbId) return
 
   for (const reviewer of requestedReviewers) {
-    if (shouldSkipSelfNotification(actor.id, reviewer.id)) continue
+    const reviewerDbId = await getDbUserId(reviewer.id)
+    if (!reviewerDbId) continue
+    if (shouldSkipSelfNotification(actorDbId, reviewerDbId)) continue
 
     await createNotification({
-      userId: reviewer.id,
+      userId: reviewerDbId,
       type: 'pull_request',
       action: 'ready_for_review',
-      repositoryId: repository.id,
-      issueId: pullRequest.id,
-      actor
+      repositoryId: dbRepoId,
+      issueId: dbIssueId,
+      actorId: actorDbId
     })
   }
 }
@@ -616,15 +850,37 @@ export async function notifyPRReviewDismissed(
 ) {
   // Notify the reviewer whose review was dismissed
   if (!review.user) return
-  if (shouldSkipSelfNotification(actor.id, review.user.id)) return
+
+  // Get internal repository ID
+  const dbRepoId = await getDbRepositoryId(repository.id)
+  if (!dbRepoId) return
+
+  // Get internal user IDs
+  const actorDbId = await ensureUser({
+    id: actor.id,
+    login: actor.login,
+    avatar_url: actor.avatar_url
+  })
+  if (!actorDbId) return
+
+  const reviewerDbId = await getDbUserId(review.user.id)
+  if (!reviewerDbId) return
+  if (shouldSkipSelfNotification(actorDbId, reviewerDbId)) return
+
+  // Look up the database issue ID
+  const dbIssueId = await getDbIssueId(dbRepoId, pullRequest.number)
+  if (!dbIssueId) {
+    console.warn(`[notifications] PR #${pullRequest.number} not found in DB, skipping review_dismissed notification`)
+    return
+  }
 
   await createNotification({
-    userId: review.user.id,
+    userId: reviewerDbId,
     type: 'pull_request',
     action: 'review_dismissed',
-    repositoryId: repository.id,
-    issueId: pullRequest.id,
-    actor
+    repositoryId: dbRepoId,
+    issueId: dbIssueId,
+    actorId: actorDbId
   })
 }
 
@@ -634,30 +890,52 @@ export async function notifyPRReviewSubmitted(
   repository: GitHubRepository,
   actor: GitHubUser
 ) {
+  // Get internal repository ID
+  const dbRepoId = await getDbRepositoryId(repository.id)
+  if (!dbRepoId) return
+
+  // Look up the database issue ID
+  const dbIssueId = await getDbIssueId(dbRepoId, pullRequest.number)
+  if (!dbIssueId) {
+    console.warn(`[notifications] PR #${pullRequest.number} not found in DB, skipping review notification`)
+    return
+  }
+
+  // Get actor's internal ID
+  const actorDbId = await ensureUser({
+    id: actor.id,
+    login: actor.login,
+    avatar_url: actor.avatar_url
+  })
+  if (!actorDbId) return
+
   const notifiedIds = new Set<number>()
 
   // Notify PR author
-  if (pullRequest.user && !shouldSkipSelfNotification(actor.id, pullRequest.user.id)) {
-    notifiedIds.add(pullRequest.user.id)
-    await createNotification({
-      userId: pullRequest.user.id,
-      type: 'pull_request',
-      action: 'review_submitted',
-      body: truncate(review.body, 200),
-      repositoryId: repository.id,
-      issueId: pullRequest.id,
-      actor
-    })
+  if (pullRequest.user) {
+    const authorDbId = await getDbUserId(pullRequest.user.id)
+    if (authorDbId && !shouldSkipSelfNotification(actorDbId, authorDbId)) {
+      notifiedIds.add(authorDbId)
+      await createNotification({
+        userId: authorDbId,
+        type: 'pull_request',
+        action: 'review_submitted',
+        body: truncate(review.body, 200),
+        repositoryId: dbRepoId,
+        issueId: dbIssueId,
+        actorId: actorDbId
+      })
+    }
   }
 
   // Notify mentioned users in review body (who have mentions enabled)
   const mentionedUserIds = await getMentionedUserIds(review.body)
-  const mentionSubscribers = await getSubscribers(repository.id, 'mentions')
+  const mentionSubscribers = await getSubscribers(dbRepoId, 'mentions')
   const mentionSubscriberIds = new Set(mentionSubscribers.map(s => s.userId))
 
   for (const userId of mentionedUserIds) {
     if (notifiedIds.has(userId)) continue
-    if (shouldSkipSelfNotification(actor.id, userId)) continue
+    if (shouldSkipSelfNotification(actorDbId, userId)) continue
     if (!mentionSubscriberIds.has(userId)) continue
     notifiedIds.add(userId)
 
@@ -666,17 +944,17 @@ export async function notifyPRReviewSubmitted(
       type: 'pull_request',
       action: 'mentioned',
       body: truncate(review.body, 200),
-      repositoryId: repository.id,
-      issueId: pullRequest.id,
-      actor
+      repositoryId: dbRepoId,
+      issueId: dbIssueId,
+      actorId: actorDbId
     })
   }
 
   // Notify activity subscribers who are subscribed to this PR
-  const activitySubscribers = await getActivitySubscribersForIssue(repository.id, pullRequest.id)
+  const activitySubscribers = await getActivitySubscribersForIssue(dbRepoId, dbIssueId)
   for (const userId of activitySubscribers) {
     if (notifiedIds.has(userId)) continue
-    if (shouldSkipSelfNotification(actor.id, userId)) continue
+    if (shouldSkipSelfNotification(actorDbId, userId)) continue
     notifiedIds.add(userId)
 
     await createNotification({
@@ -684,9 +962,9 @@ export async function notifyPRReviewSubmitted(
       type: 'pull_request',
       action: 'review_submitted',
       body: truncate(review.body, 200),
-      repositoryId: repository.id,
-      issueId: pullRequest.id,
-      actor
+      repositoryId: dbRepoId,
+      issueId: dbIssueId,
+      actorId: actorDbId
     })
   }
 }
@@ -697,47 +975,71 @@ export async function notifyPRComment(
   repository: GitHubRepository,
   actor: GitHubUser
 ) {
+  // Get internal repository ID
+  const dbRepoId = await getDbRepositoryId(repository.id)
+  if (!dbRepoId) return
+
+  // Look up the database issue ID
+  const dbIssueId = await getDbIssueId(dbRepoId, pullRequest.number)
+  if (!dbIssueId) {
+    console.warn(`[notifications] PR #${pullRequest.number} not found in DB, skipping comment notification`)
+    return
+  }
+
+  // Get actor's internal ID
+  const actorDbId = await ensureUser({
+    id: actor.id,
+    login: actor.login,
+    avatar_url: actor.avatar_url
+  })
+  if (!actorDbId) return
+
   const notifiedIds = new Set<number>()
 
   // Notify PR author
-  if (pullRequest.user && !shouldSkipSelfNotification(actor.id, pullRequest.user.id)) {
-    notifiedIds.add(pullRequest.user.id)
-    await createNotification({
-      userId: pullRequest.user.id,
-      type: 'pull_request',
-      action: 'comment',
-      body: truncate(comment.body, 200),
-      repositoryId: repository.id,
-      issueId: pullRequest.id,
-      actor
-    })
+  if (pullRequest.user) {
+    const authorDbId = await getDbUserId(pullRequest.user.id)
+    if (authorDbId && !shouldSkipSelfNotification(actorDbId, authorDbId)) {
+      notifiedIds.add(authorDbId)
+      await createNotification({
+        userId: authorDbId,
+        type: 'pull_request',
+        action: 'comment',
+        body: truncate(comment.body, 200),
+        repositoryId: dbRepoId,
+        issueId: dbIssueId,
+        actorId: actorDbId
+      })
+    }
   }
 
   // Notify assignees
   for (const assignee of pullRequest.assignees || []) {
-    if (notifiedIds.has(assignee.id)) continue
-    if (shouldSkipSelfNotification(actor.id, assignee.id)) continue
-    notifiedIds.add(assignee.id)
+    const assigneeDbId = await getDbUserId(assignee.id)
+    if (!assigneeDbId) continue
+    if (notifiedIds.has(assigneeDbId)) continue
+    if (shouldSkipSelfNotification(actorDbId, assigneeDbId)) continue
+    notifiedIds.add(assigneeDbId)
 
     await createNotification({
-      userId: assignee.id,
+      userId: assigneeDbId,
       type: 'pull_request',
       action: 'comment',
       body: truncate(comment.body, 200),
-      repositoryId: repository.id,
-      issueId: pullRequest.id,
-      actor
+      repositoryId: dbRepoId,
+      issueId: dbIssueId,
+      actorId: actorDbId
     })
   }
 
   // Notify mentioned users (who have mentions enabled)
   const mentionedUserIds = await getMentionedUserIds(comment.body)
-  const mentionSubscribers = await getSubscribers(repository.id, 'mentions')
+  const mentionSubscribers = await getSubscribers(dbRepoId, 'mentions')
   const mentionSubscriberIds = new Set(mentionSubscribers.map(s => s.userId))
 
   for (const userId of mentionedUserIds) {
     if (notifiedIds.has(userId)) continue
-    if (shouldSkipSelfNotification(actor.id, userId)) continue
+    if (shouldSkipSelfNotification(actorDbId, userId)) continue
     if (!mentionSubscriberIds.has(userId)) continue
     notifiedIds.add(userId)
 
@@ -746,17 +1048,17 @@ export async function notifyPRComment(
       type: 'pull_request',
       action: 'mentioned',
       body: truncate(comment.body, 200),
-      repositoryId: repository.id,
-      issueId: pullRequest.id,
-      actor
+      repositoryId: dbRepoId,
+      issueId: dbIssueId,
+      actorId: actorDbId
     })
   }
 
   // Notify activity subscribers who are subscribed to this PR
-  const activitySubscribers = await getActivitySubscribersForIssue(repository.id, pullRequest.id)
+  const activitySubscribers = await getActivitySubscribersForIssue(dbRepoId, dbIssueId)
   for (const userId of activitySubscribers) {
     if (notifiedIds.has(userId)) continue
-    if (shouldSkipSelfNotification(actor.id, userId)) continue
+    if (shouldSkipSelfNotification(actorDbId, userId)) continue
     notifiedIds.add(userId)
 
     await createNotification({
@@ -764,9 +1066,9 @@ export async function notifyPRComment(
       type: 'pull_request',
       action: 'comment',
       body: truncate(comment.body, 200),
-      repositoryId: repository.id,
-      issueId: pullRequest.id,
-      actor
+      repositoryId: dbRepoId,
+      issueId: dbIssueId,
+      actorId: actorDbId
     })
   }
 }
@@ -776,51 +1078,75 @@ export async function notifyPRMerged(
   repository: GitHubRepository,
   actor: GitHubUser
 ) {
+  // Get internal repository ID
+  const dbRepoId = await getDbRepositoryId(repository.id)
+  if (!dbRepoId) return
+
+  // Look up the database issue ID
+  const dbIssueId = await getDbIssueId(dbRepoId, pullRequest.number)
+  if (!dbIssueId) {
+    console.warn(`[notifications] PR #${pullRequest.number} not found in DB, skipping merged notification`)
+    return
+  }
+
+  // Get actor's internal ID
+  const actorDbId = await ensureUser({
+    id: actor.id,
+    login: actor.login,
+    avatar_url: actor.avatar_url
+  })
+  if (!actorDbId) return
+
   const notifiedIds = new Set<number>()
 
   // Notify PR author
-  if (pullRequest.user && !shouldSkipSelfNotification(actor.id, pullRequest.user.id)) {
-    notifiedIds.add(pullRequest.user.id)
-    await createNotification({
-      userId: pullRequest.user.id,
-      type: 'pull_request',
-      action: 'merged',
-      repositoryId: repository.id,
-      issueId: pullRequest.id,
-      actor
-    })
+  if (pullRequest.user) {
+    const authorDbId = await getDbUserId(pullRequest.user.id)
+    if (authorDbId && !shouldSkipSelfNotification(actorDbId, authorDbId)) {
+      notifiedIds.add(authorDbId)
+      await createNotification({
+        userId: authorDbId,
+        type: 'pull_request',
+        action: 'merged',
+        repositoryId: dbRepoId,
+        issueId: dbIssueId,
+        actorId: actorDbId
+      })
+    }
   }
 
   // Notify assignees
   for (const assignee of pullRequest.assignees || []) {
-    if (notifiedIds.has(assignee.id)) continue
-    if (shouldSkipSelfNotification(actor.id, assignee.id)) continue
-    notifiedIds.add(assignee.id)
+    const assigneeDbId = await getDbUserId(assignee.id)
+    if (!assigneeDbId) continue
+    if (notifiedIds.has(assigneeDbId)) continue
+    if (shouldSkipSelfNotification(actorDbId, assigneeDbId)) continue
+    notifiedIds.add(assigneeDbId)
 
     await createNotification({
-      userId: assignee.id,
+      userId: assigneeDbId,
       type: 'pull_request',
       action: 'merged',
-      repositoryId: repository.id,
-      issueId: pullRequest.id,
-      actor
+      repositoryId: dbRepoId,
+      issueId: dbIssueId,
+      actorId: actorDbId
     })
   }
 
   // Notify activity subscribers who are subscribed to this PR
-  const activitySubscribers = await getActivitySubscribersForIssue(repository.id, pullRequest.id)
+  const activitySubscribers = await getActivitySubscribersForIssue(dbRepoId, dbIssueId)
   for (const userId of activitySubscribers) {
     if (notifiedIds.has(userId)) continue
-    if (shouldSkipSelfNotification(actor.id, userId)) continue
+    if (shouldSkipSelfNotification(actorDbId, userId)) continue
     notifiedIds.add(userId)
 
     await createNotification({
       userId,
       type: 'pull_request',
       action: 'merged',
-      repositoryId: repository.id,
-      issueId: pullRequest.id,
-      actor
+      repositoryId: dbRepoId,
+      issueId: dbIssueId,
+      actorId: actorDbId
     })
   }
 }
@@ -833,51 +1159,75 @@ export async function notifyPRClosed(
   // Don't notify if merged (separate notification)
   if (pullRequest.merged) return
 
+  // Get internal repository ID
+  const dbRepoId = await getDbRepositoryId(repository.id)
+  if (!dbRepoId) return
+
+  // Look up the database issue ID
+  const dbIssueId = await getDbIssueId(dbRepoId, pullRequest.number)
+  if (!dbIssueId) {
+    console.warn(`[notifications] PR #${pullRequest.number} not found in DB, skipping closed notification`)
+    return
+  }
+
+  // Get actor's internal ID
+  const actorDbId = await ensureUser({
+    id: actor.id,
+    login: actor.login,
+    avatar_url: actor.avatar_url
+  })
+  if (!actorDbId) return
+
   const notifiedIds = new Set<number>()
 
   // Notify PR author
-  if (pullRequest.user && !shouldSkipSelfNotification(actor.id, pullRequest.user.id)) {
-    notifiedIds.add(pullRequest.user.id)
-    await createNotification({
-      userId: pullRequest.user.id,
-      type: 'pull_request',
-      action: 'closed',
-      repositoryId: repository.id,
-      issueId: pullRequest.id,
-      actor
-    })
+  if (pullRequest.user) {
+    const authorDbId = await getDbUserId(pullRequest.user.id)
+    if (authorDbId && !shouldSkipSelfNotification(actorDbId, authorDbId)) {
+      notifiedIds.add(authorDbId)
+      await createNotification({
+        userId: authorDbId,
+        type: 'pull_request',
+        action: 'closed',
+        repositoryId: dbRepoId,
+        issueId: dbIssueId,
+        actorId: actorDbId
+      })
+    }
   }
 
   // Notify assignees
   for (const assignee of pullRequest.assignees || []) {
-    if (notifiedIds.has(assignee.id)) continue
-    if (shouldSkipSelfNotification(actor.id, assignee.id)) continue
-    notifiedIds.add(assignee.id)
+    const assigneeDbId = await getDbUserId(assignee.id)
+    if (!assigneeDbId) continue
+    if (notifiedIds.has(assigneeDbId)) continue
+    if (shouldSkipSelfNotification(actorDbId, assigneeDbId)) continue
+    notifiedIds.add(assigneeDbId)
 
     await createNotification({
-      userId: assignee.id,
+      userId: assigneeDbId,
       type: 'pull_request',
       action: 'closed',
-      repositoryId: repository.id,
-      issueId: pullRequest.id,
-      actor
+      repositoryId: dbRepoId,
+      issueId: dbIssueId,
+      actorId: actorDbId
     })
   }
 
   // Notify activity subscribers who are subscribed to this PR
-  const activitySubscribers = await getActivitySubscribersForIssue(repository.id, pullRequest.id)
+  const activitySubscribers = await getActivitySubscribersForIssue(dbRepoId, dbIssueId)
   for (const userId of activitySubscribers) {
     if (notifiedIds.has(userId)) continue
-    if (shouldSkipSelfNotification(actor.id, userId)) continue
+    if (shouldSkipSelfNotification(actorDbId, userId)) continue
     notifiedIds.add(userId)
 
     await createNotification({
       userId,
       type: 'pull_request',
       action: 'closed',
-      repositoryId: repository.id,
-      issueId: pullRequest.id,
-      actor
+      repositoryId: dbRepoId,
+      issueId: dbIssueId,
+      actorId: actorDbId
     })
   }
 }
@@ -891,19 +1241,38 @@ export async function notifyReleasePublished(
   repository: GitHubRepository,
   actor: GitHubUser
 ) {
+  // Get internal repository ID
+  const dbRepoId = await getDbRepositoryId(repository.id)
+  if (!dbRepoId) return
+
+  // Get actor's internal ID
+  const actorDbId = await ensureUser({
+    id: actor.id,
+    login: actor.login,
+    avatar_url: actor.avatar_url
+  })
+  if (!actorDbId) return
+
+  // Get release's internal ID
+  const [dbRelease] = await db
+    .select({ id: schema.releases.id })
+    .from(schema.releases)
+    .where(eq(schema.releases.githubId, release.id))
+  const dbReleaseId = dbRelease?.id
+
   // Notify subscribers who want release notifications
-  const subscribers = await getSubscribers(repository.id, 'releases')
+  const subscribers = await getSubscribers(dbRepoId, 'releases')
   for (const subscriber of subscribers) {
-    if (shouldSkipSelfNotification(actor.id, subscriber.userId)) continue
+    if (shouldSkipSelfNotification(actorDbId, subscriber.userId)) continue
 
     await createNotification({
       userId: subscriber.userId,
       type: 'release',
       action: 'published',
       body: release.name || release.tag_name,
-      repositoryId: repository.id,
-      releaseId: release.id,
-      actor
+      repositoryId: dbRepoId,
+      releaseId: dbReleaseId,
+      actorId: actorDbId
     })
   }
 }
@@ -917,23 +1286,36 @@ export async function notifyWorkflowFailed(
   repository: GitHubRepository,
   actor: GitHubUser
 ) {
+  // Get internal repository ID
+  const dbRepoId = await getDbRepositoryId(repository.id)
+  if (!dbRepoId) return
+
+  // Get actor's internal ID
+  const actorDbId = await ensureUser({
+    id: actor.id,
+    login: actor.login,
+    avatar_url: actor.avatar_url
+  })
+
   // Find the related PR if this workflow was triggered by a pull_request event
   let issueId: number | undefined
-  if (workflowRun.pull_requests?.length) {
-    const prNumber = workflowRun.pull_requests[0].number
-    const [relatedPR] = await db.select({ id: schema.issues.id }).from(schema.issues).where(
-      and(
-        eq(schema.issues.repositoryId, repository.id),
-        eq(schema.issues.number, prNumber)
-      )
-    )
-    if (relatedPR) {
-      issueId = relatedPR.id
+  if (workflowRun.pull_requests?.length && workflowRun.pull_requests.length > 0) {
+    const prNumber = workflowRun.pull_requests[0]!.number
+    const dbIssueId = await getDbIssueId(dbRepoId, prNumber)
+    if (dbIssueId) {
+      issueId = dbIssueId
     }
   }
 
+  // Get workflow run's internal ID
+  const [dbWorkflowRun] = await db
+    .select({ id: schema.workflowRuns.id })
+    .from(schema.workflowRuns)
+    .where(eq(schema.workflowRuns.githubId, workflowRun.id))
+  const dbWorkflowRunId = dbWorkflowRun?.id
+
   // Notify subscribers who want CI failure notifications
-  const subscribers = await getSubscribers(repository.id, 'ci')
+  const subscribers = await getSubscribers(dbRepoId, 'ci')
   for (const subscriber of subscribers) {
     // Don't skip self-notification for CI - you want to know if your own build failed
     await createNotification({
@@ -941,10 +1323,10 @@ export async function notifyWorkflowFailed(
       type: 'workflow_run',
       action: 'failed',
       body: workflowRun.name || workflowRun.display_title || workflowRun.workflow?.name,
-      repositoryId: repository.id,
+      repositoryId: dbRepoId,
       issueId,
-      workflowRunId: workflowRun.id,
-      actor
+      workflowRunId: dbWorkflowRunId,
+      actorId: actorDbId ?? undefined
     })
   }
 }
