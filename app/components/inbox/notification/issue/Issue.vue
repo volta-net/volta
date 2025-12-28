@@ -1,6 +1,15 @@
 <script setup lang="ts">
 import type { Notification } from '#shared/types/notification'
 import type { IssueDetail } from '#shared/types/issue'
+import type { MentionUser } from '~/composables/useEditorMentions'
+
+interface IssueReference {
+  id: number
+  number: number
+  title: string
+  state: string
+  pullRequest: boolean
+}
 
 const props = defineProps<{
   notification: Notification
@@ -12,16 +21,37 @@ const emit = defineEmits<{
 
 const toast = useToast()
 
-// Fetch full issue details (includes isSubscribed)
+// Repository info (reactive)
+const repoFullName = computed(() => props.notification.repository?.fullName)
+const owner = computed(() => repoFullName.value?.split('/')[0])
+const name = computed(() => repoFullName.value?.split('/')[1])
+
+// Fetch full issue details
 const issueUrl = computed(() => {
-  if (!props.notification.repository || !props.notification.issue?.number) return null
-  const [owner, name] = props.notification.repository.fullName.split('/')
-  return `/api/repositories/${owner}/${name}/issues/${props.notification.issue.number}`
+  if (!repoFullName.value || !props.notification.issue?.number) return ''
+  return `/api/repositories/${owner.value}/${name.value}/issues/${props.notification.issue.number}`
 })
-const { data: issue, status, refresh: refreshIssue } = await useLazyFetch<IssueDetail & { isSubscribed: boolean }>(() =>
-  issueUrl.value as string, {
-  watch: [issueUrl],
+const { data: issue, status, refresh: refreshIssue } = await useLazyFetch<IssueDetail & { isSubscribed: boolean }>(issueUrl, {
   immediate: !!issueUrl.value
+})
+
+// Fetch repository collaborators and issues for editor mentions
+const collaboratorsUrl = computed(() => repoFullName.value ? `/api/repositories/${owner.value}/${name.value}/collaborators` : '')
+const { data: collaborators } = await useLazyFetch<MentionUser[]>(collaboratorsUrl, {
+  default: () => [],
+  immediate: !!repoFullName.value
+})
+const issuesUrl = computed(() => repoFullName.value ? `/api/repositories/${owner.value}/${name.value}/issues` : '')
+const { data: repositoryIssues } = await useLazyFetch<IssueReference[]>(issuesUrl, {
+  default: () => [],
+  immediate: !!repoFullName.value
+})
+
+// Refetch issue when notification prop changes (e.g., after inbox refresh)
+watch(() => props.notification, () => {
+  if (issueUrl.value) {
+    refreshIssue()
+  }
 })
 
 // Local subscription state (initialized from issue, updated on toggle)
@@ -159,11 +189,17 @@ async function handleRefresh() {
 
       <!-- <InboxNotificationIssueMeta :issue="issue" /> -->
 
-      <InboxNotificationIssueBody :key="issue.id" :issue="issue" @refresh="handleRefresh" />
+      <InboxNotificationIssueBody
+        :key="issue.id"
+        :issue="issue"
+        :collaborators="collaborators"
+        :repository-issues="repositoryIssues"
+        @refresh="handleRefresh"
+      />
 
       <!-- <InboxNotificationIssueTimeline :issue="issue" /> -->
 
-      <!-- <InboxNotificationIssueCommentForm :issue="issue" @refresh="handleRefresh" /> -->
+      <!-- <InboxNotificationIssueCommentForm :issue="issue" :collaborators="collaborators" :repository-issues="repositoryIssues" @refresh="handleRefresh" /> -->
     </div>
   </template>
 

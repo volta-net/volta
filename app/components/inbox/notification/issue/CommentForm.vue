@@ -1,8 +1,19 @@
 <script setup lang="ts">
 import type { IssueDetail } from '#shared/types/issue'
+import type { MentionUser } from '~/composables/useEditorMentions'
+
+interface IssueReference {
+  id: number
+  number: number
+  title: string
+  state: string
+  pullRequest: boolean
+}
 
 const props = defineProps<{
   issue: IssueDetail
+  collaborators?: MentionUser[]
+  repositoryIssues?: IssueReference[]
 }>()
 
 const emit = defineEmits<{
@@ -42,15 +53,20 @@ async function addComment() {
       <span class="text-sm font-medium">Add a comment</span>
     </div>
     <div class="p-3">
-      <UEditor
-        v-slot="{ editor }"
+      <IssueEditor
         v-model="newComment"
-        content-type="markdown"
+        :issue="issue"
+        :collaborators="collaborators"
+        :repository-issues="repositoryIssues"
+        :bubble-toolbar="false"
         placeholder="Write a comment..."
         class="min-h-24"
       >
-        <UEditorToolbar :editor="editor" :items="editorToolbarItems" class="border-b border-muted mb-2 pb-2" />
-      </UEditor>
+        <template #toolbar="{ editor }">
+          <UEditorToolbar :editor="editor" :items="editorToolbarItems" class="border-b border-muted mb-2 pb-2" />
+        </template>
+      </IssueEditor>
+
       <div class="flex justify-end mt-3">
         <UButton
           label="Comment"

@@ -12,6 +12,11 @@ export default defineAppConfig({
         body: 'sm:p-4'
       }
     },
+    toast: {
+      slots: {
+        close: 'p-0.5'
+      }
+    },
     dashboardPanel: {
       slots: {
         root: 'min-h-[calc(100svh-2rem)]',
