@@ -1,25 +1,41 @@
 import { eq, and } from 'drizzle-orm'
 import { db, schema } from 'hub:db'
 import { Octokit } from 'octokit'
-import { ensureUser } from '../../../utils/users'
-import { getDbLabelId } from '../../../utils/sync'
 
 export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
-  const id = getRouterParam(event, 'id')
+  const owner = getRouterParam(event, 'owner')
+  const name = getRouterParam(event, 'name')
+  const numberParam = getRouterParam(event, 'number')
 
-  if (!id) {
-    throw createError({ statusCode: 400, message: 'Issue ID is required' })
+  if (!owner || !name || !numberParam) {
+    throw createError({ statusCode: 400, message: 'Owner, name, and issue number are required' })
   }
 
-  const issueId = parseInt(id)
-  if (isNaN(issueId)) {
-    throw createError({ statusCode: 400, message: 'Invalid issue ID' })
+  const issueNumber = parseInt(numberParam)
+  if (isNaN(issueNumber)) {
+    throw createError({ statusCode: 400, message: 'Invalid issue number' })
   }
+
+  // Find repository by owner/name
+  const fullName = `${owner}/${name}`
+  const repository = await db.query.repositories.findFirst({
+    where: eq(schema.repositories.fullName, fullName)
+  })
+
+  if (!repository) {
+    throw createError({ statusCode: 404, message: 'Repository not found' })
+  }
+
+  // Check user has access to this repository
+  await requireRepositoryAccess(user.id, repository.id)
 
   // Fetch issue with relations
   const issue = await db.query.issues.findFirst({
-    where: eq(schema.issues.id, issueId),
+    where: and(
+      eq(schema.issues.repositoryId, repository.id),
+      eq(schema.issues.number, issueNumber)
+    ),
     with: {
       repository: true,
       milestone: true,
@@ -67,9 +83,6 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, message: 'Issue not found' })
   }
 
-  // Check user has access to this repository
-  await requireRepositoryAccess(user.id, issue.repositoryId)
-
   // Get valid access token (refreshes if expired)
   const accessToken = await getValidAccessToken(event)
 
@@ -82,14 +95,14 @@ export default defineEventHandler(async (event) => {
     })
     .where(and(
       eq(schema.notifications.userId, user.id),
-      eq(schema.notifications.issueId, issueId),
+      eq(schema.notifications.issueId, issue.id),
       eq(schema.notifications.read, false)
     ))
 
   // Check if user is subscribed to this issue
   const subscription = await db.query.issueSubscriptions.findFirst({
     where: and(
-      eq(schema.issueSubscriptions.issueId, issueId),
+      eq(schema.issueSubscriptions.issueId, issue.id),
       eq(schema.issueSubscriptions.userId, user.id)
     )
   })
@@ -113,7 +126,7 @@ export default defineEventHandler(async (event) => {
 
       // Re-fetch issue with fresh data
       const freshIssue = await db.query.issues.findFirst({
-        where: eq(schema.issues.id, issueId),
+        where: eq(schema.issues.id, issue.id),
         with: {
           repository: true,
           milestone: true,

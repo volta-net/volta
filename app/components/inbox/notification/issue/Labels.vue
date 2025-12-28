@@ -28,18 +28,17 @@ async function fetchLabels() {
 
 async function toggleLabel(label: Label) {
   const hasLabel = selectedLabelIds.value.includes(label.id)
-  const [owner, repo] = props.issue.repository!.fullName.split('/')
+  const [owner, name] = props.issue.repository.fullName.split('/')
 
   try {
     if (hasLabel) {
-      await $fetch(`/api/issues/${props.issue.id}/labels/${label.id}`, {
-        method: 'DELETE',
-        body: { owner, repo, issueNumber: props.issue.number }
+      await $fetch(`/api/repositories/${owner}/${name}/issues/${props.issue.number}/labels/${label.id}`, {
+        method: 'DELETE'
       })
     } else {
-      await $fetch(`/api/issues/${props.issue.id}/labels`, {
+      await $fetch(`/api/repositories/${owner}/${name}/issues/${props.issue.number}/labels`, {
         method: 'POST',
-        body: { labelId: label.id, owner, repo, issueNumber: props.issue.number }
+        body: { labelId: label.id }
       })
     }
     emit('refresh')

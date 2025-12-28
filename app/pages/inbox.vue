@@ -10,9 +10,13 @@ const unreadNotifications = computed(() => notifications.value?.filter(notificat
 
 // Refetch notifications when window gains focus
 const focused = useWindowFocus()
-watch(focused, (isFocused) => {
+watch(focused, async (isFocused) => {
   if (isFocused) {
-    refresh()
+    await refresh()
+    // Sync selectedNotification with refreshed data
+    if (selectedNotification.value) {
+      selectedNotification.value = notifications.value?.find(n => n.id === selectedNotification.value?.id) ?? null
+    }
   }
 })
 

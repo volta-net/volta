@@ -1,6 +1,5 @@
 import { and, inArray, notInArray, eq, desc, ilike, sql, gt, isNull } from 'drizzle-orm'
 import { db, schema } from 'hub:db'
-import { getLinkedPRsForIssues, getCIStatusForPRs } from '../utils/issues'
 
 /**
  * Flexible issues endpoint with query parameter filters

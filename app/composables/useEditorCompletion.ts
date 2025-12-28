@@ -25,7 +25,7 @@ export function useEditorCompletion(editorRef: Ref<{ editor: Editor | undefined 
   }
 
   const { completion, complete, isLoading, stop, setCompletion } = useCompletion({
-    api: options.api || '/api/completion',
+    api: options.api,
     streamProtocol: 'text',
     body: computed(() => ({
       mode: mode.value,

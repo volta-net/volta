@@ -17,7 +17,13 @@ const editorRef = useTemplateRef('editorRef')
 
 const toast = useToast()
 
-const { extension: completionExtension, handlers: aiHandlers, isLoading: aiLoading } = useEditorCompletion(editorRef)
+const {
+  extension: completionExtension,
+  handlers: aiHandlers,
+  isLoading: aiLoading
+} = useEditorCompletion(editorRef, {
+  api: `/api/repositories/${props.issue.repository.fullName}/issues/${props.issue.number}/completion`
+})
 
 // Custom handlers for editor (merged with AI handlers)
 const customHandlers = {
@@ -42,21 +48,24 @@ const extensions = computed(() => [
 ])
 
 const body = ref(props.issue.body || '')
-const isEditing = ref(false)
 const isSaving = ref(false)
 
 watch(() => props.issue.body, (newBody) => {
   body.value = newBody || ''
 })
 
-async function _saveBody() {
+async function saveBody() {
+  if (body.value.trim() === (props.issue.body?.trim() || '')) {
+    return
+  }
+
   isSaving.value = true
 
   try {
-    const [owner, repo] = props.issue.repository!.fullName.split('/')
-    await $fetch(`/api/issues/${props.issue.id}/body`, {
+    const [owner, name] = props.issue.repository.fullName.split('/')
+    await $fetch(`/api/repositories/${owner}/${name}/issues/${props.issue.number}/body`, {
       method: 'PATCH',
-      body: { body: body.value, owner, repo, issueNumber: props.issue.number }
+      body: { body: body.value }
     })
     emit('refresh')
     toast.add({ title: 'Description updated', icon: 'i-lucide-check' })
@@ -64,9 +73,14 @@ async function _saveBody() {
     toast.add({ title: 'Failed to update description', description: err.message, color: 'error', icon: 'i-lucide-x' })
   } finally {
     isSaving.value = false
-    isEditing.value = false
   }
 }
+
+const debouncedSaveBody = useDebounceFn(saveBody, 2000)
+
+watch(body, () => {
+  debouncedSaveBody()
+})
 </script>
 
 <template>
@@ -78,7 +92,11 @@ async function _saveBody() {
     :extensions="extensions"
     content-type="markdown"
     placeholder="Add a description..."
-    :ui="{ base: 'sm:px-0 pb-12' }"
+    :ui="{
+      content: 'flex flex-col',
+      base: 'sm:px-0 pb-12 flex-1'
+    }"
+    class="flex-1"
   >
     <UEditorToolbar
       :editor="editor"

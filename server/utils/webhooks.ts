@@ -220,9 +220,23 @@ async function upsertIssue(item: GitHubIssueOrPR, repositoryId: number, _reposit
   let itemId: number
 
   if (existing) {
+    // Update existing issue - don't change synced status
     await db.update(schema.issues).set(itemData).where(eq(schema.issues.id, existing.id))
     itemId = existing.id
   } else {
+    // NEW issue/PR - determine if we can mark it as synced
+    // Webhooks keep data up-to-date incrementally, so we can skip the initial sync IF:
+    // - It's an OPEN issue/PR with no comments (truly new, no historical data to fetch)
+    // - Closed/merged items synced on-demand may have historical data we need to fetch
+    const isOpen = item.state === 'open'
+    const hasNoComments = (item.comments ?? 0) === 0
+    const canSkipSync = isOpen && hasNoComments
+
+    if (canSkipSync) {
+      itemData.synced = true
+      itemData.syncedAt = new Date()
+    }
+
     // Insert without specifying id - let serial auto-generate it
     const [inserted] = await db.insert(schema.issues).values(itemData).returning({ id: schema.issues.id })
     itemId = inserted!.id
@@ -938,13 +952,12 @@ export async function handleInstallationEvent(action: string, installation: GitH
   }
 }
 
-async function createInstallation(installation: GitHubInstallation, repositories: GitHubInstallationRepository[]) {
+async function createInstallation(installation: GitHubInstallation, _repositories: GitHubInstallationRepository[]) {
   const account = installation.account
 
   // Check if installation exists
   const [existing] = await db.select().from(schema.installations).where(eq(schema.installations.githubId, installation.id))
 
-  let installationId: number
   if (existing) {
     await db.update(schema.installations).set({
       accountLogin: account.login,
@@ -952,54 +965,26 @@ async function createInstallation(installation: GitHubInstallation, repositories
       suspended: false,
       updatedAt: new Date()
     }).where(eq(schema.installations.id, existing.id))
-    installationId = existing.id
   } else {
-    const [inserted] = await db.insert(schema.installations).values({
+    await db.insert(schema.installations).values({
       githubId: installation.id,
       accountId: account.id,
       accountLogin: account.login,
       accountType: account.type,
       avatarUrl: account.avatar_url
-    }).returning({ id: schema.installations.id })
-    installationId = inserted!.id
-  }
-
-  // Create repositories
-  for (const repo of repositories) {
-    const [existingRepo] = await db.select().from(schema.repositories).where(eq(schema.repositories.githubId, repo.id))
-    if (!existingRepo) {
-      await db.insert(schema.repositories).values({
-        githubId: repo.id,
-        installationId,
-        name: repo.name,
-        fullName: repo.full_name,
-        private: repo.private,
-        description: repo.description,
-        htmlUrl: repo.html_url,
-        defaultBranch: repo.default_branch
-      })
-    }
+    })
   }
 }
 
-export async function handleInstallationRepositoriesEvent(action: string, installation: GitHubInstallation, repositoriesAdded?: GitHubInstallationRepository[], repositoriesRemoved?: GitHubInstallationRepository[]) {
+export async function handleInstallationRepositoriesEvent(action: string, installation: GitHubInstallation, _repositoriesAdded?: GitHubInstallationRepository[], repositoriesRemoved?: GitHubInstallationRepository[]) {
   const dbInstallationId = await getDbInstallationId(installation.id)
   if (!dbInstallationId) return
 
   switch (action) {
     case 'added':
-      for (const repo of repositoriesAdded || []) {
-        const [existing] = await db.select().from(schema.repositories).where(eq(schema.repositories.githubId, repo.id))
-        if (!existing) {
-          await db.insert(schema.repositories).values({
-            githubId: repo.id,
-            installationId: dbInstallationId,
-            name: repo.name,
-            fullName: repo.full_name,
-            private: repo.private
-          })
-        }
-      }
+      // Note: We don't create repository records here.
+      // Repositories are only created when the user explicitly imports them via sync.
+      // This ensures proper collaborator access is set up during import.
       break
     case 'removed':
       for (const repo of repositoriesRemoved || []) {

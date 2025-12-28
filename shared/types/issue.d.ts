@@ -34,7 +34,7 @@ export interface Comment extends Pick<DBIssueComment, 'id' | 'body' | 'htmlUrl' 
 // Full issue with all relations populated (for detail views)
 export interface IssueDetail extends Omit<DBIssue, 'repositoryId' | 'milestoneId' | 'typeId' | 'userId' | 'closedById' | 'mergedById' | 'synced'> {
   pullRequest: boolean
-  repository: Repository | null
+  repository: Repository
   milestone: Milestone | null
   type: Type | null
   user: User | null

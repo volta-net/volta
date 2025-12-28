@@ -13,10 +13,15 @@ const emit = defineEmits<{
 const toast = useToast()
 
 // Fetch full issue details (includes isSubscribed)
+const issueUrl = computed(() => {
+  if (!props.notification.repository || !props.notification.issue?.number) return null
+  const [owner, name] = props.notification.repository.fullName.split('/')
+  return `/api/repositories/${owner}/${name}/issues/${props.notification.issue.number}`
+})
 const { data: issue, status, refresh: refreshIssue } = await useLazyFetch<IssueDetail & { isSubscribed: boolean }>(() =>
-  props.notification.issue?.id ? `/api/issues/${props.notification.issue.id}` : null as unknown as string, {
-  watch: [() => props.notification.issue?.id],
-  immediate: !!props.notification.issue?.id
+  issueUrl.value as string, {
+  watch: [issueUrl],
+  immediate: !!issueUrl.value
 })
 
 // Local subscription state (initialized from issue, updated on toggle)
@@ -26,14 +31,14 @@ watch(() => issue.value?.isSubscribed, (val) => {
 }, { immediate: true })
 
 async function toggleSubscription() {
-  if (!issue.value) return
+  if (!issue.value || !issueUrl.value) return
   try {
     if (isSubscribed.value) {
-      await $fetch(`/api/issues/${issue.value.id}/subscription`, { method: 'DELETE' })
+      await $fetch(`${issueUrl.value}/subscription`, { method: 'DELETE' })
       isSubscribed.value = false
       toast.add({ title: 'Unsubscribed from issue', icon: 'i-lucide-bell-off' })
     } else {
-      await $fetch(`/api/issues/${issue.value.id}/subscription`, { method: 'POST' })
+      await $fetch(`${issueUrl.value}/subscription`, { method: 'POST' })
       isSubscribed.value = true
       toast.add({ title: 'Subscribed to issue', icon: 'i-lucide-bell' })
     }
@@ -154,7 +159,7 @@ async function handleRefresh() {
 
       <!-- <InboxNotificationIssueMeta :issue="issue" /> -->
 
-      <InboxNotificationIssueBody :issue="issue" @refresh="handleRefresh" />
+      <InboxNotificationIssueBody :key="issue.id" :issue="issue" @refresh="handleRefresh" />
 
       <!-- <InboxNotificationIssueTimeline :issue="issue" /> -->
 

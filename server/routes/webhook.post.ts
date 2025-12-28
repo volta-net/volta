@@ -1,6 +1,3 @@
-import { getDbRepositoryId, ensureUser } from '../utils/users'
-import { getDbIssueId, subscribeUserToIssue } from '../utils/sync'
-
 export default defineEventHandler(async (event) => {
   const { payload, event: githubEvent, deliveryId } = await parseWebhookEvent(event)
 

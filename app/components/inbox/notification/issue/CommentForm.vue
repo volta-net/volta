@@ -20,10 +20,10 @@ async function addComment() {
 
   isSubmitting.value = true
   try {
-    const [owner, repo] = props.issue.repository!.fullName.split('/')
-    await $fetch(`/api/issues/${props.issue.id}/comments`, {
+    const [owner, name] = props.issue.repository.fullName.split('/')
+    await $fetch(`/api/repositories/${owner}/${name}/issues/${props.issue.number}/comments`, {
       method: 'POST',
-      body: { body: newComment.value, owner, repo, issueNumber: props.issue.number }
+      body: { body: newComment.value }
     })
     newComment.value = ''
     emit('refresh')
