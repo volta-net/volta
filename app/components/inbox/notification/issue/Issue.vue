@@ -118,11 +118,19 @@ async function handleRefresh() {
   await refreshIssue()
   emit('refresh')
 }
+
+defineShortcuts({
+  meta_g: () => {
+    if (props.notification.issue?.htmlUrl) {
+      window.open(props.notification.issue.htmlUrl, '_blank')
+    }
+  }
+})
 </script>
 
 <template>
   <!-- Navbar -->
-  <UDashboardNavbar :title="`#${notification.issue?.number}`" :ui="{ title: 'text-sm font-semibold' }">
+  <UDashboardNavbar :title="`#${notification.issue?.number}`" :ui="{ title: 'text-sm font-medium' }">
     <template v-if="notification.repository" #leading>
       <UButton
         :label="notification.repository.fullName"
@@ -181,13 +189,9 @@ async function handleRefresh() {
   </div>
 
   <!-- Issue/PR View -->
-  <template v-else-if="issue">
-    <div class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 flex flex-col gap-4">
+  <div v-else-if="issue" class="grid grid-cols-3 flex-1 min-h-0">
+    <div class="flex-1 overflow-y-auto p-4 sm:px-6 flex flex-col gap-4 col-span-2">
       <InboxNotificationIssueTitle :issue="issue" @update:title="handleRefresh" />
-
-      <!-- <InboxNotificationIssueLabels :issue="issue" @refresh="handleRefresh" /> -->
-
-      <!-- <InboxNotificationIssueMeta :issue="issue" /> -->
 
       <InboxNotificationIssueBody
         :key="issue.id"
@@ -201,7 +205,11 @@ async function handleRefresh() {
 
       <!-- <InboxNotificationIssueCommentForm :issue="issue" :collaborators="collaborators" :repository-issues="repositoryIssues" @refresh="handleRefresh" /> -->
     </div>
-  </template>
+
+    <div class="border-l border-default overflow-y-auto p-4 sm:px-6">
+      <InboxNotificationIssueMeta :issue="issue" @refresh="handleRefresh" />
+    </div>
+  </div>
 
   <!-- Fallback if issue couldn't be loaded -->
   <div v-else class="flex-1 flex items-center justify-center">

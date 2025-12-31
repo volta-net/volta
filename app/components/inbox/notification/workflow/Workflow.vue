@@ -1,14 +1,22 @@
 <script setup lang="ts">
 import type { Notification } from '#shared/types/notification'
 
-defineProps<{
+const props = defineProps<{
   notification: Notification
 }>()
+
+defineShortcuts({
+  meta_g: () => {
+    if (props.notification.workflowRun?.htmlUrl) {
+      window.open(props.notification.workflowRun.htmlUrl, '_blank')
+    }
+  }
+})
 </script>
 
 <template>
   <!-- Navbar -->
-  <UDashboardNavbar>
+  <UDashboardNavbar :ui="{ title: 'text-sm font-medium' }">
     <template v-if="notification.repository" #leading>
       <UButton
         :label="notification.repository.fullName"
@@ -17,11 +25,17 @@ defineProps<{
         target="_blank"
         color="neutral"
         variant="ghost"
+        class="text-sm/4 text-highlighted -mx-1.5"
+        square
       />
+
+      <UIcon name="i-lucide-chevron-right" class="size-4 text-muted" />
     </template>
+
     <template #title>
       {{ notification.workflowRun?.workflowName || notification.workflowRun?.name }}
     </template>
+
     <template #right>
       <UTooltip text="Open on GitHub" :kbds="['meta', 'g']">
         <UButton

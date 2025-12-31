@@ -44,25 +44,25 @@ function stripMarkdown(text: string | null | undefined): string {
   <div
     class="relative flex items-center gap-2 px-2.5 py-2.5 text-sm cursor-default before:absolute before:z-[-1] before:inset-px before:rounded-md before:transition-colors transition-colors"
     :class="[
-      selected ? 'before:bg-elevated' : 'hover:before:bg-elevated/50'
+      selected ? 'before:bg-elevated' : 'hover:before:bg-elevated/50',
+      notification.read && 'opacity-60'
     ]"
   >
     <!-- Avatar -->
     <UAvatar
-      v-if="notification.actor?.avatarUrl"
-      :src="notification.actor.avatarUrl"
-      :alt="notification.actor.login"
+      :src="notification.actor?.avatarUrl!"
+      :alt="notification.actor?.login"
       size="lg"
       class="shrink-0"
     />
-    <div v-else class="size-10 rounded-full bg-muted shrink-0" />
+    <!-- <div v-else class="size-10 rounded-full bg-muted shrink-0" /> -->
 
     <!-- Content -->
     <div class="flex-1 min-w-0">
       <!-- First line: prefix + title ... state icon -->
       <div class="flex items-center gap-1">
-        <p class="font-medium truncate flex-1" :class="[notification.read && 'opacity-70']">
-          <span v-if="getPrefix(notification)" class="text-muted">{{ getPrefix(notification) }}</span>
+        <p class="font-medium truncate flex-1">
+          <span v-if="getPrefix(notification)">{{ getPrefix(notification) }}</span>
           {{ getTitle(notification) }}
         </p>
         <span v-if="!notification.read" class="size-2 rounded-full bg-primary shrink-0 m-1" />
@@ -74,11 +74,11 @@ function stripMarkdown(text: string | null | undefined): string {
       </div>
 
       <!-- Second line: actor verb body ... repo · time -->
-      <div class="flex items-center gap-1 mt-0.5 text-muted" :class="[notification.read && 'opacity-60']">
+      <div class="flex items-center gap-1 mt-0.5 text-muted">
         <span class="truncate" :title="notification.body ?? undefined">
-          <span v-if="notification.actor" class="text-default">{{ notification.actor.login }}</span>
-          {{ getActionVerb(notification.action) }}
-          <template v-if="notification.action !== 'comment' && getSubjectLabel(notification.type)">{{ getSubjectLabel(notification.type) }}</template>
+          <span v-if="notification.actor && notification.type !== 'workflow_run'" class="text-default">{{ notification.actor.login }}</span>
+          {{ getActionVerb(notification) }}
+          <template v-if="notification.action !== 'comment' && getSubjectLabel(notification.type)"> {{ getSubjectLabel(notification.type) }}</template>
           <template v-if="notification.repository"> in <span class="text-default hover:text-primary transition-colors">{{ notification.repository.fullName }}</span></template>
           <span v-if="notification.action === 'comment' && notification.body">: {{ stripMarkdown(notification.body) }}</span>
         </span>

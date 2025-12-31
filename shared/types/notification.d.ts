@@ -6,7 +6,7 @@ import type { Issue, User } from './issue'
 type NotificationRepository = Pick<Repository, 'id' | 'name' | 'fullName' | 'htmlUrl'>
 type NotificationIssue = Pick<Issue, 'id' | 'pullRequest' | 'number' | 'title' | 'state' | 'stateReason' | 'draft' | 'merged' | 'htmlUrl'>
 type NotificationRelease = Pick<DBRelease, 'id' | 'tagName' | 'name' | 'draft' | 'prerelease' | 'htmlUrl'>
-type NotificationWorkflowRun = Pick<DBWorkflowRun, 'id' | 'name' | 'workflowName' | 'conclusion' | 'htmlUrl'>
+type NotificationWorkflowRun = Pick<DBWorkflowRun, 'id' | 'name' | 'workflowName' | 'headBranch' | 'conclusion' | 'htmlUrl'>
 type NotificationActor = Pick<User, 'id' | 'login' | 'avatarUrl'>
 
 // Notification with populated relations for API responses

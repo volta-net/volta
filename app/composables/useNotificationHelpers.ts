@@ -43,30 +43,40 @@ export function useNotificationHelpers() {
   function getTitle(notification: Notification) {
     const { type } = notification
 
+    // Workflow runs: show PR title if PR-triggered, otherwise branch
+    if (type === 'workflow_run') {
+      if (notification.issue) {
+        return notification.issue.title
+      }
+      return notification.workflowRun?.headBranch || 'Workflow'
+    }
+
+    if (notification.issue) {
+      return notification.issue.title
+    }
+
     if (type === 'release' && notification.release) {
       return notification.release.name || notification.release.tagName
     }
-
-    if (type === 'workflow_run' && notification.workflowRun) {
-      return notification.workflowRun.name || notification.workflowRun.workflowName || 'Workflow'
-    }
-
-    return notification.issue?.title ?? 'Notification'
   }
 
   function getPrefix(notification: Notification) {
     const { type } = notification
 
-    if (type === 'release' && notification.release) {
-      return notification.release.tagName
-    }
-
-    if (type === 'workflow_run' && notification.workflowRun) {
-      return notification.workflowRun.workflowName
+    // Workflow runs: show PR number if PR-triggered, nothing for push-triggered
+    if (type === 'workflow_run') {
+      if (notification.issue) {
+        return `#${notification.issue.number}`
+      }
+      return null
     }
 
     if (notification.issue) {
       return `#${notification.issue.number}`
+    }
+
+    if (type === 'release' && notification.release) {
+      return notification.release.tagName
     }
 
     return null
@@ -107,7 +117,15 @@ export function useNotificationHelpers() {
     }
   }
 
-  function getActionVerb(action: Notification['action']) {
+  function getActionVerb(notification: Notification) {
+    const { action, type, workflowRun } = notification
+
+    // Workflow runs: show workflow name + status
+    if (type === 'workflow_run') {
+      const workflowName = workflowRun?.workflowName || workflowRun?.name || 'Workflow'
+      return action === 'failed' ? `${workflowName} workflow failed` : `${workflowName} workflow succeeded`
+    }
+
     switch (action) {
       case 'opened':
         return 'opened'
@@ -133,10 +151,6 @@ export function useNotificationHelpers() {
         return 'marked as ready for review'
       case 'published':
         return 'published'
-      case 'failed':
-        return 'failed'
-      case 'success':
-        return 'succeeded'
       default:
         return 'updated'
     }
@@ -151,7 +165,8 @@ export function useNotificationHelpers() {
       case 'release':
         return 'release'
       case 'workflow_run':
-        return 'workflow'
+        // Subject is included in the action verb for workflows
+        return null
       default:
         return null
     }

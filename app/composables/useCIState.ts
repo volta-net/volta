@@ -11,31 +11,31 @@ interface CIStateConfig {
 
 const ciStates: Record<string, CIStateConfig> = {
   success: {
-    icon: 'i-octicon-check-circle-fill-16',
+    icon: 'i-octicon-check-circle-16',
     color: 'text-success',
     label: 'Success',
     badgeColor: 'success'
   },
   neutral: {
-    icon: 'i-octicon-check-circle-fill-16',
+    icon: 'i-octicon-check-circle-16',
     color: 'text-success',
     label: 'Success',
     badgeColor: 'success'
   },
   failure: {
-    icon: 'i-octicon-x-circle-fill-16',
+    icon: 'i-octicon-x-circle-16',
     color: 'text-error',
     label: 'Failed',
     badgeColor: 'error'
   },
   timed_out: {
-    icon: 'i-octicon-x-circle-fill-16',
+    icon: 'i-octicon-x-circle-16',
     color: 'text-error',
     label: 'Timed out',
     badgeColor: 'error'
   },
   startup_failure: {
-    icon: 'i-octicon-x-circle-fill-16',
+    icon: 'i-octicon-x-circle-16',
     color: 'text-error',
     label: 'Startup failure',
     badgeColor: 'error'
