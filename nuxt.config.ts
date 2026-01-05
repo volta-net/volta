@@ -60,7 +60,7 @@ export default defineNuxtConfig({
 
   vite: {
     optimizeDeps: {
-      include: ['prosemirror-state']
+      include: ['prosemirror-state', 'prosemirror-gapcursor']
     }
   },
 

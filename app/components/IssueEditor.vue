@@ -2,6 +2,7 @@
 import type { Editor as TiptapEditor } from '@tiptap/vue-3'
 import type { EditorCustomHandlers } from '@nuxt/ui'
 import type { MentionOptions, MentionNodeAttrs } from '@tiptap/extension-mention'
+import { Details, DetailsContent, DetailsSummary } from '@tiptap/extension-details'
 import { mergeAttributes } from '@tiptap/core'
 import ImageUpload from '~/components/editor/ImageUpload'
 import { Emoji } from '@tiptap/extension-emoji'
@@ -229,16 +230,45 @@ const mentionOptions: Partial<MentionOptions<any, MentionNodeAttrs>> = {
 
 // Extensions
 const extensions = computed(() => {
-  const ext = [Emoji, ImageUpload]
+  const ext = [
+    Emoji,
+    ImageUpload,
+    Details.configure({
+      HTMLAttributes: {
+        class: 'details'
+      }
+    }),
+    DetailsSummary,
+    DetailsContent
+  ]
   if (completionEnabled.value) {
     ext.push(Completion as any)
   }
   return ext
 })
 
-// Content model
+/**
+ * Fix <details> HTML blocks in markdown by removing blank lines that break parsing.
+ * Markdown parsers can interrupt HTML blocks on blank lines, causing content to escape.
+ */
+function fixDetailsBlocks(markdown: string): string {
+  // Match <details> blocks and collapse internal blank lines to prevent parser interruption
+  return markdown.replace(
+    /<details([^>]*)>([\s\S]*?)<\/details>/gi,
+    (match, attrs, innerContent) => {
+      // Replace multiple newlines with single newline within the details block
+      // This prevents the markdown parser from breaking out of the HTML block
+      const fixedContent = innerContent
+        .replace(/\n\s*\n/g, '\n') // Collapse blank lines to single newlines
+        .trim()
+      return `<details${attrs}>\n${fixedContent}\n</details>`
+    }
+  )
+}
+
+// Content model - fix details blocks on read
 const content = computed({
-  get: () => props.modelValue,
+  get: () => fixDetailsBlocks(props.modelValue),
   set: (value: string) => emit('update:modelValue', value)
 })
 

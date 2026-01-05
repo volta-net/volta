@@ -35,6 +35,9 @@ importers:
       '@octokit/auth-app':
         specifier: ^8.1.2
         version: 8.1.2
+      '@tiptap/extension-details':
+        specifier: ^3.14.0
+        version: 3.14.0(@tiptap/core@3.14.0(@tiptap/pm@3.14.0))(@tiptap/extension-text-style@3.14.0(@tiptap/core@3.14.0(@tiptap/pm@3.14.0)))(@tiptap/pm@3.14.0)
       '@tiptap/extension-emoji':
         specifier: ^3.14.0
         version: 3.14.0(@tiptap/core@3.14.0(@tiptap/pm@3.14.0))(@tiptap/pm@3.14.0)(@tiptap/suggestion@3.14.0(@tiptap/core@3.14.0(@tiptap/pm@3.14.0))(@tiptap/pm@3.14.0))(emojibase@17.0.0)
@@ -2653,6 +2656,13 @@ packages:
       '@tiptap/y-tiptap': ^3.0.0
       yjs: ^13
 
+  '@tiptap/extension-details@3.14.0':
+    resolution: {integrity: sha512-YJyup+/ejKlikCkyLgClTT3ZidZ1B3/vvveEtIY+veM0aCbnw6HThunZk2U7dPJIpAtP7Qo9emUOSuBBCTENaA==}
+    peerDependencies:
+      '@tiptap/core': ^3.14.0
+      '@tiptap/extension-text-style': ^3.14.0
+      '@tiptap/pm': ^3.14.0
+
   '@tiptap/extension-document@3.14.0':
     resolution: {integrity: sha512-O3D7/GPB3XrWGy0y/b4LMHiY0eTd+dyIbSdiFtmUnbC/E9lqQLw43GiqvD9Gm6AyKhBA+Z45dKMbaOe1c6eTwQ==}
     peerDependencies:
@@ -2777,6 +2787,11 @@ packages:
 
   '@tiptap/extension-strike@3.14.0':
     resolution: {integrity: sha512-R8BbAhnWpisBml6okMKl98hY4tJjedTTgyTkx8tPabIJ92nS9IURKEk3foWB9uHxdTOBUqTvVT+2ScDf9r6QHg==}
+    peerDependencies:
+      '@tiptap/core': ^3.14.0
+
+  '@tiptap/extension-text-style@3.14.0':
+    resolution: {integrity: sha512-YZID7tvcMr5XLdq1PBxpIQi3dZFS2/LRAqIZHJ85FcG0EJkeRdM+y32+DXAWGvbwgAZaZOOvrgOfthQ/oqCdZg==}
     peerDependencies:
       '@tiptap/core': ^3.14.0
 
@@ -10099,6 +10114,12 @@ snapshots:
       '@tiptap/y-tiptap': 3.0.1(prosemirror-model@1.25.4)(prosemirror-state@1.4.4)(prosemirror-view@1.41.4)(y-protocols@1.0.6(yjs@13.6.27))(yjs@13.6.27)
       yjs: 13.6.27
 
+  '@tiptap/extension-details@3.14.0(@tiptap/core@3.14.0(@tiptap/pm@3.14.0))(@tiptap/extension-text-style@3.14.0(@tiptap/core@3.14.0(@tiptap/pm@3.14.0)))(@tiptap/pm@3.14.0)':
+    dependencies:
+      '@tiptap/core': 3.14.0(@tiptap/pm@3.14.0)
+      '@tiptap/extension-text-style': 3.14.0(@tiptap/core@3.14.0(@tiptap/pm@3.14.0))
+      '@tiptap/pm': 3.14.0
+
   '@tiptap/extension-document@3.14.0(@tiptap/core@3.14.0(@tiptap/pm@3.14.0))':
     dependencies:
       '@tiptap/core': 3.14.0(@tiptap/pm@3.14.0)
@@ -10208,6 +10229,10 @@ snapshots:
       '@tiptap/extensions': 3.14.0(@tiptap/core@3.14.0(@tiptap/pm@3.14.0))(@tiptap/pm@3.14.0)
 
   '@tiptap/extension-strike@3.14.0(@tiptap/core@3.14.0(@tiptap/pm@3.14.0))':
+    dependencies:
+      '@tiptap/core': 3.14.0(@tiptap/pm@3.14.0)
+
+  '@tiptap/extension-text-style@3.14.0(@tiptap/core@3.14.0(@tiptap/pm@3.14.0))':
     dependencies:
       '@tiptap/core': 3.14.0(@tiptap/pm@3.14.0)
 
