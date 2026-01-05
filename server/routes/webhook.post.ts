@@ -88,9 +88,11 @@ export default defineEventHandler(async (event) => {
         // Check if this is a PR comment (issue.pull_request exists)
         const isPRComment = !!payload.issue?.pull_request
         if (payload.issue) {
-          if (isPRComment) {
-            await handlePullRequestEvent('edited', payload.issue, payload.repository, payload.installation?.id)
-          } else {
+          // Only update issue metadata for actual issues, NOT for PRs
+          // The issue_comment webhook's `issue` object for PRs is incomplete -
+          // it doesn't have PR-specific fields (merged, merged_at, etc.) and
+          // could have stale state data that would overwrite correct values
+          if (!isPRComment) {
             await handleIssueEvent('edited', payload.issue, payload.repository, payload.installation?.id)
           }
         }
@@ -220,10 +222,10 @@ export default defineEventHandler(async (event) => {
         break
 
       case 'pull_request_review':
-        // Update PR on review activity
-        if (payload.pull_request) {
-          await handlePullRequestEvent('edited', payload.pull_request, payload.repository, payload.installation?.id)
-        }
+        // Note: We intentionally do NOT call handlePullRequestEvent here.
+        // The pull_request object in review events may have stale state data
+        // (e.g., state: 'open' for a merged PR if events arrive out of order).
+        // The main pull_request webhook already handles all PR state updates.
         // Sync the review to our database
         if (payload.review) {
           await handleReviewEvent(
@@ -254,10 +256,9 @@ export default defineEventHandler(async (event) => {
         break
 
       case 'pull_request_review_comment':
-        // Update PR on review activity
-        if (payload.pull_request) {
-          await handlePullRequestEvent('edited', payload.pull_request, payload.repository, payload.installation?.id)
-        }
+        // Note: We intentionally do NOT call handlePullRequestEvent here.
+        // The pull_request object in review comment events may have stale state data.
+        // The main pull_request webhook already handles all PR state updates.
         // Sync the review comment to our database
         if (payload.comment) {
           await handleReviewCommentEvent(
@@ -280,10 +281,9 @@ export default defineEventHandler(async (event) => {
         break
 
       case 'pull_request_review_thread':
-        // Update PR on review activity
-        if (payload.pull_request) {
-          await handlePullRequestEvent('edited', payload.pull_request, payload.repository, payload.installation?.id)
-        }
+        // Note: We intentionally do NOT call handlePullRequestEvent here.
+        // The pull_request object may have stale state data.
+        // The main pull_request webhook already handles all PR state updates.
         break
 
       // Repository events

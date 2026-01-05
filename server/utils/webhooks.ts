@@ -195,7 +195,10 @@ async function upsertIssue(item: GitHubIssueOrPR, repositoryId: number, _reposit
   // PR-specific fields
   if (isPullRequest) {
     itemData.draft = item.draft
-    itemData.merged = item.merged_at !== null || item.merged === true
+    // Only set merged if we have explicit merge data (not undefined from partial payloads)
+    // merged_at being a truthy string means PR is merged
+    // merged being explicitly true also means PR is merged
+    itemData.merged = !!item.merged_at || item.merged === true
     itemData.commits = item.commits
     itemData.additions = item.additions
     itemData.deletions = item.deletions
