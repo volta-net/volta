@@ -30,6 +30,7 @@ watch(selectedNotification, () => {
 })
 
 // Keep selectedNotification in sync with notifications array after refresh
+// Also clean up pendingDeletes for notifications that no longer exist
 watch(() => props.notifications, (newNotifications) => {
   if (selectedNotification.value) {
     const updated = newNotifications.find(n => n.id === selectedNotification.value!.id)
@@ -37,6 +38,10 @@ watch(() => props.notifications, (newNotifications) => {
       selectedNotification.value = updated
     }
   }
+
+  // Remove stale entries from pendingDeletes (notifications that were deleted from server)
+  const notificationIds = new Set(newNotifications.map(n => n.id))
+  pendingDeletes.value = pendingDeletes.value.filter(n => notificationIds.has(n.id))
 }, { deep: true })
 
 // Toggle read/unread
@@ -80,9 +85,13 @@ function deleteNotification() {
   toast.add({
     'id': `notification-deleted-${notification.id}`,
     'title': 'Notification deleted',
-    'description': 'Press Z to undo',
+    'orientation': 'horizontal',
+    'actions': [{
+      label: 'Undo',
+      icon: 'i-lucide-undo',
+      onClick: undoDelete
+    }],
     'icon': 'i-lucide-trash-2',
-    'duration': 5000,
     'onUpdate:open': (open) => {
       if (!open) {
         executeDelete(notification)
@@ -94,16 +103,14 @@ function deleteNotification() {
 // Execute delete for a specific notification
 async function executeDelete(notification: Notification) {
   // Check if still in pending (not undone)
-  const index = pendingDeletes.value.findIndex(n => n.id === notification.id)
-  if (index === -1) return
+  if (!pendingDeletes.value.some(n => n.id === notification.id)) return
 
-  // Delete from server first (keep hidden via pendingDeletes)
+  // Delete from server (keep hidden via pendingDeletes until refresh completes)
   await $fetch(`/api/notifications/${notification.id}`, {
     method: 'DELETE'
   })
 
-  // Now remove from pending - notification is already deleted so no blink
-  pendingDeletes.value.splice(index, 1)
+  // Refresh will update notifications, and the watch will clean up pendingDeletes
   emit('refresh')
 }
 
