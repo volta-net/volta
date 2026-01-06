@@ -53,6 +53,22 @@ async function deleteAllRead() {
   await refresh()
 }
 
+function markAsRead(notificationId: number) {
+  if (!notifications.value) return
+
+  const index = notifications.value.findIndex(n => n.id === notificationId)
+  if (index !== -1) {
+    // Replace the notification object to trigger reactivity
+    const updatedNotification = { ...notifications.value[index], read: true } as Notification
+    notifications.value[index] = updatedNotification
+
+    // Also update selectedNotification if it's the same notification
+    if (selectedNotification.value?.id === notificationId) {
+      selectedNotification.value = updatedNotification
+    }
+  }
+}
+
 useSeoMeta({
   title: () => `Inbox${unreadNotifications.value.length > 0 ? ` (${unreadNotifications.value.length})` : ''}`
 })
@@ -115,6 +131,7 @@ useSeoMeta({
       :notification="selectedNotification"
       @close="selectedNotification = null"
       @refresh="refresh"
+      @read="markAsRead"
     />
   </UDashboardPanel>
 
@@ -123,8 +140,6 @@ useSeoMeta({
       <UEmpty
         icon="i-lucide-inbox"
         :description="unreadNotifications.length > 0 ? `${unreadNotifications.length} unread notification(s)` : 'No notifications yet'"
-        variant="naked"
-        size="lg"
         class="flex-1"
       />
     </template>
@@ -140,6 +155,7 @@ useSeoMeta({
           :notification="selectedNotification"
           @close="selectedNotification = null"
           @refresh="refresh"
+          @read="markAsRead"
         />
       </template>
     </USlideover>

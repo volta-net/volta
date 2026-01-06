@@ -7,6 +7,7 @@ defineProps<{
 
 const emit = defineEmits<{
   (e: 'close' | 'refresh'): void
+  (e: 'read', id: number): void
 }>()
 </script>
 
@@ -17,28 +18,28 @@ const emit = defineEmits<{
       v-if="notification.issue"
       :notification="notification"
       @refresh="emit('refresh')"
+      @read="emit('read', $event)"
     />
 
     <!-- Release -->
     <InboxNotificationRelease
       v-else-if="notification.release"
       :notification="notification"
+      @read="emit('read', $event)"
     />
 
     <!-- Workflow Run -->
     <InboxNotificationWorkflow
       v-else-if="notification.workflowRun"
       :notification="notification"
+      @read="emit('read', $event)"
     />
 
-    <!-- Unknown/Generic notification -->
-    <div v-else class="flex flex-col gap-4 p-4">
-      <p v-if="notification?.body" class="text-muted text-sm">
-        {{ notification.body }}
-      </p>
-      <p v-else class="text-dimmed text-sm">
-        No additional details
-      </p>
-    </div>
+    <UEmpty
+      v-else
+      icon="i-lucide-inbox"
+      description="No additional details"
+      class="flex-1"
+    />
   </div>
 </template>

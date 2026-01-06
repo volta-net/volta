@@ -5,6 +5,21 @@ const props = defineProps<{
   notification: Notification
 }>()
 
+const emit = defineEmits<{
+  (e: 'read', id: number): void
+}>()
+
+// Mark notification as read on mount if unread
+onMounted(async () => {
+  if (!props.notification.read) {
+    await $fetch(`/api/notifications/${props.notification.id}`, {
+      method: 'PATCH',
+      body: { read: true }
+    })
+    emit('read', props.notification.id)
+  }
+})
+
 defineShortcuts({
   meta_g: () => {
     if (props.notification.release?.htmlUrl) {
@@ -15,8 +30,7 @@ defineShortcuts({
 </script>
 
 <template>
-  <!-- Navbar -->
-  <UDashboardNavbar :ui="{ title: 'text-sm font-medium' }">
+  <UDashboardNavbar :ui="{ left: 'gap-0.5' }">
     <template v-if="notification.repository" #leading>
       <UButton
         :label="notification.repository.fullName"
@@ -25,28 +39,27 @@ defineShortcuts({
         target="_blank"
         color="neutral"
         variant="ghost"
-        class="text-sm/4 text-highlighted -mx-1.5"
-        square
+        class="text-sm/4 text-highlighted px-2"
       />
 
       <UIcon name="i-lucide-chevron-right" class="size-4 text-muted" />
     </template>
 
     <template #title>
-      {{ notification.release?.name || notification.release?.tagName }}
+      <UTooltip text="Open on GitHub" :kbds="['meta', 'g']">
+        <UButton
+          color="neutral"
+          variant="ghost"
+          :label="notification.release?.name || notification.release?.tagName"
+          :to="notification.release?.htmlUrl!"
+          target="_blank"
+          class="text-sm/4 text-highlighted px-2"
+        />
+      </UTooltip>
     </template>
 
     <template #right>
-      <UTooltip text="Open on GitHub" :kbds="['meta', 'g']">
-        <UButton
-          v-if="notification.release?.htmlUrl"
-          icon="i-simple-icons-github"
-          color="neutral"
-          variant="subtle"
-          :to="notification.release.htmlUrl"
-          target="_blank"
-        />
-      </UTooltip>
+      <slot name="right" />
     </template>
   </UDashboardNavbar>
 

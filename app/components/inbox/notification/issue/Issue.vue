@@ -17,9 +17,21 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'refresh'): void
+  (e: 'read', id: number): void
 }>()
 
 const toast = useToast()
+
+// Mark notification as read on mount if unread
+onMounted(async () => {
+  if (!props.notification.read) {
+    await $fetch(`/api/notifications/${props.notification.id}`, {
+      method: 'PATCH',
+      body: { read: true }
+    })
+    emit('read', props.notification.id)
+  }
+})
 
 // Repository info (reactive)
 const repoFullName = computed(() => props.notification.repository?.fullName)
@@ -129,8 +141,7 @@ defineShortcuts({
 </script>
 
 <template>
-  <!-- Navbar -->
-  <UDashboardNavbar :title="`#${notification.issue?.number}`" :ui="{ title: 'text-sm font-medium' }">
+  <UDashboardNavbar :ui="{ left: 'gap-0.5' }">
     <template v-if="notification.repository" #leading>
       <UButton
         :label="notification.repository.fullName"
@@ -139,22 +150,34 @@ defineShortcuts({
         target="_blank"
         color="neutral"
         variant="ghost"
-        class="text-sm/4 text-highlighted -mx-1.5"
-        square
+        class="text-sm/4 text-highlighted px-2"
       />
 
       <UIcon name="i-lucide-chevron-right" class="size-4 text-muted" />
     </template>
 
+    <template #title>
+      <UTooltip text="Open on GitHub" :kbds="['meta', 'g']">
+        <UButton
+          color="neutral"
+          variant="ghost"
+          :label="`#${notification.issue?.number}`"
+          :to="notification.issue?.htmlUrl!"
+          target="_blank"
+          class="text-sm/4 text-highlighted px-2"
+        />
+      </UTooltip>
+    </template>
+
     <template #trailing>
-      <!-- Favorite button -->
       <UTooltip :text="isFavorited ? 'Remove from favorites' : 'Add to favorites'">
         <UButton
           :icon="isFavorited ? 'i-lucide-star' : 'i-lucide-star'"
           color="neutral"
+          active-color="warning"
           variant="ghost"
           :loading="updatingFavorite"
-          :class="isFavorited ? 'text-warning' : 'text-muted'"
+          :active="isFavorited"
           @click="toggleFavorite"
         />
       </UTooltip>
@@ -165,21 +188,12 @@ defineShortcuts({
         :icon="isSubscribed ? 'i-lucide-bell-off' : 'i-lucide-bell'"
         :label="isSubscribed ? 'Unsubscribe' : 'Subscribe'"
         color="neutral"
-        variant="subtle"
+        variant="soft"
         square
         @click="toggleSubscription"
       />
 
-      <UTooltip text="Open on GitHub" :kbds="['meta', 'g']">
-        <UButton
-          v-if="notification.issue?.htmlUrl"
-          icon="i-simple-icons-github"
-          color="neutral"
-          variant="subtle"
-          :to="notification.issue.htmlUrl"
-          target="_blank"
-        />
-      </UTooltip>
+      <slot name="right" />
     </template>
   </UDashboardNavbar>
 
