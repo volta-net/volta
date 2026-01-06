@@ -175,13 +175,6 @@ const favoritesOpen = ref(false)
         <template v-if="hasFavorites" #right>
           <UButton
             color="neutral"
-            variant="ghost"
-            icon="i-lucide-refresh-cw"
-            :loading="loading"
-            @click="refresh"
-          />
-          <UButton
-            color="neutral"
             variant="soft"
             icon="i-lucide-star"
             :label="`${favorites.length} favorites`"
@@ -196,18 +189,14 @@ const favoritesOpen = ref(false)
       <UEmpty
         v-if="!repositories?.length"
         icon="i-lucide-package"
-        title="No synced repositories"
         description="You have to install the GitHub App on your account or organization to get started."
-        variant="naked"
-        size="lg"
         class="flex-1"
         :actions="[{
           label: 'Import repositories',
           to: '/settings',
           icon: 'i-lucide-download',
           color: 'neutral',
-          variant: 'soft',
-          size: 'sm'
+          variant: 'soft'
         }]"
       />
 
@@ -215,17 +204,13 @@ const favoritesOpen = ref(false)
       <UEmpty
         v-else-if="!hasFavorites"
         icon="i-lucide-star"
-        title="Select your favorite repositories"
-        description="Choose the repositories you want to focus on."
-        variant="naked"
-        size="lg"
+        description="Select your favorite repositories"
         class="flex-1"
         :actions="[{
           label: 'Select favorites',
           icon: 'i-lucide-star',
           color: 'neutral',
           variant: 'soft',
-          size: 'sm',
           onClick: () => { favoritesOpen = true }
         }]"
       />
@@ -239,9 +224,7 @@ const favoritesOpen = ref(false)
       <UEmpty
         v-else-if="!filteredItems?.length"
         :icon="q ? 'i-lucide-search' : currentTabConfig?.icon"
-        :title="q ? 'No results found' : currentTabConfig?.empty"
-        variant="naked"
-        size="lg"
+        :description="q ? 'No results found' : currentTabConfig?.empty"
         class="flex-1"
       />
 
