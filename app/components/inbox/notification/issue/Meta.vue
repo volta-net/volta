@@ -10,7 +10,13 @@ const emit = defineEmits<{
 }>()
 
 const toast = useToast()
+const { copy } = useClipboard()
 const { icon: stateIcon, color: stateColor, label: stateLabel } = useIssueState(computed(() => props.issue))
+
+function copyIssueNumber() {
+  copy(String(props.issue.number))
+  toast.add({ title: `Copied #${props.issue.number} to clipboard`, icon: 'i-lucide-copy' })
+}
 
 // Repository info
 const repoPath = computed(() => {
@@ -94,6 +100,7 @@ interface UserItem {
   id: number
   label: string
   login: string
+  name: string | null
   avatarUrl: string | null
 }
 
@@ -102,20 +109,128 @@ const selectedAssignees = computed<UserItem[]>(() => {
     id: u.id,
     label: u.login,
     login: u.login,
+    name: u.name,
     avatarUrl: u.avatarUrl
   }))
 })
 const availableAssignees = ref<UserItem[]>([])
+const isAssigneesOpen = ref(false)
+
+async function fetchAssignees() {
+  if (!repoPath.value.owner) return
+  try {
+    const collaborators = await $fetch<{ id: number, login: string, name: string | null, avatarUrl: string | null }[]>(`/api/repositories/${repoPath.value.owner}/${repoPath.value.name}/collaborators`)
+    availableAssignees.value = (collaborators ?? []).map(u => ({
+      id: u.id,
+      label: u.login,
+      login: u.login,
+      name: u.name,
+      avatarUrl: u.avatarUrl
+    }))
+  } catch {
+    // Collaborators not available
+  }
+}
+
+function handleAssigneesOpen(open: boolean) {
+  isAssigneesOpen.value = open
+  if (open) {
+    fetchAssignees()
+  }
+}
+
+async function onUpdateAssignees(newAssignees: UserItem[]) {
+  const currentIds = new Set(props.issue.assignees?.map(u => u.id) ?? [])
+  const newIds = new Set(newAssignees.map(u => u.id))
+
+  // Find added and removed assignees
+  const added = newAssignees.filter(u => !currentIds.has(u.id))
+  const removed = (props.issue.assignees ?? []).filter(u => !newIds.has(u.id))
+
+  try {
+    // Add new assignees
+    for (const user of added) {
+      await $fetch(`/api/repositories/${repoPath.value.owner}/${repoPath.value.name}/issues/${props.issue.number}/assignees`, {
+        method: 'POST',
+        body: { userId: user.id, login: user.login }
+      })
+    }
+    // Remove old assignees
+    for (const user of removed) {
+      await $fetch(`/api/repositories/${repoPath.value.owner}/${repoPath.value.name}/issues/${props.issue.number}/assignees/${user.id}`, {
+        method: 'DELETE',
+        body: { login: user.login }
+      })
+    }
+    emit('refresh')
+  } catch (err: any) {
+    toast.add({ title: 'Failed to update assignees', description: err.message, color: 'error', icon: 'i-lucide-x' })
+  }
+}
 
 const selectedReviewers = computed<UserItem[]>(() => {
   return (props.issue.requestedReviewers ?? []).map(u => ({
     id: u.id,
     label: u.login,
     login: u.login,
+    name: u.name,
     avatarUrl: u.avatarUrl
   }))
 })
 const availableReviewers = ref<UserItem[]>([])
+const isReviewersOpen = ref(false)
+
+async function fetchReviewers() {
+  if (!repoPath.value.owner) return
+  try {
+    const collaborators = await $fetch<{ id: number, login: string, name: string | null, avatarUrl: string | null }[]>(`/api/repositories/${repoPath.value.owner}/${repoPath.value.name}/collaborators`)
+    availableReviewers.value = (collaborators ?? []).map(u => ({
+      id: u.id,
+      label: u.login,
+      login: u.login,
+      name: u.name,
+      avatarUrl: u.avatarUrl
+    }))
+  } catch {
+    // Collaborators not available
+  }
+}
+
+function handleReviewersOpen(open: boolean) {
+  isReviewersOpen.value = open
+  if (open) {
+    fetchReviewers()
+  }
+}
+
+async function onUpdateReviewers(newReviewers: UserItem[]) {
+  const currentIds = new Set(props.issue.requestedReviewers?.map(u => u.id) ?? [])
+  const newIds = new Set(newReviewers.map(u => u.id))
+
+  // Find added and removed reviewers
+  const added = newReviewers.filter(u => !currentIds.has(u.id))
+  const removed = (props.issue.requestedReviewers ?? []).filter(u => !newIds.has(u.id))
+
+  try {
+    // Add new reviewers
+    for (const user of added) {
+      await $fetch(`/api/repositories/${repoPath.value.owner}/${repoPath.value.name}/issues/${props.issue.number}/reviewers`, {
+        method: 'POST',
+        body: { userId: user.id, login: user.login }
+      })
+    }
+    // Remove old reviewers
+    for (const user of removed) {
+      await $fetch(`/api/repositories/${repoPath.value.owner}/${repoPath.value.name}/issues/${props.issue.number}/reviewers/${user.id}`, {
+        method: 'DELETE',
+        body: { login: user.login }
+      })
+    }
+    emit('refresh')
+  } catch (err: any) {
+    toast.add({ title: 'Failed to update reviewers', description: err.message, color: 'error', icon: 'i-lucide-x' })
+  }
+}
 </script>
 
 <template>
@@ -125,44 +240,48 @@ const availableReviewers = ref<UserItem[]>([])
       <!-- State -->
       <div class="flex items-center gap-1.5">
         <UIcon :name="stateIcon" :class="['size-4', stateColor]" />
-        <span class="text-sm">{{ stateLabel }} {{ issue.pullRequest ? 'pull request' : 'issue' }} #{{ issue.number }}</span>
+        <button class="text-sm font-medium" @click="copyIssueNumber">
+          {{ stateLabel }} {{ issue.pullRequest ? 'pull request' : 'issue' }} <span class="text-highlighted">#{{ issue.number }}</span>
+        </button>
       </div>
 
       <!-- Repository -->
-      <div class="flex items-center gap-1.5">
+      <NuxtLink :to="`https://github.com/${issue.repository.fullName.split('/')[0]}`" target="_blank" class="flex items-center gap-1.5">
         <UAvatar
           :src="`https://github.com/${issue.repository.fullName.split('/')[0]}.png`"
           :alt="issue.repository.fullName"
           size="3xs"
         />
-        <span class="text-sm">{{ issue.repository.fullName }}</span>
-      </div>
+        <span class="text-sm font-medium">{{ issue.repository.fullName }}</span>
+      </NuxtLink>
 
       <!-- Author -->
-      <div v-if="issue.user" class="flex items-center gap-1.5">
+      <NuxtLink
+        v-if="issue.user"
+        :to="`https://github.com/${issue.user.login}`"
+        target="_blank"
+        class="flex items-center gap-1.5"
+      >
         <UAvatar
           :src="issue.user.avatarUrl!"
           :alt="issue.user.login"
           size="3xs"
         />
-        <span class="text-sm">{{ issue.user.login }}</span>
-      </div>
+        <span class="text-sm font-medium">{{ issue.user.login }}</span>
+      </NuxtLink>
 
       <!-- View changes link (PRs only) -->
-      <UButton
+      <NuxtLink
         v-if="issue.pullRequest && issue.htmlUrl"
-        icon="i-simple-icons-github"
-        label="View changes"
-        color="neutral"
-        variant="ghost"
-        size="sm"
         :to="`${issue.htmlUrl}/files`"
         target="_blank"
-        trailing-icon="i-lucide-arrow-up-right"
-        square
-        class="-ml-1.5"
-        :ui="{ trailingIcon: 'size-3 self-start text-dimmed' }"
-      />
+        class="inline-flex items-center gap-1.5 text-sm font-medium"
+      >
+        <UIcon name="i-simple-icons-github" class="size-4" />
+
+        <span class="text-success">+{{ issue.additions }}</span>
+        <span class="text-error">-{{ issue.deletions }}</span>
+      </NuxtLink>
     </div>
 
     <USeparator />
@@ -171,123 +290,107 @@ const availableReviewers = ref<UserItem[]>([])
     <div class="space-y-4">
       <!-- Labels -->
       <div class="flex items-start gap-4">
-        <span class="text-sm text-muted w-20 shrink-0 pt-1">Labels</span>
-        <div class="flex-1">
+        <span class="text-sm/6 text-highlighted font-medium w-20 shrink-0">Labels</span>
+
+        <div class="flex-1 flex items-center gap-1 flex-wrap">
           <USelectMenu
             :model-value="selectedLabels"
             :items="availableLabels"
             multiple
+            icon="i-lucide-plus"
+            trailing-icon=""
+            size="xs"
             :search-input="{ placeholder: 'Search labels...' }"
             :open="isLabelsOpen"
+            :ui="{ content: 'min-w-fit' }"
+            :content="{ align: 'start', sideOffset: 5 }"
+            variant="ghost"
+            class="rounded-full pe-3 data-[state=open]:bg-elevated hover:ring-accented"
             @update:open="handleLabelsOpen"
             @update:model-value="onUpdateLabels"
           >
-            <template #default="{ modelValue }">
-              <div class="flex flex-wrap items-center gap-1.5">
-                <UButton
-                  icon="i-lucide-plus"
-                  label="Add"
-                  color="neutral"
-                  variant="ghost"
-                  size="xs"
-                />
-                <UBadge
-                  v-for="label in (modelValue as LabelItem[])"
-                  :key="label.id"
-                  variant="subtle"
-                  :style="{ '--badge-bg': `#${label.color}20`, '--badge-color': `#${label.color}` }"
-                  :ui="{ base: 'bg-(--badge-bg) text-(--badge-color) gap-1' }"
-                >
-                  <span class="size-2 rounded-full" :style="{ backgroundColor: `#${label.color}` }" />
-                  {{ label.name }}
-                </UBadge>
-              </div>
+            <template #default>
+              Add
             </template>
+
             <template #item-leading="{ item }">
-              <span class="size-3 rounded-full shrink-0" :style="{ backgroundColor: `#${(item as LabelItem).color}` }" />
-            </template>
-            <template #item-label="{ item }">
-              {{ (item as LabelItem).name }}
+              <span class="size-2 rounded-full shrink-0 self-center mx-1" :style="{ backgroundColor: `#${(item as LabelItem).color}` }" />
             </template>
           </USelectMenu>
+
+          <IssueLabel
+            v-for="label in selectedLabels"
+            :key="label.id"
+            :label="label"
+          />
         </div>
       </div>
 
       <!-- Assignees -->
       <div class="flex items-start gap-4">
-        <span class="text-sm text-muted w-20 shrink-0 pt-1">Assignees</span>
-        <div class="flex-1">
+        <span class="text-sm/6 text-highlighted font-medium w-20 shrink-0">Assignees</span>
+
+        <div class="flex-1 flex items-center gap-1 flex-wrap">
           <USelectMenu
             :model-value="selectedAssignees"
             :items="availableAssignees"
+            icon="i-lucide-plus"
+            trailing-icon=""
+            size="xs"
+            :ui="{ content: 'min-w-fit' }"
+            :content="{ align: 'start', sideOffset: 5 }"
+            variant="ghost"
+            class="rounded-full pe-3 data-[state=open]:bg-elevated hover:ring-accented"
             multiple
-            disabled
             :search-input="{ placeholder: 'Search users...' }"
+            :open="isAssigneesOpen"
+            @update:model-value="onUpdateAssignees"
+            @update:open="handleAssigneesOpen"
           >
-            <template #default="{ modelValue }">
-              <div class="flex flex-wrap items-center gap-1.5">
-                <UButton
-                  icon="i-lucide-plus"
-                  label="Add"
-                  color="neutral"
-                  variant="ghost"
-                  size="xs"
-                  disabled
-                />
-                <UBadge
-                  v-for="assignee in (modelValue as UserItem[])"
-                  :key="assignee.id"
-                  color="neutral"
-                  variant="subtle"
-                  :ui="{ base: 'gap-1' }"
-                >
-                  <UAvatar :src="assignee.avatarUrl!" :alt="assignee.login" size="3xs" />
-                  {{ assignee.login }}
-                </UBadge>
-              </div>
+            <template #default>
+              Add
             </template>
+
             <template #item-leading="{ item }">
               <UAvatar :src="(item as UserItem).avatarUrl!" :alt="(item as UserItem).login" size="3xs" />
             </template>
+
             <template #item-label="{ item }">
               {{ (item as UserItem).login }}
             </template>
           </USelectMenu>
+
+          <IssueUser
+            v-for="assignee in selectedAssignees"
+            :key="assignee.id"
+            :user="assignee"
+          />
         </div>
       </div>
 
       <!-- Reviewers (PRs only) -->
       <div v-if="issue.pullRequest" class="flex items-start gap-4">
-        <span class="text-sm text-muted w-20 shrink-0 pt-1">Reviewers</span>
-        <div class="flex-1">
+        <span class="text-sm/6 text-highlighted font-medium w-20 shrink-0">Reviewers</span>
+
+        <div class="flex-1 flex items-center gap-1 flex-wrap">
           <USelectMenu
             :model-value="selectedReviewers"
             :items="availableReviewers"
+            icon="i-lucide-plus"
+            trailing-icon=""
+            size="xs"
+            :ui="{ content: 'min-w-fit' }"
+            :content="{ align: 'start', sideOffset: 5 }"
+            variant="ghost"
+            class="rounded-full pe-3 data-[state=open]:bg-elevated hover:ring-accented"
             multiple
-            disabled
             :search-input="{ placeholder: 'Search users...' }"
+            :open="isReviewersOpen"
+            @update:model-value="onUpdateReviewers"
+            @update:open="handleReviewersOpen"
           >
-            <template #default="{ modelValue }">
-              <div class="flex flex-wrap items-center gap-1.5">
-                <UButton
-                  icon="i-lucide-plus"
-                  label="Add"
-                  color="neutral"
-                  variant="ghost"
-                  size="xs"
-                  disabled
-                />
-                <UBadge
-                  v-for="reviewer in (modelValue as UserItem[])"
-                  :key="reviewer.id"
-                  color="neutral"
-                  variant="subtle"
-                  :ui="{ base: 'gap-1' }"
-                >
-                  <UAvatar :src="reviewer.avatarUrl!" :alt="reviewer.login" size="3xs" />
-                  {{ reviewer.login }}
-                </UBadge>
-              </div>
+            <template #default>
+              Add
             </template>
             <template #item-leading="{ item }">
               <UAvatar :src="(item as UserItem).avatarUrl!" :alt="(item as UserItem).login" size="3xs" />
@@ -296,32 +399,14 @@ const availableReviewers = ref<UserItem[]>([])
               {{ (item as UserItem).login }}
             </template>
           </USelectMenu>
+
+          <IssueUser
+            v-for="reviewer in selectedReviewers"
+            :key="reviewer.id"
+            :user="reviewer"
+          />
         </div>
       </div>
     </div>
-
-    <!-- PR Stats -->
-    <template v-if="issue.pullRequest">
-      <USeparator />
-
-      <div class="grid grid-cols-2 gap-3 text-sm">
-        <div class="flex items-center gap-2">
-          <UIcon name="i-octicon-git-commit-16" class="size-4 text-muted" />
-          <span>{{ issue.commits }} commit{{ issue.commits !== 1 ? 's' : '' }}</span>
-        </div>
-        <div class="flex items-center gap-2">
-          <UIcon name="i-octicon-file-diff-16" class="size-4 text-muted" />
-          <span>{{ issue.changedFiles }} file{{ issue.changedFiles !== 1 ? 's' : '' }}</span>
-        </div>
-        <div class="flex items-center gap-2 text-success">
-          <UIcon name="i-lucide-plus" class="size-4" />
-          <span>{{ issue.additions }}</span>
-        </div>
-        <div class="flex items-center gap-2 text-error">
-          <UIcon name="i-lucide-minus" class="size-4" />
-          <span>{{ issue.deletions }}</span>
-        </div>
-      </div>
-    </template>
   </div>
 </template>

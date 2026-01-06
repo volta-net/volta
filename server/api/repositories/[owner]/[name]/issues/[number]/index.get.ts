@@ -86,19 +86,6 @@ export default defineEventHandler(async (event) => {
   // Get valid access token (refreshes if expired)
   const accessToken = await getValidAccessToken(event)
 
-  // Mark related notification as read (if exists)
-  await db
-    .update(schema.notifications)
-    .set({
-      read: true,
-      readAt: new Date()
-    })
-    .where(and(
-      eq(schema.notifications.userId, user.id),
-      eq(schema.notifications.issueId, issue.id),
-      eq(schema.notifications.read, false)
-    ))
-
   // Check if user is subscribed to this issue
   const subscription = await db.query.issueSubscriptions.findFirst({
     where: and(
