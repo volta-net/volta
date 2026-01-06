@@ -27,7 +27,7 @@ const issueStates: Record<string, IssueStateConfig> = {
   },
   pr_merged: {
     icon: 'i-octicon-git-merge-16',
-    color: 'text-purple-500 dark:text-purple-400',
+    color: 'text-important',
     label: 'Merged',
     badgeColor: 'info'
   },

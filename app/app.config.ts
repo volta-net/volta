@@ -3,7 +3,7 @@ export default defineAppConfig({
     colors: {
       primary: 'blue',
       success: 'emerald',
-      important: 'purple',
+      important: 'indigo',
       neutral: 'zinc'
     },
     slideover: {
