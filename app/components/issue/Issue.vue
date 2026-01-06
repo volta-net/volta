@@ -99,7 +99,7 @@ function formatTimeAgo(date: Date | string) {
     <div class="flex-1 flex items-center gap-3 min-w-0">
       <span class="text-sm font-medium truncate">#{{ item.number }} {{ item.title }}</span>
 
-      <div class="flex items-center gap-1">
+      <div class="flex items-center gap-1 -my-1">
         <IssueType v-if="item.type" :type="item.type" />
         <IssueLabel v-for="label in item.labels" :key="label.id" :label="label" />
         <IssueRepository :repository="item.repository" />

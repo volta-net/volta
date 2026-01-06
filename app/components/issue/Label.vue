@@ -2,7 +2,7 @@
 import type { Label } from '#shared/types/issue'
 
 defineProps<{
-  label: Label
+  label: Omit<Label, 'description'>
 }>()
 </script>
 
@@ -10,9 +10,9 @@ defineProps<{
   <UBadge
     color="neutral"
     variant="outline"
-    class="rounded-full -my-1"
+    class="rounded-full px-2"
   >
-    <span class="size-2 rounded-full" :style="{ backgroundColor: `#${label.color}` }" />
+    <span class="size-2 rounded-full mx-1" :style="{ backgroundColor: `#${label.color}` }" />
     <span class="text-xs text-inverted invert">{{ label.name }}</span>
   </UBadge>
 </template>

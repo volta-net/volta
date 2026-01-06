@@ -12,6 +12,12 @@ export default defineAppConfig({
         body: 'sm:p-4'
       }
     },
+    empty: {
+      defaultVariants: {
+        variant: 'naked',
+        size: 'lg'
+      }
+    },
     editor: {
       slots: {
         base: [
