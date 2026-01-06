@@ -21,6 +21,12 @@ export default defineAppConfig({
     editor: {
       slots: {
         base: [
+          '*:my-4',
+          '[&_h1]:text-xl',
+          '[&_h2]:text-xl',
+          '[&_h3]:text-lg',
+          '[&_h4]:text-base',
+          '[&_[data-type=horizontalRule]]:my-0',
           '[&_.details]:border [&_.details]:border-default [&_.details]:rounded-md [&_.details]:bg-elevated/50 [&_.details]:overflow-hidden',
           '[&_.details]:relative',
           '[&_.details>button]:absolute [&_.details>button]:top-0 [&_.details>button]:left-0 [&_.details>button]:right-0 [&_.details>button]:h-10 [&_.details>button]:cursor-pointer [&_.details>button]:z-10',

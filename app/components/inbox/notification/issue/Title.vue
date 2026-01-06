@@ -53,6 +53,6 @@ watch(editedTitle, () => {
     :loading="isSaving"
     trailing
     variant="none"
-    :ui="{ base: 'p-0 text-2xl font-semibold' }"
+    :ui="{ base: 'p-0 text-xl font-semibold' }"
   />
 </template>
