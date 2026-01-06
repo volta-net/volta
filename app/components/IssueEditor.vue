@@ -4,8 +4,9 @@ import type { EditorCustomHandlers } from '@nuxt/ui'
 import type { MentionOptions, MentionNodeAttrs } from '@tiptap/extension-mention'
 import { Details, DetailsContent, DetailsSummary } from '@tiptap/extension-details'
 import { mergeAttributes } from '@tiptap/core'
-import ImageUpload from '~/components/editor/ImageUpload'
+import ImageUpload from '~/components/editor/ImageUploadExtension'
 import { Emoji } from '@tiptap/extension-emoji'
+import CodeBlockShiki from 'tiptap-extension-code-block-shiki'
 import type { MentionUser } from '~/composables/useEditorMentions'
 import type { IssueDetail } from '#shared/types/issue'
 
@@ -233,6 +234,13 @@ const extensions = computed(() => {
   const ext = [
     Emoji,
     ImageUpload,
+    CodeBlockShiki.configure({
+      defaultTheme: 'material-theme',
+      themes: {
+        light: 'material-theme-lighter',
+        dark: 'material-theme-palenight'
+      }
+    }),
     Details.configure({
       HTMLAttributes: {
         class: 'details'
@@ -248,27 +256,62 @@ const extensions = computed(() => {
 })
 
 /**
- * Fix <details> HTML blocks in markdown by removing blank lines that break parsing.
- * Markdown parsers can interrupt HTML blocks on blank lines, causing content to escape.
+ * Simple markdown to HTML converter for content inside <details> blocks.
+ * Handles common GitHub markdown syntax.
  */
-function fixDetailsBlocks(markdown: string): string {
-  // Match <details> blocks and collapse internal blank lines to prevent parser interruption
+function simpleMarkdownToHtml(md: string): string {
+  const html = md
+    // Escape HTML entities first (except existing tags)
+    .replace(/&(?![\w#]+;)/g, '&amp;')
+    // Code blocks (``` ... ```)
+    .replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>')
+    // Inline code
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    // Headings
+    .replace(/^#### (.+)$/gm, '<h4>$1</h4>')
+    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+    .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+    // Bold
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/__([^_]+)__/g, '<strong>$1</strong>')
+    // Italic
+    .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+    .replace(/_([^_]+)_/g, '<em>$1</em>')
+    // Links
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')
+    // Line breaks to paragraphs (non-empty lines)
+    .split(/\n\n+/)
+    .map(block => block.trim())
+    .filter(block => block.length > 0)
+    .map((block) => {
+      // Don't wrap if already a block element
+      if (/^<(?:h[1-6]|p|pre|ul|ol|li|blockquote|div)/.test(block)) {
+        return block
+      }
+      return `<p>${block.replace(/\n/g, '<br>')}</p>`
+    })
+    .join('\n')
+
+  return html
+}
+
+/**
+ * Process <details> HTML blocks - parse markdown content inside to HTML.
+ */
+function processDetailsBlocks(markdown: string): string {
   return markdown.replace(
-    /<details([^>]*)>([\s\S]*?)<\/details>/gi,
-    (match, attrs, innerContent) => {
-      // Replace multiple newlines with single newline within the details block
-      // This prevents the markdown parser from breaking out of the HTML block
-      const fixedContent = innerContent
-        .replace(/\n\s*\n/g, '\n') // Collapse blank lines to single newlines
-        .trim()
-      return `<details${attrs}>\n${fixedContent}\n</details>`
+    /<details([^>]*)>\s*<summary>([\s\S]*?)<\/summary>([\s\S]*?)<\/details>/gi,
+    (_match, attrs, summary, content) => {
+      const htmlContent = simpleMarkdownToHtml(content.trim())
+      return `<details${attrs}>\n<summary>${summary.trim()}</summary>\n${htmlContent || '<p></p>'}\n</details>`
     }
   )
 }
 
-// Content model - fix details blocks on read
+// Content model - process details blocks (convert markdown to HTML inside)
 const content = computed({
-  get: () => fixDetailsBlocks(props.modelValue),
+  get: () => processDetailsBlocks(props.modelValue),
   set: (value: string) => emit('update:modelValue', value)
 })
 
@@ -304,7 +347,10 @@ const appendToBody = import.meta.client ? () => document.body : undefined
     :extensions="extensions"
     :mention="mentionOptions"
     content-type="markdown"
-    :placeholder="placeholder"
+    :placeholder="{
+      placeholder,
+      mode: 'firstLine'
+    }"
     :ui="ui"
   >
     <!-- Bubble toolbar for text selection -->
