@@ -6,7 +6,7 @@ defineProps<{
   selected: boolean
 }>()
 
-const { getIcon, getColor, getTitle, getPrefix, getActionVerb, getSubjectLabel } = useNotificationHelpers()
+const { getIcon, getColor, getTitle, getActionVerb, getSubjectLabel } = useNotificationHelpers()
 
 function formatTimeAgo(date: Date) {
   const seconds = Math.floor((Date.now() - date.getTime()) / 1000)
@@ -55,14 +55,11 @@ function stripMarkdown(text: string | null | undefined): string {
       size="lg"
       class="shrink-0"
     />
-    <!-- <div v-else class="size-10 rounded-full bg-muted shrink-0" /> -->
 
     <!-- Content -->
     <div class="flex-1 min-w-0">
-      <!-- First line: prefix + title ... state icon -->
       <div class="flex items-center gap-1">
         <p class="font-medium truncate flex-1">
-          <span v-if="getPrefix(notification)">{{ getPrefix(notification) }}</span>
           {{ getTitle(notification) }}
         </p>
         <span v-if="!notification.read" class="size-2 rounded-full bg-primary shrink-0 m-1" />
@@ -73,8 +70,7 @@ function stripMarkdown(text: string | null | undefined): string {
         />
       </div>
 
-      <!-- Second line: actor verb body ... repo · time -->
-      <div class="flex items-center gap-1 mt-0.5 text-muted">
+      <div class="flex items-center gap-1 text-muted">
         <span class="truncate" :title="notification.body ?? undefined">
           <span v-if="notification.actor && notification.type !== 'workflow_run'" class="text-default">{{ notification.actor.login }}</span>
           {{ getActionVerb(notification) }}
