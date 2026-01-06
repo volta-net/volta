@@ -27,11 +27,9 @@ export default defineEventHandler(async (event) => {
         break
 
       case 'installation_target':
-        console.log(`[Webhook] Installation target ${payload.action}: ${payload.account?.login}`)
         break
 
       case 'meta':
-        console.log(`[Webhook] Meta ${payload.action}: hook ${payload.hook?.id}`)
         break
 
       // Issue events
@@ -302,11 +300,9 @@ export default defineEventHandler(async (event) => {
         break
 
       case 'push':
-        console.log(`[Webhook] Push to ${payload.repository?.full_name}: ${payload.commits?.length || 0} commits`)
         break
 
       case 'release':
-        console.log(`[Webhook] Release ${payload.action}: ${payload.repository?.full_name} ${payload.release?.tag_name}`)
         if (payload.action === 'published' && payload.release) {
           await handleReleaseEvent(payload.action, payload.release, payload.repository)
           await notifyReleasePublished(
@@ -318,7 +314,6 @@ export default defineEventHandler(async (event) => {
         break
 
       case 'workflow_run':
-        console.log(`[Webhook] Workflow run ${payload.action}: ${payload.workflow_run?.name} (${payload.workflow_run?.conclusion})`)
         if (payload.action === 'completed' && payload.workflow_run) {
           await handleWorkflowRunEvent(payload.action, payload.workflow_run, payload.repository)
           // Only notify on failure
@@ -333,14 +328,12 @@ export default defineEventHandler(async (event) => {
         break
 
       case 'check_run':
-        console.log(`[Webhook] Check run ${payload.action}: ${payload.check_run?.name} (${payload.check_run?.conclusion})`)
         if (payload.check_run) {
           await handleCheckRunEvent(payload.action, payload.check_run, payload.repository)
         }
         break
 
       case 'status':
-        console.log(`[Webhook] Commit status ${payload.state}: ${payload.context} for ${payload.sha?.slice(0, 7)}`)
         if (payload.id && payload.sha && payload.context) {
           await handleStatusEvent(payload, payload.repository)
         }
