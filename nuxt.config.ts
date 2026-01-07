@@ -8,6 +8,7 @@ export default defineNuxtConfig({
     '@vueuse/nuxt'
     // 'workflow/nuxt'
   ],
+
   ssr: false,
 
   devtools: {
@@ -79,5 +80,18 @@ export default defineNuxtConfig({
         braceStyle: '1tbs'
       }
     }
+  },
+
+  icon: {
+    clientBundle: {
+      scan: {
+        globInclude: [
+          '{app,shared}/**',
+          '.nuxt/**'
+        ],
+        globExclude: ['node_modules']
+      }
+    },
+    provider: 'none'
   }
 })
