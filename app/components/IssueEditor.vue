@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import type { Editor as TiptapEditor } from '@tiptap/vue-3'
 import type { EditorCustomHandlers } from '@nuxt/ui'
-import type { MentionOptions, MentionNodeAttrs } from '@tiptap/extension-mention'
-import { Details, DetailsContent, DetailsSummary } from '@tiptap/extension-details'
 import { mergeAttributes } from '@tiptap/core'
-import ImageUpload from '~/components/editor/ImageUploadExtension'
+import { Details, DetailsContent, DetailsSummary } from '@tiptap/extension-details'
 import { Emoji } from '@tiptap/extension-emoji'
+import type { MentionOptions, MentionNodeAttrs } from '@tiptap/extension-mention'
+import { Mention } from '@tiptap/extension-mention'
+import { TableKit } from '@tiptap/extension-table'
+import { ImageUpload } from '~/components/editor/ImageUploadExtension'
 import CodeBlockShiki from 'tiptap-extension-code-block-shiki'
 import type { MentionUser } from '~/composables/useEditorMentions'
 import type { IssueDetail } from '#shared/types/issue'
@@ -53,7 +55,9 @@ function parseExistingMentions(editor: TiptapEditor, currentRepo: string) {
       type: 'reference'
     },
     {
-      regex: /(?<![a-zA-Z0-9._%+-])@([a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)\b/g,
+      // Exclude scoped npm packages like @nuxt/ui, @ai-sdk/mcp
+      // Use negative lookahead to check if followed by any chars then / (package pattern)
+      regex: /(?<![a-zA-Z0-9._%+-])@([a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)(?![^\s/]*\/)\b/g,
       getId: (m: RegExpExecArray) => m[1]!,
       type: 'user'
     }
@@ -61,6 +65,9 @@ function parseExistingMentions(editor: TiptapEditor, currentRepo: string) {
 
   doc.descendants((node, pos) => {
     if (!node.isText || !node.text) return
+
+    // Skip text nodes that are inside links (have link mark)
+    if (node.marks.some(mark => mark.type.name === 'link')) return
 
     const text = node.text
 
@@ -187,7 +194,13 @@ const { items: toolbarItems, getImageToolbarItems } = useEditorToolbar(customHan
 // Mention rendering
 const mentionOptions: Partial<MentionOptions<any, MentionNodeAttrs>> = {
   renderHTML({ options, node }) {
-    const label = String(node.attrs.id ?? node.attrs.label)
+    const rawLabel = node.attrs.id ?? node.attrs.label
+    // If no valid id/label, render as plain text with the suggestion char
+    if (rawLabel == null) {
+      const char = node.attrs.mentionSuggestionChar || '@'
+      return ['span', options.HTMLAttributes, char]
+    }
+    const label = String(rawLabel)
     const mentionType = isReferenceType(label) ? 'reference' : 'user'
 
     const crossRepoMatch = label.match(/^([a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+)#(\d+)$/)
@@ -217,7 +230,12 @@ const mentionOptions: Partial<MentionOptions<any, MentionNodeAttrs>> = {
     ]
   },
   renderText({ node }) {
-    const label = String(node.attrs.id ?? node.attrs.label)
+    const rawLabel = node.attrs.id ?? node.attrs.label
+    // If no valid id/label, return just the suggestion char
+    if (rawLabel == null) {
+      return node.attrs.mentionSuggestionChar || '@'
+    }
+    const label = String(rawLabel)
     const mentionType = isReferenceType(label) ? 'reference' : 'user'
     if (/^[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+#\d+$/.test(label)) {
       return label
@@ -229,11 +247,58 @@ const mentionOptions: Partial<MentionOptions<any, MentionNodeAttrs>> = {
   }
 }
 
+// Custom Mention extension that disables markdown parsing to prevent
+// `@scope/package` patterns from being incorrectly parsed as mentions
+const CustomMention = Mention.extend({
+  // Override markdown parsing to skip parsing mentions from markdown shortcodes
+  // We use parseExistingMentions instead for proper text-to-mention conversion
+  parseMarkdown: () => [],
+  markdownTokenizer: {
+    name: 'mention',
+    level: 'inline' as const,
+    start: () => -1, // Never match
+    tokenize: () => undefined
+  },
+  renderMarkdown(node: { attrs?: { id?: string, label?: string } }) {
+    // Serialize mentions back to plain text format (@username or #number)
+    const label = node.attrs?.id ?? node.attrs?.label
+    if (!label) return ''
+    if (isReferenceType(String(label))) {
+      if (/^[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+#\d+$/.test(String(label))) {
+        return String(label)
+      }
+      return `#${label}`
+    }
+    return `@${label}`
+  },
+  // Override HTML parsing to reject mentions without valid id/label
+  parseHTML() {
+    return [
+      {
+        tag: 'span[data-type="mention"]',
+        getAttrs: (element) => {
+          const el = element as HTMLElement
+          const id = el.getAttribute('data-id')
+          const label = el.getAttribute('data-label')
+          // Only parse as mention if it has valid id or label
+          if (!id && !label) {
+            return false // Reject this match
+          }
+          return { id, label }
+        }
+      }
+    ]
+  }
+}).configure({
+  ...mentionOptions,
+  HTMLAttributes: {
+    class: 'mention'
+  }
+})
+
 // Extensions
 const extensions = computed(() => {
   const ext = [
-    Emoji,
-    ImageUpload,
     CodeBlockShiki.configure({
       defaultTheme: 'material-theme',
       themes: {
@@ -247,7 +312,11 @@ const extensions = computed(() => {
       }
     }),
     DetailsSummary,
-    DetailsContent
+    DetailsContent,
+    Emoji,
+    ImageUpload,
+    TableKit,
+    CustomMention
   ]
   if (completionEnabled.value) {
     ext.push(Completion as any)
@@ -345,7 +414,12 @@ const appendToBody = import.meta.client ? () => document.body : undefined
     v-model="content"
     :handlers="customHandlers"
     :extensions="extensions"
-    :mention="mentionOptions"
+    :starter-kit="{
+      link: {
+        openOnClick: true
+      }
+    }"
+    :mention="false"
     content-type="markdown"
     :placeholder="{
       placeholder,

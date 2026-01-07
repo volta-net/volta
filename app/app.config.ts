@@ -27,15 +27,20 @@ export default defineAppConfig({
           '[&_h3]:text-lg',
           '[&_h4]:text-base',
           '[&_[data-type=horizontalRule]]:my-0',
-          '[&_.details]:border [&_.details]:border-default [&_.details]:rounded-md [&_.details]:bg-elevated/50 [&_.details]:overflow-hidden',
-          '[&_.details]:relative',
+          '[&_.details]:relative [&_.details]:border [&_.details]:border-default [&_.details]:rounded-md [&_.details]:bg-elevated/50 [&_.details]:overflow-hidden',
           '[&_.details>button]:absolute [&_.details>button]:top-0 [&_.details>button]:left-0 [&_.details>button]:right-0 [&_.details>button]:h-10 [&_.details>button]:cursor-pointer [&_.details>button]:z-10',
-          '[&_.details_summary]:list-none [&_.details_summary]:font-medium [&_.details_summary]:text-highlighted',
-          '[&_.details_summary]:flex [&_.details_summary]:items-center [&_.details_summary]:gap-2 [&_.details_summary]:px-4 [&_.details_summary]:py-2.5',
-          '[&_.details_summary]:before:content-["▶"] [&_.details_summary]:before:text-dimmed [&_.details_summary]:before:text-[10px] [&_.details_summary]:before:transition-transform [&_.details_summary]:before:duration-200 [&_.details_summary]:before:shrink-0',
+          '[&_.details_summary]:list-none [&_.details_summary]:font-medium [&_.details_summary]:text-highlighted [&_.details_summary]:flex [&_.details_summary]:items-center [&_.details_summary]:gap-2 [&_.details_summary]:px-4 [&_.details_summary]:py-2.5 [&_.details_summary]:before:content-["▶"] [&_.details_summary]:before:text-dimmed [&_.details_summary]:before:text-[10px] [&_.details_summary]:before:transition-transform [&_.details_summary]:before:duration-200 [&_.details_summary]:before:shrink-0',
           '[&_.details.is-open_summary]:before:rotate-90',
-          '[&_[data-type="detailsContent"]]:px-4 [&_[data-type="detailsContent"]]:py-3 [&_[data-type="detailsContent"]]:border-t [&_[data-type="detailsContent"]]:border-default',
-          '[&_[data-type="detailsContent"]>*:first-child]:mt-0 [&_[data-type="detailsContent"]>*:last-child]:mb-0'
+          '[&_[data-type="detailsContent"]]:px-4 [&_[data-type="detailsContent"]]:py-3 [&_[data-type="detailsContent"]]:border-t [&_[data-type="detailsContent"]]:border-default [&_[data-type="detailsContent"]>*:first-child]:mt-0 [&_[data-type="detailsContent"]>*:last-child]:mb-0',
+          '[&_table]:w-full [&_table]:border-separate [&_table]:border-spacing-0 [&_table]:rounded-md',
+          '[&_th]:py-3 [&_th]:px-4 [&_th]:font-semibold [&_th]:text-sm [&_th]:text-left [&_th]:bg-muted/50 [&_th]:border-t [&_th]:border-b [&_th]:border-e [&_th]:first:border-s [&_th]:border-muted',
+          '[&_th_p]:my-0 [&_th_p]:leading-5',
+          '[&_td]:py-3 [&_td]:px-4 [&_td]:text-sm [&_td]:text-left [&_td]:border-b [&_td]:border-e [&_td]:first:border-s [&_td]:border-muted',
+          '[&_td_p]:my-0 [&_td_p]:leading-5 [&_td_code]:text-xs/5 [&_td_ul]:my-0 [&_td_ol]:my-0 [&_td_ul]:ps-4.5 [&_td_ol]:ps-4.5 [&_td_li]:leading-6 [&_td_li]:my-0.5',
+          '[&_tr:first-child_th:first-child]:rounded-tl-md [&_tr:first-child_th:last-child]:rounded-tr-md [&_tr:last-child_td:first-child]:rounded-bl-md [&_tr:last-child_td:last-child]:rounded-br-md',
+          '[&_.selectedCell]:bg-primary/10 [&_.selectedCell]:ring-2 [&_.selectedCell]:ring-primary [&_.selectedCell]:ring-inset',
+          '[&_.ProseMirror-trailingBreak]:hidden',
+          '[&_.ProseMirror-separator]:hidden!'
         ]
       }
     },
