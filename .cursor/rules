@@ -1,21 +1,38 @@
 # Volta
 
-Volta is a **Linear clone built entirely on GitHub**. It provides a modern, fast project management experience while keeping all data synced with GitHub Issues, Pull Requests, Labels, and Milestones.
+Volta is a **GitHub inbox replacement** — a fast, beautiful way to manage GitHub notifications, issues, and pull requests. Think of it as the inbox GitHub should have built.
 
 ## Vision
 
-- Replace Linear/Jira for teams already using GitHub
-- Issues = Tasks, Labels = Tags, Milestones = Cycles/Projects
+- Replace GitHub's notification inbox with something actually usable
+- Unified view of issues, PRs, releases, and CI status across all your repos
 - Real-time sync via GitHub App webhooks
-- Beautiful, keyboard-first UI inspired by Linear
+- Beautiful, keyboard-first UI for power users
 
 ## Tech Stack
 
-- **Framework**: Nuxt 4 with Vue 3 Composition API
-- **UI**: Nuxt UI v4 + Tailwind CSS
+- **Framework**: Nuxt 4 with Vue 3 Composition API (`ssr: false` - client-only SPA)
+- **UI**: Nuxt UI v4 (bleeding edge) + Tailwind CSS
 - **Auth**: nuxt-auth-utils with GitHub App OAuth
 - **GitHub API**: Octokit with @octokit/auth-app
 - **Database**: NuxtHub with Drizzle ORM (PostgreSQL)
+- **Editor**: TipTap with custom extensions
+- **AI**: Vercel AI SDK (`ai` package) for issue completion
+
+## Critical Context
+
+### SSR is Disabled
+This app runs as a client-only SPA. This means:
+- `useFetch` still works but runs client-side only
+- No server-side rendering, no hydration issues
+- Auth loads client-only (`auth.loadStrategy: 'client-only'`)
+
+### Nuxt UI v4
+We use Nuxt UI v4 (not v3). Key differences:
+- Components use `slots` API in `app.config.ts` for customization
+- Theme colors defined in `ui.theme.colors` array
+- Use `UDashboardPanel`, `UDashboardSidebar`, `UDashboardNavbar` for layout
+- Use `UEditor` for rich text editing
 
 ## Architecture
 
@@ -37,60 +54,146 @@ We subscribe to these GitHub events to keep Volta in sync:
 - `push`, `release` - Activity feed
 - `installation`, `installation_repositories`, `installation_target`, `meta` - App lifecycle
 
-### Webhook Handlers
-
-Webhook handlers in `server/utils/webhooks.ts` update the database:
-- `handleIssueEvent()` - Creates/updates/deletes issues
-- `handlePullRequestEvent()` - Creates/updates PRs
-- `handleLabelEvent()` - Creates/updates/deletes labels
-- `handleMilestoneEvent()` - Creates/updates/deletes milestones
-- `handleRepositoryEvent()` - Updates repo info (archived, renamed, etc.)
-- `handleInstallationEvent()` - Manages app installations
-
 ### Key Directories
 
-- `app/pages/` - Vue pages (index, settings)
+- `app/pages/` - Vue pages (index, inbox, settings)
 - `app/components/` - Reusable UI components
-- `app/composables/` - Client-side composables
+- `app/composables/` - Client-side composables (`use*.ts`)
 - `server/api/` - API routes (notifications, installations, sync)
 - `server/db/` - Database schema and migrations (Drizzle ORM)
 - `server/routes/` - Auth and webhook handlers
 - `server/utils/` - Server utilities (Octokit, webhooks, sync)
 - `shared/types/` - Shared TypeScript types
 
+## API Route Conventions
+
+Server routes use file-based routing with HTTP verb suffixes:
+
+```
+server/api/
+  notifications.get.ts        → GET /api/notifications
+  notifications/
+    [id].patch.ts             → PATCH /api/notifications/:id
+    [id].delete.ts            → DELETE /api/notifications/:id
+    read-all.post.ts          → POST /api/notifications/read-all
+  repositories/
+    [owner]/[name]/
+      issues/[number]/
+        index.get.ts          → GET /api/repositories/:owner/:name/issues/:number
+        body.patch.ts         → PATCH /api/repositories/:owner/:name/issues/:number/body
+```
+
 ## Database
 
-The database schema matches GitHub's API format with `id` as the primary key (GitHub's ID).
+The database uses auto-generated `id` (serial) as primary key, with `githubId` for GitHub lookups.
 
-**Tables:**
-- `installations` - GitHub App installations (user/org)
-- `repositories` - Synced repositories
-- `labels` - Repository labels
-- `milestones` - Repository milestones
-- `issues` - Issues (not PRs)
-- `pull_requests` - Pull requests
+**ID Strategy:**
+- `id` - Auto-generated stable ID (primary key)
+- `githubId` - GitHub's ID (for API lookups, indexed)
+- Unique constraint on `(repositoryId, number)` for issues
+
+**Key Tables:** users, installations, repositories, issues, labels, milestones, notifications
 
 **Drizzle Workflow:**
 1. Modify schema in `server/db/schema.ts`
-2. Run `npx nuxt db generate` to generate migration
-3. Run `npx nuxt dev` to apply migration during development
+2. Run `pnpm db:generate` to generate migration
+3. Run `pnpm dev` to apply migration during development
 
-**Access the database:** Use `db` and `schema` from `hub:db`
+**Database Access:**
 
 ```ts
 import { eq } from 'drizzle-orm'
 import { db, schema } from 'hub:db'
 
-const [issue] = await db.select().from(schema.issues).where(eq(schema.issues.id, issueId))
+// Find by GitHub ID
+const [repo] = await db.select()
+  .from(schema.repositories)
+  .where(eq(schema.repositories.githubId, githubRepoId))
+
+// Find issue by repo + number (the true unique key)
+const [issue] = await db.select()
+  .from(schema.issues)
+  .where(and(
+    eq(schema.issues.repositoryId, repoId),
+    eq(schema.issues.number, issueNumber)
+  ))
+```
+
+## Code Patterns
+
+### Components
+
+```vue
+<script setup lang="ts">
+// Props with defaults
+const props = withDefaults(defineProps<{
+  issue: Issue
+  compact?: boolean
+}>(), {
+  compact: false
+})
+
+// Emits
+const emit = defineEmits<{
+  select: [issue: Issue]
+}>()
+
+// Auto-imported: ref, computed, watch, useFetch, useRoute, etc.
+</script>
+```
+
+### Data Fetching
+
+```ts
+// SSR-compatible (runs client-side since ssr: false)
+const { data: notifications } = await useFetch('/api/notifications')
+
+// Client-only event handlers
+async function markAsRead(id: number) {
+  await $fetch(`/api/notifications/${id}`, { method: 'PATCH' })
+}
+
+// With query params
+const { data } = await useFetch('/api/issues', {
+  query: { repositoryId: repo.value.id }
+})
+```
+
+### Server API Handlers
+
+```ts
+// server/api/issues.get.ts
+export default defineEventHandler(async (event) => {
+  const { user } = await requireUserSession(event)
+  const query = getQuery(event)
+
+  // Use Octokit for GitHub API
+  const octokit = await useOctokitWithToken(user.github_token)
+
+  // Database queries
+  const issues = await db.select()
+    .from(schema.issues)
+    .where(eq(schema.issues.repositoryId, query.repositoryId))
+
+  return issues
+})
 ```
 
 ## Conventions
 
 - Use `<script setup lang="ts">` for all components
-- Prefer `useFetch` for SSR-compatible data fetching, `$fetch` for client-only
-- Use Nuxt UI components (UButton, UCard, UAccordion, etc.)
+- Prefer `useFetch` for data fetching, `$fetch` for mutations
+- Use Nuxt UI components (UButton, UCard, UModal, etc.)
 - All GitHub API calls go through `useOctokitWithToken()` on server
-- Database IDs match GitHub IDs (bigint primary keys)
+- Database IDs are auto-generated (serial), GitHub IDs stored separately
+- Use `requireUserSession(event)` in API routes for auth
+
+## Don't
+
+- Don't use SSR-specific patterns (no `useRequestHeaders`, no server-only composables)
+- Don't reference GitHub's ID as the primary key - use our `id` field
+- Don't use Nuxt UI v3 syntax (no `ui` prop for styling, use `app.config.ts`)
+- Don't create new API routes without the verb suffix (`.get.ts`, `.post.ts`, etc.)
 
 ## Environment Variables
 
