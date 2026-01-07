@@ -1299,12 +1299,36 @@ export async function notifyWorkflowFailed(
 
   // Find the related PR if this workflow was triggered by a pull_request event
   let issueId: number | undefined
+
+  // First try using the pull_requests array from the webhook
   if (workflowRun.pull_requests?.length && workflowRun.pull_requests.length > 0) {
     const prNumber = workflowRun.pull_requests[0]!.number
     const dbIssueId = await getDbIssueId(dbRepoId, prNumber)
     if (dbIssueId) {
       issueId = dbIssueId
     }
+  }
+
+  // Fallback: if triggered by pull_request event but pull_requests array is empty
+  // (common for PRs from forks due to GitHub security restrictions),
+  // try to find the PR by matching the head SHA
+  if (!issueId && workflowRun.event === 'pull_request' && workflowRun.head_sha) {
+    const [relatedPR] = await db.select({ id: schema.issues.id }).from(schema.issues).where(
+      and(
+        eq(schema.issues.repositoryId, dbRepoId),
+        eq(schema.issues.pullRequest, true),
+        eq(schema.issues.headSha, workflowRun.head_sha)
+      )
+    )
+    if (relatedPR) {
+      issueId = relatedPR.id
+    }
+  }
+
+  // For pull_request events, skip notification if no PR was found
+  // (PR might not be synced or user doesn't care about it)
+  if (workflowRun.event === 'pull_request' && !issueId) {
+    return
   }
 
   // Get workflow run's internal ID
