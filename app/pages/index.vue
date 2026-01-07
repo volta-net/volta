@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Issue } from '#shared/types/issue'
+import { breakpointsTailwind } from '@vueuse/core'
 import { useFilter } from 'reka-ui'
 
 useSeoMeta({
@@ -131,10 +132,35 @@ const filteredItems = computed(() => {
 
 // Favorites slideover state
 const favoritesOpen = ref(false)
+
+// Selected issue state
+const selectedItem = ref<Issue | null>(null)
+
+const isPanelOpen = computed({
+  get() {
+    return !!selectedItem.value
+  },
+  set(value: boolean) {
+    if (!value) {
+      selectedItem.value = null
+    }
+  }
+})
+
+const breakpoints = useBreakpoints(breakpointsTailwind)
+const isMobile = breakpoints.smaller('lg')
 </script>
 
 <template>
-  <UDashboardPanel id="dashboard" :ui="{ body: 'overflow-hidden p-0!' }">
+  <UDashboardPanel
+    id="dashboard-1"
+    :default-size="25"
+    :min-size="25"
+    :max-size="!selectedItem ? 100 : 50"
+    :resizable="!!selectedItem"
+    :class="[!selectedItem && 'lg:w-full']"
+    :ui="{ body: 'overflow-hidden p-0!' }"
+  >
     <template #header>
       <UDashboardNavbar title="Dashboard" :ui="{ left: 'gap-3' }">
         <template v-if="hasFavorites" #trailing>
@@ -228,16 +254,47 @@ const favoritesOpen = ref(false)
         class="flex-1"
       />
 
-      <!-- Items list -->
-      <div v-else class="flex-1 overflow-y-auto divide-y divide-default">
-        <Issue
-          v-for="item in filteredItems"
-          :key="item.id"
-          :item="item"
-        />
-      </div>
+      <Issues
+        v-else
+        v-model="selectedItem"
+        :issues="filteredItems"
+        class="flex-1"
+      />
+    </template>
+
+    <template #resize-handle="{ onMouseDown, onTouchStart, onDoubleClick }">
+      <UDashboardResizeHandle
+        v-if="!!selectedItem"
+        class="after:absolute after:inset-y-0 after:right-0 after:w-px hover:after:bg-(--ui-border-accented) after:transition z-1"
+        @mousedown="onMouseDown"
+        @touchstart="onTouchStart"
+        @dblclick="onDoubleClick"
+      />
     </template>
   </UDashboardPanel>
+
+  <UDashboardPanel v-if="selectedItem" id="dashboard-2">
+    <Issue
+      :item="selectedItem"
+      @close="selectedItem = null"
+      @refresh="fetchAllTabs"
+    />
+  </UDashboardPanel>
+
+  <ClientOnly>
+    <USlideover
+      v-if="isMobile && selectedItem"
+      v-model:open="isPanelOpen"
+    >
+      <template #content>
+        <Issue
+          :item="selectedItem"
+          @close="selectedItem = null"
+          @refresh="fetchAllTabs"
+        />
+      </template>
+    </USlideover>
+  </ClientOnly>
 
   <LazyDashboardFavorites
     v-model:open="favoritesOpen"

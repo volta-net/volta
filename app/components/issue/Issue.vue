@@ -1,158 +1,219 @@
 <script setup lang="ts">
-import type { Issue } from '#shared/types/issue'
-import type { WorkflowConclusion } from '#shared/types/db'
+import type { Issue, IssueDetail } from '#shared/types/issue'
+import type { MentionUser } from '~/composables/useEditorMentions'
+
+interface IssueReference {
+  id: number
+  number: number
+  title: string
+  state: string
+  pullRequest: boolean
+}
 
 const props = defineProps<{
   item: Issue
 }>()
 
-const issueState = computed(() => ({
-  pullRequest: props.item.pullRequest ?? false,
-  state: props.item.state,
-  stateReason: props.item.stateReason ?? null,
-  draft: props.item.draft ?? false,
-  merged: props.item.merged ?? false
-}))
+const emit = defineEmits<{
+  (e: 'close' | 'refresh'): void
+}>()
 
-const stateIcon = computed(() => getIssueStateIcon(issueState.value))
-const stateColor = computed(() => getIssueStateColor(issueState.value))
+const toast = useToast()
 
-// Aggregate CI statuses from all workflow runs
-const ciStatusConfig = computed(() => {
-  const statuses = props.item.ciStatuses
-  if (!statuses || statuses.length === 0) return null
+// Repository info (reactive)
+const repoFullName = computed(() => props.item.repository?.fullName)
+const owner = computed(() => repoFullName.value?.split('/')[0])
+const name = computed(() => repoFullName.value?.split('/')[1])
 
-  const total = statuses.length
+// Fetch full issue details
+const issueUrl = computed(() => {
+  if (!repoFullName.value || !props.item.number) return ''
+  return `/api/repositories/${owner.value}/${name.value}/issues/${props.item.number}`
+})
+const { data: issue, status, refresh: refreshIssue } = await useLazyFetch<IssueDetail & { isSubscribed: boolean }>(issueUrl, {
+  immediate: !!issueUrl.value
+})
 
-  // Count by status
-  let inProgress = 0
-  let passed = 0
-  let failed = 0
-  let failedRun = null as typeof statuses[0] | null
+// Fetch repository collaborators and issues for editor mentions
+const collaboratorsUrl = computed(() => repoFullName.value ? `/api/repositories/${owner.value}/${name.value}/collaborators` : '')
+const { data: collaborators } = await useLazyFetch<MentionUser[]>(collaboratorsUrl, {
+  default: () => [],
+  immediate: !!repoFullName.value
+})
+const issuesUrl = computed(() => repoFullName.value ? `/api/repositories/${owner.value}/${name.value}/issues` : '')
+const { data: repositoryIssues } = await useLazyFetch<IssueReference[]>(issuesUrl, {
+  default: () => [],
+  immediate: !!repoFullName.value
+})
 
-  for (const ci of statuses) {
-    if (ci.status === 'in_progress' || ci.status === 'queued') {
-      inProgress++
-    } else if (ci.conclusion === 'success' || ci.conclusion === 'skipped') {
-      passed++
-    } else {
-      failed++
-      if (!failedRun) failedRun = ci
-    }
-  }
-
-  // Determine aggregate conclusion for styling
-  let aggregateConclusion: WorkflowConclusion | null = null
-  if (inProgress > 0) {
-    aggregateConclusion = null // Running
-  } else if (failed > 0) {
-    aggregateConclusion = 'failure'
-  } else {
-    aggregateConclusion = 'success'
-  }
-
-  const state = getCIState(aggregateConclusion)
-
-  // Build label: "2 / 3 passed" or "Running 1 / 3"
-  let label: string
-  if (inProgress > 0) {
-    label = `Running ${passed} / ${total}`
-  } else {
-    label = `${passed} / ${total} passed`
-  }
-
-  // Link to failed run if any, otherwise first run
-  const representativeRun = failedRun || statuses[0]!
-
-  return {
-    icon: state.icon,
-    color: state.color,
-    label,
-    animate: inProgress > 0,
-    htmlUrl: representativeRun.htmlUrl
+// Refetch issue when item prop changes
+watch(() => props.item, () => {
+  if (issueUrl.value) {
+    refreshIssue()
   }
 })
 
-function formatTimeAgo(date: Date | string) {
-  const d = typeof date === 'string' ? new Date(date) : date
-  const seconds = Math.floor((Date.now() - d.getTime()) / 1000)
+// Local subscription state (initialized from issue, updated on toggle)
+const isSubscribed = ref(false)
+watch(() => issue.value?.isSubscribed, (val) => {
+  isSubscribed.value = !!val
+}, { immediate: true })
 
-  if (seconds < 60) return 'now'
-  if (seconds < 3600) return `${Math.floor(seconds / 60)}m`
-  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h`
-  if (seconds < 604800) return `${Math.floor(seconds / 86400)}d`
-  if (seconds < 2592000) return `${Math.floor(seconds / 604800)}w`
-  return `${Math.floor(seconds / 2592000)}mo`
+async function toggleSubscription() {
+  if (!issue.value || !issueUrl.value) return
+  try {
+    if (isSubscribed.value) {
+      await $fetch(`${issueUrl.value}/subscription`, { method: 'DELETE' })
+      isSubscribed.value = false
+      toast.add({ title: 'Unsubscribed from issue', icon: 'i-lucide-bell-off' })
+    } else {
+      await $fetch(`${issueUrl.value}/subscription`, { method: 'POST' })
+      isSubscribed.value = true
+      toast.add({ title: 'Subscribed to issue', icon: 'i-lucide-bell' })
+    }
+  } catch (err: any) {
+    toast.add({ title: 'Failed to update subscription', description: err.message, color: 'error', icon: 'i-lucide-x' })
+  }
 }
+
+// Favorite functionality
+const { data: favoriteIssues, refresh: refreshFavorites } = await useLazyFetch('/api/favorites/issues', {
+  default: () => []
+})
+
+const isFavorited = computed(() => favoriteIssues.value?.some(f => f.issueId === issue.value?.id) || false)
+const updatingFavorite = ref(false)
+
+async function toggleFavorite() {
+  if (!issue.value) return
+
+  updatingFavorite.value = true
+
+  try {
+    if (isFavorited.value) {
+      await $fetch(`/api/favorites/issues/${issue.value.id}`, { method: 'DELETE' })
+      toast.add({ title: 'Removed from favorites', icon: 'i-lucide-star' })
+    } else {
+      await $fetch('/api/favorites/issues', {
+        method: 'POST',
+        body: { issueId: issue.value.id }
+      })
+      toast.add({ title: 'Added to favorites', icon: 'i-lucide-star' })
+    }
+    await refreshFavorites()
+  } catch (error: any) {
+    toast.add({
+      title: 'Failed to update favorites',
+      description: error.data?.message || 'An error occurred',
+      color: 'error'
+    })
+  } finally {
+    updatingFavorite.value = false
+  }
+}
+
+// Handle refresh from child components
+async function handleRefresh() {
+  await refreshIssue()
+  emit('refresh')
+}
+
+defineShortcuts({
+  meta_g: () => {
+    if (props.item.htmlUrl) {
+      window.open(props.item.htmlUrl, '_blank')
+    }
+  }
+})
 </script>
 
 <template>
-  <NuxtLink
-    :to="item.htmlUrl ?? undefined"
-    target="_blank"
-    class="flex items-center gap-3 px-4 py-3 hover:bg-elevated/50 transition-colors"
-  >
-    <!-- State icon -->
-    <UIcon :name="stateIcon" :class="stateColor" class="size-4 shrink-0" />
+  <div class="flex flex-col h-full overflow-hidden">
+    <UDashboardNavbar :ui="{ left: 'gap-0.5' }">
+      <template v-if="item.repository" #leading>
+        <UButton
+          :label="item.repository.fullName"
+          :avatar="{ src: `https://github.com/${item.repository.fullName.split('/')[0]}.png`, alt: item.repository.fullName }"
+          :to="item.repository.htmlUrl!"
+          target="_blank"
+          color="neutral"
+          variant="ghost"
+          class="text-sm/4 text-highlighted px-2"
+        />
 
-    <!-- Content -->
-    <div class="flex-1 flex items-center gap-3 min-w-0">
-      <span class="text-sm font-medium truncate">#{{ item.number }} {{ item.title }}</span>
+        <UIcon name="i-lucide-chevron-right" class="size-4 text-muted" />
+      </template>
 
-      <div class="flex items-center gap-1 -my-1">
-        <IssueType v-if="item.type" :type="item.type" />
-        <IssueLabel v-for="label in item.labels" :key="label.id" :label="label" />
-        <IssueRepository :repository="item.repository" />
-        <IssueUser v-if="item.user" :user="item.user" />
-      </div>
+      <template #title>
+        <UTooltip text="Open on GitHub" :kbds="['meta', 'g']">
+          <UButton
+            color="neutral"
+            variant="ghost"
+            :label="`#${item.number}`"
+            :to="item.htmlUrl!"
+            target="_blank"
+            class="text-sm/4 text-highlighted px-2"
+          />
+        </UTooltip>
+      </template>
 
-      <div class="flex items-center gap-2 text-xs text-muted" />
+      <template #trailing>
+        <UTooltip :text="isFavorited ? 'Remove from favorites' : 'Add to favorites'">
+          <UButton
+            :icon="isFavorited ? 'i-lucide-star' : 'i-lucide-star'"
+            color="neutral"
+            active-color="warning"
+            variant="ghost"
+            :loading="updatingFavorite"
+            :active="isFavorited"
+            @click="toggleFavorite"
+          />
+        </UTooltip>
+      </template>
+
+      <template #right>
+        <UButton
+          :icon="isSubscribed ? 'i-lucide-bell-off' : 'i-lucide-bell'"
+          :label="isSubscribed ? 'Unsubscribe' : 'Subscribe'"
+          color="neutral"
+          variant="soft"
+          square
+          @click="toggleSubscription"
+        />
+
+        <slot name="right" />
+      </template>
+    </UDashboardNavbar>
+
+    <!-- Loading state (only on initial load, not refetches) -->
+    <div v-if="status === 'pending' && !issue" class="flex-1 flex items-center justify-center">
+      <UIcon name="i-lucide-loader-2" class="size-8 animate-spin text-muted" />
     </div>
 
-    <!-- Maintainer replied (for issues) -->
-    <UTooltip
-      v-if="item.hasMaintainerComment"
-      text="Maintainer replied"
-    >
-      <UIcon name="i-lucide-message-circle-reply" class="size-4 shrink-0 text-success" />
-    </UTooltip>
+    <!-- Issue/PR View -->
+    <div v-else-if="issue" class="grid grid-cols-3 flex-1 min-h-0">
+      <div class="flex-1 overflow-y-auto p-4 sm:px-6 flex flex-col gap-4 col-span-2">
+        <IssueTitle :issue="issue" @update:title="handleRefresh" />
 
-    <span v-if="(item.reactionCount ?? 0) > 0" class="flex items-center gap-0.5 text-muted">
-      <UIcon name="i-lucide-heart" class="size-4 shrink-0" />
-      <span class="text-xs">{{ item.reactionCount }}</span>
-    </span>
-
-    <span v-if="(item.commentCount ?? 0) > 0" class="flex items-center gap-0.5 text-muted">
-      <UIcon name="i-lucide-message-circle" class="size-4 shrink-0" />
-      <span class="text-xs">{{ item.commentCount }}</span>
-    </span>
-
-    <!-- Linked PRs (for issues) -->
-    <UTooltip
-      v-if="item.linkedPrs?.length"
-      :text="`${item.linkedPrs.length} linked PR${item.linkedPrs.length > 1 ? 's' : ''}`"
-    >
-      <div class="flex items-center gap-0.5 text-muted">
-        <UIcon name="i-lucide-git-pull-request" class="size-4 shrink-0" />
-        <span class="text-xs">{{ item.linkedPrs.length }}</span>
+        <IssueBody
+          :key="issue.id"
+          :issue="issue"
+          :collaborators="collaborators"
+          :repository-issues="repositoryIssues"
+          @refresh="handleRefresh"
+        />
       </div>
-    </UTooltip>
 
-    <!-- CI Status -->
-    <UTooltip
-      v-if="ciStatusConfig"
-      :text="ciStatusConfig.label"
-    >
-      <UIcon
-        :name="ciStatusConfig.icon"
-        :class="[ciStatusConfig.color, ciStatusConfig.animate && 'animate-spin']"
-        class="size-4 shrink-0"
-      />
-    </UTooltip>
+      <div class="border-l border-default overflow-y-auto p-4 sm:px-6">
+        <IssueMeta :issue="issue" @refresh="handleRefresh" />
+      </div>
+    </div>
 
-    <!-- Time -->
-    <span class="text-xs text-muted shrink-0 w-8 text-end">
-      {{ formatTimeAgo(item.updatedAt) }}
-    </span>
-  </NuxtLink>
+    <!-- Fallback if issue couldn't be loaded -->
+    <div v-else class="flex-1 flex items-center justify-center">
+      <p class="text-dimmed text-sm">
+        Failed to load issue details
+      </p>
+    </div>
+  </div>
 </template>

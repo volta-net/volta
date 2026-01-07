@@ -151,9 +151,9 @@ defineShortcuts({
 </script>
 
 <template>
-  <div class="overflow-y-auto p-1 scroll-py-1 isolate">
+  <div class="overflow-y-auto p-1 scroll-py-1 isolate focus:outline-none">
     <template v-for="notification in notifications" :key="notification.id">
-      <InboxNotificationsItem
+      <NotificationsItem
         v-if="!pendingDeleteIds.has(notification.id)"
         :ref="(el: any) => { notificationsRefs[notification.id] = el?.$el as Element }"
         :notification="notification"

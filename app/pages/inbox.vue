@@ -110,7 +110,7 @@ useSeoMeta({
       </template>
     </UDashboardNavbar>
 
-    <InboxNotifications
+    <Notifications
       v-model="selectedNotification"
       :notifications="notifications ?? []"
       @refresh="refresh"
@@ -127,7 +127,7 @@ useSeoMeta({
   </UDashboardPanel>
 
   <UDashboardPanel v-if="selectedNotification" id="inbox-2">
-    <InboxNotification
+    <Notification
       :notification="selectedNotification"
       @close="selectedNotification = null"
       @refresh="refresh"
@@ -151,7 +151,7 @@ useSeoMeta({
       v-model:open="isPanelOpen"
     >
       <template #content>
-        <InboxNotification
+        <Notification
           :notification="selectedNotification"
           @close="selectedNotification = null"
           @refresh="refresh"

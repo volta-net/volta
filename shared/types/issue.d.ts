@@ -1,21 +1,8 @@
-import type { DBUser, DBLabel, DBMilestone, DBIssueComment, DBIssue, Serialized } from './db'
-import type { Repository } from './repository'
+import type { DBUser, DBLabel, DBMilestone, DBIssueComment, DBIssue, DBRepository, DBType, Serialized } from './db'
 
-// User with selected fields for API responses
-export type User = Pick<DBUser, 'id' | 'login' | 'name' | 'avatarUrl'>
-
-// Label with selected fields for API responses
-export type Label = Pick<DBLabel, 'id' | 'name' | 'color' | 'description'>
-
-// Milestone with selected fields for API responses
-export type Milestone = Pick<DBMilestone, 'id' | 'number' | 'title' | 'description' | 'state' | 'htmlUrl' | 'dueOn'>
-
-// Issue type with selected fields for API responses
-export interface Type {
-  id: number
-  name: string
-  color: string | null
-}
+// Re-export DB types for convenience
+export type Label = DBLabel
+export type Type = DBType
 
 // CI status for PRs
 export interface CIStatus {
@@ -24,26 +11,6 @@ export interface CIStatus {
   conclusion: string | null
   htmlUrl: string | null
   name: string | null
-}
-
-// Comment with user relation
-export interface Comment extends Pick<DBIssueComment, 'id' | 'body' | 'htmlUrl' | 'createdAt' | 'updatedAt'> {
-  user: User | null
-}
-
-// Full issue with all relations populated (for detail views)
-export interface IssueDetail extends Omit<DBIssue, 'repositoryId' | 'milestoneId' | 'typeId' | 'userId' | 'closedById' | 'mergedById' | 'synced'> {
-  pullRequest: boolean
-  repository: Repository
-  milestone: Milestone | null
-  type: Type | null
-  user: User | null
-  closedBy: User | null
-  mergedBy: User | null
-  assignees: User[]
-  labels: Label[]
-  requestedReviewers: User[]
-  comments: Comment[]
 }
 
 // Linked PR/Issue reference (minimal info for display)
@@ -64,16 +31,27 @@ export interface LinkedIssue {
 }
 
 // Issue/PR for list views (serialized for API responses)
-export interface Issue extends Pick<Serialized<DBIssue>, 'id' | 'pullRequest' | 'number' | 'title' | 'state' | 'stateReason' | 'draft' | 'merged' | 'htmlUrl' | 'createdAt' | 'updatedAt' | 'reactionCount' | 'commentCount'> {
-  repository: Repository
-  user?: User | null
-  labels: Label[]
-  type?: Type | null
+export interface Issue extends Serialized<DBIssue> {
+  repository: Serialized<DBRepository>
+  user?: Serialized<DBUser> | null
+  labels?: Serialized<DBLabel>[]
+  type?: Serialized<DBType> | null
   ciStatuses?: CIStatus[]
-  // Linked PRs (for issues) - PRs that will close this issue
   linkedPrs?: LinkedPR[]
-  // Linked Issues (for PRs) - Issues this PR will close
   linkedIssues?: LinkedIssue[]
-  // Whether a maintainer has commented on this issue
   hasMaintainerComment?: boolean
+}
+
+// Full issue with all relations populated (for detail views)
+export interface IssueDetail extends Serialized<DBIssue> {
+  repository: Serialized<DBRepository>
+  milestone: Serialized<DBMilestone> | null
+  type: Serialized<DBType> | null
+  user: Serialized<DBUser> | null
+  closedBy: Serialized<DBUser> | null
+  mergedBy: Serialized<DBUser> | null
+  assignees: Serialized<DBUser>[]
+  labels: Serialized<DBLabel>[]
+  requestedReviewers: Serialized<DBUser>[]
+  comments: Array<Serialized<DBIssueComment> & { user: Serialized<DBUser> | null }>
 }
