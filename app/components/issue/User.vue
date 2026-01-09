@@ -1,6 +1,6 @@
 <script setup lang="ts">
 defineProps<{
-  user: User
+  user: Pick<User, 'login'>
 }>()
 </script>
 

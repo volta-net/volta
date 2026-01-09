@@ -1,12 +1,26 @@
 import { inArray, desc, eq, and } from 'drizzle-orm'
 import { db, schema } from 'hub:db'
-import type { CIStatus, Label, Type, LinkedPR, LinkedIssue } from '#shared/types/issue'
+
+// Minimal label data returned by getLabelsForIssues
+interface LabelData {
+  id: number
+  name: string
+  color: string
+  description: string | null
+}
+
+// Minimal type data returned by getTypesForIssues
+interface TypeData {
+  id: number
+  name: string
+  color: string | null
+}
 
 /**
  * Batch get labels for multiple issues (single query)
  */
-export async function getLabelsForIssues(issueIds: number[]): Promise<Map<number, Label[]>> {
-  if (issueIds.length === 0) return new Map<number, Label[]>()
+export async function getLabelsForIssues(issueIds: number[]): Promise<Map<number, LabelData[]>> {
+  if (issueIds.length === 0) return new Map<number, LabelData[]>()
 
   const labels = await db
     .select({
@@ -21,7 +35,7 @@ export async function getLabelsForIssues(issueIds: number[]): Promise<Map<number
     .where(inArray(schema.issueLabels.issueId, issueIds))
 
   // Group by issue ID
-  const labelsByIssue = new Map<number, Label[]>()
+  const labelsByIssue = new Map<number, LabelData[]>()
   for (const label of labels) {
     if (!labelsByIssue.has(label.issueId)) {
       labelsByIssue.set(label.issueId, [])
@@ -40,9 +54,9 @@ export async function getLabelsForIssues(issueIds: number[]): Promise<Map<number
 /**
  * Batch get types for multiple issues (single query)
  */
-export async function getTypesForIssues(typeIds: number[]): Promise<Map<number, Type>> {
+export async function getTypesForIssues(typeIds: number[]): Promise<Map<number, TypeData>> {
   const uniqueIds = [...new Set(typeIds.filter(id => id !== null))] as number[]
-  if (uniqueIds.length === 0) return new Map<number, Type>()
+  if (uniqueIds.length === 0) return new Map<number, TypeData>()
 
   const typesData = await db
     .select({

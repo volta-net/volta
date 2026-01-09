@@ -1,8 +1,6 @@
 <script setup lang="ts">
-import type { Type } from '#shared/types/issue'
-
 defineProps<{
-  type: Type
+  type: Pick<Type, 'name' | 'color'>
 }>()
 </script>
 

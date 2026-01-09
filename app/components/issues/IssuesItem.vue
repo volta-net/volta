@@ -1,7 +1,4 @@
 <script setup lang="ts">
-import type { Issue } from '#shared/types/issue'
-import type { WorkflowConclusion } from '#shared/types/db'
-
 const props = defineProps<{
   item: Issue
   selected?: boolean

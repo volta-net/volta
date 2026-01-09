@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import type { IssueDetail, Label } from '#shared/types/issue'
-
 const props = defineProps<{
   issue: IssueDetail
 }>()
@@ -352,11 +350,11 @@ async function onUpdateReviewers(newReviewers: UserItem[]) {
             </template>
 
             <template #item-leading="{ item }">
-              <UAvatar :src="(item as UserItem).avatarUrl!" :alt="(item as UserItem).login" size="3xs" />
+              <UAvatar :src="item.avatarUrl!" :alt="item.login" size="3xs" />
             </template>
 
             <template #item-label="{ item }">
-              {{ (item as UserItem).login }}
+              {{ item.login }}
             </template>
           </USelectMenu>
 
@@ -393,10 +391,10 @@ async function onUpdateReviewers(newReviewers: UserItem[]) {
               Add
             </template>
             <template #item-leading="{ item }">
-              <UAvatar :src="(item as UserItem).avatarUrl!" :alt="(item as UserItem).login" size="3xs" />
+              <UAvatar :src="item.avatarUrl!" :alt="item.login" size="3xs" />
             </template>
             <template #item-label="{ item }">
-              {{ (item as UserItem).login }}
+              {{ item.login }}
             </template>
           </USelectMenu>
 

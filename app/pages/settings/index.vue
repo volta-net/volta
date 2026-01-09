@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { triggerRef } from 'vue'
 import type { DropdownMenuItem } from '@nuxt/ui'
-import type { Installation, InstallationRepository } from '#shared/types/installation'
-import type { RepositorySubscription } from '#shared/types/repository'
 
 const toast = useToast()
 const config = useRuntimeConfig().public
@@ -128,7 +126,7 @@ async function importAllRepositories(installation: Installation) {
         await $fetch(`/api/repositories/${owner}/${name}/sync`, { method: 'POST' })
         // Optimistically update local state
         repo.synced = true
-        repo.lastSyncedAt = new Date()
+        repo.lastSyncedAt = new Date().toISOString()
         triggerRef(installations)
       } finally {
         syncing.value.delete(repo.fullName)
@@ -167,7 +165,7 @@ async function syncAllRepositories(installation: Installation) {
       try {
         await $fetch(`/api/repositories/${owner}/${name}/sync`, { method: 'POST' })
         // Optimistically update local state
-        repo.lastSyncedAt = new Date()
+        repo.lastSyncedAt = new Date().toISOString()
         triggerRef(installations)
       } finally {
         syncing.value.delete(repo.fullName)

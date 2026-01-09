@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { IssueDetail } from '#shared/types/issue'
 import type { TimelineItem } from '@nuxt/ui'
 
 const props = defineProps<{

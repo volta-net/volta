@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import type { IssueDetail } from '#shared/types/issue'
-
 const props = defineProps<{
   issue: IssueDetail
 }>()

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { Issue } from '#shared/types/issue'
 import { breakpointsTailwind } from '@vueuse/core'
 import { useFilter } from 'reka-ui'
 

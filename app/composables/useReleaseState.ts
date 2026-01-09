@@ -1,6 +1,4 @@
-import type { DBRelease } from '#shared/types/db'
-
-export type ReleaseStateLike = Pick<DBRelease, 'draft' | 'prerelease'>
+export type ReleaseStateLike = Pick<Release, 'draft' | 'prerelease'>
 
 type BadgeColor = 'success' | 'warning' | 'neutral'
 

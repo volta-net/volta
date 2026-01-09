@@ -1,11 +1,4 @@
-// Partial issue type for notification context
-export type IssueStateLike = {
-  pullRequest: boolean
-  state: string
-  stateReason?: string | null
-  draft?: boolean | null
-  merged?: boolean | null
-}
+export type IssueStateLike = Pick<Issue, 'pullRequest' | 'state' | 'stateReason' | 'draft' | 'merged'>
 
 type BadgeColor = 'success' | 'error' | 'info' | 'neutral'
 

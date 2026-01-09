@@ -1,10 +1,8 @@
 <script setup lang="ts">
-import type { FavoriteRepository } from '#shared/types/favorites'
-
 const open = defineModel<boolean>('open', { default: false })
 
 const props = defineProps<{
-  repositories: Pick<DBRepository, 'id' | 'fullName' | 'private'>[]
+  repositories: Pick<Repository, 'id' | 'fullName' | 'private'>[]
   favorites: FavoriteRepository[]
 }>()
 

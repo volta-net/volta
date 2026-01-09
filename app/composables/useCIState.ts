@@ -1,5 +1,3 @@
-import type { WorkflowConclusion } from '#shared/types/db'
-
 type BadgeColor = 'success' | 'error' | 'neutral' | 'warning'
 
 interface CIStateConfig {

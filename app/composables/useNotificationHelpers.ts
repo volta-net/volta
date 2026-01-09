@@ -1,4 +1,4 @@
-import type { Notification } from '#shared/types/notification'
+import type { Notification } from '#shared/types'
 import { getIssueStateIcon, getIssueStateColor } from './useIssueState'
 import { getCIStateIcon, getCIStateColor } from './useCIState'
 import { getReleaseStateIcon, getReleaseStateColor } from './useReleaseState'

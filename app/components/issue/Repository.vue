@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import type { Repository } from '#shared/types/repository'
-
 defineProps<{
   repository: Repository
 }>()

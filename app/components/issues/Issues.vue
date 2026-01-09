@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import type { Issue } from '#shared/types/issue'
-
 const props = defineProps<{
   issues: Issue[]
 }>()

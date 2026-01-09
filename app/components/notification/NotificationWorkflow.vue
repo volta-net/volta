@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Notification } from '#shared/types/notification'
+import type { Notification } from '#shared/types'
 
 const props = defineProps<{
   notification: Notification

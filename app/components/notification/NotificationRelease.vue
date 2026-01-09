@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Notification } from '#shared/types/notification'
+import type { Notification } from '#shared/types'
 
 const props = defineProps<{
   notification: Notification
@@ -92,7 +92,7 @@ defineShortcuts({
       </div>
 
       <!-- Body/Description -->
-      <div v-if="notification.body" class="prose prose-sm dark:prose-invert max-w-none">
+      <div v-if="notification.body">
         <p class="text-muted whitespace-pre-wrap">
           {{ notification.body }}
         </p>

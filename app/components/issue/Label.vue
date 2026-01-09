@@ -1,8 +1,6 @@
 <script setup lang="ts">
-import type { Label } from '#shared/types/issue'
-
 defineProps<{
-  label: Omit<Label, 'description'>
+  label: Pick<Label, 'name' | 'color'>
 }>()
 </script>
 

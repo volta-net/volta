@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { Issue, IssueDetail } from '#shared/types/issue'
 import type { MentionUser } from '~/composables/useEditorMentions'
 
 interface IssueReference {
