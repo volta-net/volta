@@ -78,6 +78,10 @@ export default defineEventHandler(async (event) => {
     }
   })
 
+  if (!freshIssue) {
+    throw createError({ statusCode: 404, message: 'Issue not found after sync' })
+  }
+
   // Check if user is subscribed to this issue
   const subscription = await db.query.issueSubscriptions.findFirst({
     where: and(
@@ -88,9 +92,9 @@ export default defineEventHandler(async (event) => {
 
   return {
     ...freshIssue,
-    assignees: freshIssue!.assignees.map(a => a.user),
-    labels: freshIssue!.labels.map(l => l.label),
-    requestedReviewers: freshIssue!.requestedReviewers.map(r => r.user),
+    assignees: freshIssue.assignees.map(a => a.user),
+    labels: freshIssue.labels.map(l => l.label),
+    requestedReviewers: freshIssue.requestedReviewers.map(r => r.user),
     isSubscribed: !!subscription
   }
 })
