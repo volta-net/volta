@@ -1,23 +1,28 @@
 <script setup lang="ts">
 import type { Notification } from '#shared/types/notification'
 
-defineProps<{
+const props = defineProps<{
   notification: Notification
   selected: boolean
 }>()
 
 const { getIcon, getColor, getTitle, getActionVerb, getSubjectLabel } = useNotificationHelpers()
 
-function formatTimeAgo(date: Date) {
-  const seconds = Math.floor((Date.now() - date.getTime()) / 1000)
-
-  if (seconds < 60) return 'now'
-  if (seconds < 3600) return `${Math.floor(seconds / 60)}m`
-  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h`
-  if (seconds < 604800) return `${Math.floor(seconds / 86400)}d`
-  if (seconds < 2592000) return `${Math.floor(seconds / 604800)}w`
-  return `${Math.floor(seconds / 2592000)}mo`
-}
+const timeAgo = useTimeAgo(() => new Date(props.notification.createdAt), {
+  messages: {
+    justNow: 'now',
+    past: (n: string | number) => String(n),
+    future: (n: string | number) => String(n),
+    month: (n: number) => `${n}mo`,
+    year: (n: number) => `${n}y`,
+    day: (n: number) => `${n}d`,
+    week: (n: number) => `${n}w`,
+    hour: (n: number) => `${n}h`,
+    minute: (n: number) => `${n}m`,
+    second: () => 'now',
+    invalid: ''
+  }
+})
 
 function stripMarkdown(text: string | null | undefined): string {
   if (!text) return ''
@@ -79,7 +84,7 @@ function stripMarkdown(text: string | null | undefined): string {
           <span v-if="notification.action === 'comment' && notification.body">: {{ stripMarkdown(notification.body) }}</span>
         </span>
         <span class="shrink-0 ms-auto flex items-center gap-1 text-sm text-dimmed">
-          {{ formatTimeAgo(new Date(notification.createdAt)) }}
+          {{ timeAgo }}
         </span>
       </div>
     </div>
