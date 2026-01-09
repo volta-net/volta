@@ -38,11 +38,6 @@ async function saveTitle() {
   }
 }
 
-const debouncedSaveTitle = useDebounceFn(saveTitle, 2000)
-
-watch(editedTitle, () => {
-  debouncedSaveTitle()
-})
 </script>
 
 <template>
@@ -52,5 +47,6 @@ watch(editedTitle, () => {
     trailing
     variant="none"
     :ui="{ base: 'p-0 text-xl font-semibold' }"
+    @blur="saveTitle"
   />
 </template>

@@ -33,13 +33,14 @@ const props = withDefaults(defineProps<{
   placeholder: 'Write something...',
   collaborators: () => [],
   repositoryIssues: () => [],
-  completion: false,
-  parseMentions: false,
+  completion: true,
+  parseMentions: true,
   bubbleToolbar: true
 })
 
 const emit = defineEmits<{
   (e: 'parsing', isParsing: boolean): void
+  (e: 'blur'): void
 }>()
 
 const modelValue = defineModel<string>()
@@ -183,6 +184,7 @@ const appendToBody = import.meta.client ? () => document.body : undefined
       mode: 'firstLine'
     }"
     :ui="ui"
+    @blur="emit('blur')"
   >
     <!-- Bubble toolbar for text selection -->
     <UEditorToolbar

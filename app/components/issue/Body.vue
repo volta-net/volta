@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { MentionUser } from '~/composables/useEditorMentions'
-import { stripHtmlComments } from '~/utils/editor'
 
 interface IssueReference {
   id: number
@@ -26,7 +25,7 @@ const body = ref(props.issue.body || '')
 const isSaving = ref(false)
 const isParsing = ref(false)
 
-// Track the original body (with comments) for comparison
+// Track the original body for comparison
 const originalBody = ref(props.issue.body || '')
 
 watch(() => props.issue.body, (newBody) => {
@@ -37,12 +36,12 @@ watch(() => props.issue.body, (newBody) => {
 })
 
 // Normalize content for comparison
-// Strip comments, normalize whitespace, and normalize common markdown transformations
+// Normalize whitespace and common markdown transformations
 function normalizeForComparison(content: string): string {
-  let normalized = stripHtmlComments(content)
+  let normalized = content
 
   // Normalize table separators (editor may add/remove padding)
-  normalized = normalized.replace(/\|[\s-:]+\|/g, match => match.replace(/\s+/g, ''))
+  normalized = normalized.replace(/\|[\s-:]+\|/g, (match: string) => match.replace(/\s+/g, ''))
 
   // Normalize multiple newlines to single
   normalized = normalized.replace(/\n{3,}/g, '\n\n')
@@ -60,7 +59,7 @@ function normalizeForComparison(content: string): string {
 async function saveBody() {
   if (isSaving.value || isParsing.value) return
 
-  // Only save if actual content changed (ignoring comments)
+  // Only save if actual content changed
   if (normalizeForComparison(body.value) === normalizeForComparison(originalBody.value)) {
     return
   }
@@ -82,14 +81,6 @@ async function saveBody() {
     isSaving.value = false
   }
 }
-
-const debouncedSaveBody = useDebounceFn(saveBody, 2000)
-
-watch(body, () => {
-  if (!isParsing.value) {
-    debouncedSaveBody()
-  }
-})
 </script>
 
 <template>
@@ -98,8 +89,6 @@ watch(body, () => {
     :issue="issue"
     :collaborators="collaborators"
     :repository-issues="repositoryIssues"
-    :completion="true"
-    :parse-mentions="false"
     placeholder="Add a description..."
     :ui="{
       content: 'flex flex-col',
@@ -107,5 +96,6 @@ watch(body, () => {
     }"
     class="flex-1"
     @parsing="isParsing = $event"
+    @blur="saveBody"
   />
 </template>

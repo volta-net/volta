@@ -91,20 +91,9 @@ function renderBasicMarkdown(content: string): string {
  * rendering issues in the TipTap editor.
  */
 
-// HTML comments regex - matches <!-- anything -->
-const HTML_COMMENT_REGEX = /<!--[\s\S]*?-->/g
-
 // Details block regex and wrapper
 const DETAILS_HTML_REGEX = /<details[^>]*>[\s\S]*?<\/details>/gi
-const WRAPPER_REGEX = /<div data-details-encoded="([^"]+)"><\/div>/g
-
-/**
- * Strip HTML comments from markdown content.
- * Comments like <!-- rebase-check --> cause empty paragraphs/line breaks.
- */
-export function stripHtmlComments(markdown: string): string {
-  return markdown.replace(HTML_COMMENT_REGEX, '')
-}
+const DETAILS_WRAPPER_REGEX = /<div data-details-encoded="([^"]+)"><\/div>/g
 
 /**
  * Encode <details> blocks to wrapper divs before markdown parsing
@@ -120,7 +109,7 @@ export function encodeDetailsBlocks(markdown: string): string {
  * Decode wrapper divs back to <details> HTML
  */
 export function decodeDetailsBlocks(markdown: string): string {
-  return markdown.replace(WRAPPER_REGEX, (_, encoded) => {
+  return markdown.replace(DETAILS_WRAPPER_REGEX, (_, encoded) => {
     try {
       return decodeURIComponent(escape(atob(encoded)))
     } catch {
@@ -131,14 +120,10 @@ export function decodeDetailsBlocks(markdown: string): string {
 
 /**
  * Pre-process content for editor display:
- * - Strip HTML comments
  * - Encode details blocks
  */
 export function preprocessForEditor(markdown: string): string {
-  let result = markdown
-  result = stripHtmlComments(result)
-  result = encodeDetailsBlocks(result)
-  return result
+  return encodeDetailsBlocks(markdown)
 }
 
 /**
