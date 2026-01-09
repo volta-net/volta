@@ -11,8 +11,8 @@ export const users = pgTable('users', {
   avatarUrl: text('avatar_url'),
   // True if user has logged into the app, false for shadow users from imports
   registered: boolean().default(false).notNull(),
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow()
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
 }, table => ([
   uniqueIndex('users_github_id_idx').on(table.githubId)
 ]))
@@ -47,8 +47,8 @@ export const notifications = pgTable('notifications', {
   actorId: integer('actor_id').references(() => users.id, { onDelete: 'set null' }),
   // Status
   read: boolean().default(false),
-  readAt: timestamp('read_at'),
-  createdAt: timestamp('created_at').notNull().defaultNow()
+  readAt: timestamp('read_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
 })
 
 // GitHub App Installations
@@ -60,8 +60,8 @@ export const installations = pgTable('installations', {
   accountType: text('account_type').notNull(), // 'User' | 'Organization'
   avatarUrl: text('avatar_url'),
   suspended: boolean().default(false),
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow()
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
 }, table => ([
   uniqueIndex('installations_github_id_idx').on(table.githubId)
 ]))
@@ -81,9 +81,9 @@ export const repositories = pgTable('repositories', {
   disabled: boolean().default(false),
   // Volta-specific
   syncEnabled: boolean('sync_enabled').default(true),
-  lastSyncedAt: timestamp('last_synced_at'),
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow()
+  lastSyncedAt: timestamp('last_synced_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
 }, table => ([
   uniqueIndex('repositories_github_id_idx').on(table.githubId)
 ]))
@@ -100,8 +100,8 @@ export const releases = pgTable('releases', {
   draft: boolean().default(false),
   prerelease: boolean().default(false),
   htmlUrl: text('html_url'),
-  publishedAt: timestamp('published_at'),
-  createdAt: timestamp('created_at').notNull().defaultNow()
+  publishedAt: timestamp('published_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
 }, table => ([
   uniqueIndex('releases_github_id_idx').on(table.githubId)
 ]))
@@ -127,10 +127,10 @@ export const workflowRuns = pgTable('workflow_runs', {
   htmlUrl: text('html_url'),
   runNumber: bigint('run_number', { mode: 'number' }),
   runAttempt: bigint('run_attempt', { mode: 'number' }),
-  startedAt: timestamp('started_at'),
-  completedAt: timestamp('completed_at'),
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow()
+  startedAt: timestamp('started_at', { withTimezone: true }),
+  completedAt: timestamp('completed_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
 }, table => ([
   uniqueIndex('workflow_runs_github_id_idx').on(table.githubId)
 ]))
@@ -148,10 +148,10 @@ export const checkRuns = pgTable('check_runs', {
   detailsUrl: text('details_url'), // External URL (e.g., Vercel deployment URL)
   appSlug: text('app_slug'), // App identifier (e.g., "vercel", "circleci")
   appName: text('app_name'), // App display name
-  startedAt: timestamp('started_at'),
-  completedAt: timestamp('completed_at'),
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow()
+  startedAt: timestamp('started_at', { withTimezone: true }),
+  completedAt: timestamp('completed_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
 }, table => ([
   uniqueIndex('check_runs_github_id_idx').on(table.githubId)
 ]))
@@ -169,8 +169,8 @@ export const commitStatuses = pgTable('commit_statuses', {
   context: text().notNull(), // Status context (e.g., "Vercel", "continuous-integration/travis-ci")
   description: text(), // Short description
   targetUrl: text('target_url'), // Link to external service
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow()
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
 }, table => ([
   uniqueIndex('commit_statuses_github_id_idx').on(table.githubId)
 ]))
@@ -184,8 +184,8 @@ export const labels = pgTable('labels', {
   color: text().notNull(),
   description: text(),
   default: boolean().default(false),
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow()
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
 }, table => ([
   uniqueIndex('labels_github_id_idx').on(table.githubId)
 ]))
@@ -198,8 +198,8 @@ export const types = pgTable('types', {
   name: text().notNull(),
   description: text(),
   color: text(),
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow()
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
 }, table => ([
   uniqueIndex('types_github_id_idx').on(table.githubId)
 ]))
@@ -216,10 +216,10 @@ export const milestones = pgTable('milestones', {
   htmlUrl: text('html_url'),
   openIssues: bigint('open_issues', { mode: 'number' }).default(0),
   closedIssues: bigint('closed_issues', { mode: 'number' }).default(0),
-  dueOn: timestamp('due_on'),
-  closedAt: timestamp('closed_at'),
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow()
+  dueOn: timestamp('due_on', { withTimezone: true }),
+  closedAt: timestamp('closed_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
 }, table => ([
   uniqueIndex('milestones_github_id_idx').on(table.githubId)
 ]))
@@ -252,20 +252,20 @@ export const issues = pgTable('issues', {
   headSha: text('head_sha'),
   baseRef: text('base_ref'),
   baseSha: text('base_sha'),
-  mergedAt: timestamp('merged_at'),
+  mergedAt: timestamp('merged_at', { withTimezone: true }),
   mergedById: integer('merged_by_id').references(() => users.id, { onDelete: 'set null' }),
   // Timestamps
-  closedAt: timestamp('closed_at'),
+  closedAt: timestamp('closed_at', { withTimezone: true }),
   closedById: integer('closed_by_id').references(() => users.id, { onDelete: 'set null' }),
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   // Engagement metrics (from GitHub API)
   reactionCount: bigint('reaction_count', { mode: 'number' }).default(0),
   commentCount: bigint('comment_count', { mode: 'number' }).default(0),
   // Sync status - false until full data (comments, reactions, etc.) has been fetched from GitHub
   synced: boolean().default(false).notNull(),
   // When we last synced this issue from GitHub (for staleness checks)
-  syncedAt: timestamp('synced_at')
+  syncedAt: timestamp('synced_at', { withTimezone: true })
 }, table => ([
   // The true unique identifier is (repositoryId, number), not GitHub's ID
   uniqueIndex('issues_repo_number_idx').on(table.repositoryId, table.number)
@@ -312,8 +312,8 @@ export const issueComments = pgTable('issue_comments', {
   userId: integer('user_id').references(() => users.id, { onDelete: 'set null' }),
   body: text().notNull(),
   htmlUrl: text('html_url'),
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow()
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
 }, table => ([
   uniqueIndex('issue_comments_github_id_idx').on(table.githubId)
 ]))
@@ -331,9 +331,9 @@ export const issueReviews = pgTable('issue_reviews', {
   state: text().$type<ReviewState>().notNull(),
   htmlUrl: text('html_url'),
   commitId: text('commit_id'),
-  submittedAt: timestamp('submitted_at'),
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow()
+  submittedAt: timestamp('submitted_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
 }, table => ([
   uniqueIndex('issue_reviews_github_id_idx').on(table.githubId)
 ]))
@@ -352,8 +352,8 @@ export const issueReviewComments = pgTable('issue_review_comments', {
   commitId: text('commit_id'),
   diffHunk: text('diff_hunk'),
   htmlUrl: text('html_url'),
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow()
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
 }, table => ([
   uniqueIndex('issue_review_comments_github_id_idx').on(table.githubId)
 ]))
@@ -625,7 +625,7 @@ export const repositorySubscriptions = pgTable('repository_subscriptions', {
   ci: boolean().default(true), // CI failures
   mentions: boolean().default(true), // @mentions
   activity: boolean().default(true), // All activity (comments, reviews, etc.)
-  createdAt: timestamp('created_at').notNull().defaultNow()
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
 })
 
 export const repositorySubscriptionsRelations = relations(repositorySubscriptions, ({ one }) => ({
@@ -643,7 +643,7 @@ export const repositorySubscriptionsRelations = relations(repositorySubscription
 export const issueSubscriptions = pgTable('issue_subscriptions', {
   issueId: integer('issue_id').notNull().references(() => issues.id, { onDelete: 'cascade' }),
   userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  createdAt: timestamp('created_at').notNull().defaultNow()
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
 }, table => ([
   primaryKey({ columns: [table.issueId, table.userId] })
 ]))
@@ -664,7 +664,7 @@ export const favoriteRepositories = pgTable('favorite_repositories', {
   id: serial().primaryKey(),
   userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   repositoryId: integer('repository_id').notNull().references(() => repositories.id, { onDelete: 'cascade' }),
-  createdAt: timestamp('created_at').notNull().defaultNow()
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
 })
 
 export const favoriteRepositoriesRelations = relations(favoriteRepositories, ({ one }) => ({
@@ -685,8 +685,8 @@ export const repositoryCollaborators = pgTable('repository_collaborators', {
   repositoryId: integer('repository_id').notNull().references(() => repositories.id, { onDelete: 'cascade' }),
   userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   permission: text().$type<CollaboratorPermission>().notNull(),
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow()
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
 }, table => ([
   primaryKey({ columns: [table.repositoryId, table.userId] })
 ]))
@@ -707,7 +707,7 @@ export const favoriteIssues = pgTable('favorite_issues', {
   id: serial().primaryKey(),
   userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   issueId: integer('issue_id').notNull().references(() => issues.id, { onDelete: 'cascade' }),
-  createdAt: timestamp('created_at').notNull().defaultNow()
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
 })
 
 export const favoriteIssuesRelations = relations(favoriteIssues, ({ one }) => ({
