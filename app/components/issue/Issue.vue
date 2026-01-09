@@ -118,6 +118,24 @@ async function handleRefresh() {
   emit('refresh')
 }
 
+// Force sync with GitHub
+const syncing = ref(false)
+async function handleSync() {
+  if (!issueUrl.value || syncing.value) return
+
+  syncing.value = true
+  try {
+    await $fetch(`${issueUrl.value}/sync`, { method: 'POST' })
+    await refreshIssue()
+    emit('refresh')
+    toast.add({ title: 'Synced with GitHub', icon: 'i-lucide-refresh-cw' })
+  } catch (err: any) {
+    toast.add({ title: 'Failed to sync', description: err.message, color: 'error', icon: 'i-lucide-x' })
+  } finally {
+    syncing.value = false
+  }
+}
+
 defineShortcuts({
   meta_g: () => {
     if (props.item.htmlUrl) {
@@ -167,6 +185,16 @@ defineShortcuts({
             :loading="updatingFavorite"
             :active="isFavorited"
             @click="toggleFavorite"
+          />
+        </UTooltip>
+
+        <UTooltip text="Sync with GitHub">
+          <UButton
+            icon="i-lucide-refresh-cw"
+            color="neutral"
+            variant="ghost"
+            :loading="syncing"
+            @click="handleSync"
           />
         </UTooltip>
       </template>
