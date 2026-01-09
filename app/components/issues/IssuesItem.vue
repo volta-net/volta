@@ -104,7 +104,7 @@ function formatTimeAgo(date: Date | string) {
     <!-- Content -->
     <div class="flex-1 flex items-center gap-3 min-w-0">
       <span class="text-sm font-medium truncate">
-        <span class="text-muted">#{{ item.number }}</span> {{ item.title }}
+        <span class="text-dimmed">#{{ item.number }}</span> {{ item.title }}
       </span>
 
       <div class="flex items-center gap-1 -my-1">
