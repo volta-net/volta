@@ -1,102 +1,13 @@
 <script setup lang="ts">
 import type { Editor as TiptapEditor } from '@tiptap/vue-3'
 import type { EditorCustomHandlers } from '@nuxt/ui'
-import { mergeAttributes } from '@tiptap/core'
-import { Details, DetailsContent, DetailsSummary } from '@tiptap/extension-details'
 import { Emoji } from '@tiptap/extension-emoji'
-import type { MentionOptions, MentionNodeAttrs } from '@tiptap/extension-mention'
-import { Mention } from '@tiptap/extension-mention'
 import { TableKit } from '@tiptap/extension-table'
-import { ImageUpload } from '~/components/editor/ImageUploadExtension'
+import { TaskList, TaskItem } from '@tiptap/extension-list'
 import CodeBlockShiki from 'tiptap-extension-code-block-shiki'
-import type { MentionUser } from '~/composables/useEditorMentions'
-import type { IssueDetail } from '#shared/types/issue'
-
-/**
- * Determine if a mention ID is a reference (issue/PR) or user mention
- */
-function isReferenceType(id: string): boolean {
-  if (/^[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+#\d+$/.test(id)) return true
-  if (/^\d+$/.test(id)) return true
-  return false
-}
-
-/**
- * Parse GitHub autolinked references in editor document
- * See: https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/autolinked-references-and-urls
- */
-function parseExistingMentions(editor: TiptapEditor, currentRepo: string) {
-  const { state } = editor
-  const { doc, schema } = state
-  const mentionType = schema.nodes.mention
-  if (!mentionType) return
-
-  const replacements: { from: number, to: number, id: string, type: 'user' | 'reference' }[] = []
-
-  const patterns: { regex: RegExp, getId: (m: RegExpExecArray) => string, type: 'user' | 'reference' }[] = [
-    {
-      regex: /https?:\/\/github\.com\/([a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+)\/(?:issues|pull)\/(\d+)/g,
-      getId: (m: RegExpExecArray) => m[1] === currentRepo ? m[2]! : `${m[1]}#${m[2]}`,
-      type: 'reference'
-    },
-    {
-      regex: /([a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+)#(\d+)/g,
-      getId: (m: RegExpExecArray) => `${m[1]}#${m[2]}`,
-      type: 'reference'
-    },
-    {
-      regex: /\bGH-(\d+)\b/gi,
-      getId: (m: RegExpExecArray) => m[1]!,
-      type: 'reference'
-    },
-    {
-      regex: /(?<![/])#(\d+)\b/g,
-      getId: (m: RegExpExecArray) => m[1]!,
-      type: 'reference'
-    },
-    {
-      // Exclude scoped npm packages like @nuxt/ui, @ai-sdk/mcp
-      // Use negative lookahead to check if followed by any chars then / (package pattern)
-      regex: /(?<![a-zA-Z0-9._%+-])@([a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)(?![^\s/]*\/)\b/g,
-      getId: (m: RegExpExecArray) => m[1]!,
-      type: 'user'
-    }
-  ]
-
-  doc.descendants((node, pos) => {
-    if (!node.isText || !node.text) return
-
-    // Skip text nodes that are inside links (have link mark)
-    if (node.marks.some(mark => mark.type.name === 'link')) return
-
-    const text = node.text
-
-    for (const { regex, getId, type } of patterns) {
-      regex.lastIndex = 0
-      let match: RegExpExecArray | null
-      while ((match = regex.exec(text)) !== null) {
-        const from = pos + match.index
-        const to = from + match[0].length
-
-        if (!replacements.some(r => (from >= r.from && from < r.to) || (to > r.from && to <= r.to))) {
-          replacements.push({ from, to, id: getId(match), type })
-        }
-      }
-    }
-  })
-
-  if (replacements.length === 0) return
-
-  const tr = state.tr
-  replacements
-    .sort((a, b) => b.from - a.from)
-    .forEach(({ from, to, id, type }) => {
-      const mentionNode = mentionType.create({ id, label: id, type })
-      tr.replaceWith(from, to, mentionNode)
-    })
-
-  editor.view.dispatch(tr)
-}
+import { ImageUpload } from '~/components/editor/ImageUploadExtension'
+import { createCustomMentionExtension, parseExistingMentions, type MentionUser } from '~/composables/useEditorMentions'
+import { DetailsBlock, preprocessForEditor, postprocessFromEditor } from '~/utils/editor'
 
 interface IssueReference {
   id: number
@@ -107,7 +18,6 @@ interface IssueReference {
 }
 
 const props = withDefaults(defineProps<{
-  modelValue: string
   issue: IssueDetail
   // External data (fetched by parent)
   collaborators?: MentionUser[]
@@ -129,9 +39,18 @@ const props = withDefaults(defineProps<{
 })
 
 const emit = defineEmits<{
-  (e: 'update:modelValue', value: string): void
   (e: 'parsing', isParsing: boolean): void
 }>()
+
+const modelValue = defineModel<string>()
+
+// Internal content with preprocessing for proper display
+const content = computed({
+  get: () => preprocessForEditor(modelValue.value || ''),
+  set: (val) => {
+    modelValue.value = postprocessFromEditor(val || '')
+  }
+})
 
 // Computed from issue
 const repoFullName = computed(() => props.issue.repository.fullName)
@@ -191,110 +110,8 @@ const { items: referenceItems } = useEditorReferences(issuesRef, {
 const { items: suggestionItems } = useEditorSuggestions(customHandlers.value)
 const { items: toolbarItems, getImageToolbarItems } = useEditorToolbar(customHandlers.value, { aiLoading })
 
-// Mention rendering
-const mentionOptions: Partial<MentionOptions<any, MentionNodeAttrs>> = {
-  renderHTML({ options, node }) {
-    const rawLabel = node.attrs.id ?? node.attrs.label
-    // If no valid id/label, render as plain text with the suggestion char
-    if (rawLabel == null) {
-      const char = node.attrs.mentionSuggestionChar || '@'
-      return ['span', options.HTMLAttributes, char]
-    }
-    const label = String(rawLabel)
-    const mentionType = isReferenceType(label) ? 'reference' : 'user'
-
-    const crossRepoMatch = label.match(/^([a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+)#(\d+)$/)
-
-    let href: string
-    let displayText: string
-
-    if (crossRepoMatch) {
-      const [, repo, number] = crossRepoMatch
-      href = `https://github.com/${repo}/issues/${number}`
-      displayText = label
-    } else if (mentionType === 'reference') {
-      href = `https://github.com/${repoFullName.value}/issues/${label}`
-      displayText = `#${label}`
-    } else {
-      href = `https://github.com/${label}`
-      displayText = `@${label}`
-    }
-
-    return [
-      'a',
-      mergeAttributes(
-        { href, target: '_blank', rel: 'noopener noreferrer' },
-        options.HTMLAttributes
-      ),
-      displayText
-    ]
-  },
-  renderText({ node }) {
-    const rawLabel = node.attrs.id ?? node.attrs.label
-    // If no valid id/label, return just the suggestion char
-    if (rawLabel == null) {
-      return node.attrs.mentionSuggestionChar || '@'
-    }
-    const label = String(rawLabel)
-    const mentionType = isReferenceType(label) ? 'reference' : 'user'
-    if (/^[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+#\d+$/.test(label)) {
-      return label
-    }
-    if (mentionType === 'reference') {
-      return `#${label}`
-    }
-    return `@${label}`
-  }
-}
-
-// Custom Mention extension that disables markdown parsing to prevent
-// `@scope/package` patterns from being incorrectly parsed as mentions
-const CustomMention = Mention.extend({
-  // Override markdown parsing to skip parsing mentions from markdown shortcodes
-  // We use parseExistingMentions instead for proper text-to-mention conversion
-  parseMarkdown: () => [],
-  markdownTokenizer: {
-    name: 'mention',
-    level: 'inline' as const,
-    start: () => -1, // Never match
-    tokenize: () => undefined
-  },
-  renderMarkdown(node: { attrs?: { id?: string, label?: string } }) {
-    // Serialize mentions back to plain text format (@username or #number)
-    const label = node.attrs?.id ?? node.attrs?.label
-    if (!label) return ''
-    if (isReferenceType(String(label))) {
-      if (/^[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+#\d+$/.test(String(label))) {
-        return String(label)
-      }
-      return `#${label}`
-    }
-    return `@${label}`
-  },
-  // Override HTML parsing to reject mentions without valid id/label
-  parseHTML() {
-    return [
-      {
-        tag: 'span[data-type="mention"]',
-        getAttrs: (element) => {
-          const el = element as HTMLElement
-          const id = el.getAttribute('data-id')
-          const label = el.getAttribute('data-label')
-          // Only parse as mention if it has valid id or label
-          if (!id && !label) {
-            return false // Reject this match
-          }
-          return { id, label }
-        }
-      }
-    ]
-  }
-}).configure({
-  ...mentionOptions,
-  HTMLAttributes: {
-    class: 'mention'
-  }
-})
+// Custom Mention extension (configured with repo context for proper link generation)
+const CustomMention = createCustomMentionExtension(repoFullName)
 
 // Extensions
 const extensions = computed(() => {
@@ -306,82 +123,22 @@ const extensions = computed(() => {
         dark: 'material-theme-palenight'
       }
     }),
-    Details.configure({
-      HTMLAttributes: {
-        class: 'details'
-      }
-    }),
-    DetailsSummary,
-    DetailsContent,
+    DetailsBlock,
     Emoji,
     ImageUpload,
-    TableKit,
+    TableKit.configure({
+      table: {
+        resizable: true
+      }
+    }),
+    TaskList,
+    TaskItem,
     CustomMention
   ]
   if (completionEnabled.value) {
     ext.push(Completion as any)
   }
   return ext
-})
-
-/**
- * Simple markdown to HTML converter for content inside <details> blocks.
- * Handles common GitHub markdown syntax.
- */
-function simpleMarkdownToHtml(md: string): string {
-  const html = md
-    // Escape HTML entities first (except existing tags)
-    .replace(/&(?![\w#]+;)/g, '&amp;')
-    // Code blocks (``` ... ```)
-    .replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>')
-    // Inline code
-    .replace(/`([^`]+)`/g, '<code>$1</code>')
-    // Headings
-    .replace(/^#### (.+)$/gm, '<h4>$1</h4>')
-    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
-    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
-    .replace(/^# (.+)$/gm, '<h1>$1</h1>')
-    // Bold
-    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-    .replace(/__([^_]+)__/g, '<strong>$1</strong>')
-    // Italic
-    .replace(/\*([^*]+)\*/g, '<em>$1</em>')
-    .replace(/_([^_]+)_/g, '<em>$1</em>')
-    // Links
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')
-    // Line breaks to paragraphs (non-empty lines)
-    .split(/\n\n+/)
-    .map(block => block.trim())
-    .filter(block => block.length > 0)
-    .map((block) => {
-      // Don't wrap if already a block element
-      if (/^<(?:h[1-6]|p|pre|ul|ol|li|blockquote|div)/.test(block)) {
-        return block
-      }
-      return `<p>${block.replace(/\n/g, '<br>')}</p>`
-    })
-    .join('\n')
-
-  return html
-}
-
-/**
- * Process <details> HTML blocks - parse markdown content inside to HTML.
- */
-function processDetailsBlocks(markdown: string): string {
-  return markdown.replace(
-    /<details([^>]*)>\s*<summary>([\s\S]*?)<\/summary>([\s\S]*?)<\/details>/gi,
-    (_match, attrs, summary, content) => {
-      const htmlContent = simpleMarkdownToHtml(content.trim())
-      return `<details${attrs}>\n<summary>${summary.trim()}</summary>\n${htmlContent || '<p></p>'}\n</details>`
-    }
-  )
-}
-
-// Content model - process details blocks (convert markdown to HTML inside)
-const content = computed({
-  get: () => processDetailsBlocks(props.modelValue),
-  set: (value: string) => emit('update:modelValue', value)
 })
 
 const isParsing = ref(false)

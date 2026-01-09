@@ -1,9 +1,19 @@
 import { streamText } from 'ai'
 import { gateway } from '@ai-sdk/gateway'
-import { eq, and } from 'drizzle-orm'
+import { eq, and, inArray } from 'drizzle-orm'
 import { db, schema } from 'hub:db'
 
-function buildContextPrompt(repository: { fullName: string, description: string | null }, issue: { number: number, title: string, pullRequest: boolean, labels: { name: string }[] }): string {
+function buildContextPrompt(
+  repository: { fullName: string, description: string | null },
+  issue: {
+    number: number
+    title: string
+    body: string | null
+    pullRequest: boolean
+    labels: { name: string }[]
+    comments: { author: string, body: string, isMaintainer: boolean }[]
+  }
+): string {
   const parts: string[] = []
 
   parts.push(`Repository: ${repository.fullName}`)
@@ -13,8 +23,18 @@ function buildContextPrompt(repository: { fullName: string, description: string 
 
   const type = issue.pullRequest ? 'Pull Request' : 'Issue'
   parts.push(`${type} #${issue.number}: ${issue.title}`)
+  if (issue.body) {
+    parts.push(`Body:\n${issue.body}`)
+  }
   if (issue.labels.length) {
     parts.push(`Labels: ${issue.labels.map(l => l.name).join(', ')}`)
+  }
+  if (issue.comments.length) {
+    parts.push(`\nComment history:`)
+    for (const comment of issue.comments) {
+      const role = comment.isMaintainer ? ' [maintainer]' : ''
+      parts.push(`@${comment.author}${role}: ${comment.body}`)
+    }
   }
 
   return `\n\nCONTEXT (use this to provide relevant suggestions):\n${parts.join('\n')}`
@@ -48,7 +68,7 @@ export default defineEventHandler(async (event) => {
   // Check user has access to this repository
   await requireRepositoryAccess(user.id, repository.id)
 
-  // Find issue by repository + number with labels
+  // Find issue by repository + number with labels and comments
   const issue = await db.query.issues.findFirst({
     where: and(
       eq(schema.issues.repositoryId, repository.id),
@@ -59,6 +79,12 @@ export default defineEventHandler(async (event) => {
         with: {
           label: true
         }
+      },
+      comments: {
+        with: {
+          user: true
+        },
+        orderBy: (comments, { asc }) => [asc(comments.createdAt)]
       }
     }
   })
@@ -66,6 +92,16 @@ export default defineEventHandler(async (event) => {
   if (!issue) {
     throw createError({ statusCode: 404, message: 'Issue not found' })
   }
+
+  // Get maintainer user IDs (collaborators with write access or higher)
+  const maintainerPermissions = ['admin', 'maintain', 'write'] as const
+  const collaborators = await db.query.repositoryCollaborators.findMany({
+    where: and(
+      eq(schema.repositoryCollaborators.repositoryId, repository.id),
+      inArray(schema.repositoryCollaborators.permission, [...maintainerPermissions])
+    )
+  })
+  const maintainerIds = new Set(collaborators.map(c => c.userId))
 
   // Parse request body
   const { prompt, mode, language } = await readBody<{
@@ -87,8 +123,14 @@ export default defineEventHandler(async (event) => {
     {
       number: issue.number,
       title: issue.title,
+      body: issue.body,
       pullRequest: issue.pullRequest,
-      labels: issue.labels.map(l => ({ name: l.label.name }))
+      labels: issue.labels.map(l => ({ name: l.label.name })),
+      comments: issue.comments.map(c => ({
+        author: c.user?.login ?? 'unknown',
+        body: c.body,
+        isMaintainer: c.userId ? maintainerIds.has(c.userId) : false
+      }))
     }
   )
 
@@ -134,7 +176,7 @@ CRITICAL RULES:
   }
 
   return streamText({
-    model: gateway('openai/gpt-4o-mini'),
+    model: gateway('anthropic/claude-sonnet-4.5'),
     system,
     prompt,
     maxOutputTokens
