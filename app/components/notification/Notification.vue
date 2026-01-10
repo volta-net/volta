@@ -7,7 +7,7 @@ defineProps<{
 
 const emit = defineEmits<{
   (e: 'close' | 'refresh'): void
-  (e: 'read', id: number): void
+  (e: 'read' | 'delete', id: number): void
 }>()
 </script>
 
@@ -19,6 +19,7 @@ const emit = defineEmits<{
       :notification="notification"
       @refresh="emit('refresh')"
       @read="emit('read', $event)"
+      @delete="emit('delete', $event)"
     />
 
     <!-- Release -->
@@ -26,6 +27,7 @@ const emit = defineEmits<{
       v-else-if="notification.release"
       :notification="notification"
       @read="emit('read', $event)"
+      @delete="emit('delete', $event)"
     />
 
     <!-- Workflow Run -->
@@ -33,6 +35,7 @@ const emit = defineEmits<{
       v-else-if="notification.workflowRun"
       :notification="notification"
       @read="emit('read', $event)"
+      @delete="emit('delete', $event)"
     />
 
     <UEmpty

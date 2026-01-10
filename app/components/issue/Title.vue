@@ -37,7 +37,6 @@ async function saveTitle() {
     isSaving.value = false
   }
 }
-
 </script>
 
 <template>

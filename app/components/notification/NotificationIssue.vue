@@ -7,7 +7,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'refresh'): void
-  (e: 'read', id: number): void
+  (e: 'read' | 'delete', id: number): void
 }>()
 
 // Mark notification as read on mount if unread
@@ -32,7 +32,15 @@ onMounted(async () => {
     @refresh="emit('refresh')"
   >
     <template #right>
-      <slot name="right" />
+      <UTooltip text="Delete notification" :kbds="['d']">
+        <UButton
+          icon="i-lucide-trash-2"
+          label="Delete notification"
+          color="neutral"
+          variant="soft"
+          @click="emit('delete', notification.id)"
+        />
+      </UTooltip>
     </template>
   </Issue>
 </template>

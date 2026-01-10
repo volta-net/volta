@@ -2,9 +2,20 @@
 import { breakpointsTailwind } from '@vueuse/core'
 import type { Notification } from '#shared/types'
 
+const toast = useToast()
+
 const { data: notifications, refresh } = await useFetch<Notification[]>('/api/notifications')
 
 const selectedNotification = ref<Notification | null>()
+
+// Stack of pending deletions (notifications to delete when their toast closes)
+const pendingDeletes = ref<Notification[]>([])
+
+// Set of pending delete IDs for quick lookup
+const pendingDeleteIds = computed(() => new Set(pendingDeletes.value.map(n => n.id)))
+
+// Visible notifications (excluding pending deletes)
+const visibleNotifications = computed(() => notifications.value?.filter(n => !pendingDeleteIds.value.has(n.id)) ?? [])
 
 const unreadNotifications = computed(() => notifications.value?.filter(notification => !notification.read) ?? [])
 
@@ -19,6 +30,13 @@ watch(focused, async (isFocused) => {
     }
   }
 })
+
+// Clean up pendingDeletes for notifications that no longer exist
+watch(notifications, (newNotifications) => {
+  if (!newNotifications) return
+  const notificationIds = new Set(newNotifications.map(n => n.id))
+  pendingDeletes.value = pendingDeletes.value.filter(n => notificationIds.has(n.id))
+}, { deep: true })
 
 const isPanelOpen = computed({
   get() {
@@ -69,6 +87,72 @@ function markAsRead(notificationId: number) {
   }
 }
 
+// Delete notification (deferred until toast closes)
+function deleteNotification() {
+  if (!selectedNotification.value) return
+
+  const notification = selectedNotification.value
+
+  // Add to pending deletes stack
+  pendingDeletes.value.push(notification)
+
+  // Move selection to next notification (skip other pending deletes)
+  const index = visibleNotifications.value.findIndex(n => n.id === notification.id)
+  if (index < visibleNotifications.value.length - 1) {
+    selectedNotification.value = visibleNotifications.value[index + 1]
+  } else if (index > 0) {
+    selectedNotification.value = visibleNotifications.value[index - 1]
+  } else {
+    selectedNotification.value = null
+  }
+
+  // Show toast - actual deletion happens when toast closes
+  toast.add({
+    'id': `notification-deleted-${notification.id}`,
+    'title': 'Notification deleted',
+    'icon': 'i-lucide-trash-2',
+    'orientation': 'horizontal',
+    'actions': [{
+      label: 'Undo',
+      color: 'neutral',
+      variant: 'outline',
+      icon: 'i-lucide-undo',
+      onClick: undoDelete
+    }],
+    'onUpdate:open': (open) => {
+      if (!open) {
+        // Delay to allow onClick handler to run first when undo is clicked
+        setTimeout(() => executeDelete(notification), 0)
+      }
+    }
+  })
+}
+
+// Execute delete for a specific notification
+async function executeDelete(notification: Notification) {
+  // Check if still in pending (not undone)
+  if (!pendingDeletes.value.some(n => n.id === notification.id)) return
+
+  // Delete from server
+  await $fetch(`/api/notifications/${notification.id}`, {
+    method: 'DELETE'
+  })
+
+  // Refresh will update notifications, and the watch will clean up pendingDeletes
+  await refresh()
+}
+
+// Undo most recent delete
+function undoDelete() {
+  if (!pendingDeletes.value.length) return
+
+  // Get most recent pending delete
+  const notification = pendingDeletes.value.pop()!
+
+  // Remove its toast
+  toast.remove(`notification-deleted-${notification.id}`)
+}
+
 useSeoMeta({
   title: () => `Inbox${unreadNotifications.value.length > 0 ? ` (${unreadNotifications.value.length})` : ''}`
 })
@@ -112,8 +196,10 @@ useSeoMeta({
 
     <Notifications
       v-model="selectedNotification"
-      :notifications="notifications ?? []"
+      :notifications="visibleNotifications"
       @refresh="refresh"
+      @delete="deleteNotification"
+      @undo="undoDelete"
     />
 
     <template #resize-handle="{ onMouseDown, onTouchStart, onDoubleClick }">
@@ -132,6 +218,7 @@ useSeoMeta({
       @close="selectedNotification = null"
       @refresh="refresh"
       @read="markAsRead"
+      @delete="deleteNotification"
     />
   </UDashboardPanel>
 
@@ -156,6 +243,7 @@ useSeoMeta({
           @close="selectedNotification = null"
           @refresh="refresh"
           @read="markAsRead"
+          @delete="deleteNotification"
         />
       </template>
     </USlideover>
