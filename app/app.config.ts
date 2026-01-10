@@ -22,6 +22,7 @@ export default defineAppConfig({
       slots: {
         base: [
           '*:my-4',
+          '[&_p:has(>br.ProseMirror-trailingBreak:only-child)]:hidden',
           '[&_a]:cursor-pointer',
           '[&_h1]:text-xl',
           '[&_h2]:text-xl',
