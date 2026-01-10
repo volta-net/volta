@@ -21,19 +21,10 @@ export type Label = Serialized<DBLabel>
 export type Milestone = Serialized<DBMilestone>
 export type Release = Serialized<DBRelease>
 export type Repository = Serialized<DBRepository>
+export type RepositorySubscription = Serialized<DBRepositorySubscription>
 export type Type = Serialized<DBType>
 export type User = Serialized<DBUser>
 export type WorkflowRun = Serialized<DBWorkflowRun>
-
-// Repository subscription preferences (subset used in API responses)
-export interface RepositorySubscription {
-  issues: boolean
-  pullRequests: boolean
-  releases: boolean
-  ci: boolean
-  mentions: boolean
-  activity: boolean
-}
 
 // CI Status
 export interface CIStatus {

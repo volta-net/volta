@@ -73,7 +73,7 @@ export default defineEventHandler(async (event) => {
         )
 
         // Get subscriptions for synced repos
-        const subscriptionMap = new Map<number, RepositorySubscription>()
+        const subscriptionMap = new Map<number, Pick<RepositorySubscription, 'issues' | 'pullRequests' | 'releases' | 'ci' | 'mentions' | 'activity'>>()
         if (dbInstallation.repositories.length > 0) {
           const repoIds = dbInstallation.repositories.map(r => r.id)
           const subscriptions = await db.query.repositorySubscriptions.findMany({
