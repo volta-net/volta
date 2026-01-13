@@ -229,6 +229,14 @@ async function onUpdateReviewers(newReviewers: UserItem[]) {
     toast.add({ title: 'Failed to update reviewers', description: err.message, color: 'error', icon: 'i-lucide-x' })
   }
 }
+
+// AI Resolution Analysis (issues only)
+const { getConfig: getResolutionConfig } = useResolutionStatus()
+const resolutionConfig = computed(() => {
+  // Only show for issues, not PRs
+  if (props.issue.pullRequest) return null
+  return getResolutionConfig(props.issue.resolutionStatus)
+})
 </script>
 
 <template>
@@ -403,6 +411,46 @@ async function onUpdateReviewers(newReviewers: UserItem[]) {
             :key="reviewer.id"
             :user="reviewer"
           />
+        </div>
+      </div>
+
+      <!-- AI Resolution Analysis (issues only) -->
+      <div v-if="resolutionConfig" class="flex items-start gap-4">
+        <span class="text-sm/6 text-highlighted font-medium w-20 shrink-0">Status</span>
+
+        <div class="flex-1">
+          <UTooltip :text="resolutionConfig.description">
+            <UBadge
+              :icon="resolutionConfig.icon"
+              :label="resolutionConfig.label"
+              :color="resolutionConfig.color"
+              variant="subtle"
+              size="md"
+              class="px-2 rounded-full"
+            />
+          </UTooltip>
+
+          <!-- Show who answered if available -->
+          <div v-if="issue.resolutionAnsweredBy" class="mt-1.5 flex items-center gap-1.5 text-xs text-muted">
+            <span>Answered by</span>
+            <NuxtLink
+              :to="`https://github.com/${issue.resolutionAnsweredBy.login}`"
+              target="_blank"
+              class="flex items-center gap-1 hover:text-highlighted"
+            >
+              <UAvatar
+                :src="issue.resolutionAnsweredBy.avatarUrl!"
+                :alt="issue.resolutionAnsweredBy.login"
+                size="3xs"
+              />
+              <span>@{{ issue.resolutionAnsweredBy.login }}</span>
+            </NuxtLink>
+          </div>
+
+          <!-- Confidence indicator -->
+          <div v-if="issue.resolutionConfidence" class="mt-1 text-xs text-muted">
+            {{ issue.resolutionConfidence }}% confidence
+          </div>
         </div>
       </div>
     </div>

@@ -42,6 +42,7 @@ export default defineEventHandler(async (event) => {
       user: true,
       closedBy: true,
       mergedBy: true,
+      resolutionAnsweredBy: true,
       assignees: {
         with: {
           user: true
@@ -120,6 +121,7 @@ export default defineEventHandler(async (event) => {
           user: true,
           closedBy: true,
           mergedBy: true,
+          resolutionAnsweredBy: true,
           assignees: { with: { user: true } },
           labels: { with: { label: true } },
           requestedReviewers: { with: { user: true } },
@@ -216,7 +218,7 @@ async function syncIssueFromGitHub(accessToken: string, issue: any) {
       closedAt: ghPr.closed_at ? new Date(ghPr.closed_at) : null,
       closedById: mergedById, // If merged, merged_by is the closer
       commentCount: ghPr.comments,
-      updatedAt: new Date()
+      updatedAt: new Date(ghPr.updated_at)
     }).where(eq(schema.issues.id, issue.id))
 
     // Sync assignees
@@ -275,7 +277,7 @@ async function syncIssueFromGitHub(accessToken: string, issue: any) {
       closedById,
       commentCount: ghIssue.comments,
       reactionCount: ghIssue.reactions?.total_count ?? 0,
-      updatedAt: new Date()
+      updatedAt: new Date(ghIssue.updated_at)
     }).where(eq(schema.issues.id, issue.id))
 
     // Sync assignees

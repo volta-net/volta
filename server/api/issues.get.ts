@@ -27,6 +27,7 @@ import { db, schema } from 'hub:db'
  * - hasLabel: string - filter by label name (partial match)
  * - excludeLabel: string - exclude by label name (partial match)
  * - minEngagement: number - minimum reactions + comments
+ * - resolutionStatus: string - filter by AI resolution status (issues only)
  * - sort: 'updated' | 'created' | 'engagement' - sort order
  * - limit: number - max results (default 100)
  */
@@ -59,6 +60,7 @@ export default defineEventHandler(async (event) => {
   const hasLabel = query.hasLabel as string | undefined
   const excludeLabel = query.excludeLabel as string | undefined
   const minEngagement = query.minEngagement ? parseInt(query.minEngagement as string, 10) : undefined
+  const resolutionStatus = query.resolutionStatus as string | undefined
   const sort = (query.sort as 'updated' | 'created' | 'engagement') || 'updated'
   const limit = query.limit ? Math.min(parseInt(query.limit as string, 10), 500) : undefined
 
@@ -241,6 +243,13 @@ export default defineEventHandler(async (event) => {
     }
   }
 
+  // Filter by resolutionStatus (issues only)
+  if (resolutionStatus) {
+    // Support comma-separated values for multiple statuses
+    const statuses = resolutionStatus.split(',').map(s => s.trim()) as ('answered' | 'likely_resolved' | 'waiting_on_author' | 'needs_attention')[]
+    conditions.push(inArray(schema.issues.resolutionStatus, statuses))
+  }
+
   // Filter by minEngagement
   if (minEngagement !== undefined) {
     conditions.push(gt(sql`${schema.issues.reactionCount} + ${schema.issues.commentCount}`, minEngagement))
@@ -300,7 +309,8 @@ export default defineEventHandler(async (event) => {
       type: true,
       labels: { with: { label: true } },
       comments: needsComments ? { with: { user: true } } : undefined,
-      reviews: (isApproved !== undefined || hasChangesRequested !== undefined) ? true : undefined
+      reviews: (isApproved !== undefined || hasChangesRequested !== undefined) ? true : undefined,
+      resolutionAnsweredBy: true
     }
   })
 

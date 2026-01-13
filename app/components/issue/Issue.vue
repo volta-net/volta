@@ -33,6 +33,38 @@ const { data: issue, status, refresh: refreshIssue } = await useLazyFetch<IssueD
   immediate: !!issueUrl.value
 })
 
+// Fetch AI resolution analysis for issues (not PRs)
+const resolutionUrl = computed(() => {
+  if (!issueUrl.value || props.item.pullRequest) return ''
+  return `${issueUrl.value}/resolution`
+})
+interface ResolutionData {
+  status: string | null
+  answeredBy: { id: number, login: string, avatar: string | null } | null
+  answerCommentId: number | null
+  confidence: number | null
+  analyzedAt: string | null
+  skipped: boolean
+}
+const { data: resolution } = useLazyFetch<ResolutionData>(resolutionUrl, {
+  immediate: !!resolutionUrl.value && !props.item.pullRequest
+})
+
+// Merge resolution data into issue when it arrives
+watch(resolution, (res) => {
+  if (res && issue.value && !res.skipped) {
+    // Create new object to trigger reactivity for child components
+    issue.value = {
+      ...issue.value,
+      resolutionStatus: res.status as IssueDetail['resolutionStatus'],
+      resolutionAnsweredBy: res.answeredBy as IssueDetail['resolutionAnsweredBy'],
+      resolutionAnswerCommentId: res.answerCommentId,
+      resolutionConfidence: res.confidence,
+      resolutionAnalyzedAt: res.analyzedAt
+    }
+  }
+})
+
 // Fetch repository collaborators and issues for editor mentions
 const collaboratorsUrl = computed(() => repoFullName.value ? `/api/repositories/${owner.value}/${name.value}/collaborators` : '')
 const { data: collaborators } = await useLazyFetch<MentionUser[]>(collaboratorsUrl, {

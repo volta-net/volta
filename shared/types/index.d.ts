@@ -16,6 +16,8 @@ import type {
   Serialized
 } from './db'
 
+export type { ResolutionStatus } from '../../server/db/schema'
+
 // Base serialized types
 export type Label = Serialized<DBLabel>
 export type Milestone = Serialized<DBMilestone>
@@ -62,6 +64,8 @@ export interface Issue extends Serialized<DBIssue> {
   linkedIssues?: LinkedIssue[]
   linkedPrs?: LinkedPR[]
   hasMaintainerComment?: boolean
+  // AI Resolution Analysis (issues only)
+  resolutionAnsweredBy?: User | null
 }
 
 // Issue for detail views (all relations populated)
@@ -76,6 +80,8 @@ export interface IssueDetail extends Serialized<DBIssue> {
   milestone: Milestone | null
   type: Type | null
   comments: Array<Serialized<DBIssueComment> & { user: User | null }>
+  // AI Resolution Analysis (issues only)
+  resolutionAnsweredBy?: User | null
 }
 
 // Notification with relations

@@ -9,6 +9,20 @@ const emit = defineEmits<{
   (e: 'read' | 'delete', id: number): void
 }>()
 
+// CI state for the workflow conclusion
+const ciState = computed(() => getCIState(props.notification.workflowRun?.conclusion))
+
+// Build a human-friendly description
+const description = computed(() => {
+  const run = props.notification.workflowRun
+  if (!run) return 'Workflow run completed'
+
+  const status = ciState.value.label.toLowerCase()
+  const branch = run.headBranch ? ` on branch ${run.headBranch}` : ''
+
+  return `Workflow run ${status}${branch}`
+})
+
 // Mark notification as read on mount if unread
 onMounted(async () => {
   if (!props.notification.read) {
@@ -73,8 +87,8 @@ defineShortcuts({
 
   <div class="flex-1 flex items-center justify-center">
     <UEmpty
-      icon="i-lucide-workflow"
-      description="View workflow run on GitHub"
+      :icon="ciState.icon"
+      :description="description"
       :actions="[{
         label: 'Open on GitHub',
         icon: 'i-simple-icons-github',

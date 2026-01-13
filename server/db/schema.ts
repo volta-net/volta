@@ -20,6 +20,9 @@ export const users = pgTable('users', {
 // Notification types (what entity the notification is about)
 export type NotificationType = 'issue' | 'pull_request' | 'release' | 'workflow_run'
 
+// AI Resolution status for issues (not PRs)
+export type ResolutionStatus = 'answered' | 'likely_resolved' | 'waiting_on_author' | 'needs_attention'
+
 // Notification actions (what happened)
 export type NotificationAction
   = | 'opened' | 'reopened' | 'closed' | 'merged'
@@ -265,7 +268,13 @@ export const issues = pgTable('issues', {
   // Sync status - false until full data (comments, reactions, etc.) has been fetched from GitHub
   synced: boolean().default(false).notNull(),
   // When we last synced this issue from GitHub (for staleness checks)
-  syncedAt: timestamp('synced_at', { withTimezone: true })
+  syncedAt: timestamp('synced_at', { withTimezone: true }),
+  // AI Resolution Analysis (issues only, not PRs)
+  resolutionStatus: text('resolution_status').$type<'answered' | 'likely_resolved' | 'waiting_on_author' | 'needs_attention'>(),
+  resolutionAnsweredById: integer('resolution_answered_by_id').references(() => users.id, { onDelete: 'set null' }),
+  resolutionAnswerCommentId: integer('resolution_answer_comment_id'),
+  resolutionConfidence: integer('resolution_confidence'), // 0-100 percentage
+  resolutionAnalyzedAt: timestamp('resolution_analyzed_at', { withTimezone: true })
 }, table => ([
   // The true unique identifier is (repositoryId, number), not GitHub's ID
   uniqueIndex('issues_repo_number_idx').on(table.repositoryId, table.number)
@@ -363,6 +372,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   issues: many(issues),
   closedIssues: many(issues, { relationName: 'issueClosedBy' }),
   mergedIssues: many(issues, { relationName: 'issueMergedBy' }),
+  resolutionAnsweredIssues: many(issues, { relationName: 'issueResolutionAnsweredBy' }),
   assignedIssues: many(issueAssignees),
   reviewRequests: many(issueRequestedReviewers),
   comments: many(issueComments),
@@ -463,6 +473,11 @@ export const issuesRelations = relations(issues, ({ one, many }) => ({
     fields: [issues.mergedById],
     references: [users.id],
     relationName: 'issueMergedBy'
+  }),
+  resolutionAnsweredBy: one(users, {
+    fields: [issues.resolutionAnsweredById],
+    references: [users.id],
+    relationName: 'issueResolutionAnsweredBy'
   }),
   assignees: many(issueAssignees),
   labels: many(issueLabels),

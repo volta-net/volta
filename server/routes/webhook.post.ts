@@ -120,6 +120,9 @@ export default defineEventHandler(async (event) => {
               payload.repository,
               payload.sender
             )
+
+            // Trigger AI resolution analysis for issues (not PRs)
+            triggerResolutionAnalysisOnComment(payload.issue, payload.comment, payload.repository)
           }
         }
         break
