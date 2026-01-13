@@ -749,6 +749,7 @@ async function syncIssueComments(octokit: Octokit, owner: string, repo: string, 
         userId,
         body: comment.body || '',
         htmlUrl: comment.html_url,
+        createdAt: new Date(comment.created_at),
         updatedAt: new Date(comment.updated_at)
       }
 
@@ -759,8 +760,7 @@ async function syncIssueComments(octokit: Octokit, owner: string, repo: string, 
       } else {
         await db.insert(schema.issueComments).values({
           githubId: comment.id,
-          ...commentData,
-          createdAt: new Date(comment.created_at)
+          ...commentData
         })
       }
     }
@@ -866,6 +866,7 @@ async function syncPRReviewComments(octokit: Octokit, owner: string, repo: strin
         commitId: comment.commit_id,
         diffHunk: comment.diff_hunk,
         htmlUrl: comment.html_url,
+        createdAt: new Date(comment.created_at),
         updatedAt: new Date(comment.updated_at)
       }
 
@@ -876,8 +877,7 @@ async function syncPRReviewComments(octokit: Octokit, owner: string, repo: strin
       } else {
         await db.insert(schema.issueReviewComments).values({
           githubId: comment.id,
-          ...commentData,
-          createdAt: new Date(comment.created_at)
+          ...commentData
         })
       }
     }

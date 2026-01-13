@@ -459,6 +459,7 @@ async function syncComments(accessToken: string, owner: string, repo: string, is
       userId,
       body: comment.body || '',
       htmlUrl: comment.html_url,
+      createdAt: new Date(comment.created_at),
       updatedAt: new Date(comment.updated_at)
     }
 
@@ -472,8 +473,7 @@ async function syncComments(accessToken: string, owner: string, repo: string, is
     } else {
       await db.insert(schema.issueComments).values({
         githubId: comment.id,
-        ...commentData,
-        createdAt: new Date(comment.created_at)
+        ...commentData
       })
     }
   }
@@ -567,6 +567,7 @@ async function syncReviewComments(accessToken: string, owner: string, repo: stri
       commitId: comment.commit_id,
       diffHunk: comment.diff_hunk,
       htmlUrl: comment.html_url,
+      createdAt: new Date(comment.created_at),
       updatedAt: new Date(comment.updated_at)
     }
 
@@ -580,8 +581,7 @@ async function syncReviewComments(accessToken: string, owner: string, repo: stri
     } else {
       await db.insert(schema.issueReviewComments).values({
         githubId: comment.id,
-        ...commentData,
-        createdAt: new Date(comment.created_at)
+        ...commentData
       })
     }
   }
