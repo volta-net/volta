@@ -87,55 +87,16 @@ const resolutionConfig = computed(() => {
 <template>
   <button
     type="button"
-    class="w-full flex flex-col gap-1 px-4 py-3 hover:bg-elevated/50 transition-colors text-left focus:outline-none"
-    :class="[selected && 'bg-elevated']"
+    class="w-full flex items-center gap-1.5 px-4 py-2.5 transition-colors text-left focus:outline-none @container"
+    :class="[selected ? 'bg-elevated/50' : 'hover:bg-elevated/50']"
     @click="emit('select', item)"
   >
-    <div class="flex items-center gap-3 min-w-0">
+    <div class="flex items-center gap-1.5 min-w-0 flex-1">
       <UIcon :name="stateIcon" :class="stateColor" class="size-4 shrink-0" />
 
-      <div class="flex-1 flex items-center gap-3 min-w-0">
-        <span class="text-sm font-medium truncate">
-          <span class="text-dimmed">#{{ item.number }}</span> {{ item.title }}
-        </span>
-      </div>
-
-      <!-- Maintainer replied (for issues) -->
-      <UTooltip
-        v-if="item.hasMaintainerComment"
-        text="Maintainer replied"
-      >
-        <UIcon name="i-lucide-message-circle-reply" class="size-4 shrink-0 text-success" />
-      </UTooltip>
-
-      <!-- AI Resolution Status (for issues only) -->
-      <UTooltip
-        v-if="resolutionConfig"
-        :text="String(resolutionConfig.label)"
-      >
-        <UIcon :name="resolutionConfig.icon" :class="resolutionConfig.color" class="size-4 shrink-0" />
-      </UTooltip>
-
-      <span v-if="(item.reactionCount ?? 0) > 0" class="flex items-center gap-0.5 text-muted">
-        <UIcon name="i-lucide-heart" class="size-4 shrink-0" />
-        <span class="text-xs">{{ item.reactionCount }}</span>
+      <span class="text-sm/6 truncate @max-3xl:flex-1">
+        <span class="text-muted">{{ item.repository?.fullName }}#{{ item.number }}</span> <span class="text-highlighted font-medium">{{ item.title }}</span>
       </span>
-
-      <span v-if="(item.commentCount ?? 0) > 0" class="flex items-center gap-0.5 text-muted">
-        <UIcon name="i-lucide-message-circle" class="size-4 shrink-0" />
-        <span class="text-xs">{{ item.commentCount }}</span>
-      </span>
-
-      <!-- Linked PRs (for issues) -->
-      <UTooltip
-        v-if="item.linkedPrs?.length"
-        :text="`${item.linkedPrs.length} linked PR${item.linkedPrs.length > 1 ? 's' : ''}`"
-      >
-        <div class="flex items-center gap-0.5 text-muted">
-          <UIcon name="i-lucide-git-pull-request" class="size-4 shrink-0" />
-          <span class="text-xs">{{ item.linkedPrs.length }}</span>
-        </div>
-      </UTooltip>
 
       <!-- CI Status -->
       <UTooltip
@@ -149,17 +110,71 @@ const resolutionConfig = computed(() => {
         />
       </UTooltip>
 
-      <!-- Time -->
-      <span class="text-xs text-muted shrink-0 w-8 text-end">
-        {{ useRelativeTime(new Date(item.updatedAt)) }}
-      </span>
+      <!-- Maintainer replied (for issues) -->
+      <UTooltip
+        v-if="item.hasMaintainerComment"
+        text="Maintainer replied"
+      >
+        <UIcon name="i-lucide-message-circle-reply" class="size-4 shrink-0 text-primary" />
+      </UTooltip>
+
+      <!-- AI Resolution Status (for issues only) -->
+      <UTooltip
+        v-if="resolutionConfig"
+        :text="String(resolutionConfig.label)"
+      >
+        <UIcon
+          :name="resolutionConfig.icon"
+          :class="`text-${resolutionConfig.color}`"
+          class="size-4 shrink-0"
+        />
+      </UTooltip>
     </div>
 
-    <div class="flex flex-wrap items-center gap-1">
-      <IssueRepository :repository="item.repository" />
-      <IssueUser v-if="item.user" :user="item.user" />
-      <IssueType v-if="item.type" :type="item.type" />
-      <IssueLabel v-for="label in item.labels" :key="label.id" :label="label" />
+    <div class="flex items-center gap-1.5 ms-auto">
+      <div class="hidden @3xl:flex items-center gap-1.5">
+        <!-- Linked PRs (for issues) -->
+        <UTooltip
+          v-if="item.linkedPrs?.length"
+          :text="`${item.linkedPrs.length} linked PR${item.linkedPrs.length > 1 ? 's' : ''}`"
+        >
+          <UBadge
+            color="neutral"
+            variant="outline"
+            size="md"
+            :label="item.linkedPrs.length"
+            icon="i-lucide-git-pull-request"
+            class="rounded-full px-2"
+          />
+        </UTooltip>
+
+        <UBadge
+          v-if="(item.reactionCount ?? 0) > 0"
+          color="neutral"
+          variant="outline"
+          size="md"
+          :label="item.reactionCount ?? 0"
+          icon="i-lucide-heart"
+          class="rounded-full px-2"
+        />
+        <UBadge
+          v-if="(item.commentCount ?? 0) > 0"
+          color="neutral"
+          variant="outline"
+          size="md"
+          :label="item.commentCount ?? 0"
+          icon="i-lucide-message-circle"
+          class="rounded-full px-2"
+        />
+
+        <IssueType v-if="item.type" :type="item.type" />
+        <IssueLabel v-for="label in item.labels" :key="label.id" :label="label" />
+      </div>
+
+      <!-- Time -->
+      <span class="text-xs text-muted shrink-0 text-end w-6">
+        {{ useRelativeTime(new Date(item.updatedAt)) }}
+      </span>
     </div>
   </button>
 </template>

@@ -4,6 +4,8 @@ import type {
   DBInstallation,
   DBIssue,
   DBIssueComment,
+  DBIssueReview,
+  DBIssueReviewComment,
   DBLabel,
   DBMilestone,
   DBNotification,
@@ -68,6 +70,15 @@ export interface Issue extends Serialized<DBIssue> {
   resolutionAnsweredBy?: User | null
 }
 
+// Review with user relation
+export type IssueReview = Serialized<DBIssueReview> & { user: User | null }
+
+// Review comment with user and review relations
+export type IssueReviewComment = Serialized<DBIssueReviewComment> & {
+  user: User | null
+  review: IssueReview | null
+}
+
 // Issue for detail views (all relations populated)
 export interface IssueDetail extends Serialized<DBIssue> {
   repository: Repository
@@ -80,6 +91,8 @@ export interface IssueDetail extends Serialized<DBIssue> {
   milestone: Milestone | null
   type: Type | null
   comments: Array<Serialized<DBIssueComment> & { user: User | null }>
+  reviews?: IssueReview[]
+  reviewComments?: IssueReviewComment[]
   // AI Resolution Analysis (issues only)
   resolutionAnsweredBy?: User | null
 }

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Notification } from '#shared/types'
 
-const props = defineProps<{
+defineProps<{
   notification: Notification
   selected: boolean
 }>()

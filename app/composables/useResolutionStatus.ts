@@ -25,7 +25,7 @@ const resolutionStatusConfigs: Record<ResolutionStatus, ResolutionStatusConfig> 
   },
   needs_attention: {
     icon: 'i-lucide-alert-circle',
-    color: 'neutral',
+    color: 'important',
     label: 'Needs attention',
     description: 'No quality answer provided yet'
   }

@@ -262,13 +262,14 @@ export async function analyzeAndStoreResolution(issueId: number): Promise<Analys
     maintainerIds
   )
 
-  // Store result in database
+  // Store result in database (clear cached suggested answer so it regenerates)
   await db.update(schema.issues).set({
     resolutionStatus: result.status,
     resolutionAnsweredById: result.answeredByUserId,
     resolutionAnswerCommentId: result.answerCommentId,
     resolutionConfidence: result.confidence,
-    resolutionAnalyzedAt: new Date()
+    resolutionAnalyzedAt: new Date(),
+    resolutionSuggestedAnswer: null
   }).where(eq(schema.issues.id, issueId))
 
   return result
@@ -284,6 +285,81 @@ export function isResolutionStale(analyzedAt: Date | string | null): boolean {
   const d = typeof analyzedAt === 'string' ? new Date(analyzedAt) : analyzedAt
   const oneHourAgo = Date.now() - (60 * 60 * 1000)
   return d.getTime() < oneHourAgo
+}
+
+interface UserStyleComment {
+  body: string
+}
+
+/**
+ * Generate a suggested answer for an issue that needs attention
+ * Optionally matches the user's writing style based on their previous comments
+ */
+export async function generateSuggestedAnswer(
+  issue: IssueForAnalysis,
+  comments: CommentForAnalysis[],
+  userStyleComments?: UserStyleComment[]
+): Promise<string | null> {
+  let styleGuidance = ''
+  if (userStyleComments && userStyleComments.length > 0) {
+    styleGuidance = `
+
+IMPORTANT - Writing Style Reference:
+Below are examples of how this user typically writes comments. Match their:
+- Tone (formal/casual/friendly)
+- Sentence structure and length
+- Use of emojis, punctuation, and formatting
+- Technical depth and explanation style
+- Greeting/sign-off patterns (if any)
+
+User's previous comments:
+${userStyleComments.slice(0, 5).map((c, i) => `--- Example ${i + 1} ---\n${c.body}`).join('\n\n')}
+--- End of examples ---
+
+Generate a response that sounds like it was written by this user.`
+  }
+
+  const systemPrompt = `You are a helpful assistant that drafts responses to GitHub issues.
+Your task is to generate a helpful, actionable response to the issue based on:
+1. The original issue description
+2. Any existing conversation (if present)
+
+Guidelines:
+- Be concise and direct
+- If it's a question, provide a clear answer with code examples if relevant
+- If it's a bug report, suggest debugging steps or ask clarifying questions
+- If it's a feature request, acknowledge it and ask for more details if needed
+- Use markdown formatting appropriately
+- Keep the response focused and under 300 words${styleGuidance}`
+
+  const parts: string[] = []
+  parts.push(`Issue #${issue.number}: ${issue.title}`)
+  if (issue.body) {
+    parts.push(`\nOriginal description:\n${issue.body}`)
+  }
+
+  if (comments.length > 0) {
+    parts.push(`\n\nExisting conversation (${comments.length} comments):`)
+    comments.forEach((comment) => {
+      const login = comment.user?.login ?? 'unknown'
+      parts.push(`\n@${login}:\n${comment.body}`)
+    })
+  }
+
+  parts.push('\n\nPlease generate a helpful response to continue this conversation:')
+
+  try {
+    const { text } = await generateText({
+      model: gateway('anthropic/claude-sonnet-4.5'),
+      system: systemPrompt,
+      prompt: parts.join('\n')
+    })
+
+    return text || null
+  } catch (error) {
+    console.error('[resolution] Failed to generate suggested answer:', error)
+    return null
+  }
 }
 
 /**

@@ -153,7 +153,7 @@ const isMobile = breakpoints.smaller('lg')
 <template>
   <UDashboardPanel
     id="dashboard-1"
-    :default-size="25"
+    :default-size="40"
     :min-size="25"
     :max-size="!selectedItem ? 100 : 50"
     :resizable="!!selectedItem"
@@ -161,9 +161,9 @@ const isMobile = breakpoints.smaller('lg')
     :ui="{ body: 'overflow-hidden p-0!' }"
   >
     <template #header>
-      <UDashboardNavbar title="Dashboard" :ui="{ left: 'gap-3' }">
+      <UDashboardNavbar title="Dashboard" :ui="{ left: 'gap-3', title: 'shrink-0' }">
         <template v-if="hasFavorites" #trailing>
-          <UFieldGroup>
+          <UFieldGroup class="overflow-x-auto">
             <UButton
               v-for="tab in tabs"
               :key="tab.id"

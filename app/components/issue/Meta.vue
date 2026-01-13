@@ -422,12 +422,16 @@ const resolutionConfig = computed(() => {
           <UTooltip :text="resolutionConfig.description">
             <UBadge
               :icon="resolutionConfig.icon"
-              :label="resolutionConfig.label"
               :color="resolutionConfig.color"
               variant="subtle"
               size="md"
               class="px-2 rounded-full"
-            />
+            >
+              {{ resolutionConfig.label }}
+              <span v-if="issue.resolutionConfidence" class="italic">
+                ({{ issue.resolutionConfidence }}%)
+              </span>
+            </UBadge>
           </UTooltip>
 
           <!-- Show who answered if available -->
@@ -445,11 +449,6 @@ const resolutionConfig = computed(() => {
               />
               <span>@{{ issue.resolutionAnsweredBy.login }}</span>
             </NuxtLink>
-          </div>
-
-          <!-- Confidence indicator -->
-          <div v-if="issue.resolutionConfidence" class="mt-1 text-xs text-muted">
-            {{ issue.resolutionConfidence }}% confidence
           </div>
         </div>
       </div>

@@ -18,6 +18,12 @@ export default defineNuxtConfig({
 
   css: ['~/assets/css/main.css'],
 
+  mdc: {
+    highlight: {
+      langs: ['bash', 'html', 'ts', 'typescript', 'diff', 'vue', 'json', 'yml', 'css', 'mdc', 'blade', 'edge']
+    }
+  },
+
   ui: {
     theme: {
       colors: [

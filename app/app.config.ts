@@ -18,11 +18,19 @@ export default defineAppConfig({
         size: 'lg'
       }
     },
+    prose: {
+      p: {
+        base: 'my-4'
+      },
+      blockquote: {
+        base: '[&>p]:my-0'
+      }
+    },
     editor: {
       slots: {
         base: [
           '*:my-4',
-          '[&_p:has(>br.ProseMirror-trailingBreak:only-child)]:hidden',
+          '[&_p:not([data-placeholder]):has(>br.ProseMirror-trailingBreak:only-child)]:hidden',
           '[&_a]:cursor-pointer',
           '[&_h1]:text-xl',
           '[&_h2]:text-xl',

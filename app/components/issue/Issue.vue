@@ -45,10 +45,20 @@ interface ResolutionData {
   confidence: number | null
   analyzedAt: string | null
   skipped: boolean
+  suggestedAnswer?: string | null
 }
-const { data: resolution } = useLazyFetch<ResolutionData>(resolutionUrl, {
-  immediate: !!resolutionUrl.value && !props.item.pullRequest
+const { data: resolution, execute: fetchResolution, clear: clearResolution } = useLazyFetch<ResolutionData>(resolutionUrl, {
+  immediate: false,
+  watch: false
 })
+
+// Reset resolution and fetch when issue changes (not a PR)
+watch(() => props.item.id, () => {
+  clearResolution()
+  if (resolutionUrl.value) {
+    fetchResolution()
+  }
+}, { immediate: true })
 
 // Merge resolution data into issue when it arrives
 watch(resolution, (res) => {
@@ -65,6 +75,9 @@ watch(resolution, (res) => {
   }
 })
 
+// Suggested answer from AI when issue needs attention
+const suggestedAnswer = computed(() => resolution.value?.suggestedAnswer ?? null)
+
 // Fetch repository collaborators and issues for editor mentions
 const collaboratorsUrl = computed(() => repoFullName.value ? `/api/repositories/${owner.value}/${name.value}/collaborators` : '')
 const { data: collaborators } = await useLazyFetch<MentionUser[]>(collaboratorsUrl, {
@@ -75,13 +88,6 @@ const issuesUrl = computed(() => repoFullName.value ? `/api/repositories/${owner
 const { data: repositoryIssues } = await useLazyFetch<IssueReference[]>(issuesUrl, {
   default: () => [],
   immediate: !!repoFullName.value
-})
-
-// Refetch issue when item prop changes
-watch(() => props.item, () => {
-  if (issueUrl.value) {
-    refreshIssue()
-  }
 })
 
 // Local subscription state (initialized from issue, updated on toggle)
@@ -251,14 +257,21 @@ defineShortcuts({
 
     <!-- Issue/PR View -->
     <div v-else-if="issue" class="grid grid-cols-3 flex-1 min-h-0">
-      <div class="flex-1 overflow-y-auto p-4 sm:px-6 flex flex-col gap-4 col-span-2">
+      <div :key="issue.id" class="flex-1 overflow-y-auto p-4 sm:px-6 flex flex-col gap-4 col-span-2">
         <IssueTitle :issue="issue" @update:title="handleRefresh" />
 
         <IssueBody
-          :key="issue.id"
           :issue="issue"
           :collaborators="collaborators"
           :repository-issues="repositoryIssues"
+          @refresh="handleRefresh"
+        />
+
+        <IssueTimeline
+          :issue="issue"
+          :collaborators="collaborators"
+          :repository-issues="repositoryIssues"
+          :suggested-answer="suggestedAnswer"
           @refresh="handleRefresh"
         />
       </div>
