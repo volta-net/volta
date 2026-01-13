@@ -8,22 +8,6 @@ const props = defineProps<{
 
 const { getIcon, getColor, getTitle, getActionVerb, getSubjectLabel } = useNotificationHelpers()
 
-const timeAgo = useTimeAgo(() => new Date(props.notification.createdAt), {
-  messages: {
-    justNow: 'now',
-    past: (n: string | number) => String(n),
-    future: (n: string | number) => String(n),
-    month: (n: number) => `${n}mo`,
-    year: (n: number) => `${n}y`,
-    day: (n: number) => `${n}d`,
-    week: (n: number) => `${n}w`,
-    hour: (n: number) => `${n}h`,
-    minute: (n: number) => `${n}m`,
-    second: () => 'now',
-    invalid: ''
-  }
-})
-
 function stripMarkdown(text: string | null | undefined): string {
   if (!text) return ''
 
@@ -84,7 +68,7 @@ function stripMarkdown(text: string | null | undefined): string {
           <span v-if="notification.action === 'comment' && notification.body">: {{ stripMarkdown(notification.body) }}</span>
         </span>
         <span class="shrink-0 ms-auto flex items-center gap-1 text-sm text-dimmed">
-          {{ timeAgo }}
+          {{ useRelativeTime(new Date(notification.createdAt)) }}
         </span>
       </div>
     </div>

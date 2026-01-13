@@ -75,22 +75,6 @@ const ciStatusConfig = computed(() => {
   }
 })
 
-const timeAgo = useTimeAgo(() => new Date(props.item.updatedAt), {
-  messages: {
-    justNow: 'now',
-    past: (n: string | number) => String(n),
-    future: (n: string | number) => String(n),
-    month: (n: number) => `${n}mo`,
-    year: (n: number) => `${n}y`,
-    day: (n: number) => `${n}d`,
-    week: (n: number) => `${n}w`,
-    hour: (n: number) => `${n}h`,
-    minute: (n: number) => `${n}m`,
-    second: () => 'now',
-    invalid: ''
-  }
-})
-
 // Resolution status config (issues only)
 const { getConfig: getResolutionConfig } = useResolutionStatus()
 const resolutionConfig = computed(() => {
@@ -127,7 +111,7 @@ const resolutionConfig = computed(() => {
       <!-- AI Resolution Status (for issues only) -->
       <UTooltip
         v-if="resolutionConfig"
-        :text="resolutionConfig.label"
+        :text="String(resolutionConfig.label)"
       >
         <UIcon :name="resolutionConfig.icon" :class="resolutionConfig.color" class="size-4 shrink-0" />
       </UTooltip>
@@ -167,15 +151,15 @@ const resolutionConfig = computed(() => {
 
       <!-- Time -->
       <span class="text-xs text-muted shrink-0 w-8 text-end">
-        {{ timeAgo }}
+        {{ useRelativeTime(new Date(item.updatedAt)) }}
       </span>
     </div>
 
     <div class="flex flex-wrap items-center gap-1">
-      <IssueType v-if="item.type" :type="item.type" />
-      <IssueLabel v-for="label in item.labels" :key="label.id" :label="label" />
       <IssueRepository :repository="item.repository" />
       <IssueUser v-if="item.user" :user="item.user" />
+      <IssueType v-if="item.type" :type="item.type" />
+      <IssueLabel v-for="label in item.labels" :key="label.id" :label="label" />
     </div>
   </button>
 </template>
