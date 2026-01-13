@@ -18,42 +18,11 @@ watch(focused, (isFocused) => {
 const syncing = ref<Set<string>>(new Set())
 const deleting = ref<Set<string>>(new Set())
 const updatingSubscription = ref<string | null>(null)
-const updatingFavorite = ref<Set<number>>(new Set())
 
 // Installation-level bulk operation loading states
 const importingAll = ref<Set<number>>(new Set())
 const syncingAll = ref<Set<number>>(new Set())
 const removingAll = ref<Set<number>>(new Set())
-
-const { data: favoriteRepositories, refresh: refreshFavorites } = useLazyFetch('/api/favorites/repositories', {
-  default: () => []
-})
-
-const favoriteRepoIds = computed(() => new Set(favoriteRepositories.value?.map(f => f.repositoryId) || []))
-
-async function toggleFavorite(repositoryId: number) {
-  updatingFavorite.value.add(repositoryId)
-
-  try {
-    if (favoriteRepoIds.value.has(repositoryId)) {
-      await $fetch(`/api/favorites/repositories/${repositoryId}`, { method: 'DELETE' })
-    } else {
-      await $fetch('/api/favorites/repositories', {
-        method: 'POST',
-        body: { repositoryId }
-      })
-    }
-    await refreshFavorites()
-  } catch (error: any) {
-    toast.add({
-      title: 'Failed to update favorites',
-      description: error.data?.message || 'An error occurred',
-      color: 'error'
-    })
-  } finally {
-    updatingFavorite.value.delete(repositoryId)
-  }
-}
 
 interface SyncResult {
   success: boolean
@@ -631,17 +600,6 @@ function getSubscriptionSummary(repo: InstallationRepository): { label: string, 
             </div>
 
             <div v-if="repo.synced" class="flex items-center gap-2 shrink-0">
-              <!-- Favorite toggle -->
-              <UTooltip :text="favoriteRepoIds.has(repo.id) ? 'Remove from favorites' : 'Add to favorites'">
-                <UButton
-                  :icon="favoriteRepoIds.has(repo.id) ? 'i-lucide-star' : 'i-lucide-star'"
-                  color="neutral"
-                  variant="soft"
-                  :class="favoriteRepoIds.has(repo.id) ? 'text-warning' : 'text-muted'"
-                  @click="toggleFavorite(repo.id)"
-                />
-              </UTooltip>
-
               <!-- Notification dropdown -->
               <UDropdownMenu
                 v-if="repo.subscription"
