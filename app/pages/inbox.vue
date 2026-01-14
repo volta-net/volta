@@ -4,7 +4,9 @@ import type { Notification } from '#shared/types'
 
 const toast = useToast()
 
-const { data: notifications, refresh } = await useFetch<Notification[]>('/api/notifications')
+const { data: notifications, status, refresh } = await useLazyFetch<Notification[]>('/api/notifications', {
+  default: () => []
+})
 
 const selectedNotification = ref<Notification | null>()
 
@@ -165,48 +167,57 @@ useSeoMeta({
     :min-size="20"
     :max-size="30"
     resizable
+    :ui="{ body: 'overflow-hidden p-0!' }"
   >
-    <UDashboardNavbar>
-      <template #title>
-        <span class="inline-flex">Inbox</span>
+    <template #header>
+      <UDashboardNavbar>
+        <template #title>
+          <span class="inline-flex">Inbox</span>
 
-        <UBadge :label="String(unreadNotifications.length)" color="neutral" variant="subtle" />
-      </template>
+          <UBadge :label="String(unreadNotifications.length)" color="neutral" variant="subtle" />
+        </template>
 
-      <template #right>
-        <UDropdownMenu
-          :content="{ align: 'start' }"
-          :items="[[{
-            label: 'Mark all as read',
-            icon: 'i-lucide-check-circle',
-            onSelect: markAllAsRead
-          }], [{
-            label: 'Delete all',
-            icon: 'i-lucide-trash-2',
-            onSelect: deleteAll
-          }, {
-            label: 'Delete all read',
-            icon: 'i-lucide-trash-2',
-            onSelect: deleteAllRead
-          }]]"
-        >
-          <UButton
-            variant="ghost"
-            color="neutral"
-            trailing-icon="i-lucide-ellipsis"
-            class="data-[state=open]:bg-elevated -mr-1.5"
-          />
-        </UDropdownMenu>
-      </template>
-    </UDashboardNavbar>
+        <template #right>
+          <UDropdownMenu
+            :content="{ align: 'start' }"
+            :items="[[{
+              label: 'Mark all as read',
+              icon: 'i-lucide-check-circle',
+              onSelect: markAllAsRead
+            }], [{
+              label: 'Delete all',
+              icon: 'i-lucide-trash-2',
+              onSelect: deleteAll
+            }, {
+              label: 'Delete all read',
+              icon: 'i-lucide-trash-2',
+              onSelect: deleteAllRead
+            }]]"
+          >
+            <UButton
+              variant="ghost"
+              color="neutral"
+              trailing-icon="i-lucide-ellipsis"
+              class="data-[state=open]:bg-elevated -mr-1.5"
+            />
+          </UDropdownMenu>
+        </template>
+      </UDashboardNavbar>
+    </template>
 
-    <Notifications
-      v-model="selectedNotification"
-      :notifications="visibleNotifications"
-      @refresh="refresh"
-      @delete="deleteNotification"
-      @undo="undoDelete"
-    />
+    <template #body>
+      <!-- Loading state (only on initial load, not refetches) -->
+      <Loading v-if="status === 'pending' && !notifications?.length" />
+
+      <Notifications
+        v-else
+        v-model="selectedNotification"
+        :notifications="visibleNotifications"
+        @refresh="refresh"
+        @delete="deleteNotification"
+        @undo="undoDelete"
+      />
+    </template>
 
     <template #resize-handle="{ onMouseDown, onTouchStart, onDoubleClick }">
       <UDashboardResizeHandle

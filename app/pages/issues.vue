@@ -3,106 +3,76 @@ import { breakpointsTailwind } from '@vueuse/core'
 import { useFilter } from 'reka-ui'
 
 useSeoMeta({
-  title: 'Dashboard'
+  title: 'Issues'
 })
 
 const route = useRoute()
 const router = useRouter()
 
-// Action-based tabs
-const tabs = [
-  {
-    id: 'merge',
+const tabs = {
+  merge: {
     label: 'Ready to Merge',
     icon: 'i-lucide-git-merge',
     api: '/api/issues?pullRequest=true&state=open&draft=false&isApproved=true&ciPassing=true',
     empty: 'No PRs ready to merge'
   },
-  {
-    id: 'review',
+  review: {
     label: 'Needs Review',
     icon: 'i-lucide-eye',
     api: '/api/issues?pullRequest=true&state=open&reviewRequested=me&draft=false&excludeBotWithPassingCi=true',
     empty: 'No reviews requested'
   },
-  {
-    id: 'triage',
+  triage: {
     label: 'Needs Triage',
     icon: 'i-lucide-inbox',
     api: '/api/issues?pullRequest=false&state=open&excludeBots=true',
     empty: 'All triaged!'
   }
-]
+} as const
 
-// Tab state from URL query
+type TabId = keyof typeof tabs
+
+// Active tab from URL
 const activeTab = computed({
-  get: () => (route.query.tab as string) || tabs[0]?.id,
-  set: (tab) => {
-    router.replace({ query: { ...route.query, tab } })
+  get: () => (route.query.tab as TabId) || 'merge',
+  set: (tab: TabId) => router.replace({ query: { ...route.query, tab } })
+})
+
+const currentTab = computed(() => tabs[activeTab.value])
+
+// Fetch issues for active tab
+const apiUrl = computed(() => currentTab.value.api)
+const { data: items, status, refresh } = await useLazyFetch<Issue[]>(apiUrl, {
+  default: () => [],
+  watch: [apiUrl]
+})
+
+// Favorite repositories - use shared composable
+const {
+  favorites: favoriteRepositories,
+  open: favoriteRepositoriesOpen,
+  hasFavorites,
+  hasSynced
+} = useFavoriteRepositories()
+
+// Favorite issues - use shared composable for cross-component communication
+const { selectedIssue, clearSelection } = useFavoriteIssues()
+
+// Selected issue state
+const selectedItem = ref<Issue | null>(null)
+
+// Watch for favorite issue selection from sidebar
+watch(selectedIssue, (issue) => {
+  if (issue) {
+    selectedItem.value = {
+      ...issue,
+      repositoryId: issue.repository.id,
+      createdAt: '',
+      updatedAt: ''
+    } as Issue
+    clearSelection()
   }
-})
-
-// Current tab config
-const currentTabConfig = computed(() =>
-  tabs.find(t => t.id === activeTab.value) || tabs[0]
-)
-
-// Data for all tabs
-const tabsData = ref<Record<string, Issue[]>>({})
-const loading = ref(true)
-
-// Current tab items
-const items = computed(() => activeTab.value ? tabsData.value[activeTab.value] ?? [] : [])
-
-// Tab counts
-const tabCounts = computed(() => {
-  const counts: Record<string, number> = {}
-  for (const [key, data] of Object.entries(tabsData.value)) {
-    counts[key] = data.length
-  }
-  return counts
-})
-
-async function fetchAllTabs() {
-  loading.value = true
-  const data: Record<string, Issue[]> = {}
-
-  await Promise.all(
-    tabs.map(async (tab) => {
-      try {
-        data[tab.id] = await $fetch<Issue[]>(tab.api) ?? []
-      } catch {
-        data[tab.id] = []
-      }
-    })
-  )
-
-  tabsData.value = data
-  loading.value = false
-}
-
-// Fetch synced repositories to check if user has any
-const { data: repositories } = await useFetch('/api/repositories/synced', {
-  default: () => []
-})
-
-// Check if user has favorites
-const { data: favorites, refresh: refreshFavorites } = await useFetch('/api/favorites/repositories', {
-  default: () => []
-})
-const hasFavorites = computed(() => favorites.value && favorites.value.length > 0)
-
-function refresh() {
-  refreshFavorites()
-  fetchAllTabs()
-}
-
-// Initial fetch
-onMounted(() => {
-  if (hasFavorites.value) {
-    fetchAllTabs()
-  }
-})
+}, { immediate: true })
 
 // Refresh data when window gains focus
 const focused = useWindowFocus()
@@ -117,9 +87,9 @@ const q = ref('')
 const { contains } = useFilter({ sensitivity: 'base' })
 
 const filteredItems = computed(() => {
-  if (!q.value) return items.value
+  if (!q.value) return items.value ?? []
 
-  return items.value.filter((item) => {
+  return (items.value ?? []).filter((item) => {
     return (
       contains(item.title, q.value)
       || contains(String(item.number), q.value)
@@ -128,12 +98,6 @@ const filteredItems = computed(() => {
     )
   })
 })
-
-// Favorites slideover state
-const favoritesOpen = ref(false)
-
-// Selected issue state
-const selectedItem = ref<Issue | null>(null)
 
 const isPanelOpen = computed({
   get() {
@@ -152,7 +116,7 @@ const isMobile = breakpoints.smaller('lg')
 
 <template>
   <UDashboardPanel
-    id="dashboard-1"
+    id="issues-1"
     :default-size="40"
     :min-size="25"
     :max-size="!selectedItem ? 100 : 50"
@@ -169,7 +133,7 @@ const isMobile = breakpoints.smaller('lg')
             :ui="{ content: 'w-[calc(var(--reka-popper-anchor-width)+8px)]' }"
           >
             <UButton
-              :label="currentTabConfig?.label"
+              :label="currentTab.label"
               color="neutral"
               variant="ghost"
               size="xl"
@@ -178,7 +142,7 @@ const isMobile = breakpoints.smaller('lg')
             >
               <template #trailing>
                 <UBadge
-                  :label="String(tabCounts[currentTabConfig?.id ?? ''] ?? 0)"
+                  :label="String(items?.length ?? 0)"
                   color="neutral"
                   variant="subtle"
                 />
@@ -188,27 +152,18 @@ const isMobile = breakpoints.smaller('lg')
             <template #content>
               <div class="p-1 flex flex-col gap-0.5">
                 <UButton
-                  v-for="tab in tabs"
-                  :key="tab.id"
+                  v-for="(tab, id) in tabs"
+                  :key="id"
                   :label="tab.label"
                   color="neutral"
                   variant="ghost"
-                  :active="activeTab === tab.id"
+                  :active="activeTab === id"
                   active-variant="soft"
                   size="md"
                   class="py-1 gap-1.5"
                   square
-                  @click="activeTab = tab.id"
-                >
-                  <template #trailing>
-                    <UBadge
-                      :label="String(tabCounts[tab.id])"
-                      color="neutral"
-                      variant="subtle"
-                      class="ms-auto"
-                    />
-                  </template>
-                </UButton>
+                  @click="activeTab = id"
+                />
               </div>
             </template>
           </UPopover>
@@ -227,10 +182,10 @@ const isMobile = breakpoints.smaller('lg')
           <UButton
             color="neutral"
             variant="soft"
-            icon="i-lucide-star"
+            icon="i-lucide-book"
             square
-            :label="`${favorites.length} favorites`"
-            @click="favoritesOpen = true"
+            :label="`${favoriteRepositories.length} repos`"
+            @click="favoriteRepositoriesOpen = !favoriteRepositoriesOpen"
           />
         </template>
       </UDashboardNavbar>
@@ -239,7 +194,7 @@ const isMobile = breakpoints.smaller('lg')
     <template #body>
       <!-- No synced repositories -->
       <UEmpty
-        v-if="!repositories?.length"
+        v-if="!hasSynced"
         icon="i-lucide-package"
         description="You have to install the GitHub App on your account or organization to get started."
         class="flex-1"
@@ -263,20 +218,18 @@ const isMobile = breakpoints.smaller('lg')
           icon: 'i-lucide-star',
           color: 'neutral',
           variant: 'soft',
-          onClick: () => { favoritesOpen = true }
+          onClick: () => { favoriteRepositoriesOpen = true }
         }]"
       />
 
-      <!-- Loading state -->
-      <div v-else-if="loading && !Object.keys(tabsData).length" class="flex-1 flex items-center justify-center">
-        <UIcon name="i-lucide-loader-2" class="size-6 animate-spin text-muted" />
-      </div>
+      <!-- Loading state (only on initial load, not refetches) -->
+      <Loading v-else-if="status === 'pending' && !items?.length" />
 
       <!-- Empty state -->
       <UEmpty
         v-else-if="!filteredItems?.length"
-        :icon="q ? 'i-lucide-search' : currentTabConfig?.icon"
-        :description="q ? 'No results found' : currentTabConfig?.empty"
+        :icon="q ? 'i-lucide-search' : currentTab.icon"
+        :description="q ? 'No results found' : currentTab.empty"
         class="flex-1"
       />
 
@@ -299,11 +252,11 @@ const isMobile = breakpoints.smaller('lg')
     </template>
   </UDashboardPanel>
 
-  <UDashboardPanel v-if="selectedItem" id="dashboard-2">
+  <UDashboardPanel v-if="selectedItem" id="issues-2">
     <Issue
       :item="selectedItem"
       @close="selectedItem = null"
-      @refresh="fetchAllTabs"
+      @refresh="refresh"
     />
   </UDashboardPanel>
 
@@ -316,16 +269,9 @@ const isMobile = breakpoints.smaller('lg')
         <Issue
           :item="selectedItem"
           @close="selectedItem = null"
-          @refresh="fetchAllTabs"
+          @refresh="refresh"
         />
       </template>
     </USlideover>
   </ClientOnly>
-
-  <LazyRepositoriesFavorites
-    v-model:open="favoritesOpen"
-    :favorites="favorites"
-    :repositories="repositories"
-    @change="refresh"
-  />
 </template>

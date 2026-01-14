@@ -5,22 +5,28 @@ useSeoMeta({
   titleTemplate: '%s - Volta'
 })
 
-const { data: favoriteIssues } = await useLazyFetch('/api/favorites/issues', {
-  default: () => []
-})
+const router = useRouter()
 
-const favoriteIssueItems = computed<NavigationMenuItem[]>(() => {
-  if (!favoriteIssues.value || favoriteIssues.value.length === 0) {
-    return []
-  }
+// Favorite issues
+const {
+  favorites: favoriteIssues,
+  open: favoriteIssuesOpen,
+  refresh: refreshFavoriteIssues,
+  selectIssue
+} = useFavoriteIssues()
 
-  return favoriteIssues.value.map(fav => ({
-    label: `${fav.issue.repository.fullName}#${fav.issue.number} ${fav.issue.title}`,
-    icon: getIssueStateIcon(fav.issue),
-    to: fav.issue.htmlUrl || '#',
-    target: '_blank' as const
-  }))
-})
+function handleSelectFavoriteIssue(issue: Parameters<typeof selectIssue>[0]) {
+  selectIssue(issue)
+  router.push('/issues')
+}
+
+// Favorite repositories
+const {
+  favorites: favoriteRepositories,
+  synced: syncedRepositories,
+  open: favoriteRepositoriesOpen,
+  refresh: refreshFavoriteRepositories
+} = useFavoriteRepositories()
 
 const links = computed<NavigationMenuItem[][]>(() => [[{
   label: 'Inbox',
@@ -30,13 +36,11 @@ const links = computed<NavigationMenuItem[][]>(() => [[{
   label: 'Issues',
   icon: 'i-lucide-layout-list',
   to: '/issues'
-}, ...(favoriteIssueItems.value.length > 0
-  ? [{
-      label: 'Favorites',
-      icon: 'i-lucide-star',
-      children: favoriteIssueItems.value
-    }]
-  : []), {
+}, {
+  label: 'Favorites',
+  icon: 'i-lucide-star',
+  onSelect: () => { favoriteIssuesOpen.value = !favoriteIssuesOpen.value }
+}, {
   label: 'Settings',
   icon: 'i-lucide-settings',
   to: '/settings'
@@ -93,5 +97,19 @@ const links = computed<NavigationMenuItem[][]>(() => [[{
     </div>
 
     <UDashboardSearch :groups="[{ id: 'links', items: links.flat() }]" />
+
+    <LazyIssuesFavorites
+      v-model:open="favoriteIssuesOpen"
+      :favorites="favoriteIssues"
+      @select="handleSelectFavoriteIssue"
+      @change="refreshFavoriteIssues"
+    />
+
+    <LazyRepositoriesFavorites
+      v-model:open="favoriteRepositoriesOpen"
+      :favorites="favoriteRepositories"
+      :repositories="syncedRepositories"
+      @change="refreshFavoriteRepositories"
+    />
   </UDashboardGroup>
 </template>

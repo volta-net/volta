@@ -109,10 +109,8 @@ async function toggleSubscription() {
   }
 }
 
-// Favorite functionality
-const { data: favoriteIssues, refresh: refreshFavorites } = await useLazyFetch('/api/favorites/issues', {
-  default: () => []
-})
+// Favorite functionality - use shared composable
+const { favorites: favoriteIssues, refresh: refreshFavorites } = useFavoriteIssues()
 
 const isFavorited = computed(() => favoriteIssues.value?.some(f => f.issueId === issue.value?.id) || false)
 const updatingFavorite = ref(false)
@@ -254,9 +252,7 @@ defineShortcuts({
     </UDashboardNavbar>
 
     <!-- Loading state (only on initial load, not refetches) -->
-    <div v-if="status === 'pending' && !issue" class="flex-1 flex items-center justify-center">
-      <UIcon name="i-lucide-loader-2" class="size-8 animate-spin text-muted" />
-    </div>
+    <Loading v-if="status === 'pending' && !issue" />
 
     <!-- Issue/PR View -->
     <div v-else-if="issue" class="grid grid-cols-3 flex-1 min-h-0">

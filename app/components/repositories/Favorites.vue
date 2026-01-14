@@ -118,7 +118,7 @@ async function setFavorite(repositoryId: number, value: boolean) {
       body: 'flex flex-col p-0!'
     }"
   >
-    <template v-if="repositories?.length" #body>
+    <template #body>
       <UCommandPalette
         v-model="selected"
         :groups="groups"
@@ -138,12 +138,29 @@ async function setFavorite(repositoryId: number, value: boolean) {
           item: 'items-center pl-2.5 pr-4',
           itemLeadingIcon: 'size-4',
           itemTrailingIcon: 'size-4 text-warning',
-          input: '[&>input]:h-11'
+          input: '[&>input]:h-11',
+          content: 'flex-1',
+          empty: 'flex-1 flex items-center justify-center'
         }"
         :fuse="{
           resultLimit: 1000
         }"
-      />
+      >
+        <template #empty>
+          <UEmpty
+            icon="i-lucide-package"
+            description="You have to install the GitHub App on your account or organization to get started."
+            class="flex-1 -mt-[45px]"
+            :actions="[{
+              label: 'Import repositories',
+              to: '/settings',
+              icon: 'i-lucide-download',
+              color: 'neutral',
+              variant: 'soft'
+            }]"
+          />
+        </template>
+      </UCommandPalette>
     </template>
   </USlideover>
 </template>
