@@ -382,7 +382,7 @@ export default defineEventHandler(async (event) => {
 
     // Filter by ciPassing (PRs only)
     if (ciPassing !== undefined && issue.pullRequest && ciByHeadSha) {
-      const ciStatuses = issue.headSha ? ciByHeadSha.get(issue.headSha) : null
+      const ciStatuses = issue.headSha ? ciByHeadSha.get(`${issue.repositoryId}:${issue.headSha}`) : null
 
       // No CI = considered passing (some repos don't have CI)
       let passing = true
@@ -401,7 +401,7 @@ export default defineEventHandler(async (event) => {
       const isBot = authorLogin.includes('[bot]')
 
       if (isBot) {
-        const ciStatuses = issue.headSha ? ciByHeadSha.get(issue.headSha) : null
+        const ciStatuses = issue.headSha ? ciByHeadSha.get(`${issue.repositoryId}:${issue.headSha}`) : null
         // No CI = considered passing
         let passing = true
         if (ciStatuses && ciStatuses.length > 0) {
@@ -448,7 +448,7 @@ export default defineEventHandler(async (event) => {
       labels: issue.labels.map(l => l.label),
       linkedPrs: linkedPRsByIssue.get(issue.id) || [],
       ciStatuses: issue.pullRequest && issue.headSha && ciByHeadSha
-        ? ciByHeadSha.get(issue.headSha) || []
+        ? ciByHeadSha.get(`${issue.repositoryId}:${issue.headSha}`) || []
         : [],
       hasMaintainerComment: hasMaintainerCommentValue,
       // Remove internal fields from response

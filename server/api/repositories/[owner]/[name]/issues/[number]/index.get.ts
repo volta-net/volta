@@ -156,7 +156,7 @@ export default defineEventHandler(async (event) => {
       let freshCiStatuses: CIStatus[] = []
       if (freshIssue!.pullRequest && freshIssue!.headSha) {
         const ciMap = await getCIStatusForPRs([{ repositoryId: repository.id, headSha: freshIssue!.headSha }])
-        freshCiStatuses = ciMap.get(freshIssue!.headSha) || []
+        freshCiStatuses = ciMap.get(`${repository.id}:${freshIssue!.headSha}`) || []
       }
 
       return {
@@ -191,7 +191,7 @@ export default defineEventHandler(async (event) => {
   let ciStatuses: CIStatus[] = []
   if (issue.pullRequest && issue.headSha) {
     const ciMap = await getCIStatusForPRs([{ repositoryId: repository.id, headSha: issue.headSha }])
-    ciStatuses = ciMap.get(issue.headSha) || []
+    ciStatuses = ciMap.get(`${repository.id}:${issue.headSha}`) || []
   }
 
   // Return cached data

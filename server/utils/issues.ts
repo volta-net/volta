@@ -72,16 +72,25 @@ export async function getTypesForIssues(typeIds: number[]): Promise<Map<number, 
 
 /**
  * Batch get CI status for multiple PRs
- * Returns all check runs + commit statuses per headSha
+ * Returns all check runs + commit statuses per headSha (filtered by repositoryId)
  * Includes GitHub Actions, Vercel Agent Review (Checks API) + Vercel deployments (Status API)
  */
 export async function getCIStatusForPRs(prs: { repositoryId: number, headSha: string | null }[]): Promise<Map<string, CIStatus[]>> {
   const validPRs = prs.filter(pr => pr.headSha)
   if (validPRs.length === 0) return new Map<string, CIStatus[]>()
 
+  // Build lookup key combining repositoryId and headSha for proper isolation
+  const prLookup = new Map<string, { repositoryId: number, headSha: string }>()
+  for (const pr of validPRs) {
+    const key = `${pr.repositoryId}:${pr.headSha}`
+    prLookup.set(key, { repositoryId: pr.repositoryId, headSha: pr.headSha! })
+  }
+
   const headShas = validPRs.map(pr => pr.headSha!)
+  const repositoryIds = [...new Set(validPRs.map(pr => pr.repositoryId))]
 
   // Fetch check runs (GitHub Actions, Vercel Agent Review, etc.) and commit statuses (Vercel deployments, etc.) in parallel
+  // Filter by both repositoryId AND headSha to ensure we only get CI statuses for the correct PR
   const [checkRuns, commitStatuses] = await Promise.all([
     db
       .select({
@@ -92,11 +101,15 @@ export async function getCIStatusForPRs(prs: { repositoryId: number, headSha: st
         detailsUrl: schema.checkRuns.detailsUrl,
         name: schema.checkRuns.name,
         headSha: schema.checkRuns.headSha,
+        repositoryId: schema.checkRuns.repositoryId,
         appSlug: schema.checkRuns.appSlug,
         createdAt: schema.checkRuns.createdAt
       })
       .from(schema.checkRuns)
-      .where(inArray(schema.checkRuns.headSha, headShas))
+      .where(and(
+        inArray(schema.checkRuns.repositoryId, repositoryIds),
+        inArray(schema.checkRuns.headSha, headShas)
+      ))
       .orderBy(desc(schema.checkRuns.createdAt)),
     db
       .select({
@@ -105,32 +118,40 @@ export async function getCIStatusForPRs(prs: { repositoryId: number, headSha: st
         context: schema.commitStatuses.context,
         targetUrl: schema.commitStatuses.targetUrl,
         sha: schema.commitStatuses.sha,
+        repositoryId: schema.commitStatuses.repositoryId,
         createdAt: schema.commitStatuses.createdAt
       })
       .from(schema.commitStatuses)
-      .where(inArray(schema.commitStatuses.sha, headShas))
+      .where(and(
+        inArray(schema.commitStatuses.repositoryId, repositoryIds),
+        inArray(schema.commitStatuses.sha, headShas)
+      ))
       .orderBy(desc(schema.commitStatuses.createdAt))
   ])
 
-  // Group runs by headSha, keeping only the latest run per check
-  const runsByHeadSha = new Map<string, CIStatus[]>()
-  const seenChecks = new Map<string, Set<string>>() // headSha -> Set of check keys
+  // Group runs by composite key (repositoryId:headSha), keeping only the latest run per check
+  const runsByKey = new Map<string, CIStatus[]>()
+  const seenChecks = new Map<string, Set<string>>() // key -> Set of check keys
 
   // Process check runs (Checks API)
   for (const check of checkRuns) {
-    if (!check.headSha) continue
+    if (!check.headSha || !check.repositoryId) continue
 
-    if (!runsByHeadSha.has(check.headSha)) {
-      runsByHeadSha.set(check.headSha, [])
-      seenChecks.set(check.headSha, new Set())
+    // Only include check runs that match a requested PR (repositoryId + headSha combination)
+    const key = `${check.repositoryId}:${check.headSha}`
+    if (!prLookup.has(key)) continue
+
+    if (!runsByKey.has(key)) {
+      runsByKey.set(key, [])
+      seenChecks.set(key, new Set())
     }
 
     // Only keep the latest run per check (name + appSlug combination)
     const checkKey = `check:${check.name}:${check.appSlug || ''}`
-    const seen = seenChecks.get(check.headSha)!
+    const seen = seenChecks.get(key)!
     if (!seen.has(checkKey)) {
       seen.add(checkKey)
-      runsByHeadSha.get(check.headSha)!.push({
+      runsByKey.get(key)!.push({
         id: check.id,
         status: check.status,
         conclusion: check.conclusion,
@@ -142,16 +163,20 @@ export async function getCIStatusForPRs(prs: { repositoryId: number, headSha: st
 
   // Process commit statuses (Status API - used by Vercel deployments, etc.)
   for (const status of commitStatuses) {
-    if (!status.sha) continue
+    if (!status.sha || !status.repositoryId) continue
 
-    if (!runsByHeadSha.has(status.sha)) {
-      runsByHeadSha.set(status.sha, [])
-      seenChecks.set(status.sha, new Set())
+    // Only include statuses that match a requested PR (repositoryId + headSha combination)
+    const key = `${status.repositoryId}:${status.sha}`
+    if (!prLookup.has(key)) continue
+
+    if (!runsByKey.has(key)) {
+      runsByKey.set(key, [])
+      seenChecks.set(key, new Set())
     }
 
     // Only keep the latest status per context
     const statusKey = `status:${status.context}`
-    const seen = seenChecks.get(status.sha)!
+    const seen = seenChecks.get(key)!
     if (!seen.has(statusKey)) {
       seen.add(statusKey)
 
@@ -167,7 +192,7 @@ export async function getCIStatusForPRs(prs: { repositoryId: number, headSha: st
         conclusion = 'failure'
       }
 
-      runsByHeadSha.get(status.sha)!.push({
+      runsByKey.get(key)!.push({
         id: status.id,
         status: isCompleted ? 'completed' : 'in_progress',
         conclusion,
@@ -177,7 +202,7 @@ export async function getCIStatusForPRs(prs: { repositoryId: number, headSha: st
     }
   }
 
-  return runsByHeadSha
+  return runsByKey
 }
 
 /**
@@ -289,7 +314,7 @@ export async function enrichIssuesWithMetadata<T extends { id: number, repositor
     }
 
     if (includeCIStatus && 'headSha' in item && item.headSha) {
-      enriched.ciStatuses = ciByHeadSha.get(item.headSha) || []
+      enriched.ciStatuses = ciByHeadSha.get(`${item.repository.id}:${item.headSha}`) || []
     }
 
     return enriched
