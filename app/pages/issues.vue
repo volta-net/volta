@@ -87,6 +87,13 @@ watch(focused, (isFocused) => {
   }
 })
 
+// Refresh data when favorite repositories slideover closes
+watch(favoriteRepositoriesOpen, (isOpen, wasOpen) => {
+  if (!isOpen && wasOpen) {
+    refresh()
+  }
+})
+
 // Search
 const q = ref('')
 const searchInputRef = ref<{ inputRef: HTMLInputElement } | null>(null)
