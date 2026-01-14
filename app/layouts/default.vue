@@ -117,9 +117,9 @@ const groups = computed(() => [{
     label: 'Issues',
     icon: issuesIcon.value,
     children: [{
-      label: 'Ready To Merge',
-      icon: 'i-lucide-git-merge',
-      to: '/issues?tab=merge',
+      label: 'Needs Triage',
+      icon: 'i-lucide-circle-dashed',
+      to: '/issues?tab=triage',
       exactQuery: true
     }, {
       label: 'Needs Review',
@@ -127,9 +127,9 @@ const groups = computed(() => [{
       to: '/issues?tab=review',
       exactQuery: true
     }, {
-      label: 'Needs Triage',
-      icon: 'i-lucide-circle-dashed',
-      to: '/issues?tab=triage',
+      label: 'Ready To Merge',
+      icon: 'i-lucide-git-merge',
+      to: '/issues?tab=merge',
       exactQuery: true
     }]
   }, {

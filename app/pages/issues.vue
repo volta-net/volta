@@ -10,11 +10,11 @@ const route = useRoute()
 const router = useRouter()
 
 const tabs = {
-  merge: {
-    label: 'Ready to Merge',
-    icon: 'i-lucide-git-merge',
-    api: '/api/issues?pullRequest=true&state=open&draft=false&isApproved=true&ciPassing=true',
-    empty: 'No PRs ready to merge'
+  triage: {
+    label: 'Needs Triage',
+    icon: 'i-lucide-circle-dashed',
+    api: '/api/issues?pullRequest=false&state=open&excludeBots=true',
+    empty: 'All triaged!'
   },
   review: {
     label: 'Needs Review',
@@ -22,11 +22,11 @@ const tabs = {
     api: '/api/issues?pullRequest=true&state=open&reviewRequested=me&draft=false&excludeBotWithPassingCi=true',
     empty: 'No reviews requested'
   },
-  triage: {
-    label: 'Needs Triage',
-    icon: 'i-lucide-circle-dashed',
-    api: '/api/issues?pullRequest=false&state=open&excludeBots=true',
-    empty: 'All triaged!'
+  merge: {
+    label: 'Ready to Merge',
+    icon: 'i-lucide-git-merge',
+    api: '/api/issues?pullRequest=true&state=open&draft=false&isApproved=true&ciPassing=true',
+    empty: 'No PRs ready to merge'
   }
 } as const
 
@@ -39,7 +39,7 @@ function isValidTab(tab: unknown): tab is TabId {
 
 // Active tab from URL
 const activeTab = computed({
-  get: () => isValidTab(route.query.tab) ? route.query.tab : 'merge',
+  get: () => isValidTab(route.query.tab) ? route.query.tab : 'triage',
   set: (tab: TabId) => router.replace({ query: { ...route.query, tab } })
 })
 
