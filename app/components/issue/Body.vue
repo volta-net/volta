@@ -1,18 +1,9 @@
 <script setup lang="ts">
 import type { MentionUser } from '~/composables/useEditorMentions'
 
-interface IssueReference {
-  id: number
-  number: number
-  title: string
-  state: string
-  pullRequest: boolean
-}
-
 const props = defineProps<{
   issue: IssueDetail
   collaborators?: MentionUser[]
-  repositoryIssues?: IssueReference[]
 }>()
 
 defineEmits<{
@@ -88,7 +79,6 @@ async function saveBody() {
     v-model="body"
     :issue="issue"
     :collaborators="collaborators"
-    :repository-issues="repositoryIssues"
     placeholder="Add a description..."
     :ui="{
       content: 'flex flex-col',

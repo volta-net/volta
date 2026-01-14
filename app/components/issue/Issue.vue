@@ -1,14 +1,6 @@
 <script setup lang="ts">
 import type { MentionUser } from '~/composables/useEditorMentions'
 
-interface IssueReference {
-  id: number
-  number: number
-  title: string
-  state: string
-  pullRequest: boolean
-}
-
 const props = defineProps<{
   item: Issue
 }>()
@@ -74,14 +66,9 @@ watch(resolution, (res) => {
   }
 })
 
-// Fetch repository collaborators and issues for editor mentions
+// Fetch repository collaborators for editor mentions
 const collaboratorsUrl = computed(() => repoFullName.value ? `/api/repositories/${owner.value}/${name.value}/collaborators` : '')
 const { data: collaborators } = await useLazyFetch<MentionUser[]>(collaboratorsUrl, {
-  default: () => [],
-  immediate: !!repoFullName.value
-})
-const issuesUrl = computed(() => repoFullName.value ? `/api/repositories/${owner.value}/${name.value}/issues` : '')
-const { data: repositoryIssues } = await useLazyFetch<IssueReference[]>(issuesUrl, {
   default: () => [],
   immediate: !!repoFullName.value
 })
@@ -262,14 +249,12 @@ defineShortcuts({
         <IssueBody
           :issue="issue"
           :collaborators="collaborators"
-          :repository-issues="repositoryIssues"
           @refresh="handleRefresh"
         />
 
         <IssueTimeline
           :issue="issue"
           :collaborators="collaborators"
-          :repository-issues="repositoryIssues"
           @refresh="handleRefresh"
         />
       </div>

@@ -203,7 +203,6 @@ const timelineItems = computed(() => {
       <IssueCommentForm
         :issue="issue"
         :collaborators="collaborators"
-        :repository-issues="repositoryIssues"
         @refresh="emit('refresh')"
       />
     </template>

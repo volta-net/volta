@@ -1,18 +1,9 @@
 <script setup lang="ts">
 import type { MentionUser } from '~/composables/useEditorMentions'
 
-interface IssueReference {
-  id: number
-  number: number
-  title: string
-  state: string
-  pullRequest: boolean
-}
-
 const props = defineProps<{
   issue: IssueDetail
   collaborators?: MentionUser[]
-  repositoryIssues?: IssueReference[]
 }>()
 
 const emit = defineEmits<{
@@ -53,7 +44,6 @@ async function addComment() {
       v-model="newComment"
       :issue="issue"
       :collaborators="collaborators"
-      :repository-issues="repositoryIssues"
       :bubble-toolbar="false"
       :suggest-reply="true"
       placeholder="Leave a comment..."

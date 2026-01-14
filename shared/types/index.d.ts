@@ -98,6 +98,7 @@ export interface IssueDetail extends Serialized<DBIssue> {
   linkedPrs?: LinkedPR[]
   // AI Resolution Analysis (issues only)
   resolutionAnsweredBy?: User | null
+  resolutionAnswerCommentId?: number | null
 }
 
 // Notification with relations

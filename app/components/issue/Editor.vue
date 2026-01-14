@@ -9,19 +9,10 @@ import { ImageUpload } from '~/components/editor/ImageUploadExtension'
 import { createCustomMentionExtension, parseExistingMentions, type MentionUser } from '~/composables/useEditorMentions'
 import { DetailsBlock, preprocessForEditor, postprocessFromEditor } from '~/utils/editor'
 
-interface IssueReference {
-  id: number
-  number: number
-  title: string
-  state: string
-  pullRequest: boolean
-}
-
 const props = withDefaults(defineProps<{
   issue: IssueDetail
   // External data (fetched by parent)
   collaborators?: MentionUser[]
-  repositoryIssues?: IssueReference[]
   // UI
   placeholder?: string
   ui?: Record<string, string>
@@ -34,7 +25,6 @@ const props = withDefaults(defineProps<{
 }>(), {
   placeholder: 'Write something...',
   collaborators: () => [],
-  repositoryIssues: () => [],
   completion: true,
   parseMentions: true,
   bubbleToolbar: true,
@@ -105,10 +95,10 @@ const { items: mentionItems } = useEditorMentions({
   commenters: props.issue.comments
 })
 
-// Reference items (from repository issues, excluding current)
-const issuesRef = computed(() => props.repositoryIssues)
-const { items: referenceItems } = useEditorReferences(issuesRef, {
-  excludeNumber: props.issue.number
+// Reference items (async search when user types #)
+const { query: referenceQuery, items: referenceItems } = useEditorReferences({
+  excludeNumber: props.issue.number,
+  repositoryFullName: props.issue.repository.fullName
 })
 
 const { items: suggestionItems } = useEditorSuggestions(customHandlers.value)
@@ -237,10 +227,12 @@ const appendToBody = import.meta.client ? () => document.body : undefined
       :append-to="appendToBody"
     />
     <UEditorMentionMenu
+      v-model:query="referenceQuery"
       :editor="editor"
       :items="referenceItems"
       char="#"
       plugin-key="referenceMenu"
+      ignore-filter
       :append-to="appendToBody"
     />
     <UEditorSuggestionMenu
