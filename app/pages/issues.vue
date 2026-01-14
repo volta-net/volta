@@ -84,7 +84,12 @@ watch(focused, (isFocused) => {
 
 // Search
 const q = ref('')
+const searchInputRef = ref<{ inputRef: HTMLInputElement } | null>(null)
 const { contains } = useFilter({ sensitivity: 'base' })
+
+defineShortcuts({
+  '/': () => searchInputRef.value?.inputRef?.focus()
+})
 
 const filteredItems = computed(() => {
   if (!q.value) return items.value ?? []
@@ -169,16 +174,36 @@ const isMobile = breakpoints.smaller('lg')
           </UPopover>
         </template>
 
-        <template v-if="hasFavorites" #trailing>
+        <template v-if="hasFavorites" #right>
           <UInput
+            ref="searchInputRef"
             v-model="q"
             placeholder="Search..."
+            variant="soft"
             icon="i-lucide-search"
             color="neutral"
-          />
-        </template>
+          >
+            <template #trailing>
+              <UButton
+                v-if="q"
+                color="neutral"
+                variant="link"
+                icon="i-lucide-x"
+                size="sm"
+                aria-label="Clear search"
+                class="-mr-2"
+                @click="q = ''"
+              />
+              <UKbd
+                v-else
+                value="/"
+                size="md"
+                variant="soft"
+                class="-mr-1"
+              />
+            </template>
+          </UInput>
 
-        <template v-if="hasFavorites" #right>
           <UButton
             color="neutral"
             variant="soft"
