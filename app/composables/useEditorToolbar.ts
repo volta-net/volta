@@ -3,44 +3,29 @@ import type { Editor } from '@tiptap/vue-3'
 
 interface UseEditorToolbarOptions {
   aiLoading?: Ref<boolean | undefined>
+  suggestReply?: boolean
 }
 
 export function useEditorToolbar<T extends EditorCustomHandlers>(_customHandlers?: T, options: UseEditorToolbarOptions = {}) {
-  const { aiLoading } = options
+  const { aiLoading, suggestReply } = options
 
-  const items = computed(() => [[{
-    icon: 'i-lucide-sparkles',
-    label: 'Improve',
-    activeColor: 'neutral',
-    activeVariant: 'ghost',
-    loading: aiLoading?.value,
-    content: {
-      align: 'start'
-    },
-    items: [{
+  const items = computed(() => {
+    const aiItems: any[] = [{
       kind: 'aiFix',
       icon: 'i-lucide-spell-check',
-      label: 'Fix spelling & grammar'
-    }, {
-      kind: 'aiExtend',
-      icon: 'i-lucide-unfold-vertical',
-      label: 'Extend text'
-    }, {
-      kind: 'aiReduce',
-      icon: 'i-lucide-fold-vertical',
-      label: 'Reduce text'
+      label: 'Fix spelling & formatting'
     }, {
       kind: 'aiSimplify',
       icon: 'i-lucide-lightbulb',
-      label: 'Simplify text'
-    }, {
-      kind: 'aiContinue',
-      icon: 'i-lucide-text',
-      label: 'Continue sentence'
+      label: 'Simplify'
     }, {
       kind: 'aiSummarize',
       icon: 'i-lucide-list',
       label: 'Summarize'
+    }, {
+      kind: 'aiContinue',
+      icon: 'i-lucide-text',
+      label: 'Continue sentence'
     }, {
       icon: 'i-lucide-languages',
       label: 'Translate',
@@ -48,6 +33,22 @@ export function useEditorToolbar<T extends EditorCustomHandlers>(_customHandlers
         kind: 'aiTranslate',
         language: 'English',
         label: 'English'
+      }, {
+        kind: 'aiTranslate',
+        language: 'Chinese (Simplified)',
+        label: 'Chinese (Simplified)'
+      }, {
+        kind: 'aiTranslate',
+        language: 'Portuguese (Brazilian)',
+        label: 'Portuguese'
+      }, {
+        kind: 'aiTranslate',
+        language: 'Japanese',
+        label: 'Japanese'
+      }, {
+        kind: 'aiTranslate',
+        language: 'Korean',
+        label: 'Korean'
       }, {
         kind: 'aiTranslate',
         language: 'French',
@@ -60,101 +61,133 @@ export function useEditorToolbar<T extends EditorCustomHandlers>(_customHandlers
         kind: 'aiTranslate',
         language: 'German',
         label: 'German'
+      }, {
+        kind: 'aiTranslate',
+        language: 'Russian',
+        label: 'Russian'
       }]
     }]
-  }], [{
-    label: 'Turn into',
-    trailingIcon: 'i-lucide-chevron-down',
-    activeColor: 'neutral',
-    activeVariant: 'ghost',
-    tooltip: { text: 'Turn into' },
-    content: {
-      align: 'start'
-    },
-    ui: {
-      label: 'text-xs'
-    },
-    items: [{
-      type: 'label',
-      label: 'Turn into'
+
+    // Add "Suggest reply" option if enabled
+    if (suggestReply) {
+      aiItems.push({
+        kind: 'aiReply',
+        icon: 'i-lucide-reply',
+        label: 'Suggest reply'
+      })
+    }
+
+    return [[{
+      label: 'Improve',
+      icon: 'i-lucide-sparkles',
+      trailingIcon: 'i-lucide-chevron-down',
+      activeColor: 'neutral',
+      activeVariant: 'ghost',
+      loading: aiLoading?.value,
+      ui: {
+        base: 'group',
+        trailingIcon: 'group-data-[state=open]:rotate-180 transition-transform duration-200'
+      },
+      content: {
+        align: 'start'
+      },
+      items: aiItems
+    }], [{
+      label: 'Turn into',
+      trailingIcon: 'i-lucide-chevron-down',
+      activeColor: 'neutral',
+      activeVariant: 'ghost',
+      tooltip: { text: 'Turn into' },
+      content: {
+        align: 'start'
+      },
+      ui: {
+        label: 'text-xs',
+        base: 'group',
+        trailingIcon: 'group-data-[state=open]:rotate-180 transition-transform duration-200'
+      },
+      items: [{
+        type: 'label',
+        label: 'Turn into'
+      }, {
+        kind: 'paragraph',
+        label: 'Paragraph',
+        icon: 'i-lucide-type'
+      }, {
+        kind: 'heading',
+        level: 1,
+        label: 'Heading 1',
+        icon: 'i-lucide-heading-1'
+      }, {
+        kind: 'heading',
+        level: 2,
+        label: 'Heading 2',
+        icon: 'i-lucide-heading-2'
+      }, {
+        kind: 'heading',
+        level: 3,
+        label: 'Heading 3',
+        icon: 'i-lucide-heading-3'
+      }, {
+        kind: 'heading',
+        level: 4,
+        label: 'Heading 4',
+        icon: 'i-lucide-heading-4'
+      }, {
+        kind: 'bulletList',
+        label: 'Bullet List',
+        icon: 'i-lucide-list'
+      }, {
+        kind: 'orderedList',
+        label: 'Ordered List',
+        icon: 'i-lucide-list-ordered'
+      }, {
+        kind: 'taskList',
+        label: 'Task List',
+        icon: 'i-lucide-list-check'
+      }, {
+        kind: 'blockquote',
+        label: 'Blockquote',
+        icon: 'i-lucide-text-quote'
+      }, {
+        kind: 'codeBlock',
+        label: 'Code Block',
+        icon: 'i-lucide-square-code'
+      }]
+    }], [{
+      kind: 'mark',
+      mark: 'bold',
+      icon: 'i-lucide-bold',
+      tooltip: { text: 'Bold' }
     }, {
-      kind: 'paragraph',
-      label: 'Paragraph',
-      icon: 'i-lucide-type'
+      kind: 'mark',
+      mark: 'italic',
+      icon: 'i-lucide-italic',
+      tooltip: { text: 'Italic' }
     }, {
-      kind: 'heading',
-      level: 1,
-      label: 'Heading 1',
-      icon: 'i-lucide-heading-1'
+      kind: 'mark',
+      mark: 'underline',
+      icon: 'i-lucide-underline',
+      tooltip: { text: 'Underline' }
     }, {
-      kind: 'heading',
-      level: 2,
-      label: 'Heading 2',
-      icon: 'i-lucide-heading-2'
+      kind: 'mark',
+      mark: 'strike',
+      icon: 'i-lucide-strikethrough',
+      tooltip: { text: 'Strikethrough' }
     }, {
-      kind: 'heading',
-      level: 3,
-      label: 'Heading 3',
-      icon: 'i-lucide-heading-3'
+      kind: 'mark',
+      mark: 'code',
+      icon: 'i-lucide-code',
+      tooltip: { text: 'Code' }
+    }], [{
+      slot: 'link' as const,
+      icon: 'i-lucide-link'
     }, {
-      kind: 'heading',
-      level: 4,
-      label: 'Heading 4',
-      icon: 'i-lucide-heading-4'
-    }, {
-      kind: 'bulletList',
-      label: 'Bullet List',
-      icon: 'i-lucide-list'
-    }, {
-      kind: 'orderedList',
-      label: 'Ordered List',
-      icon: 'i-lucide-list-ordered'
-    }, {
-      kind: 'taskList',
-      label: 'Task List',
-      icon: 'i-lucide-list-check'
-    }, {
-      kind: 'blockquote',
-      label: 'Blockquote',
-      icon: 'i-lucide-text-quote'
-    }, {
-      kind: 'codeBlock',
-      label: 'Code Block',
-      icon: 'i-lucide-square-code'
-    }]
-  }], [{
-    kind: 'mark',
-    mark: 'bold',
-    icon: 'i-lucide-bold',
-    tooltip: { text: 'Bold' }
-  }, {
-    kind: 'mark',
-    mark: 'italic',
-    icon: 'i-lucide-italic',
-    tooltip: { text: 'Italic' }
-  }, {
-    kind: 'mark',
-    mark: 'underline',
-    icon: 'i-lucide-underline',
-    tooltip: { text: 'Underline' }
-  }, {
-    kind: 'mark',
-    mark: 'strike',
-    icon: 'i-lucide-strikethrough',
-    tooltip: { text: 'Strikethrough' }
-  }, {
-    kind: 'mark',
-    mark: 'code',
-    icon: 'i-lucide-code',
-    tooltip: { text: 'Code' }
-  }], [{
-    slot: 'link' as const,
-    icon: 'i-lucide-link'
-  }, {
-    kind: 'imageUpload',
-    icon: 'i-lucide-image',
-    tooltip: { text: 'Image' }
-  }]] satisfies EditorToolbarItem<T>[][])
+      kind: 'imageUpload',
+      icon: 'i-lucide-image',
+      tooltip: { text: 'Image' }
+    }]] as EditorToolbarItem<T>[][]
+  })
 
   const getImageToolbarItems = (editor: Editor): EditorToolbarItem<T>[][] => {
     const node = editor.state.doc.nodeAt(editor.state.selection.from)

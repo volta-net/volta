@@ -45,7 +45,6 @@ interface ResolutionData {
   confidence: number | null
   analyzedAt: string | null
   skipped: boolean
-  suggestedAnswer?: string | null
 }
 const { data: resolution, execute: fetchResolution, clear: clearResolution } = useLazyFetch<ResolutionData>(resolutionUrl, {
   immediate: false,
@@ -74,9 +73,6 @@ watch(resolution, (res) => {
     }
   }
 })
-
-// Suggested answer from AI when issue needs attention
-const suggestedAnswer = computed(() => resolution.value?.suggestedAnswer ?? null)
 
 // Fetch repository collaborators and issues for editor mentions
 const collaboratorsUrl = computed(() => repoFullName.value ? `/api/repositories/${owner.value}/${name.value}/collaborators` : '')
@@ -164,6 +160,13 @@ async function handleSync() {
   try {
     await $fetch(`${issueUrl.value}/sync`, { method: 'POST' })
     await refreshIssue()
+
+    // Re-analyze resolution after sync (for issues only)
+    if (resolutionUrl.value) {
+      await $fetch(resolutionUrl.value, { query: { force: true } })
+      await fetchResolution()
+    }
+
     emit('refresh')
     toast.add({ title: 'Synced with GitHub', icon: 'i-lucide-refresh-cw' })
   } catch (err: any) {
@@ -271,7 +274,6 @@ defineShortcuts({
           :issue="issue"
           :collaborators="collaborators"
           :repository-issues="repositoryIssues"
-          :suggested-answer="suggestedAnswer"
           @refresh="handleRefresh"
         />
       </div>

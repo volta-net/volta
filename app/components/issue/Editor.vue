@@ -29,13 +29,16 @@ const props = withDefaults(defineProps<{
   completion?: boolean
   parseMentions?: boolean
   bubbleToolbar?: boolean
+  // AI Suggest Reply (only for comment forms)
+  suggestReply?: boolean
 }>(), {
   placeholder: 'Write something...',
   collaborators: () => [],
   repositoryIssues: () => [],
   completion: true,
   parseMentions: true,
-  bubbleToolbar: true
+  bubbleToolbar: true,
+  suggestReply: false
 })
 
 const emit = defineEmits<{
@@ -109,7 +112,10 @@ const { items: referenceItems } = useEditorReferences(issuesRef, {
 })
 
 const { items: suggestionItems } = useEditorSuggestions(customHandlers.value)
-const { items: toolbarItems, getImageToolbarItems } = useEditorToolbar(customHandlers.value, { aiLoading })
+const { items: toolbarItems, getImageToolbarItems } = useEditorToolbar(customHandlers.value, {
+  aiLoading,
+  suggestReply: props.suggestReply
+})
 
 // Custom Mention extension (configured with repo context for proper link generation)
 const CustomMention = createCustomMentionExtension(repoFullName)

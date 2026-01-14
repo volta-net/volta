@@ -13,7 +13,6 @@ const props = defineProps<{
   issue: IssueDetail
   collaborators?: MentionUser[]
   repositoryIssues?: IssueReference[]
-  suggestedAnswer?: string | null
 }>()
 
 const emit = defineEmits<{
@@ -26,23 +25,6 @@ const newComment = ref('')
 const isSubmitting = ref(false)
 const editorRef = useTemplateRef('editorRef')
 
-// Track if we've pre-filled with suggestion (to avoid overwriting user edits)
-const suggestionApplied = ref(false)
-const isAiSuggestion = computed(() => suggestionApplied.value && newComment.value === props.suggestedAnswer)
-
-// Pre-fill editor with suggested answer when it arrives (only once)
-watch(() => props.suggestedAnswer, (suggestion) => {
-  if (suggestion && !newComment.value.trim() && !suggestionApplied.value) {
-    newComment.value = suggestion
-    suggestionApplied.value = true
-  }
-}, { immediate: true })
-
-function clearSuggestion() {
-  newComment.value = ''
-  suggestionApplied.value = true // Prevent re-applying
-}
-
 async function addComment() {
   if (!newComment.value.trim()) return
 
@@ -54,7 +36,6 @@ async function addComment() {
       body: { body: newComment.value }
     })
     newComment.value = ''
-    suggestionApplied.value = false // Allow suggestion again after posting
     emit('refresh')
     toast.add({ title: 'Comment added', icon: 'i-lucide-check' })
   } catch (err: any) {
@@ -66,7 +47,7 @@ async function addComment() {
 </script>
 
 <template>
-  <div class="flex flex-col items-start flex-1 gap-4">
+  <div class="flex flex-col gap-4">
     <IssueEditor
       ref="editorRef"
       v-model="newComment"
@@ -74,6 +55,7 @@ async function addComment() {
       :collaborators="collaborators"
       :repository-issues="repositoryIssues"
       :bubble-toolbar="false"
+      :suggest-reply="true"
       placeholder="Leave a comment..."
       class="ring ring-default rounded-md w-full"
       :ui="{ base: 'px-4! py-3 min-h-24 text-sm [&_pre]:text-xs/5 [&_code]:text-xs/5 [&_p]:leading-6' }"
@@ -85,30 +67,19 @@ async function addComment() {
               <EditorLinkPopover :editor="editor" />
             </template>
           </UEditorToolbar>
-
-          <USeparator orientation="vertical" class="self-stretch" />
-
-          <UButton
-            v-if="isAiSuggestion"
-            icon="i-lucide-x"
-            color="warning"
-            variant="soft"
-            label="Clear suggestion"
-            class="ms-auto"
-            @click="clearSuggestion"
-          />
         </div>
       </template>
     </IssueEditor>
 
-    <UButton
-      label="Comment"
-      color="neutral"
-      icon="i-lucide-send"
-      class="self-end"
-      :loading="isSubmitting"
-      :disabled="!newComment.trim()"
-      @click="addComment"
-    />
+    <div class="flex items-center justify-end">
+      <UButton
+        label="Comment"
+        color="neutral"
+        icon="i-lucide-send"
+        :loading="isSubmitting"
+        :disabled="!newComment.trim()"
+        @click="addComment"
+      />
+    </div>
   </div>
 </template>

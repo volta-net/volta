@@ -3,7 +3,7 @@ import type { Editor } from '@tiptap/vue-3'
 import { Completion } from '~/components/editor/CompletionExtension'
 import type { CompletionStorage } from '~/components/editor/CompletionExtension'
 
-type CompletionMode = 'continue' | 'fix' | 'extend' | 'reduce' | 'simplify' | 'summarize' | 'translate'
+type CompletionMode = 'continue' | 'fix' | 'extend' | 'reduce' | 'simplify' | 'summarize' | 'translate' | 'reply'
 
 export interface UseEditorCompletionOptions {
   api?: string
@@ -39,7 +39,7 @@ export function useEditorCompletion(editorRef: Ref<{ editor: Editor | undefined 
       }
 
       // For transform modes, insert the full completion with markdown parsing
-      const transformModes = ['fix', 'extend', 'reduce', 'simplify', 'summarize', 'translate']
+      const transformModes = ['fix', 'extend', 'reduce', 'simplify', 'summarize', 'translate', 'reply']
       if (transformModes.includes(mode.value) && insertState.value && completionText) {
         const editor = editorRef.value?.editor
         if (editor) {
@@ -90,7 +90,7 @@ export function useEditorCompletion(editorRef: Ref<{ editor: Editor | undefined 
       // Direct insertion/transform mode (from toolbar actions)
 
       // Transform modes use markdown insertion - wait for full completion
-      const transformModes = ['fix', 'extend', 'reduce', 'simplify', 'summarize', 'translate']
+      const transformModes = ['fix', 'extend', 'reduce', 'simplify', 'summarize', 'translate', 'reply']
       if (transformModes.includes(mode.value)) {
         // Don't stream - will be handled in onFinish
         return
@@ -181,6 +181,20 @@ export function useEditorCompletion(editorRef: Ref<{ editor: Editor | undefined 
     }
   }
 
+  function triggerReply(editor: Editor) {
+    if (isLoading.value) return
+
+    mode.value = 'reply'
+    getCompletionStorage()?.clearSuggestion()
+
+    // Clear editor content and insert the reply at the beginning
+    editor.commands.clearContent()
+    insertState.value = { pos: 0 }
+
+    // The prompt for reply mode is just a trigger - the context comes from the server
+    complete('Generate a helpful reply to this issue/PR')
+  }
+
   // Configure Completion extension
   const extension = Completion.configure({
     onTrigger: (editor) => {
@@ -262,6 +276,15 @@ export function useEditorCompletion(editorRef: Ref<{ editor: Editor | undefined 
       },
       isActive: (_editor: Editor, cmd: { language?: string } | undefined) => !!(isLoading.value && mode.value === 'translate' && language.value === cmd?.language),
       isDisabled: (editor: Editor) => editor.state.selection.empty || !!isLoading.value
+    },
+    aiReply: {
+      canExecute: () => !isLoading.value,
+      execute: (editor: Editor) => {
+        triggerReply(editor)
+        return editor.chain()
+      },
+      isActive: () => !!(isLoading.value && mode.value === 'reply'),
+      isDisabled: () => !!isLoading.value
     }
   }
 

@@ -1,7 +1,26 @@
 import { streamText } from 'ai'
 import { gateway } from '@ai-sdk/gateway'
-import { eq, and, inArray } from 'drizzle-orm'
+import { eq, and, inArray, desc, ne, isNotNull } from 'drizzle-orm'
 import { db, schema } from 'hub:db'
+
+/**
+ * Fetch user's recent comments from other issues to analyze their writing style
+ */
+async function getUserStyleExamples(userId: number, excludeIssueId: number, limit = 10): Promise<string[]> {
+  const recentComments = await db.query.issueComments.findMany({
+    where: and(
+      eq(schema.issueComments.userId, userId),
+      ne(schema.issueComments.issueId, excludeIssueId),
+      isNotNull(schema.issueComments.body)
+    ),
+    orderBy: [desc(schema.issueComments.createdAt)],
+    limit
+  })
+
+  return recentComments
+    .map(c => c.body)
+    .filter((body): body is string => !!body && body.length > 0 && body.length < 1000)
+}
 
 function buildContextPrompt(
   repository: { fullName: string, description: string | null },
@@ -138,29 +157,92 @@ export default defineEventHandler(async (event) => {
 
   switch (mode) {
     case 'fix':
-      system = `You are a writing assistant. Fix all spelling and grammar errors in the given text. ${preserveMarkdown} Only output the corrected text, nothing else.`
+      system = `You are a writing assistant for GitHub. Fix spelling and grammar errors in the given text.
+
+Rules:
+- Fix typos, grammar, and punctuation
+- Wrap inline code (variables, functions, file paths, commands, package names) with single backticks
+- Wrap multi-line code blocks with triple backticks and appropriate language identifier
+- DO NOT "correct" technical terms, library names, or intentional abbreviations (e.g., "repo", "config", "env")
+- ${preserveMarkdown}
+
+Only output the corrected text, nothing else.`
       maxOutputTokens = 500
-      break
-    case 'extend':
-      system = `You are a writing assistant helping with GitHub ${isPR ? 'pull requests' : 'issues'}. Extend the given text with more details, examples, and explanations while maintaining the same style. ${preserveMarkdown} Only output the extended text, nothing else.${contextPrompt}`
-      maxOutputTokens = 500
-      break
-    case 'reduce':
-      system = `You are a writing assistant. Make the given text more concise by removing unnecessary words while keeping the meaning. ${preserveMarkdown} Only output the reduced text, nothing else.`
-      maxOutputTokens = 300
       break
     case 'simplify':
-      system = `You are a writing assistant. Simplify the given text to make it easier to understand, using simpler words and shorter sentences. ${preserveMarkdown} Only output the simplified text, nothing else.`
+      system = `You are a writing assistant for GitHub ${isPR ? 'pull requests' : 'issues'}. Simplify the given text to make it easier to understand.
+
+Rules:
+- Use simpler words and shorter sentences
+- Keep technical terms that are necessary (don't replace "API" with "interface", etc.)
+- Preserve code snippets exactly as-is
+- ${preserveMarkdown}
+
+Only output the simplified text, nothing else.`
       maxOutputTokens = 400
       break
     case 'summarize':
-      system = 'You are a writing assistant. Summarize the given text concisely while keeping the key points. Only output the summary, nothing else.'
+      system = `You are a writing assistant for GitHub ${isPR ? 'pull requests' : 'issues'}. Summarize the given text concisely.
+
+Prioritize:
+- The main problem or request
+- Key technical details (error messages, versions, steps to reproduce)
+- Proposed solutions or next steps
+
+Keep it brief (2-4 sentences max). Only output the summary, nothing else.`
       maxOutputTokens = 200
       break
     case 'translate':
-      system = `You are a writing assistant. Translate the given text to ${language || 'English'}. ${preserveMarkdown} Only output the translated text, nothing else.`
+      system = `You are a writing assistant. Translate the given text to ${language || 'English'}.
+
+Rules:
+- Translate prose and explanations
+- DO NOT translate: code, variable names, function names, file paths, CLI commands, package names, error messages
+- Keep technical terms in their commonly-used form (some terms like "pull request", "commit", "merge" are often kept in English even in other languages)
+- ${preserveMarkdown}
+
+Only output the translated text, nothing else.`
       maxOutputTokens = 500
       break
+    case 'reply': {
+      // Fetch user's recent comments to match their writing style
+      const userStyleExamples = await getUserStyleExamples(user.id, issue.id)
+
+      let styleGuidance = ''
+      if (userStyleExamples.length > 0) {
+        styleGuidance = `\n\nIMPORTANT - Match this user's writing style based on their previous comments:
+${userStyleExamples.map((ex, i) => `Example ${i + 1}: "${ex.slice(0, 300)}${ex.length > 300 ? '...' : ''}"`).join('\n')}
+
+Analyze these examples for:
+- Tone (formal/casual/friendly)
+- Use of greetings and sign-offs
+- Typical response length
+- Use of code blocks, lists, or other formatting
+- Common phrases or patterns`
+      }
+
+      system = `You are drafting a GitHub comment ON BEHALF of a user. The comment will be posted as if THEY wrote it - NOT as an AI assistant.
+
+CRITICAL: Write as the user, not as an AI. Never say "I'm an AI" or refer to yourself. This is their voice.
+
+Based on the ${isPR ? 'PR' : 'issue'} context, write a SHORT, CASUAL reply that:
+- Gets straight to the point (1-3 sentences is usually enough)
+- Sounds natural and human - like a quick comment between developers
+- Uses casual language (contractions, informal tone)
+- Only includes code if absolutely necessary
+- Avoids corporate-speak, filler phrases, or overly formal language
+
+Response types:
+- Question? Give a quick, direct answer
+- Bug report? Ask one clarifying question or suggest a quick fix
+- Feature request? Brief acknowledgment + maybe one follow-up question
+- Discussion? Add a short, relevant thought
+
+Keep it SHORT. Most GitHub comments are 1-3 sentences. Don't over-explain.
+${contextPrompt}${styleGuidance}`
+      maxOutputTokens = 200
+      break
+    }
     case 'continue':
     default:
       system = `You are a writing assistant helping with GitHub ${isPR ? 'pull requests' : 'issues'}.
@@ -171,7 +253,7 @@ CRITICAL RULES:
 - Match the tone and style of the existing text
 - Provide contextually relevant suggestions based on the repository and issue context
 - ${preserveMarkdown}${contextPrompt}`
-      maxOutputTokens = 25
+      maxOutputTokens = 40
       break
   }
 

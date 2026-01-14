@@ -140,11 +140,33 @@ export default defineEventHandler(async (event) => {
         }
       })
 
+      // Get linked PRs (for issues) or linked issues (for PRs)
+      let freshLinkedPrs: LinkedPR[] = []
+      let freshLinkedIssues: LinkedIssue[] = []
+
+      if (freshIssue!.pullRequest) {
+        const linkedIssuesMap = await getLinkedIssuesForPRs([freshIssue!.id])
+        freshLinkedIssues = linkedIssuesMap.get(freshIssue!.id) || []
+      } else {
+        const linkedPrsMap = await getLinkedPRsForIssues([freshIssue!.id])
+        freshLinkedPrs = linkedPrsMap.get(freshIssue!.id) || []
+      }
+
+      // Get CI statuses for PRs
+      let freshCiStatuses: CIStatus[] = []
+      if (freshIssue!.pullRequest && freshIssue!.headSha) {
+        const ciMap = await getCIStatusForPRs([{ repositoryId: repository.id, headSha: freshIssue!.headSha }])
+        freshCiStatuses = ciMap.get(freshIssue!.headSha) || []
+      }
+
       return {
         ...freshIssue,
         assignees: freshIssue!.assignees.map(a => a.user),
         labels: freshIssue!.labels.map(l => l.label),
         requestedReviewers: freshIssue!.requestedReviewers.map(r => r.user),
+        linkedPrs: freshLinkedPrs,
+        linkedIssues: freshLinkedIssues,
+        ciStatuses: freshCiStatuses,
         isSubscribed
       }
     } catch (err) {
@@ -153,12 +175,34 @@ export default defineEventHandler(async (event) => {
     }
   }
 
+  // Get linked PRs (for issues) or linked issues (for PRs)
+  let linkedPrs: LinkedPR[] = []
+  let linkedIssues: LinkedIssue[] = []
+
+  if (issue.pullRequest) {
+    const linkedIssuesMap = await getLinkedIssuesForPRs([issue.id])
+    linkedIssues = linkedIssuesMap.get(issue.id) || []
+  } else {
+    const linkedPrsMap = await getLinkedPRsForIssues([issue.id])
+    linkedPrs = linkedPrsMap.get(issue.id) || []
+  }
+
+  // Get CI statuses for PRs
+  let ciStatuses: CIStatus[] = []
+  if (issue.pullRequest && issue.headSha) {
+    const ciMap = await getCIStatusForPRs([{ repositoryId: repository.id, headSha: issue.headSha }])
+    ciStatuses = ciMap.get(issue.headSha) || []
+  }
+
   // Return cached data
   return {
     ...issue,
     assignees: issue.assignees.map(a => a.user),
     labels: issue.labels.map(l => l.label),
     requestedReviewers: issue.requestedReviewers.map(r => r.user),
+    linkedPrs,
+    linkedIssues,
+    ciStatuses,
     isSubscribed
   }
 })

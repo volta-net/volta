@@ -274,8 +274,7 @@ export const issues = pgTable('issues', {
   resolutionAnsweredById: integer('resolution_answered_by_id').references(() => users.id, { onDelete: 'set null' }),
   resolutionAnswerCommentId: integer('resolution_answer_comment_id'),
   resolutionConfidence: integer('resolution_confidence'), // 0-100 percentage
-  resolutionAnalyzedAt: timestamp('resolution_analyzed_at', { withTimezone: true }),
-  resolutionSuggestedAnswer: text('resolution_suggested_answer') // AI-generated suggested reply (cached)
+  resolutionAnalyzedAt: timestamp('resolution_analyzed_at', { withTimezone: true })
 }, table => ([
   // The true unique identifier is (repositoryId, number), not GitHub's ID
   uniqueIndex('issues_repo_number_idx').on(table.repositoryId, table.number)

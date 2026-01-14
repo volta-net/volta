@@ -237,6 +237,9 @@ const resolutionConfig = computed(() => {
   if (props.issue.pullRequest) return null
   return getResolutionConfig(props.issue.resolutionStatus)
 })
+
+// CI Status (PRs only)
+const ciStatusConfig = computed(() => getAggregatedCIStatus(props.issue.ciStatuses))
 </script>
 
 <template>
@@ -276,12 +279,27 @@ const resolutionConfig = computed(() => {
         <span class="text-sm font-medium">{{ issue.user.login }}</span>
       </NuxtLink>
 
+      <!-- CI Status (PRs only) -->
+      <NuxtLink
+        v-if="ciStatusConfig"
+        :to="ciStatusConfig.htmlUrl!"
+        target="_blank"
+        class="flex items-center gap-1.5 text-sm font-medium"
+      >
+        <UIcon
+          :name="ciStatusConfig.icon"
+          :class="[ciStatusConfig.color, ciStatusConfig.animate && 'animate-pulse']"
+          class="size-4"
+        />
+        <span>{{ ciStatusConfig.label }}</span>
+      </NuxtLink>
+
       <!-- View changes link (PRs only) -->
       <NuxtLink
         v-if="issue.pullRequest && issue.htmlUrl"
         :to="`${issue.htmlUrl}/files`"
         target="_blank"
-        class="inline-flex items-center gap-1.5 text-sm font-medium"
+        class="flex items-center gap-1.5 text-sm font-medium"
       >
         <UIcon name="i-simple-icons-github" class="size-4" />
 
@@ -427,7 +445,7 @@ const resolutionConfig = computed(() => {
               size="md"
               class="px-2 rounded-full"
             >
-              {{ resolutionConfig.label }}
+              <span class="truncate">{{ resolutionConfig.label }}</span>
               <span v-if="issue.resolutionConfidence" class="italic">
                 ({{ issue.resolutionConfidence }}%)
               </span>
@@ -435,23 +453,65 @@ const resolutionConfig = computed(() => {
           </UTooltip>
 
           <!-- Show who answered if available -->
-          <div v-if="issue.resolutionAnsweredBy" class="mt-1.5 flex items-center gap-1.5 text-xs text-muted">
-            <span>Answered by</span>
+          <div v-if="issue.resolutionAnsweredBy" class="mt-1 flex items-center gap-1 text-xs text-muted truncate">
+            Answered by
             <NuxtLink
               :to="`https://github.com/${issue.resolutionAnsweredBy.login}`"
               target="_blank"
               class="flex items-center gap-1 hover:text-highlighted"
-            >
-              <UAvatar
-                :src="issue.resolutionAnsweredBy.avatarUrl!"
-                :alt="issue.resolutionAnsweredBy.login"
-                size="3xs"
-              />
-              <span>@{{ issue.resolutionAnsweredBy.login }}</span>
+            >{{ issue.resolutionAnsweredBy.login }}
             </NuxtLink>
           </div>
         </div>
       </div>
     </div>
+
+    <template v-if="issue.linkedIssues?.length || issue.linkedPrs?.length">
+      <USeparator />
+
+      <div class="space-y-4">
+        <!-- Linked PRs (issues only) -->
+        <div v-if="!issue.pullRequest && issue.linkedPrs?.length" class="flex flex-col gap-2">
+          <span class="text-sm/6 text-highlighted font-medium w-20 shrink-0">Linked PRs</span>
+
+          <div class="flex-1 flex flex-col gap-1">
+            <NuxtLink
+              v-for="pr in issue.linkedPrs"
+              :key="pr.id"
+              :to="pr.htmlUrl!"
+              target="_blank"
+              class="flex items-center gap-1.5 text-sm hover:text-highlighted truncate"
+            >
+              <UIcon name="i-lucide-git-pull-request" class="size-4 shrink-0 text-success" />
+              <span class="text-muted">#{{ pr.number }}</span>
+              <span class="truncate">{{ pr.title }}</span>
+            </NuxtLink>
+          </div>
+        </div>
+
+        <!-- Linked Issues (PRs only) -->
+        <div v-if="issue.pullRequest && issue.linkedIssues?.length" class="flex flex-col gap-2">
+          <span class="text-sm/6 text-highlighted font-medium w-20 shrink-0">Closes</span>
+
+          <div class="flex-1 flex flex-col gap-1">
+            <NuxtLink
+              v-for="linkedIssue in issue.linkedIssues"
+              :key="linkedIssue.id"
+              :to="linkedIssue.htmlUrl!"
+              target="_blank"
+              class="flex items-center gap-1.5 text-sm hover:text-highlighted truncate"
+            >
+              <UIcon
+                :name="linkedIssue.state === 'open' ? 'i-lucide-circle-dot' : 'i-lucide-circle-check'"
+                :class="linkedIssue.state === 'open' ? 'text-success' : 'text-purple-500'"
+                class="size-4 shrink-0"
+              />
+              <span class="text-muted">#{{ linkedIssue.number }}</span>
+              <span class="truncate">{{ linkedIssue.title }}</span>
+            </NuxtLink>
+          </div>
+        </div>
+      </div>
+    </template>
   </div>
 </template>

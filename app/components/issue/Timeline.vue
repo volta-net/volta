@@ -15,7 +15,6 @@ const props = defineProps<{
   issue: IssueDetail
   collaborators?: MentionUser[]
   repositoryIssues?: IssueReference[]
-  suggestedAnswer?: string | null
 }>()
 
 const emit = defineEmits<{
@@ -205,7 +204,6 @@ const timelineItems = computed(() => {
         :issue="issue"
         :collaborators="collaborators"
         :repository-issues="repositoryIssues"
-        :suggested-answer="suggestedAnswer"
         @refresh="emit('refresh')"
       />
     </template>

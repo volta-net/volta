@@ -6,6 +6,8 @@ export default defineEventHandler(async (event) => {
   const owner = getRouterParam(event, 'owner')
   const name = getRouterParam(event, 'name')
   const numberParam = getRouterParam(event, 'number')
+  const query = getQuery(event)
+  const forceReanalyze = query.force === 'true'
 
   if (!owner || !name || !numberParam) {
     throw createError({ statusCode: 400, message: 'Owner, name, and issue number are required' })
@@ -70,86 +72,8 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  // Helper to get or generate suggested answer if issue needs attention
-  async function getSuggestedAnswerIfNeeded(
-    status: string | null,
-    issueId: number,
-    repositoryId: number,
-    currentUserId: number,
-    cachedSuggestedAnswer: string | null
-  ): Promise<string | null> {
-    if (status !== 'needs_attention') {
-      return null
-    }
-
-    // Return cached answer if available
-    if (cachedSuggestedAnswer) {
-      return cachedSuggestedAnswer
-    }
-
-    // Fetch issue with comments for suggestion generation
-    const issueWithComments = await db.query.issues.findFirst({
-      where: eq(schema.issues.id, issueId),
-      with: {
-        comments: {
-          with: { user: true },
-          orderBy: (comments, { asc }) => [asc(comments.createdAt)]
-        }
-      }
-    })
-
-    if (!issueWithComments) {
-      return null
-    }
-
-    // Fetch user's recent comments in this repository for style matching
-    const userRecentComments = await db.query.issueComments.findMany({
-      where: eq(schema.issueComments.userId, currentUserId),
-      with: {
-        issue: true
-      },
-      orderBy: (comments, { desc }) => [desc(comments.createdAt)],
-      limit: 10
-    })
-
-    // Filter to comments from issues in the same repository
-    const userStyleComments = userRecentComments
-      .filter(c => c.issue?.repositoryId === repositoryId)
-      .slice(0, 5)
-      .map(c => ({ body: c.body }))
-
-    const suggestedAnswer = await generateSuggestedAnswer(
-      {
-        id: issueWithComments.id,
-        number: issueWithComments.number,
-        title: issueWithComments.title,
-        body: issueWithComments.body,
-        userId: issueWithComments.userId,
-        repositoryId: issueWithComments.repositoryId,
-        pullRequest: issueWithComments.pullRequest
-      },
-      issueWithComments.comments.map(c => ({
-        id: c.id,
-        body: c.body,
-        userId: c.userId,
-        createdAt: c.createdAt,
-        user: c.user ? { id: c.user.id, login: c.user.login } : null
-      })),
-      userStyleComments.length > 0 ? userStyleComments : undefined
-    )
-
-    // Cache the generated answer in the database
-    if (suggestedAnswer) {
-      await db.update(schema.issues)
-        .set({ resolutionSuggestedAnswer: suggestedAnswer })
-        .where(eq(schema.issues.id, issueId))
-    }
-
-    return suggestedAnswer
-  }
-
-  // If never analyzed or stale, await fresh analysis
-  if (isResolutionStale(issue.resolutionAnalyzedAt)) {
+  // If never analyzed, stale, or force re-analyze requested, await fresh analysis
+  if (forceReanalyze || isResolutionStale(issue.resolutionAnalyzedAt)) {
     try {
       const result = await analyzeAndStoreResolution(issue.id)
       if (result) {
@@ -161,26 +85,19 @@ export default defineEventHandler(async (event) => {
           }
         })
 
-        const status = freshIssue?.resolutionStatus ?? null
-        const suggestedAnswer = await getSuggestedAnswerIfNeeded(status, issue.id, repository.id, user.id, freshIssue?.resolutionSuggestedAnswer ?? null)
-
         return {
-          status,
+          status: freshIssue?.resolutionStatus ?? null,
           answeredBy: freshIssue?.resolutionAnsweredBy ?? null,
           answerCommentId: freshIssue?.resolutionAnswerCommentId ?? null,
           confidence: freshIssue?.resolutionConfidence ?? null,
           analyzedAt: freshIssue?.resolutionAnalyzedAt ?? null,
-          skipped: false,
-          suggestedAnswer
+          skipped: false
         }
       }
     } catch (err) {
       console.error('[resolution.get] Analysis failed:', err)
     }
   }
-
-  // Get or generate suggested answer if current status is needs_attention
-  const suggestedAnswer = await getSuggestedAnswerIfNeeded(issue.resolutionStatus, issue.id, repository.id, user.id, issue.resolutionSuggestedAnswer)
 
   // Return current resolution status (fresh or fallback to cached)
   return {
@@ -189,7 +106,6 @@ export default defineEventHandler(async (event) => {
     answerCommentId: issue.resolutionAnswerCommentId,
     confidence: issue.resolutionConfidence,
     analyzedAt: issue.resolutionAnalyzedAt,
-    skipped: false,
-    suggestedAnswer
+    skipped: false
   }
 })

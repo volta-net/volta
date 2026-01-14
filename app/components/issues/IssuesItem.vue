@@ -20,60 +20,7 @@ const stateIcon = computed(() => getIssueStateIcon(issueState.value))
 const stateColor = computed(() => getIssueStateColor(issueState.value))
 
 // Aggregate CI statuses from all workflow runs
-const ciStatusConfig = computed(() => {
-  const statuses = props.item.ciStatuses
-  if (!statuses || statuses.length === 0) return null
-
-  const total = statuses.length
-
-  // Count by status
-  let inProgress = 0
-  let passed = 0
-  let failed = 0
-  let failedRun = null as typeof statuses[0] | null
-
-  for (const ci of statuses) {
-    if (ci.status === 'in_progress' || ci.status === 'queued') {
-      inProgress++
-    } else if (ci.conclusion === 'success' || ci.conclusion === 'skipped') {
-      passed++
-    } else {
-      failed++
-      if (!failedRun) failedRun = ci
-    }
-  }
-
-  // Determine aggregate conclusion for styling
-  let aggregateConclusion: WorkflowConclusion | null = null
-  if (inProgress > 0) {
-    aggregateConclusion = null // Running
-  } else if (failed > 0) {
-    aggregateConclusion = 'failure'
-  } else {
-    aggregateConclusion = 'success'
-  }
-
-  const state = getCIState(aggregateConclusion)
-
-  // Build label: "2 / 3 passed" or "Running 1 / 3"
-  let label: string
-  if (inProgress > 0) {
-    label = `Running ${passed} / ${total}`
-  } else {
-    label = `${passed} / ${total} passed`
-  }
-
-  // Link to failed run if any, otherwise first run
-  const representativeRun = failedRun || statuses[0]!
-
-  return {
-    icon: state.icon,
-    color: state.color,
-    label,
-    animate: inProgress > 0,
-    htmlUrl: representativeRun.htmlUrl
-  }
-})
+const ciStatusConfig = computed(() => getAggregatedCIStatus(props.item.ciStatuses))
 
 // Resolution status config (issues only)
 const { getConfig: getResolutionConfig } = useResolutionStatus()
@@ -105,7 +52,7 @@ const resolutionConfig = computed(() => {
       >
         <UIcon
           :name="ciStatusConfig.icon"
-          :class="[ciStatusConfig.color, ciStatusConfig.animate && 'animate-spin']"
+          :class="[ciStatusConfig.color, ciStatusConfig.animate && 'animate-pulse']"
           class="size-4 shrink-0"
         />
       </UTooltip>

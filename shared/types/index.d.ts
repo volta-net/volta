@@ -93,6 +93,9 @@ export interface IssueDetail extends Serialized<DBIssue> {
   comments: Array<Serialized<DBIssueComment> & { user: User | null }>
   reviews?: IssueReview[]
   reviewComments?: IssueReviewComment[]
+  ciStatuses?: CIStatus[]
+  linkedIssues?: LinkedIssue[]
+  linkedPrs?: LinkedPR[]
   // AI Resolution Analysis (issues only)
   resolutionAnsweredBy?: User | null
 }

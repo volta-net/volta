@@ -97,3 +97,63 @@ export function useCIState(conclusion: Ref<WorkflowConclusion | null | undefined
     badgeColor: computed(() => state.value.badgeColor)
   }
 }
+
+// Aggregate multiple CI statuses into a single status config
+export interface AggregatedCIStatus {
+  icon: string
+  color: string
+  label: string
+  animate: boolean
+  htmlUrl: string | null
+}
+
+export function getAggregatedCIStatus(statuses: CIStatus[] | undefined): AggregatedCIStatus | null {
+  if (!statuses || statuses.length === 0) return null
+
+  const total = statuses.length
+
+  // Count by status
+  let inProgress = 0
+  let passed = 0
+  let failed = 0
+  let failedRun: CIStatus | null = null
+
+  for (const ci of statuses) {
+    if (ci.status === 'in_progress' || ci.status === 'queued') {
+      inProgress++
+    } else if (ci.conclusion === 'success' || ci.conclusion === 'skipped') {
+      passed++
+    } else {
+      failed++
+      if (!failedRun) failedRun = ci
+    }
+  }
+
+  // Determine aggregate conclusion for styling
+  let aggregateConclusion: WorkflowConclusion | null = null
+  if (inProgress > 0) {
+    aggregateConclusion = null // Running
+  } else if (failed > 0) {
+    aggregateConclusion = 'failure'
+  } else {
+    aggregateConclusion = 'success'
+  }
+
+  const state = getCIState(aggregateConclusion)
+
+  // Build label: "2 / 3 passed" or "1 / 3 running"
+  const label = inProgress > 0
+    ? `${inProgress} / ${total} running`
+    : `${passed} / ${total} passed`
+
+  // Link to failed run if any, otherwise first run
+  const representativeRun = failedRun || statuses[0]!
+
+  return {
+    icon: state.icon,
+    color: state.color,
+    label,
+    animate: inProgress > 0,
+    htmlUrl: representativeRun.htmlUrl
+  }
+}
