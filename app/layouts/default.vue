@@ -50,6 +50,51 @@ const links = computed<NavigationMenuItem[][]>(() => [[{
   to: 'https://github.com/volta-net/volta',
   target: '_blank'
 }]])
+
+const groups = computed(() => [{
+  id: 'links',
+  items: [{
+    label: 'Inbox',
+    icon: 'i-lucide-inbox',
+    to: '/inbox'
+  }, {
+    label: 'Issues',
+    icon: 'i-lucide-layout-list',
+    to: '/issues',
+    children: [{
+      label: 'Ready To Merge',
+      icon: 'i-lucide-git-merge',
+      to: '/issues?tab=merge',
+      exactQuery: true
+    }, {
+      label: 'Needs Review',
+      icon: 'i-lucide-eye',
+      to: '/issues?tab=review',
+      exactQuery: true
+    }, {
+      label: 'Needs Triage',
+      icon: 'i-lucide-inbox',
+      to: '/issues?tab=triage',
+      exactQuery: true
+    }]
+  }, {
+    label: 'Settings',
+    icon: 'i-lucide-settings',
+    to: '/settings'
+  }]
+}, {
+  id: 'favorites',
+  label: 'Favorites',
+  items: [{
+    label: 'Issues',
+    icon: 'i-octicon-issue-opened-16',
+    onSelect: () => { favoriteIssuesOpen.value = true }
+  }, {
+    label: 'Repositories',
+    icon: 'i-lucide-package',
+    onSelect: () => { favoriteRepositoriesOpen.value = true }
+  }]
+}])
 </script>
 
 <template>
@@ -96,7 +141,7 @@ const links = computed<NavigationMenuItem[][]>(() => [[{
       <slot />
     </div>
 
-    <UDashboardSearch :groups="[{ id: 'links', items: links.flat() }]" />
+    <UDashboardSearch :groups="groups" />
 
     <LazyIssuesFavorites
       v-model:open="favoriteIssuesOpen"
