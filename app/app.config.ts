@@ -6,6 +6,13 @@ export default defineAppConfig({
       important: 'indigo',
       neutral: 'zinc'
     },
+    commandPalette: {
+      slots: {
+        itemLabelPrefix: 'text-muted',
+        content: 'flex-1',
+        empty: 'flex-1 flex items-center justify-center'
+      }
+    },
     slideover: {
       slots: {
         header: 'sm:px-4',

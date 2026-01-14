@@ -1,11 +1,24 @@
 <script setup lang="ts">
 import type { NavigationMenuItem } from '@nuxt/ui'
+import { refDebounced } from '@vueuse/core'
 
 useSeoMeta({
   titleTemplate: '%s - Volta'
 })
 
 const router = useRouter()
+const route = useRoute()
+
+// Issues icon based on current tab
+const issuesIcon = computed(() => {
+  const tab = route.query.tab
+  switch (tab) {
+    case 'merge': return 'i-lucide-git-merge'
+    case 'review': return 'i-lucide-eye'
+    case 'triage': return 'i-lucide-circle-dashed'
+    default: return 'i-lucide-circle-dashed'
+  }
+})
 
 // Favorite issues
 const {
@@ -28,23 +41,66 @@ const {
   refresh: refreshFavoriteRepositories
 } = useFavoriteRepositories()
 
+const searchOpen = ref(false)
+// Issue search for command palette
+const searchTerm = ref('')
+const searchTermDebounced = refDebounced(searchTerm, 300)
+
+const { data: searchedIssues, status: searchStatus } = useLazyFetch('/api/issues/search', {
+  query: { q: searchTermDebounced },
+  default: () => []
+})
+
+const searchedIssueItems = computed(() => {
+  if (!searchedIssues.value) return []
+  return searchedIssues.value.map(issue => ({
+    id: issue.id,
+    label: issue.title,
+    prefix: `${issue.repository.fullName}#${issue.number}`,
+    icon: issue.pullRequest ? 'i-octicon-git-pull-request-16' : 'i-octicon-issue-opened-16',
+    onSelect: () => {
+      selectIssue({
+        id: issue.id,
+        number: issue.number,
+        title: issue.title,
+        state: issue.state,
+        stateReason: null,
+        pullRequest: issue.pullRequest,
+        draft: null,
+        merged: null,
+        htmlUrl: issue.htmlUrl,
+        repository: {
+          id: issue.repository.id,
+          name: issue.repository.fullName.split('/')[1]!,
+          fullName: issue.repository.fullName
+        }
+      })
+      router.push('/issues')
+    }
+  }))
+})
+
 const links = computed<NavigationMenuItem[][]>(() => [[{
   label: 'Inbox',
   icon: 'i-lucide-inbox',
   to: '/inbox'
 }, {
   label: 'Issues',
-  icon: 'i-lucide-layout-list',
+  icon: issuesIcon.value,
   to: '/issues'
-}, {
-  label: 'Favorites',
-  icon: 'i-lucide-star',
-  onSelect: () => { favoriteIssuesOpen.value = !favoriteIssuesOpen.value }
 }, {
   label: 'Settings',
   icon: 'i-lucide-settings',
   to: '/settings'
 }], [{
+  label: 'Search',
+  icon: 'i-lucide-search',
+  onSelect: () => { searchOpen.value = true }
+}, {
+  label: 'Favorites',
+  icon: 'i-lucide-star',
+  onSelect: () => { favoriteIssuesOpen.value = !favoriteIssuesOpen.value }
+}, {
   label: 'Feedback',
   icon: 'i-lucide-message-circle',
   to: 'https://github.com/volta-net/volta',
@@ -59,8 +115,7 @@ const groups = computed(() => [{
     to: '/inbox'
   }, {
     label: 'Issues',
-    icon: 'i-lucide-layout-list',
-    to: '/issues',
+    icon: issuesIcon.value,
     children: [{
       label: 'Ready To Merge',
       icon: 'i-lucide-git-merge',
@@ -73,7 +128,7 @@ const groups = computed(() => [{
       exactQuery: true
     }, {
       label: 'Needs Triage',
-      icon: 'i-lucide-inbox',
+      icon: 'i-lucide-circle-dashed',
       to: '/issues?tab=triage',
       exactQuery: true
     }]
@@ -87,13 +142,18 @@ const groups = computed(() => [{
   label: 'Favorites',
   items: [{
     label: 'Issues',
-    icon: 'i-octicon-issue-opened-16',
+    icon: 'i-lucide-circle-dashed',
     onSelect: () => { favoriteIssuesOpen.value = true }
   }, {
     label: 'Repositories',
-    icon: 'i-lucide-package',
+    icon: 'i-lucide-book',
     onSelect: () => { favoriteRepositoriesOpen.value = true }
   }]
+}, {
+  id: 'search-issues',
+  label: searchTerm.value ? `Issues matching "${searchTerm.value}"...` : 'Search Issues',
+  items: searchedIssueItems.value,
+  ignoreFilter: true
 }])
 </script>
 
@@ -141,7 +201,12 @@ const groups = computed(() => [{
       <slot />
     </div>
 
-    <UDashboardSearch :groups="groups" />
+    <UDashboardSearch
+      v-model:open="searchOpen"
+      v-model:search-term="searchTerm"
+      :loading="searchStatus === 'pending'"
+      :groups="groups"
+    />
 
     <LazyIssuesFavorites
       v-model:open="favoriteIssuesOpen"

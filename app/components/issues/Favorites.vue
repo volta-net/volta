@@ -18,7 +18,8 @@ const updating = ref<Set<number>>(new Set())
 function issueToItem(fav: FavoriteIssue) {
   return {
     id: fav.issue.id,
-    label: `${fav.issue.repository.fullName}#${fav.issue.number} ${fav.issue.title}`,
+    prefix: `${fav.issue.repository.fullName}#${fav.issue.number}`,
+    label: `${fav.issue.title}`,
     icon: getIssueStateIcon(fav.issue),
     issue: fav.issue
   }
@@ -76,17 +77,13 @@ async function removeFavorite(issueId: number) {
         :loading="updating.size > 0"
         :input="{
           ui: {
-            base: 'ps-9.5 text-sm',
+            base: 'ps-9.5',
             leading: 'ps-4'
           }
         }"
         :ui="{
           group: 'p-1.5',
-          item: 'items-center pl-2.5 pr-4',
-          itemLeadingIcon: 'size-4',
-          input: '[&>input]:h-11',
-          content: 'flex-1',
-          empty: 'flex-1 flex items-center justify-center py-0'
+          item: 'pl-2.5 pr-3'
         }"
         :fuse="{
           resultLimit: 1000
@@ -105,9 +102,9 @@ async function removeFavorite(issueId: number) {
           <UButton
             icon="i-lucide-x"
             color="neutral"
-            variant="ghost"
+            variant="link"
             size="xs"
-            class="opacity-0 group-hover:opacity-100 transition-opacity -mr-1"
+            class="opacity-0 group-hover:opacity-100 transition-opacity -my-1"
             :loading="updating.has(item.id)"
             @click.stop="removeFavorite(item.id)"
           />

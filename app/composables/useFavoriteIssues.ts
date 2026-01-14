@@ -44,7 +44,6 @@ export function useFavoriteIssues() {
 
   function selectIssue(issue: FavoriteIssue['issue']) {
     selectedIssue.value = issue
-    open.value = false
   }
 
   function clearSelection() {

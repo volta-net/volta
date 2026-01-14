@@ -129,18 +129,14 @@ async function setFavorite(repositoryId: number, value: boolean) {
         :loading="updating.size > 0"
         :input="{
           ui: {
-            base: 'ps-9.5 text-sm',
+            base: 'ps-9.5',
             leading: 'ps-4'
           }
         }"
         :ui="{
           group: 'p-1.5',
-          item: 'items-center pl-2.5 pr-4',
-          itemLeadingIcon: 'size-4',
-          itemTrailingIcon: 'size-4 text-warning',
-          input: '[&>input]:h-11',
-          content: 'flex-1',
-          empty: 'flex-1 flex items-center justify-center'
+          item: 'pl-2.5 pr-4',
+          itemTrailingIcon: 'text-warning'
         }"
         :fuse="{
           resultLimit: 1000

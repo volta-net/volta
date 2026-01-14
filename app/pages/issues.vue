@@ -24,17 +24,22 @@ const tabs = {
   },
   triage: {
     label: 'Needs Triage',
-    icon: 'i-lucide-inbox',
+    icon: 'i-lucide-circle-dashed',
     api: '/api/issues?pullRequest=false&state=open&excludeBots=true',
     empty: 'All triaged!'
   }
 } as const
 
 type TabId = keyof typeof tabs
+const validTabs = Object.keys(tabs) as TabId[]
+
+function isValidTab(tab: unknown): tab is TabId {
+  return typeof tab === 'string' && validTabs.includes(tab as TabId)
+}
 
 // Active tab from URL
 const activeTab = computed({
-  get: () => (route.query.tab as TabId) || 'merge',
+  get: () => isValidTab(route.query.tab) ? route.query.tab : 'merge',
   set: (tab: TabId) => router.replace({ query: { ...route.query, tab } })
 })
 
