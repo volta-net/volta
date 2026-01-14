@@ -134,7 +134,7 @@ const isMobile = breakpoints.smaller('lg')
 <template>
   <UDashboardPanel
     id="issues-1"
-    :default-size="40"
+    :default-size="30"
     :min-size="25"
     :max-size="!selectedItem ? 100 : 50"
     :resizable="!!selectedItem"

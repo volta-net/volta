@@ -5,6 +5,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'refresh'): void
+  (e: 'scroll-to-answer', commentId: number): void
 }>()
 
 const toast = useToast()
@@ -453,15 +454,17 @@ const ciStatusConfig = computed(() => getAggregatedCIStatus(props.issue.ciStatus
           </UTooltip>
 
           <!-- Show who answered if available -->
-          <div v-if="issue.resolutionAnsweredBy" class="mt-1 flex items-center gap-1 text-xs text-muted truncate">
+          <button
+            v-if="issue.resolutionAnsweredBy"
+            class="mt-1 flex items-center gap-1 text-xs text-muted truncate"
+            :class="issue.resolutionAnswerCommentId ? 'hover:text-highlighted cursor-pointer' : 'cursor-default'"
+            :disabled="!issue.resolutionAnswerCommentId"
+            @click="issue.resolutionAnswerCommentId && emit('scroll-to-answer', issue.resolutionAnswerCommentId)"
+          >
             Answered by
-            <NuxtLink
-              :to="`https://github.com/${issue.resolutionAnsweredBy.login}`"
-              target="_blank"
-              class="flex items-center gap-1 hover:text-highlighted"
-            >{{ issue.resolutionAnsweredBy.login }}
-            </NuxtLink>
-          </div>
+            <span class="font-medium">{{ issue.resolutionAnsweredBy.login }}</span>
+            <UIcon v-if="issue.resolutionAnswerCommentId" name="i-lucide-arrow-up-right" class="size-3 shrink-0" />
+          </button>
         </div>
       </div>
     </div>

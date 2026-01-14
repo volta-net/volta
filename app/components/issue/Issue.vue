@@ -136,6 +136,13 @@ async function handleRefresh() {
   emit('refresh')
 }
 
+// Handle scrolling to answer comment from Meta
+const timelineRef = ref<{ scrollToComment: (commentId: number) => void } | null>(null)
+
+function scrollToAnswerComment(commentId: number) {
+  timelineRef.value?.scrollToComment(commentId)
+}
+
 // Force sync with GitHub
 const syncing = ref(false)
 async function handleSync() {
@@ -253,6 +260,7 @@ defineShortcuts({
         />
 
         <IssueTimeline
+          ref="timelineRef"
           :issue="issue"
           :collaborators="collaborators"
           @refresh="handleRefresh"
@@ -260,7 +268,7 @@ defineShortcuts({
       </div>
 
       <div class="border-l border-default overflow-y-auto p-4 sm:px-6">
-        <IssueMeta :issue="issue" @refresh="handleRefresh" />
+        <IssueMeta :issue="issue" @refresh="handleRefresh" @scroll-to-answer="scrollToAnswerComment" />
       </div>
     </div>
 

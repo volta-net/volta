@@ -3,23 +3,41 @@ import type { TimelineItem } from '@nuxt/ui'
 import type { MentionUser } from '~/composables/useEditorMentions'
 import type { IssueReviewComment } from '#shared/types'
 
-interface IssueReference {
-  id: number
-  number: number
-  title: string
-  state: string
-  pullRequest: boolean
-}
-
 const props = defineProps<{
   issue: IssueDetail
   collaborators?: MentionUser[]
-  repositoryIssues?: IssueReference[]
+  highlightedCommentId?: number | null
 }>()
 
 const emit = defineEmits<{
   (e: 'refresh'): void
 }>()
+
+// Local highlighted comment state
+const highlightedCommentId = ref<number | null>(null)
+
+// Watch for external highlight requests
+watch(() => props.highlightedCommentId, (commentId) => {
+  if (commentId) {
+    scrollToComment(commentId)
+  }
+})
+
+// Scroll to and highlight a comment
+function scrollToComment(commentId: number) {
+  const element = document.getElementById(`comment-${commentId}`)
+  if (element) {
+    element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    highlightedCommentId.value = commentId
+    // Remove highlight after animation
+    setTimeout(() => {
+      highlightedCommentId.value = null
+    }, 2000)
+  }
+}
+
+// Expose scroll function for parent components
+defineExpose({ scrollToComment })
 
 const { user } = useUserSession()
 
@@ -27,6 +45,8 @@ interface ActivityItem extends TimelineItem {
   rawDate?: Date
   username?: string
   action?: string
+  // Comment ID for scrolling/highlighting
+  commentId?: number
   // For review comments (when not nested in a review)
   diffHunk?: string
   filePath?: string
@@ -74,7 +94,8 @@ const timelineItems = computed(() => {
       description: comment.body,
       avatar: comment.user?.avatarUrl ? { src: comment.user.avatarUrl } : undefined,
       icon: 'i-octicon-comment-16',
-      rawDate: toDate(comment.createdAt)
+      rawDate: toDate(comment.createdAt),
+      commentId: comment.id
     })
   })
 
@@ -188,10 +209,12 @@ const timelineItems = computed(() => {
       <!-- Simple comment or orphan review comment -->
       <IssueComment
         v-else-if="item.diffHunk || item.description"
+        :id="item.commentId ? `comment-${item.commentId}` : undefined"
         :body="item.description"
         :diff-hunk="item.diffHunk"
         :file-path="item.filePath"
-        class="mt-2"
+        class="mt-2 scroll-mt-4 transition-shadow duration-500"
+        :class="{ 'ring-2 ring-primary rounded-md shadow-lg shadow-primary/20': highlightedCommentId === item.commentId }"
       />
     </template>
 
