@@ -97,7 +97,6 @@ export function useEditorToolbar<T extends EditorCustomHandlers>(_customHandlers
       trailingIcon: 'i-lucide-chevron-down',
       activeColor: 'neutral',
       activeVariant: 'ghost',
-      tooltip: { text: 'Turn into' },
       content: {
         align: 'start'
       },
