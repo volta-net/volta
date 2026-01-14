@@ -23,13 +23,13 @@ const favoriteIssueItems = computed<NavigationMenuItem[]>(() => {
 })
 
 const links = computed<NavigationMenuItem[][]>(() => [[{
-  label: 'Home',
-  icon: 'i-lucide-activity',
-  to: '/'
-}, {
   label: 'Inbox',
   icon: 'i-lucide-inbox',
   to: '/inbox'
+}, {
+  label: 'Issues',
+  icon: 'i-lucide-layout-list',
+  to: '/issues'
 }, ...(favoriteIssueItems.value.length > 0
   ? [{
       label: 'Favorites',

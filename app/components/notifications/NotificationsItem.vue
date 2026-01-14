@@ -31,7 +31,7 @@ function stripMarkdown(text: string | null | undefined): string {
 
 <template>
   <div
-    class="relative flex items-center gap-2 px-2.5 py-2.5 text-sm cursor-default before:absolute before:z-[-1] before:inset-px before:rounded-md before:transition-colors transition-colors"
+    class="relative flex items-center gap-2 px-3 py-2.5 text-sm cursor-default before:absolute before:z-[-1] before:inset-px before:rounded-md before:transition-colors transition-colors"
     :class="[
       selected ? 'before:bg-elevated' : 'hover:before:bg-elevated/50',
       notification.read && 'opacity-60'

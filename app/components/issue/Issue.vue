@@ -260,7 +260,7 @@ defineShortcuts({
 
     <!-- Issue/PR View -->
     <div v-else-if="issue" class="grid grid-cols-3 flex-1 min-h-0">
-      <div :key="issue.id" class="flex-1 overflow-y-auto p-4 sm:px-6 flex flex-col gap-4 col-span-2">
+      <div :key="issue.id" class="flex-1 overflow-y-auto p-4 sm:px-6 flex flex-col gap-4 col-span-2 pb-22">
         <IssueTitle :issue="issue" @update:title="handleRefresh" />
 
         <IssueBody

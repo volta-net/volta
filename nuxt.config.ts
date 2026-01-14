@@ -57,7 +57,7 @@ export default defineNuxtConfig({
   },
 
   routeRules: {
-    '/': { prerender: true }
+    '/': { prerender: true, redirect: '/inbox' }
   },
 
   compatibilityDate: '2025-01-15',

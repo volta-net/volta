@@ -89,6 +89,9 @@ importers:
       postgres:
         specifier: ^3.4.8
         version: 3.4.8
+      reka-ui:
+        specifier: 2.7.0
+        version: 2.7.0(typescript@5.9.3)(vue@3.5.25(typescript@5.9.3))
       shiki:
         specifier: ^3.21.0
         version: 3.21.0

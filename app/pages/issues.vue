@@ -161,34 +161,60 @@ const isMobile = breakpoints.smaller('lg')
     :ui="{ body: 'overflow-hidden p-0!' }"
   >
     <template #header>
-      <UDashboardNavbar title="Dashboard" :ui="{ left: 'gap-3', title: 'shrink-0' }">
-        <template v-if="hasFavorites" #trailing>
-          <UFieldGroup class="overflow-x-auto">
+      <UDashboardNavbar :ui="{ title: 'shrink-0 -ml-1.5' }">
+        <template #title>
+          <UPopover
+            mode="hover"
+            :content="{ align: 'start', sideOffset: 4, alignOffset: -4 }"
+            :ui="{ content: 'w-[calc(var(--reka-popper-anchor-width)+8px)]' }"
+          >
             <UButton
-              v-for="tab in tabs"
-              :key="tab.id"
-              :icon="tab.icon"
-              :label="tab.label"
+              :label="currentTabConfig?.label"
               color="neutral"
-              variant="outline"
-              active-variant="subtle"
-              :active="activeTab === tab.id"
-              :class="[activeTab === tab.id ? 'hover:bg-elevated' : '']"
-              @click="activeTab = tab.id"
+              variant="ghost"
+              size="xl"
+              square
+              class="px-1.5 py-0.5 gap-1.5 data-[state=open]:bg-elevated text-highlighted font-semibold"
             >
               <template #trailing>
                 <UBadge
-                  v-if="(tabCounts[tab.id] ?? 0) > 0"
-                  :label="String(tabCounts[tab.id])"
+                  :label="String(tabCounts[currentTabConfig?.id ?? ''] ?? 0)"
                   color="neutral"
                   variant="subtle"
-                  size="xs"
-                  class="rounded-full! size-4.5 justify-center p-0 -my-1"
                 />
               </template>
             </UButton>
-          </UFieldGroup>
 
+            <template #content>
+              <div class="p-1 flex flex-col gap-0.5">
+                <UButton
+                  v-for="tab in tabs"
+                  :key="tab.id"
+                  :label="tab.label"
+                  color="neutral"
+                  variant="ghost"
+                  :active="activeTab === tab.id"
+                  active-variant="soft"
+                  size="md"
+                  class="py-1 gap-1.5"
+                  square
+                  @click="activeTab = tab.id"
+                >
+                  <template #trailing>
+                    <UBadge
+                      :label="String(tabCounts[tab.id])"
+                      color="neutral"
+                      variant="subtle"
+                      class="ms-auto"
+                    />
+                  </template>
+                </UButton>
+              </div>
+            </template>
+          </UPopover>
+        </template>
+
+        <template v-if="hasFavorites" #trailing>
           <UInput
             v-model="q"
             placeholder="Search..."
@@ -202,6 +228,7 @@ const isMobile = breakpoints.smaller('lg')
             color="neutral"
             variant="soft"
             icon="i-lucide-star"
+            square
             :label="`${favorites.length} favorites`"
             @click="favoritesOpen = true"
           />
@@ -295,7 +322,7 @@ const isMobile = breakpoints.smaller('lg')
     </USlideover>
   </ClientOnly>
 
-  <LazyDashboardFavorites
+  <LazyRepositoriesFavorites
     v-model:open="favoritesOpen"
     :favorites="favorites"
     :repositories="repositories"

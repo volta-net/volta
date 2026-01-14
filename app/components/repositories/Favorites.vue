@@ -12,22 +12,54 @@ const emit = defineEmits<{
 
 const toast = useToast()
 
-const favoriteRepoIds = computed(() => new Set(props.favorites?.map(f => f.repositoryId) || []))
+// Local state for optimistic updates
+const localFavoriteIds = ref<Set<number>>(new Set())
+const hasChanges = ref(false)
 
-const selected = computed({
-  get: () => props.repositories.filter(repo => favoriteRepoIds.value.has(repo.id)).map(repo => ({
+// Sync local state when slideover opens or favorites prop changes while closed
+watch(() => props.favorites, (favorites) => {
+  if (!open.value) {
+    localFavoriteIds.value = new Set(favorites?.map(f => f.repositoryId) || [])
+  }
+}, { immediate: true })
+
+watch(open, (isOpen) => {
+  if (isOpen) {
+    // Reset local state from props when opening
+    localFavoriteIds.value = new Set(props.favorites?.map(f => f.repositoryId) || [])
+  } else if (hasChanges.value) {
+    // Emit change when closing if there were changes
+    emit('change')
+    hasChanges.value = false
+  }
+})
+
+function repoToItem(repo: Pick<Repository, 'id' | 'fullName' | 'private'>) {
+  return {
     id: repo.id,
     label: repo.fullName,
     icon: repo.private ? 'i-lucide-lock' : 'i-lucide-book'
-  })),
+  }
+}
+
+const selected = computed({
+  get: () => props.repositories.filter(repo => localFavoriteIds.value.has(repo.id)).map(repoToItem),
   set: async (items) => {
     const newSelectedIds = new Set(items.map(item => item.id))
 
-    // Find added (in new selection but not in current favorites)
-    const toAdd = items.filter(item => !favoriteRepoIds.value.has(item.id))
-    // Find removed (in current favorites but not in new selection)
-    const toRemove = [...favoriteRepoIds.value].filter(id => !newSelectedIds.has(id))
+    // Find added and removed
+    const toAdd = items.filter(item => !localFavoriteIds.value.has(item.id))
+    const toRemove = [...localFavoriteIds.value].filter(id => !newSelectedIds.has(id))
 
+    // Optimistically update local state
+    for (const item of toAdd) {
+      localFavoriteIds.value.add(item.id)
+    }
+    for (const id of toRemove) {
+      localFavoriteIds.value.delete(id)
+    }
+
+    // Persist changes
     await Promise.all([
       ...toAdd.map(item => setFavorite(item.id, true)),
       ...toRemove.map(id => setFavorite(id, false))
@@ -37,11 +69,7 @@ const selected = computed({
 
 const groups = computed(() => [{
   id: 'repositories',
-  items: props.repositories.map(repo => ({
-    id: repo.id,
-    label: repo.fullName,
-    icon: repo.private ? 'i-lucide-lock' : 'i-lucide-book'
-  }))
+  items: props.repositories.map(repoToItem)
 }])
 
 const updating = ref<Set<number>>(new Set())
@@ -58,8 +86,14 @@ async function setFavorite(repositoryId: number, value: boolean) {
     } else {
       await $fetch(`/api/favorites/repositories/${repositoryId}`, { method: 'DELETE' })
     }
-    emit('change')
+    hasChanges.value = true
   } catch (error: any) {
+    // Revert optimistic update on error
+    if (value) {
+      localFavoriteIds.value.delete(repositoryId)
+    } else {
+      localFavoriteIds.value.add(repositoryId)
+    }
     toast.add({
       title: 'Failed to update favorite',
       description: error.data?.message || 'An error occurred',

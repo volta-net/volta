@@ -39,6 +39,7 @@
     "nuxt-auth-utils": "^0.5.26",
     "octokit": "^5.0.5",
     "postgres": "^3.4.8",
+    "reka-ui": "2.7.0",
     "shiki": "^3.21.0",
     "tailwindcss": "^4.1.18",
     "tiptap-extension-code-block-shiki": "^1.0.0",

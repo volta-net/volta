@@ -166,8 +166,14 @@ useSeoMeta({
     :max-size="30"
     resizable
   >
-    <UDashboardNavbar title="Inbox">
-      <template #trailing>
+    <UDashboardNavbar>
+      <template #title>
+        <span class="inline-flex">Inbox</span>
+
+        <UBadge :label="String(unreadNotifications.length)" color="neutral" variant="subtle" />
+      </template>
+
+      <template #right>
         <UDropdownMenu
           :content="{ align: 'start' }"
           :items="[[{
@@ -188,7 +194,7 @@ useSeoMeta({
             variant="ghost"
             color="neutral"
             trailing-icon="i-lucide-ellipsis"
-            class="data-[state=open]:bg-elevated"
+            class="data-[state=open]:bg-elevated -mr-1.5"
           />
         </UDropdownMenu>
       </template>
