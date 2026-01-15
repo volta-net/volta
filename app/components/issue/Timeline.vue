@@ -13,7 +13,7 @@ const emit = defineEmits<{
   (e: 'refresh'): void
 }>()
 
-// Local highlighted comment state
+// eslint-disable-next-line vue/no-dupe-keys
 const highlightedCommentId = ref<number | null>(null)
 
 // Watch for external highlight requests
@@ -172,7 +172,7 @@ const timelineItems = computed(() => {
   <USeparator
     label="Activity"
     :ui="{ label: 'text-highlighted', container: 'ml-0' }"
-    class="[&>div]:first:hidden mb-2"
+    class="[&>div]:first:hidden"
   />
 
   <UTimeline
@@ -181,6 +181,7 @@ const timelineItems = computed(() => {
     :ui="{
       date: 'float-end ms-1',
       title: 'flex items-center gap-1',
+      description: 'text-default',
       separator: 'w-px',
       wrapper: 'pb-2 min-w-0',
       item: 'last:pb-0 [&:last-child_[data-part=separator]]:hidden'
@@ -195,12 +196,13 @@ const timelineItems = computed(() => {
       <!-- Review with nested review comments -->
       <div v-if="item.reviewComments?.length" class="mt-2 space-y-2">
         <!-- Review body if present -->
-        <IssueComment v-if="item.description" :body="item.description" />
+        <IssueComment v-if="item.description" :issue="issue" :body="item.description" />
 
         <!-- Nested review comments -->
         <IssueReviewComment
           v-for="comment in item.reviewComments"
           :key="comment.id"
+          :issue="issue"
           :comment="comment"
         />
       </div>
@@ -209,6 +211,7 @@ const timelineItems = computed(() => {
       <IssueComment
         v-else-if="item.diffHunk || item.description"
         :id="item.commentId ? `comment-${item.commentId}` : undefined"
+        :issue="issue"
         :body="item.description"
         :diff-hunk="item.diffHunk"
         :file-path="item.filePath"

@@ -88,6 +88,7 @@ const resolutionConfig = computed(() => {
           <UBadge
             :label="item.linkedPrs.length"
             icon="i-lucide-git-pull-request"
+            class="rounded-full"
           />
         </UTooltip>
 

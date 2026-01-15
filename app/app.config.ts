@@ -32,23 +32,25 @@ export default defineAppConfig({
       }
     },
     prose: {
-      p: {
-        base: 'my-4'
-      },
-      blockquote: {
-        base: '[&>p]:my-0'
+      pre: {
+        base: 'text-xs/5 max-h-[30.5rem] overflow-y-auto'
       }
     },
     editor: {
       slots: {
         base: [
+          'sm:px-0',
           '*:my-4',
+          'text-sm',
+          '[&_p]:leading-6',
           '[&_p:not([data-placeholder]):has(>br.ProseMirror-trailingBreak:only-child)]:hidden',
           '[&_a]:cursor-pointer',
           '[&_h1]:text-xl',
-          '[&_h2]:text-xl',
-          '[&_h3]:text-lg',
-          '[&_h4]:text-base',
+          '[&_h2]:text-lg',
+          '[&_h3]:text-base',
+          '[&_h4]:text-sm',
+          '[&_pre]:text-xs/5 [&_pre]:max-h-[30.5rem] [&_pre]:overflow-y-auto',
+          '[&_code]:text-xs/4',
           '[&_[data-type=horizontalRule]]:my-0',
           // Details
           '[&_.details]:relative [&_.details]:border [&_.details]:border-default [&_.details]:rounded-md [&_.details]:bg-elevated/50 [&_.details]:overflow-hidden',
@@ -62,7 +64,7 @@ export default defineAppConfig({
           '[&_th]:py-3 [&_th]:px-4 [&_th]:font-semibold [&_th]:text-sm [&_th]:text-left [&_th]:bg-muted/50 [&_th]:border-t [&_th]:border-b [&_th]:border-e [&_th]:first:border-s [&_th]:border-muted',
           '[&_th_p]:my-0 [&_th_p]:leading-5',
           '[&_td]:py-3 [&_td]:px-4 [&_td]:text-sm [&_td]:text-left [&_td]:border-b [&_td]:border-e [&_td]:first:border-s [&_td]:border-muted',
-          '[&_td_p]:my-0 [&_td_p]:leading-5 [&_td_code]:text-xs/5 [&_td_ul]:my-0 [&_td_ol]:my-0 [&_td_ul]:ps-4.5 [&_td_ol]:ps-4.5 [&_td_li]:leading-6 [&_td_li]:my-0.5',
+          '[&_td_p]:my-0 [&_td_p]:leading-6 [&_td_code]:text-xs/4 [&_td_ul]:my-0 [&_td_ol]:my-0 [&_td_ul]:ps-4.5 [&_td_ol]:ps-4.5 [&_td_li]:leading-6 [&_td_li]:my-0.5',
           '[&_tr:first-child_th:first-child]:rounded-tl-md [&_tr:first-child_th:last-child]:rounded-tr-md [&_tr:last-child_td:first-child]:rounded-bl-md [&_tr:last-child_td:last-child]:rounded-br-md',
           '[&_.selectedCell]:bg-primary/10 [&_.selectedCell]:ring-2 [&_.selectedCell]:ring-primary [&_.selectedCell]:ring-inset',
           // Task lists

@@ -2,6 +2,7 @@
 import type { IssueReviewComment } from '#shared/types'
 
 const props = defineProps<{
+  issue: IssueDetail
   comment: IssueReviewComment
 }>()
 
@@ -119,43 +120,42 @@ const diffHunkWithoutHeader = computed(() => {
 <template>
   <div class="ring ring-default rounded-md overflow-hidden">
     <!-- File path header -->
-    <div v-if="comment.path" class="flex items-center gap-2 px-4 py-3 bg-muted/50 border-b border-default text-xs text-muted">
-      <UIcon name="i-octicon-file-16" class="size-3.5 shrink-0" />
-      <span class="truncate font-mono text-highlighted">{{ comment.path }}</span>
+    <div v-if="comment.path" class="flex items-center gap-1.5 px-4 py-3 border-b border-default text-xs">
+      <UIcon name="i-lucide-file" class="size-3.5 shrink-0 text-muted" />
+      <span class="truncate font-mono text-default">{{ comment.path }}</span>
     </div>
 
     <!-- Code diff -->
     <MDC
       v-if="diffHunkWithoutHeader"
       :value="`\`\`\`diff\n${diffHunkWithoutHeader}\n\`\`\``"
-      class="[&>div]:my-0! [&_pre]:rounded-none! [&_pre]:border-0! [&_pre]:bg-default! [&_pre]:text-xs/5"
+      class="[&>div]:my-0! [&_pre]:rounded-none! [&_pre]:border-0! [&_pre]:bg-muted/50!"
     />
 
     <!-- Comment body with user info -->
     <div class="px-4 py-3" :class="{ 'border-t border-default': comment.diffHunk }">
       <div class="flex items-center gap-2 mb-2">
         <UAvatar v-if="comment.user?.avatarUrl" :src="comment.user.avatarUrl" size="2xs" />
-        <span class="text-sm font-medium text-highlighted">{{ comment.user?.login || 'Unknown' }}</span>
+        <span class="text-sm font-medium text-highlighted">
+          {{ comment.user?.login || 'Unknown' }}
+          <span class="font-normal text-muted">{{ hasSuggestion ? 'suggested change' : 'commented' }}</span>
+        </span>
         <span class="text-xs text-dimmed ms-auto">{{ useRelativeTime(new Date(comment.createdAt)) }}</span>
       </div>
 
       <!-- Suggested change block (inside body) -->
-      <div v-if="hasSuggestion" class="ring ring-default rounded-md overflow-hidden mb-2">
-        <div class="px-3 py-1.5 bg-muted/30 text-xs font-medium text-muted border-b border-default">
-          Suggested change
-        </div>
-        <MDC
-          v-if="suggestionDiff"
-          :value="suggestionDiff"
-          class="[&>div]:my-0! [&_pre]:rounded-none! [&_pre]:border-0! [&_pre]:bg-default! [&_pre]:text-xs/5"
-        />
-      </div>
+      <MDC
+        v-if="hasSuggestion && suggestionDiff"
+        :value="suggestionDiff"
+        class="[&>div]:my-0!"
+      />
 
       <!-- Show body without suggestion block if there's other content -->
-      <MDC
+      <IssueEditor
         v-if="bodyWithoutSuggestion"
-        :value="bodyWithoutSuggestion"
-        class="*:first:mt-0 *:last:mb-0 *:my-2 text-default text-sm [&_p]:leading-6 [&_pre]:text-xs/5 [&_code]:text-xs/5"
+        :issue="issue"
+        :model-value="bodyWithoutSuggestion"
+        :editable="false"
       />
     </div>
   </div>

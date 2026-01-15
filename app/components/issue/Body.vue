@@ -82,7 +82,7 @@ async function saveBody() {
     placeholder="Add a description..."
     :ui="{
       content: 'flex flex-col',
-      base: 'sm:px-0 pb-4 flex-1'
+      base: 'pb-4 flex-1'
     }"
     class="flex-1"
     @parsing="isParsing = $event"

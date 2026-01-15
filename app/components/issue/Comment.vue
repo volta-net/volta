@@ -1,5 +1,6 @@
 <script setup lang="ts">
 defineProps<{
+  issue: IssueDetail
   body?: string
   diffHunk?: string
   filePath?: string
@@ -27,14 +28,15 @@ function getDiffHunkWithoutHeader(diffHunk: string): string {
     <MDC
       v-if="diffHunk"
       :value="`\`\`\`diff\n${getDiffHunkWithoutHeader(diffHunk)}\n\`\`\``"
-      class="[&>div]:my-0! [&_pre]:rounded-none! [&_pre]:border-0! [&_pre]:bg-default! [&_pre]:text-xs/5"
+      class="[&>div]:my-0! [&_pre]:rounded-none! [&_pre]:border-0!"
     />
 
     <!-- Comment body -->
-    <MDC
-      v-if="body"
-      :value="body"
-      class="*:first:mt-0 *:last:mb-0 *:my-2 px-4 py-3 text-default text-sm [&_p]:leading-6 [&_pre]:text-xs/5 [&_code]:text-xs/5"
+    <IssueEditor
+      :issue="issue"
+      :model-value="body"
+      :editable="false"
+      :ui="{ base: 'px-4 sm:px-4 py-3' }"
     />
   </div>
 </template>

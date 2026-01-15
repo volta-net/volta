@@ -48,7 +48,7 @@ async function addComment() {
       :suggest-reply="true"
       placeholder="Leave a comment..."
       class="ring ring-default rounded-md w-full"
-      :ui="{ base: 'px-4! py-3 min-h-24 text-sm [&_pre]:text-xs/5 [&_code]:text-xs/5 [&_p]:leading-6' }"
+      :ui="{ base: 'px-4 sm:px-4 py-3 min-h-24' }"
     >
       <template #toolbar="{ editor, items }">
         <div class="flex items-center gap-2 px-2 py-1 w-full border-b border-default overflow-x-auto">
