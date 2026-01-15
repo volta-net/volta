@@ -31,6 +31,7 @@ pnpm install
 | Actions | Read-only |
 | Administration | Read-only |
 | Checks | Read-only |
+| Commit statuses | Read-only |
 | Contents | Read-only |
 | Issues | Read & write |
 | Metadata | Read-only |
