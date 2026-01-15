@@ -50,7 +50,8 @@ export default defineEventHandler(async (event) => {
           createdAt: repo.created_at,
           updatedAt: repo.updated_at,
           synced: false,
-          subscription: undefined
+          subscription: undefined,
+          stars: repo.stargazers_count ?? 0
         }))
       }
 
@@ -118,7 +119,8 @@ export default defineEventHandler(async (event) => {
             createdAt: repo.created_at,
             updatedAt: repo.updated_at,
             synced: syncedRepoMap.has(repo.id),
-            subscription: subscriptionMap.get(repo.id)
+            subscription: subscriptionMap.get(repo.id),
+            stars: repo.stargazers_count ?? 0
           }))
         }
       } catch (error) {

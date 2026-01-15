@@ -35,13 +35,35 @@ interface SyncResult {
   }
 }
 
+// Sort repositories: synced first, then by stars (desc), then by updatedAt (desc)
+function sortRepositories(repos: InstallationRepository[]) {
+  return [...repos].sort((a, b) => {
+    // First: synced repos come first
+    if (a.synced && !b.synced) return -1
+    if (!a.synced && b.synced) return 1
+
+    // Second: sort by stars (descending)
+    const starsA = a.stars ?? 0
+    const starsB = b.stars ?? 0
+    if (starsA !== starsB) return starsB - starsA
+
+    // Third: sort by updatedAt (descending)
+    const updatedA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0
+    const updatedB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0
+    return updatedB - updatedA
+  })
+}
+
 const accordionItems = computed(() => {
   if (!installations.value) return []
 
   return installations.value.map(installation => ({
     label: installation.account.login,
     value: String(installation.id),
-    installation
+    installation: {
+      ...installation,
+      repositories: sortRepositories(installation.repositories)
+    }
   }))
 })
 
@@ -59,8 +81,8 @@ async function syncRepository(fullName: string) {
     await refresh()
 
     toast.add({
-      title: 'Repository synced',
-      description: `Synced ${result.synced.issues} issues, ${result.synced.pullRequests} PRs, ${result.synced.labels} labels, ${result.synced.milestones} milestones`,
+      title: `Repo ${name} imported`,
+      description: `Imported ${result.synced.issues} issues, ${result.synced.pullRequests} PRs, ${result.synced.labels} labels, ${result.synced.milestones} milestones`,
       color: 'success'
     })
   } catch (error: any) {
@@ -585,9 +607,20 @@ function getSubscriptionSummary(repo: InstallationRepository): { label: string, 
                     Synced
                   </UBadge>
                 </p>
-                <p class="text-xs text-muted truncate">
+                <p class="text-xs text-muted truncate flex items-center gap-1">
+                  <span v-if="repo.stars" class="inline-flex items-center gap-1">
+                    <UIcon name="i-lucide-star" class="size-3" />
+                    {{ repo.stars.toLocaleString() }}
+                  </span>
+                  <span class="text-muted">·</span>
+                  <span class="inline-flex items-center gap-1">
+                    <UIcon name="i-lucide-clock" class="size-3" />
+                    {{ useTimeAgo(repo.updatedAt).value }}
+                  </span>
+                  <span class="text-muted">·</span>
+
                   <template v-if="repo.synced && repo.lastSyncedAt">
-                    Last synced {{ useTimeAgo(repo.lastSyncedAt).value }}
+                    Synced {{ useTimeAgo(repo.lastSyncedAt).value }}
                   </template>
                   <template v-else>
                     Not imported yet
