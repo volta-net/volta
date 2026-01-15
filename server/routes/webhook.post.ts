@@ -34,7 +34,7 @@ export default defineEventHandler(async (event) => {
 
       // Issue events
       case 'issues':
-        await handleIssueEvent(payload.action, payload.issue, payload.repository, payload.installation?.id)
+        await handleIssueEvent(payload.action, payload.issue, payload.repository, payload.installation?.id, payload.sender)
         // Create notifications
         if (payload.action === 'opened') {
           await notifyIssueOpened(
@@ -140,7 +140,7 @@ export default defineEventHandler(async (event) => {
 
       // Pull request events
       case 'pull_request':
-        await handlePullRequestEvent(payload.action, payload.pull_request, payload.repository, payload.installation?.id)
+        await handlePullRequestEvent(payload.action, payload.pull_request, payload.repository, payload.installation?.id, payload.sender)
         // Create notifications
         if (payload.action === 'opened') {
           await notifyPROpened(

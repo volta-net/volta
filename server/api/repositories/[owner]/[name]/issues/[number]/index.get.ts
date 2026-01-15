@@ -242,6 +242,9 @@ async function syncIssueFromGitHub(accessToken: string, issue: any) {
     }
 
     // Update issue data (skip reactionCount - not available in PR endpoint)
+    // Note: GitHub Pulls API doesn't include closed_by - only merged_by.
+    // For PRs closed without merging, closedById is set via webhook.
+    // Only update closedById if PR was merged (use merged_by), otherwise preserve existing value.
     await db.update(schema.issues).set({
       title: ghPr.title,
       body: ghPr.body,
@@ -260,7 +263,8 @@ async function syncIssueFromGitHub(accessToken: string, issue: any) {
       mergedAt: ghPr.merged_at ? new Date(ghPr.merged_at) : null,
       mergedById,
       closedAt: ghPr.closed_at ? new Date(ghPr.closed_at) : null,
-      closedById: mergedById, // If merged, merged_by is the closer
+      // Only set closedById if PR was merged - for closed-without-merge PRs, preserve webhook data
+      ...(mergedById ? { closedById: mergedById } : {}),
       commentCount: ghPr.comments,
       updatedAt: new Date(ghPr.updated_at)
     }).where(eq(schema.issues.id, issue.id))

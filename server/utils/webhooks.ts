@@ -26,7 +26,7 @@ import { useOctokitAsInstallation } from './octokit'
 // Issues
 // ============================================================================
 
-export async function handleIssueEvent(action: string, issue: GitHubIssue, repository: GitHubRepository, _installationId?: number) {
+export async function handleIssueEvent(action: string, issue: GitHubIssue, repository: GitHubRepository, _installationId?: number, sender?: GitHubUser | null) {
   // Check if repository is synced (lookup by GitHub ID)
   const dbRepoId = await getDbRepositoryId(repository.id)
   if (!dbRepoId) {
@@ -49,7 +49,7 @@ export async function handleIssueEvent(action: string, issue: GitHubIssue, repos
     case 'unlocked':
     case 'typed':
     case 'untyped':
-      await upsertIssue(issue, dbRepoId, repository.full_name, false)
+      await upsertIssue(issue, dbRepoId, repository.full_name, false, action, sender)
       break
     case 'deleted':
     case 'transferred':
@@ -68,7 +68,7 @@ export async function handleIssueEvent(action: string, issue: GitHubIssue, repos
 // Pull Requests
 // ============================================================================
 
-export async function handlePullRequestEvent(action: string, pullRequest: GitHubPullRequest, repository: GitHubRepository, installationId?: number) {
+export async function handlePullRequestEvent(action: string, pullRequest: GitHubPullRequest, repository: GitHubRepository, installationId?: number, sender?: GitHubUser | null) {
   // Check if repository is synced (lookup by GitHub ID)
   const dbRepoId = await getDbRepositoryId(repository.id)
   if (!dbRepoId) {
@@ -94,7 +94,7 @@ export async function handlePullRequestEvent(action: string, pullRequest: GitHub
     case 'review_requested':
     case 'review_request_removed':
     case 'synchronize': {
-      const prId = await upsertIssue(pullRequest, dbRepoId, repository.full_name, true)
+      const prId = await upsertIssue(pullRequest, dbRepoId, repository.full_name, true, action, sender)
 
       // Update linked issues using GitHub's closingIssuesReferences API
       if (installationId && (action === 'opened' || action === 'edited' || action === 'reopened')) {
@@ -116,7 +116,7 @@ export async function handlePullRequestEvent(action: string, pullRequest: GitHub
 // Issues (Issues & Pull Requests unified)
 // ============================================================================
 
-async function upsertIssue(item: GitHubIssueOrPR, repositoryId: number, _repositoryFullName: string, isPullRequest: boolean): Promise<number> {
+async function upsertIssue(item: GitHubIssueOrPR, repositoryId: number, _repositoryFullName: string, isPullRequest: boolean, action?: string, sender?: GitHubUser | null): Promise<number> {
   // Ensure author exists as shadow user and get internal ID
   let userId: number | null = null
   if (item.user) {
@@ -128,12 +128,15 @@ async function upsertIssue(item: GitHubIssueOrPR, repositoryId: number, _reposit
   }
 
   // Ensure closed_by user exists and get internal ID
+  // Note: GitHub webhook payloads for 'closed' events do NOT include closed_by on the issue/PR object.
+  // The closed_by field is only available via REST API. For webhooks, we use the sender (who performed the action).
   let closedById: number | null = null
-  if (item.closed_by) {
+  const closedByUser = item.closed_by || (action === 'closed' ? sender : null)
+  if (closedByUser) {
     closedById = await ensureUser({
-      id: item.closed_by.id,
-      login: item.closed_by.login,
-      avatar_url: item.closed_by.avatar_url
+      id: closedByUser.id,
+      login: closedByUser.login,
+      avatar_url: closedByUser.avatar_url
     })
   }
 
