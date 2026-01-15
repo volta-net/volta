@@ -70,7 +70,7 @@ export function useEditorToolbar<T extends EditorCustomHandlers>(_customHandlers
 
     // Add "Suggest reply" option if enabled
     if (suggestReply) {
-      aiItems.push({
+      aiItems.unshift({
         kind: 'aiReply',
         icon: 'i-lucide-reply',
         label: 'Suggest reply'
@@ -78,7 +78,7 @@ export function useEditorToolbar<T extends EditorCustomHandlers>(_customHandlers
     }
 
     return [[{
-      label: 'Improve',
+      label: 'Ask AI',
       icon: 'i-lucide-sparkles',
       trailingIcon: 'i-lucide-chevron-down',
       activeColor: 'neutral',
