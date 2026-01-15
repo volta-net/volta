@@ -80,11 +80,6 @@ async function saveBody() {
     :issue="issue"
     :collaborators="collaborators"
     placeholder="Add a description..."
-    :ui="{
-      content: 'flex flex-col',
-      base: 'pb-4 flex-1'
-    }"
-    class="flex-1"
     @parsing="isParsing = $event"
     @blur="saveBody"
   />
