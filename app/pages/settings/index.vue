@@ -608,7 +608,7 @@ function getSubscriptionSummary(repo: InstallationRepository): { label: string, 
                   </UBadge>
                 </p>
                 <p class="text-xs text-muted truncate flex items-center gap-1">
-                  <span v-if="repo.stars" class="inline-flex items-center gap-1">
+                  <span class="inline-flex items-center gap-1">
                     <UIcon name="i-lucide-star" class="size-3" />
                     {{ repo.stars.toLocaleString() }}
                   </span>
