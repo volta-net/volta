@@ -86,32 +86,22 @@ const resolutionConfig = computed(() => {
           :text="`${item.linkedPrs.length} linked PR${item.linkedPrs.length > 1 ? 's' : ''}`"
         >
           <UBadge
-            color="neutral"
-            variant="outline"
-            size="md"
             :label="item.linkedPrs.length"
             icon="i-lucide-git-pull-request"
-            class="rounded-full px-2"
           />
         </UTooltip>
 
         <UBadge
           v-if="(item.reactionCount ?? 0) > 0"
-          color="neutral"
-          variant="outline"
-          size="md"
           :label="item.reactionCount ?? 0"
           icon="i-lucide-heart"
-          class="rounded-full px-2"
+          class="rounded-full"
         />
         <UBadge
           v-if="(item.commentCount ?? 0) > 0"
-          color="neutral"
-          variant="outline"
-          size="md"
           :label="item.commentCount ?? 0"
           icon="i-lucide-message-circle"
-          class="rounded-full px-2"
+          class="rounded-full"
         />
 
         <IssueType v-if="item.type" :type="item.type" />

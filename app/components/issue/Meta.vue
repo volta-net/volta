@@ -443,8 +443,7 @@ const ciStatusConfig = computed(() => getAggregatedCIStatus(props.issue.ciStatus
               :icon="resolutionConfig.icon"
               :color="resolutionConfig.color"
               variant="subtle"
-              size="md"
-              class="px-2 rounded-full"
+              class="rounded-full"
             >
               <span class="truncate">{{ resolutionConfig.label }}</span>
               <span v-if="issue.resolutionConfidence" class="italic">

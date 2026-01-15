@@ -101,7 +101,6 @@ async function removeFavorite(issueId: number) {
         <template #item-trailing="{ item }">
           <UButton
             icon="i-lucide-x"
-            color="neutral"
             variant="link"
             size="xs"
             class="opacity-0 group-hover:opacity-100 transition-opacity -my-1"

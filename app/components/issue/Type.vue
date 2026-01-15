@@ -5,12 +5,9 @@ defineProps<{
 </script>
 
 <template>
-  <UBadge
-    color="neutral"
-    variant="outline"
-    class="rounded-full px-2 shrink-0"
-  >
-    <span class="size-2 rounded-full mx-1" :style="{ backgroundColor: `#${type.color}` }" />
-    <span class="text-xs text-inverted invert">{{ type.name }}</span>
+  <UBadge :label="type.name" class="rounded-full">
+    <template #leading>
+      <span class="size-2 rounded-full mx-1" :style="{ backgroundColor: `#${type.color}` }" />
+    </template>
   </UBadge>
 </template>

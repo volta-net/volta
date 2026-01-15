@@ -37,7 +37,6 @@ defineShortcuts({
         :avatar="{ src: `https://github.com/${notification.repository.fullName.split('/')[0]}.png`, alt: notification.repository.fullName }"
         :to="notification.repository.htmlUrl!"
         target="_blank"
-        color="neutral"
         variant="ghost"
         class="text-sm/4 text-highlighted px-2"
       />
@@ -48,7 +47,6 @@ defineShortcuts({
     <template #title>
       <UTooltip text="Open on GitHub" :kbds="['meta', 'g']">
         <UButton
-          color="neutral"
           variant="ghost"
           :label="notification.release?.name || notification.release?.tagName"
           :to="notification.release?.htmlUrl!"
@@ -63,7 +61,6 @@ defineShortcuts({
         <UButton
           icon="i-lucide-trash-2"
           label="Delete notification"
-          color="neutral"
           variant="soft"
           @click="emit('delete', notification.id)"
         />

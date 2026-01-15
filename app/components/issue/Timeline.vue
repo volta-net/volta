@@ -178,7 +178,6 @@ const timelineItems = computed(() => {
   <UTimeline
     :items="timelineItems"
     size="2xs"
-    color="neutral"
     :ui="{
       date: 'float-end ms-1',
       title: 'flex items-center gap-1',

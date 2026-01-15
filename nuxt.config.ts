@@ -35,6 +35,7 @@ export default defineNuxtConfig({
         'important'
       ],
       defaultVariants: {
+        color: 'neutral',
         size: 'sm'
       }
     },

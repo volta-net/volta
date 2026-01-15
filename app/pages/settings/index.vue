@@ -79,8 +79,7 @@ async function importAllRepositories(installation: Installation) {
   if (!unsyncedRepos.length) {
     toast.add({
       title: 'All repositories imported',
-      description: 'All repositories are already imported.',
-      color: 'neutral'
+      description: 'All repositories are already imported.'
     })
     return
   }
@@ -480,7 +479,6 @@ function getSubscriptionSummary(repo: InstallationRepository): { label: string, 
     >
       <UButton
         icon="i-lucide-plus"
-        color="neutral"
         variant="soft"
         :to="getInstallUrl()"
         target="_blank"
@@ -556,7 +554,6 @@ function getSubscriptionSummary(repo: InstallationRepository): { label: string, 
             >
               <UButton
                 icon="i-lucide-ellipsis-vertical"
-                color="neutral"
                 variant="soft"
                 @click.stop
               />
@@ -564,7 +561,6 @@ function getSubscriptionSummary(repo: InstallationRepository): { label: string, 
 
             <UButton
               icon="i-lucide-chevron-down"
-              color="neutral"
               variant="soft"
               :ui="{
                 leadingIcon: 'group-data-[state=open]:rotate-180 transition-transform duration-200'
@@ -584,6 +580,7 @@ function getSubscriptionSummary(repo: InstallationRepository): { label: string, 
                     v-if="repo.synced"
                     color="success"
                     variant="subtle"
+                    size="xs"
                   >
                     Synced
                   </UBadge>
@@ -608,7 +605,6 @@ function getSubscriptionSummary(repo: InstallationRepository): { label: string, 
                 :ui="{ content: 'w-72', itemDescription: 'text-clip' }"
               >
                 <UButton
-                  color="neutral"
                   variant="soft"
                   v-bind="getSubscriptionSummary(repo)"
                   trailing-icon="i-lucide-chevron-down"
@@ -648,7 +644,6 @@ function getSubscriptionSummary(repo: InstallationRepository): { label: string, 
                 ]"
               >
                 <UButton
-                  color="neutral"
                   variant="soft"
                   icon="i-lucide-ellipsis-vertical"
                   class="data-[state=open]:bg-accented/75"
@@ -659,7 +654,6 @@ function getSubscriptionSummary(repo: InstallationRepository): { label: string, 
             <UButton
               v-else
               icon="i-lucide-download"
-              color="neutral"
               variant="soft"
               :loading="syncing.has(repo.fullName)"
               @click="syncRepository(repo.fullName)"
@@ -678,7 +672,6 @@ function getSubscriptionSummary(repo: InstallationRepository): { label: string, 
         v-else
         title="No installations found"
         description="Install the GitHub App on your account or organization to get started."
-        color="neutral"
         variant="soft"
       />
     </UCard>

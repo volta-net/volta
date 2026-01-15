@@ -186,7 +186,6 @@ defineShortcuts({
           :avatar="{ src: `https://github.com/${item.repository.fullName.split('/')[0]}.png`, alt: item.repository.fullName }"
           :to="item.repository.htmlUrl!"
           target="_blank"
-          color="neutral"
           variant="ghost"
           class="text-sm/4 text-highlighted px-2"
         />
@@ -197,7 +196,6 @@ defineShortcuts({
       <template #title>
         <UTooltip text="Open on GitHub" :kbds="['meta', 'g']">
           <UButton
-            color="neutral"
             variant="ghost"
             :label="`#${item.number}`"
             :to="item.htmlUrl!"
@@ -211,7 +209,6 @@ defineShortcuts({
         <UTooltip :text="isFavorited ? 'Remove from favorites' : 'Add to favorites'">
           <UButton
             :icon="isFavorited ? 'i-lucide-star' : 'i-lucide-star'"
-            color="neutral"
             active-color="warning"
             variant="ghost"
             :loading="updatingFavorite"
@@ -223,7 +220,6 @@ defineShortcuts({
         <UTooltip text="Sync with GitHub">
           <UButton
             icon="i-lucide-refresh-cw"
-            color="neutral"
             variant="ghost"
             :loading="syncing"
             @click="handleSync"
@@ -235,7 +231,6 @@ defineShortcuts({
         <UButton
           :icon="isSubscribed ? 'i-lucide-bell-off' : 'i-lucide-bell'"
           :label="isSubscribed ? 'Unsubscribe' : 'Subscribe'"
-          color="neutral"
           variant="soft"
           square
           @click="toggleSubscription"

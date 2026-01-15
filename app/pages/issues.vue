@@ -151,7 +151,6 @@ const isMobile = breakpoints.smaller('lg')
           >
             <UButton
               :label="currentTab.label"
-              color="neutral"
               variant="ghost"
               size="xl"
               square
@@ -160,8 +159,8 @@ const isMobile = breakpoints.smaller('lg')
               <template #trailing>
                 <UBadge
                   :label="String(items?.length ?? 0)"
-                  color="neutral"
                   variant="subtle"
+                  size="sm"
                 />
               </template>
             </UButton>
@@ -172,7 +171,6 @@ const isMobile = breakpoints.smaller('lg')
                   v-for="(tab, id) in tabs"
                   :key="id"
                   :label="tab.label"
-                  color="neutral"
                   variant="ghost"
                   :active="activeTab === id"
                   active-variant="soft"
@@ -193,12 +191,10 @@ const isMobile = breakpoints.smaller('lg')
             placeholder="Search..."
             variant="soft"
             icon="i-lucide-search"
-            color="neutral"
           >
             <template #trailing>
               <UButton
                 v-if="q"
-                color="neutral"
                 variant="link"
                 icon="i-lucide-x"
                 size="sm"
@@ -217,7 +213,6 @@ const isMobile = breakpoints.smaller('lg')
           </UInput>
 
           <UButton
-            color="neutral"
             variant="soft"
             icon="i-lucide-book"
             square
@@ -239,7 +234,6 @@ const isMobile = breakpoints.smaller('lg')
           label: 'Import repositories',
           to: '/settings',
           icon: 'i-lucide-download',
-          color: 'neutral',
           variant: 'soft'
         }]"
       />
@@ -253,7 +247,6 @@ const isMobile = breakpoints.smaller('lg')
         :actions="[{
           label: 'Select favorites',
           icon: 'i-lucide-star',
-          color: 'neutral',
           variant: 'soft',
           onClick: () => { favoriteRepositoriesOpen = true }
         }]"

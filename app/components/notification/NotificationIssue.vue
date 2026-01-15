@@ -36,7 +36,6 @@ onMounted(async () => {
         <UButton
           icon="i-lucide-trash-2"
           label="Delete notification"
-          color="neutral"
           variant="soft"
           @click="emit('delete', notification.id)"
         />

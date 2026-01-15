@@ -6,6 +6,12 @@ export default defineAppConfig({
       important: 'indigo',
       neutral: 'zinc'
     },
+    badge: {
+      defaultVariants: {
+        variant: 'outline',
+        size: 'md'
+      }
+    },
     commandPalette: {
       slots: {
         itemLabelPrefix: 'text-muted',

@@ -64,7 +64,6 @@ async function addComment() {
     <div class="flex items-center justify-end">
       <UButton
         label="Comment"
-        color="neutral"
         icon="i-lucide-send"
         :loading="isSubmitting"
         :disabled="!newComment.trim()"

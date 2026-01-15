@@ -116,7 +116,6 @@ function deleteNotification() {
     'orientation': 'horizontal',
     'actions': [{
       label: 'Undo',
-      color: 'neutral',
       variant: 'outline',
       icon: 'i-lucide-undo',
       onClick: undoDelete
@@ -174,7 +173,11 @@ useSeoMeta({
         <template #title>
           <span class="inline-flex">Inbox</span>
 
-          <UBadge :label="String(unreadNotifications.length)" color="neutral" variant="subtle" />
+          <UBadge
+            :label="String(unreadNotifications.length)"
+            variant="subtle"
+            size="sm"
+          />
         </template>
 
         <template #right>
@@ -196,7 +199,6 @@ useSeoMeta({
           >
             <UButton
               variant="ghost"
-              color="neutral"
               trailing-icon="i-lucide-ellipsis"
               class="data-[state=open]:bg-elevated -mr-1.5"
             />

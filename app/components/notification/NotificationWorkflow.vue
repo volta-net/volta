@@ -51,7 +51,6 @@ defineShortcuts({
         :avatar="{ src: `https://github.com/${notification.repository.fullName.split('/')[0]}.png`, alt: notification.repository.fullName }"
         :to="notification.repository.htmlUrl!"
         target="_blank"
-        color="neutral"
         variant="ghost"
         class="text-sm/4 text-highlighted px-2"
       />
@@ -62,7 +61,6 @@ defineShortcuts({
     <template #title>
       <UTooltip text="Open on GitHub" :kbds="['meta', 'g']">
         <UButton
-          color="neutral"
           variant="ghost"
           :label="notification.workflowRun?.workflowName || notification.workflowRun?.name!"
           :to="notification.workflowRun?.htmlUrl!"
@@ -77,7 +75,6 @@ defineShortcuts({
         <UButton
           icon="i-lucide-trash-2"
           label="Delete notification"
-          color="neutral"
           variant="soft"
           @click="emit('delete', notification.id)"
         />
@@ -92,7 +89,6 @@ defineShortcuts({
       :actions="[{
         label: 'Open on GitHub',
         icon: 'i-simple-icons-github',
-        color: 'neutral',
         variant: 'soft',
         to: notification.workflowRun?.htmlUrl!,
         target: '_blank'

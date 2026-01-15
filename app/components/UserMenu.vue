@@ -70,7 +70,6 @@ const items = computed<DropdownMenuItem[][]>(() => ([[{
         alt: user?.username
       }"
       :label="user?.username"
-      color="neutral"
       variant="ghost"
       size="md"
       class="data-[state=open]:bg-elevated px-2.5 lg:px-1.5"

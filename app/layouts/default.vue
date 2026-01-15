@@ -176,7 +176,6 @@ const groups = computed(() => [{
           :collapsed="collapsed"
           :items="links[0]"
           orientation="vertical"
-          color="neutral"
           tooltip
           popover
         />
@@ -185,7 +184,6 @@ const groups = computed(() => [{
           :collapsed="collapsed"
           :items="links[1]"
           orientation="vertical"
-          color="neutral"
           tooltip
           popover
           class="mt-auto"

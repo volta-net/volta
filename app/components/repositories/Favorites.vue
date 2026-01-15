@@ -151,7 +151,6 @@ async function setFavorite(repositoryId: number, value: boolean) {
               label: 'Import repositories',
               to: '/settings',
               icon: 'i-lucide-download',
-              color: 'neutral',
               variant: 'soft'
             }]"
           />

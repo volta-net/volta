@@ -54,7 +54,6 @@ useSeoMeta({
           icon="i-simple-icons-github"
           to="/auth/github"
           external
-          color="neutral"
           size="lg"
         />
       </div>
