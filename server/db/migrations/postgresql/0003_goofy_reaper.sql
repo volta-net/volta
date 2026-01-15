@@ -1,1 +1,0 @@
-ALTER TABLE "issues" ADD COLUMN "resolution_suggested_answer" text;

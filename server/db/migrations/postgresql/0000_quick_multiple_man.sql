@@ -10,10 +10,10 @@ CREATE TABLE "check_runs" (
 	"details_url" text,
 	"app_slug" text,
 	"app_name" text,
-	"started_at" timestamp,
-	"completed_at" timestamp,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL
+	"started_at" timestamp with time zone,
+	"completed_at" timestamp with time zone,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "commit_statuses" (
@@ -25,22 +25,22 @@ CREATE TABLE "commit_statuses" (
 	"context" text NOT NULL,
 	"description" text,
 	"target_url" text,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "favorite_issues" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"user_id" integer NOT NULL,
 	"issue_id" integer NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "favorite_repositories" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"user_id" integer NOT NULL,
 	"repository_id" integer NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "installations" (
@@ -51,8 +51,8 @@ CREATE TABLE "installations" (
 	"account_type" text NOT NULL,
 	"avatar_url" text,
 	"suspended" boolean DEFAULT false,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "issue_assignees" (
@@ -68,8 +68,8 @@ CREATE TABLE "issue_comments" (
 	"user_id" integer,
 	"body" text NOT NULL,
 	"html_url" text,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "issue_labels" (
@@ -103,8 +103,8 @@ CREATE TABLE "issue_review_comments" (
 	"commit_id" text,
 	"diff_hunk" text,
 	"html_url" text,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "issue_reviews" (
@@ -116,15 +116,15 @@ CREATE TABLE "issue_reviews" (
 	"state" text NOT NULL,
 	"html_url" text,
 	"commit_id" text,
-	"submitted_at" timestamp,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL
+	"submitted_at" timestamp with time zone,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "issue_subscriptions" (
 	"issue_id" integer NOT NULL,
 	"user_id" integer NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "issue_subscriptions_issue_id_user_id_pk" PRIMARY KEY("issue_id","user_id")
 );
 --> statement-breakpoint
@@ -153,16 +153,21 @@ CREATE TABLE "issues" (
 	"head_sha" text,
 	"base_ref" text,
 	"base_sha" text,
-	"merged_at" timestamp,
+	"merged_at" timestamp with time zone,
 	"merged_by_id" integer,
-	"closed_at" timestamp,
+	"closed_at" timestamp with time zone,
 	"closed_by_id" integer,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"reaction_count" bigint DEFAULT 0,
 	"comment_count" bigint DEFAULT 0,
 	"synced" boolean DEFAULT false NOT NULL,
-	"synced_at" timestamp
+	"synced_at" timestamp with time zone,
+	"resolution_status" text,
+	"resolution_answered_by_id" integer,
+	"resolution_answer_comment_id" integer,
+	"resolution_confidence" integer,
+	"resolution_analyzed_at" timestamp with time zone
 );
 --> statement-breakpoint
 CREATE TABLE "labels" (
@@ -173,8 +178,8 @@ CREATE TABLE "labels" (
 	"color" text NOT NULL,
 	"description" text,
 	"default" boolean DEFAULT false,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "milestones" (
@@ -188,10 +193,10 @@ CREATE TABLE "milestones" (
 	"html_url" text,
 	"open_issues" bigint DEFAULT 0,
 	"closed_issues" bigint DEFAULT 0,
-	"due_on" timestamp,
-	"closed_at" timestamp,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL
+	"due_on" timestamp with time zone,
+	"closed_at" timestamp with time zone,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "notifications" (
@@ -206,8 +211,8 @@ CREATE TABLE "notifications" (
 	"workflow_run_id" integer,
 	"actor_id" integer,
 	"read" boolean DEFAULT false,
-	"read_at" timestamp,
-	"created_at" timestamp DEFAULT now() NOT NULL
+	"read_at" timestamp with time zone,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "releases" (
@@ -221,8 +226,8 @@ CREATE TABLE "releases" (
 	"draft" boolean DEFAULT false,
 	"prerelease" boolean DEFAULT false,
 	"html_url" text,
-	"published_at" timestamp,
-	"created_at" timestamp DEFAULT now() NOT NULL
+	"published_at" timestamp with time zone,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "repositories" (
@@ -238,17 +243,17 @@ CREATE TABLE "repositories" (
 	"archived" boolean DEFAULT false,
 	"disabled" boolean DEFAULT false,
 	"sync_enabled" boolean DEFAULT true,
-	"last_synced_at" timestamp,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL
+	"last_synced_at" timestamp with time zone,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "repository_collaborators" (
 	"repository_id" integer NOT NULL,
 	"user_id" integer NOT NULL,
 	"permission" text NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "repository_collaborators_repository_id_user_id_pk" PRIMARY KEY("repository_id","user_id")
 );
 --> statement-breakpoint
@@ -262,7 +267,7 @@ CREATE TABLE "repository_subscriptions" (
 	"ci" boolean DEFAULT true,
 	"mentions" boolean DEFAULT true,
 	"activity" boolean DEFAULT true,
-	"created_at" timestamp DEFAULT now() NOT NULL
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "types" (
@@ -272,8 +277,8 @@ CREATE TABLE "types" (
 	"name" text NOT NULL,
 	"description" text,
 	"color" text,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "users" (
@@ -284,8 +289,8 @@ CREATE TABLE "users" (
 	"email" text,
 	"avatar_url" text,
 	"registered" boolean DEFAULT false NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "workflow_runs" (
@@ -305,10 +310,10 @@ CREATE TABLE "workflow_runs" (
 	"html_url" text,
 	"run_number" bigint,
 	"run_attempt" bigint,
-	"started_at" timestamp,
-	"completed_at" timestamp,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL
+	"started_at" timestamp with time zone,
+	"completed_at" timestamp with time zone,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 ALTER TABLE "check_runs" ADD CONSTRAINT "check_runs_repository_id_repositories_id_fk" FOREIGN KEY ("repository_id") REFERENCES "public"."repositories"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -340,6 +345,7 @@ ALTER TABLE "issues" ADD CONSTRAINT "issues_type_id_types_id_fk" FOREIGN KEY ("t
 ALTER TABLE "issues" ADD CONSTRAINT "issues_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "issues" ADD CONSTRAINT "issues_merged_by_id_users_id_fk" FOREIGN KEY ("merged_by_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "issues" ADD CONSTRAINT "issues_closed_by_id_users_id_fk" FOREIGN KEY ("closed_by_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "issues" ADD CONSTRAINT "issues_resolution_answered_by_id_users_id_fk" FOREIGN KEY ("resolution_answered_by_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "labels" ADD CONSTRAINT "labels_repository_id_repositories_id_fk" FOREIGN KEY ("repository_id") REFERENCES "public"."repositories"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "milestones" ADD CONSTRAINT "milestones_repository_id_repositories_id_fk" FOREIGN KEY ("repository_id") REFERENCES "public"."repositories"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "notifications" ADD CONSTRAINT "notifications_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint

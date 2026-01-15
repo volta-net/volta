@@ -5,50 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1766759743729,
-      "tag": "0000_lame_kylun",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1767952524580,
-      "tag": "0001_vengeful_gunslinger",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1768230926443,
-      "tag": "0002_stormy_maggott",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1768320879696,
-      "tag": "0003_goofy_reaper",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1768338515177,
-      "tag": "0004_glorious_shape",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1768382083092,
-      "tag": "0005_familiar_leader",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "7",
-      "when": 1768384431298,
-      "tag": "0006_breezy_sleeper",
+      "when": 1768492768553,
+      "tag": "0000_quick_multiple_man",
       "breakpoints": true
     }
   ]
