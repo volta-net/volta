@@ -34,6 +34,13 @@ watch(() => props.notifications, (newNotifications) => {
   }
 }, { deep: true })
 
+// Select notification and mark as read (optimistic update, API call is handled by detail component)
+function selectNotification(notification: Notification) {
+  selectedNotification.value = notification
+  // Optimistic update - the actual API call happens in NotificationIssue/Release/Workflow onMounted
+  notification.read = true
+}
+
 // Toggle read/unread
 async function toggleRead() {
   if (!selectedNotification.value) return
@@ -56,18 +63,18 @@ defineShortcuts({
     const index = props.notifications.findIndex(notification => notification.id === selectedNotification.value?.id)
 
     if (index === -1) {
-      selectedNotification.value = props.notifications[0]
+      selectNotification(props.notifications[0])
     } else if (index < props.notifications.length - 1) {
-      selectedNotification.value = props.notifications[index + 1]
+      selectNotification(props.notifications[index + 1])
     }
   },
   arrowup: () => {
     const index = props.notifications.findIndex(notification => notification.id === selectedNotification.value?.id)
 
     if (index === -1) {
-      selectedNotification.value = props.notifications[props.notifications.length - 1]
+      selectNotification(props.notifications[props.notifications.length - 1])
     } else if (index > 0) {
-      selectedNotification.value = props.notifications[index - 1]
+      selectNotification(props.notifications[index - 1])
     }
   },
   u: toggleRead,
@@ -84,7 +91,7 @@ defineShortcuts({
       :ref="(el: any) => { notificationsRefs[notification.id] = el?.$el as Element }"
       :notification="notification"
       :selected="selectedNotification?.id === notification.id"
-      @click="selectedNotification = notification"
+      @click="selectNotification(notification)"
     />
   </div>
 </template>
