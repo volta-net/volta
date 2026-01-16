@@ -6,7 +6,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'read' | 'delete', id: number): void
+  (e: 'delete', id: number): void
 }>()
 
 // CI state for the workflow conclusion
@@ -21,17 +21,6 @@ const description = computed(() => {
   const branch = run.headBranch ? ` on branch ${run.headBranch}` : ''
 
   return `Workflow run ${status}${branch}`
-})
-
-// Mark notification as read on mount if unread
-onMounted(async () => {
-  if (!props.notification.read) {
-    await $fetch(`/api/notifications/${props.notification.id}`, {
-      method: 'PATCH',
-      body: { read: true }
-    })
-    emit('read', props.notification.id)
-  }
 })
 
 defineShortcuts({

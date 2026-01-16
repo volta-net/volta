@@ -6,9 +6,9 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  refresh: []
   delete: []
   undo: []
+  toggleRead: [id: number, read: boolean]
 }>()
 
 const notificationsRefs = ref<Record<string, Element>>({})
@@ -34,11 +34,8 @@ watch(() => props.notifications, (newNotifications) => {
   }
 }, { deep: true })
 
-// Select notification and mark as read (optimistic update, API call is handled by detail component)
 function selectNotification(notification: Notification) {
   selectedNotification.value = notification
-  // Optimistic update - the actual API call happens in NotificationIssue/Release/Workflow onMounted
-  notification.read = true
 }
 
 // Toggle read/unread
@@ -48,14 +45,11 @@ async function toggleRead() {
   const notification = selectedNotification.value
   const newReadState = !notification.read
 
-  // Optimistic update
-  notification.read = newReadState
-
   await $fetch(`/api/notifications/${notification.id}`, {
     method: 'PATCH',
     body: { read: newReadState }
   })
-  emit('refresh')
+  emit('toggleRead', notification.id, newReadState)
 }
 
 defineShortcuts({

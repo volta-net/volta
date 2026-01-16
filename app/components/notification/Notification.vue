@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Notification } from '#shared/types'
 
-defineProps<{
+const props = defineProps<{
   notification: Notification
 }>()
 
@@ -9,6 +9,17 @@ const emit = defineEmits<{
   (e: 'close' | 'refresh'): void
   (e: 'read' | 'delete', id: number): void
 }>()
+
+// Mark notification as read when notification changes (immediate handles initial mount)
+watch(() => props.notification.id, async () => {
+  if (!props.notification.read) {
+    await $fetch(`/api/notifications/${props.notification.id}`, {
+      method: 'PATCH',
+      body: { read: true }
+    })
+    emit('read', props.notification.id)
+  }
+}, { immediate: true })
 </script>
 
 <template>
@@ -18,7 +29,6 @@ const emit = defineEmits<{
       v-if="notification.issue"
       :notification="notification"
       @refresh="emit('refresh')"
-      @read="emit('read', $event)"
       @delete="emit('delete', $event)"
     />
 
@@ -26,7 +36,6 @@ const emit = defineEmits<{
     <NotificationRelease
       v-else-if="notification.release"
       :notification="notification"
-      @read="emit('read', $event)"
       @delete="emit('delete', $event)"
     />
 
@@ -34,7 +43,6 @@ const emit = defineEmits<{
     <NotificationWorkflow
       v-else-if="notification.workflowRun"
       :notification="notification"
-      @read="emit('read', $event)"
       @delete="emit('delete', $event)"
     />
 

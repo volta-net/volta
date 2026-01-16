@@ -73,20 +73,25 @@ async function deleteAllRead() {
   await refresh()
 }
 
-function markAsRead(notificationId: number) {
+function updateReadState(notificationId: number, read: boolean) {
   if (!notifications.value) return
 
   const index = notifications.value.findIndex(n => n.id === notificationId)
   if (index !== -1) {
-    // Replace the notification object to trigger reactivity
-    const updatedNotification = { ...notifications.value[index], read: true } as Notification
-    notifications.value[index] = updatedNotification
+    const updatedNotification = { ...notifications.value[index], read } as Notification
+
+    // Create a new array to trigger reactivity for computed properties
+    notifications.value = notifications.value.map((n, i) => i === index ? updatedNotification : n)
 
     // Also update selectedNotification if it's the same notification
     if (selectedNotification.value?.id === notificationId) {
       selectedNotification.value = updatedNotification
     }
   }
+}
+
+function markAsRead(notificationId: number) {
+  updateReadState(notificationId, true)
 }
 
 // Delete notification (deferred until toast closes)
@@ -215,7 +220,7 @@ useSeoMeta({
         v-else
         v-model="selectedNotification"
         :notifications="visibleNotifications"
-        @refresh="refresh"
+        @toggle-read="updateReadState"
         @delete="deleteNotification"
         @undo="undoDelete"
       />

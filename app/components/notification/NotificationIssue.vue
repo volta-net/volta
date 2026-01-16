@@ -1,25 +1,14 @@
 <script setup lang="ts">
 import type { Notification } from '#shared/types'
 
-const props = defineProps<{
+defineProps<{
   notification: Notification
 }>()
 
 const emit = defineEmits<{
   (e: 'refresh'): void
-  (e: 'read' | 'delete', id: number): void
+  (e: 'delete', id: number): void
 }>()
-
-// Mark notification as read on mount if unread
-onMounted(async () => {
-  if (!props.notification.read) {
-    await $fetch(`/api/notifications/${props.notification.id}`, {
-      method: 'PATCH',
-      body: { read: true }
-    })
-    emit('read', props.notification.id)
-  }
-})
 </script>
 
 <template>
