@@ -14,10 +14,14 @@ const toast = useToast()
 
 const newComment = ref('')
 const isSubmitting = ref(false)
-const editorRef = useTemplateRef('editorRef')
+
+defineShortcuts({
+  meta_s: () => addComment(),
+  meta_enter: () => addComment()
+})
 
 async function addComment() {
-  if (!newComment.value.trim()) return
+  if (!newComment.value.trim() || isSubmitting.value) return
 
   isSubmitting.value = true
   try {
@@ -40,7 +44,6 @@ async function addComment() {
 <template>
   <div class="flex flex-col gap-4">
     <IssueEditor
-      ref="editorRef"
       v-model="newComment"
       :issue="issue"
       :collaborators="collaborators"
@@ -62,13 +65,15 @@ async function addComment() {
     </IssueEditor>
 
     <div class="flex items-center justify-end">
-      <UButton
-        label="Comment"
-        icon="i-lucide-send"
-        :loading="isSubmitting"
-        :disabled="!newComment.trim()"
-        @click="addComment"
-      />
+      <UTooltip text="Submit comment" :kbds="['meta', 's']">
+        <UButton
+          label="Comment"
+          icon="i-lucide-send"
+          :loading="isSubmitting"
+          :disabled="!newComment.trim()"
+          @click="addComment"
+        />
+      </UTooltip>
     </div>
   </div>
 </template>
