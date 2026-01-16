@@ -213,12 +213,7 @@ Only output the translated text, nothing else.`
         styleGuidance = `\n\nIMPORTANT - Match this user's writing style based on their previous comments:
 ${userStyleExamples.map((ex, i) => `Example ${i + 1}: "${ex.slice(0, 300)}${ex.length > 300 ? '...' : ''}"`).join('\n')}
 
-Analyze these examples for:
-- Tone (formal/casual/friendly)
-- Use of greetings and sign-offs
-- Typical response length
-- Use of code blocks, lists, or other formatting
-- Common phrases or patterns`
+Match the tone, length, and style of these examples.`
       }
 
       system = `You are drafting a GitHub comment ON BEHALF of a user. The comment will be posted as if THEY wrote it - NOT as an AI assistant.
@@ -239,6 +234,8 @@ Response types:
 - Discussion? Add a short, relevant thought
 
 Keep it SHORT. Most GitHub comments are 1-3 sentences. Don't over-explain.
+
+Only output the reply text itself, nothing else. No preamble, no explanation, no "Here's a reply:" - just the comment.
 ${contextPrompt}${styleGuidance}`
       maxOutputTokens = 200
       break
