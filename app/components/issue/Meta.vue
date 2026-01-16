@@ -17,6 +17,24 @@ function copyIssueNumber() {
   toast.add({ title: `Copied #${props.issue.number} to clipboard`, icon: 'i-lucide-copy' })
 }
 
+function copyIssueUrl() {
+  if (!props.issue.htmlUrl) return
+  copy(props.issue.htmlUrl)
+  toast.add({ title: 'Copied URL to clipboard', icon: 'i-lucide-copy' })
+}
+
+function copyGitBranch() {
+  if (!props.issue.headRef) return
+  copy(props.issue.headRef)
+  toast.add({ title: `Copied ${props.issue.headRef} to clipboard`, icon: 'i-lucide-copy' })
+}
+
+defineShortcuts({
+  'meta_shift_,': copyIssueUrl,
+  'meta_.': copyIssueNumber,
+  'meta_shift_.': copyGitBranch
+})
+
 // Repository info
 const repoPath = computed(() => {
   if (!props.issue.repository?.fullName) return { owner: '', name: '' }
@@ -244,276 +262,283 @@ const ciStatusConfig = computed(() => getAggregatedCIStatus(props.issue.ciStatus
 </script>
 
 <template>
-  <div class="space-y-6">
-    <!-- Header -->
-    <div class="space-y-3">
+  <div class="flex flex-col gap-3 -mx-1.5">
+    <!-- Properties -->
+    <div class="flex flex-col gap-1">
+      <span class="text-xs/6 text-muted font-medium px-1.5">Properties</span>
+
       <!-- State -->
-      <div class="flex items-center gap-1.5">
-        <UIcon :name="stateIcon" :class="['size-4', stateColor]" />
-        <button class="text-sm font-medium" @click="copyIssueNumber">
-          {{ stateLabel }} {{ issue.pullRequest ? 'pull request' : 'issue' }} <span class="text-highlighted">#{{ issue.number }}</span>
-        </button>
-      </div>
+      <UButton
+        as="div"
+        :icon="stateIcon"
+        variant="ghost"
+        :ui="{ leadingIcon: stateColor }"
+        class="text-sm/4 hover:bg-transparent active:bg-transparent pl-2 pr-0"
+      >
+        {{ stateLabel }} {{ issue.pullRequest ? 'pull request' : 'issue' }}
 
-      <!-- Repository -->
-      <NuxtLink :to="`https://github.com/${issue.repository.fullName.split('/')[0]}`" target="_blank" class="flex items-center gap-1.5">
-        <UAvatar
-          :src="`https://github.com/${issue.repository.fullName.split('/')[0]}.png`"
-          :alt="issue.repository.fullName"
-          size="3xs"
-        />
-        <span class="text-sm font-medium">{{ issue.repository.fullName }}</span>
-      </NuxtLink>
+        <template #trailing>
+          <div class="flex items-center ms-auto -my-1.5">
+            <UTooltip :text="`Copy URL`" :kbds="['meta', 'shift', ',']">
+              <UButton
+                icon="i-lucide-link"
+                variant="ghost"
+                @click="copyIssueUrl"
+              />
+            </UTooltip>
 
-      <!-- Author -->
-      <NuxtLink
+            <UTooltip :text="`Copy number`" :kbds="['meta', '.']">
+              <UButton
+                icon="i-lucide-hash"
+                variant="ghost"
+                @click="copyIssueNumber"
+              />
+            </UTooltip>
+
+            <UTooltip v-if="issue.pullRequest" :text="`Copy branch`" :kbds="['meta', 'shift', '.']">
+              <UButton
+                icon="i-lucide-git-branch"
+                variant="ghost"
+                @click="copyGitBranch"
+              />
+            </UTooltip>
+          </div>
+        </template>
+      </UButton>
+
+      <UButton
         v-if="issue.user"
         :to="`https://github.com/${issue.user.login}`"
         target="_blank"
-        class="flex items-center gap-1.5"
-      >
-        <UAvatar
-          :src="issue.user.avatarUrl!"
-          :alt="issue.user.login"
-          size="3xs"
-        />
-        <span class="text-sm font-medium">{{ issue.user.login }}</span>
-      </NuxtLink>
+        variant="ghost"
+        class="text-sm/4 px-2"
+        :label="issue.user.login"
+        :avatar="{
+          src: issue.user.avatarUrl!,
+          alt: issue.user.login
+        }"
+      />
 
       <!-- CI Status (PRs only) -->
-      <NuxtLink
+      <UButton
         v-if="ciStatusConfig"
         :to="ciStatusConfig.htmlUrl!"
+        :label="ciStatusConfig.label"
+        :icon="ciStatusConfig.icon"
+        :ui="{ leadingIcon: [ciStatusConfig.color, ciStatusConfig.animate && 'animate-pulse'] }"
         target="_blank"
-        class="flex items-center gap-1.5 text-sm font-medium"
-      >
-        <UIcon
-          :name="ciStatusConfig.icon"
-          :class="[ciStatusConfig.color, ciStatusConfig.animate && 'animate-pulse']"
-          class="size-4"
-        />
-        <span>{{ ciStatusConfig.label }}</span>
-      </NuxtLink>
+        variant="ghost"
+        class="text-sm/4 px-2"
+      />
 
       <!-- View changes link (PRs only) -->
-      <NuxtLink
+      <UButton
         v-if="issue.pullRequest && issue.htmlUrl"
         :to="`${issue.htmlUrl}/files`"
         target="_blank"
-        class="flex items-center gap-1.5 text-sm font-medium"
+        icon="i-lucide-file-diff"
+        variant="ghost"
+        class="text-sm/4 px-2"
       >
-        <UIcon name="i-simple-icons-github" class="size-4" />
-
         <span class="text-success">+{{ issue.additions }}</span>
         <span class="text-error">-{{ issue.deletions }}</span>
-      </NuxtLink>
+      </UButton>
     </div>
 
-    <USeparator />
+    <!-- Labels -->
+    <div class="flex flex-col gap-1">
+      <span class="text-xs/6 text-muted font-medium px-1.5">Labels</span>
 
-    <!-- Metadata -->
-    <div class="space-y-4">
-      <!-- Labels -->
-      <div class="flex items-start gap-4">
-        <span class="text-sm/6 text-highlighted font-medium w-20 shrink-0">Labels</span>
+      <div class="flex-1 flex items-center gap-1 flex-wrap">
+        <IssueLabel
+          v-for="label in selectedLabels"
+          :key="label.id"
+          :label="label"
+        />
 
-        <div class="flex-1 flex items-center gap-1 flex-wrap">
-          <USelectMenu
-            :model-value="selectedLabels"
-            :items="availableLabels"
-            multiple
-            icon="i-lucide-plus"
-            trailing-icon=""
-            size="xs"
-            :search-input="{ placeholder: 'Search labels...' }"
-            :open="isLabelsOpen"
-            :ui="{ content: 'min-w-fit' }"
-            :content="{ align: 'start', sideOffset: 5 }"
-            variant="ghost"
-            class="rounded-full pe-3 data-[state=open]:bg-elevated hover:ring-accented"
-            @update:open="handleLabelsOpen"
-            @update:model-value="onUpdateLabels"
-          >
-            <template #default>
-              Add
-            </template>
+        <USelectMenu
+          :model-value="selectedLabels"
+          :items="availableLabels"
+          multiple
+          icon="i-lucide-plus"
+          trailing-icon=""
+          size="xs"
+          :search-input="{ placeholder: 'Search labels...' }"
+          :open="isLabelsOpen"
+          :ui="{ content: 'min-w-fit' }"
+          :content="{ align: 'start', sideOffset: 5 }"
+          variant="ghost"
+          class="rounded-full data-[state=open]:bg-elevated hover:ring-accented"
+          @update:open="handleLabelsOpen"
+          @update:model-value="onUpdateLabels"
+        >
+          <template #default>
+            Add
+          </template>
 
-            <template #item-leading="{ item }">
-              <span class="size-2 rounded-full shrink-0 self-center mx-1" :style="{ backgroundColor: `#${(item as LabelItem).color}` }" />
-            </template>
-          </USelectMenu>
-
-          <IssueLabel
-            v-for="label in selectedLabels"
-            :key="label.id"
-            :label="label"
-          />
-        </div>
-      </div>
-
-      <!-- Assignees -->
-      <div class="flex items-start gap-4">
-        <span class="text-sm/6 text-highlighted font-medium w-20 shrink-0">Assignees</span>
-
-        <div class="flex-1 flex items-center gap-1 flex-wrap">
-          <USelectMenu
-            :model-value="selectedAssignees"
-            :items="availableAssignees"
-            icon="i-lucide-plus"
-            trailing-icon=""
-            size="xs"
-            :ui="{ content: 'min-w-fit' }"
-            :content="{ align: 'start', sideOffset: 5 }"
-            variant="ghost"
-            class="rounded-full pe-3 data-[state=open]:bg-elevated hover:ring-accented"
-            multiple
-            :search-input="{ placeholder: 'Search users...' }"
-            :open="isAssigneesOpen"
-            @update:model-value="onUpdateAssignees"
-            @update:open="handleAssigneesOpen"
-          >
-            <template #default>
-              Add
-            </template>
-
-            <template #item-leading="{ item }">
-              <UAvatar :src="item.avatarUrl!" :alt="item.login" size="3xs" />
-            </template>
-
-            <template #item-label="{ item }">
-              {{ item.login }}
-            </template>
-          </USelectMenu>
-
-          <IssueUser
-            v-for="assignee in selectedAssignees"
-            :key="assignee.id"
-            :user="assignee"
-          />
-        </div>
-      </div>
-
-      <!-- Reviewers (PRs only) -->
-      <div v-if="issue.pullRequest" class="flex items-start gap-4">
-        <span class="text-sm/6 text-highlighted font-medium w-20 shrink-0">Reviewers</span>
-
-        <div class="flex-1 flex items-center gap-1 flex-wrap">
-          <USelectMenu
-            :model-value="selectedReviewers"
-            :items="availableReviewers"
-            icon="i-lucide-plus"
-            trailing-icon=""
-            size="xs"
-            :ui="{ content: 'min-w-fit' }"
-            :content="{ align: 'start', sideOffset: 5 }"
-            variant="ghost"
-            class="rounded-full pe-3 data-[state=open]:bg-elevated hover:ring-accented"
-            multiple
-            :search-input="{ placeholder: 'Search users...' }"
-            :open="isReviewersOpen"
-            @update:model-value="onUpdateReviewers"
-            @update:open="handleReviewersOpen"
-          >
-            <template #default>
-              Add
-            </template>
-            <template #item-leading="{ item }">
-              <UAvatar :src="item.avatarUrl!" :alt="item.login" size="3xs" />
-            </template>
-            <template #item-label="{ item }">
-              {{ item.login }}
-            </template>
-          </USelectMenu>
-
-          <IssueUser
-            v-for="reviewer in selectedReviewers"
-            :key="reviewer.id"
-            :user="reviewer"
-          />
-        </div>
-      </div>
-
-      <!-- AI Resolution Analysis (issues only) -->
-      <div v-if="resolutionConfig" class="flex items-start gap-4">
-        <span class="text-sm/6 text-highlighted font-medium w-20 shrink-0">Status</span>
-
-        <div class="flex-1">
-          <UTooltip :text="resolutionConfig.description">
-            <UBadge
-              :icon="resolutionConfig.icon"
-              :color="resolutionConfig.color"
-              variant="subtle"
-              class="rounded-full"
-            >
-              <span class="truncate">{{ resolutionConfig.label }}</span>
-              <span v-if="issue.resolutionConfidence" class="italic">
-                ({{ issue.resolutionConfidence }}%)
-              </span>
-            </UBadge>
-          </UTooltip>
-
-          <!-- Show who answered if available -->
-          <button
-            v-if="issue.resolutionAnsweredBy"
-            class="mt-1 flex items-center gap-1 text-xs text-muted truncate"
-            :class="issue.resolutionAnswerCommentId ? 'hover:text-highlighted cursor-pointer' : 'cursor-default'"
-            :disabled="!issue.resolutionAnswerCommentId"
-            @click="issue.resolutionAnswerCommentId && emit('scroll-to-answer', issue.resolutionAnswerCommentId)"
-          >
-            Answered by
-            <span class="font-medium">{{ issue.resolutionAnsweredBy.login }}</span>
-            <UIcon v-if="issue.resolutionAnswerCommentId" name="i-lucide-arrow-up-right" class="size-3 shrink-0" />
-          </button>
-        </div>
+          <template #item-leading="{ item }">
+            <span class="size-2 rounded-full shrink-0 self-center mx-1" :style="{ backgroundColor: `#${(item as LabelItem).color}` }" />
+          </template>
+        </USelectMenu>
       </div>
     </div>
 
-    <template v-if="issue.linkedIssues?.length || issue.linkedPrs?.length">
-      <USeparator />
+    <!-- Assignees -->
+    <div class="flex flex-col gap-1">
+      <span class="text-xs/6 text-muted font-medium px-1.5">Assignees</span>
 
-      <div class="space-y-4">
-        <!-- Linked PRs (issues only) -->
-        <div v-if="!issue.pullRequest && issue.linkedPrs?.length" class="flex flex-col gap-2">
-          <span class="text-sm/6 text-highlighted font-medium w-20 shrink-0">Linked PRs</span>
+      <div class="flex-1 flex items-center gap-1 flex-wrap">
+        <IssueUser
+          v-for="assignee in selectedAssignees"
+          :key="assignee.id"
+          :user="assignee"
+        />
 
-          <div class="flex-1 flex flex-col gap-1">
-            <NuxtLink
-              v-for="pr in issue.linkedPrs"
-              :key="pr.id"
-              :to="pr.htmlUrl!"
-              target="_blank"
-              class="flex items-center gap-1.5 text-sm hover:text-highlighted truncate"
-            >
-              <UIcon name="i-lucide-git-pull-request" class="size-4 shrink-0 text-success" />
-              <span class="text-muted">#{{ pr.number }}</span>
-              <span class="truncate">{{ pr.title }}</span>
-            </NuxtLink>
-          </div>
-        </div>
+        <USelectMenu
+          :model-value="selectedAssignees"
+          :items="availableAssignees"
+          icon="i-lucide-plus"
+          trailing-icon=""
+          size="xs"
+          :ui="{ content: 'min-w-fit' }"
+          :content="{ align: 'start', sideOffset: 5 }"
+          variant="ghost"
+          class="rounded-full data-[state=open]:bg-elevated hover:ring-accented"
+          multiple
+          :search-input="{ placeholder: 'Search users...' }"
+          :open="isAssigneesOpen"
+          @update:model-value="onUpdateAssignees"
+          @update:open="handleAssigneesOpen"
+        >
+          <template #default>
+            Add
+          </template>
 
-        <!-- Linked Issues (PRs only) -->
-        <div v-if="issue.pullRequest && issue.linkedIssues?.length" class="flex flex-col gap-2">
-          <span class="text-sm/6 text-highlighted font-medium w-20 shrink-0">Closes</span>
+          <template #item-leading="{ item }">
+            <UAvatar :src="item.avatarUrl!" :alt="item.login" size="3xs" />
+          </template>
 
-          <div class="flex-1 flex flex-col gap-1">
-            <NuxtLink
-              v-for="linkedIssue in issue.linkedIssues"
-              :key="linkedIssue.id"
-              :to="linkedIssue.htmlUrl!"
-              target="_blank"
-              class="flex items-center gap-1.5 text-sm hover:text-highlighted truncate"
-            >
-              <UIcon
-                :name="linkedIssue.state === 'open' ? 'i-lucide-circle-dot' : 'i-lucide-circle-check'"
-                :class="linkedIssue.state === 'open' ? 'text-success' : 'text-purple-500'"
-                class="size-4 shrink-0"
-              />
-              <span class="text-muted">#{{ linkedIssue.number }}</span>
-              <span class="truncate">{{ linkedIssue.title }}</span>
-            </NuxtLink>
-          </div>
-        </div>
+          <template #item-label="{ item }">
+            {{ item.login }}
+          </template>
+        </USelectMenu>
       </div>
-    </template>
+    </div>
+
+    <!-- Reviewers (PRs only) -->
+    <div v-if="issue.pullRequest" class="flex flex-col gap-1">
+      <span class="text-xs/6 text-muted font-medium px-1.5">Reviewers</span>
+
+      <div class="flex-1 flex items-center gap-1 flex-wrap">
+        <IssueUser
+          v-for="reviewer in selectedReviewers"
+          :key="reviewer.id"
+          :user="reviewer"
+        />
+
+        <USelectMenu
+          :model-value="selectedReviewers"
+          :items="availableReviewers"
+          icon="i-lucide-plus"
+          trailing-icon=""
+          size="xs"
+          :ui="{ content: 'min-w-fit' }"
+          :content="{ align: 'start', sideOffset: 5 }"
+          variant="ghost"
+          class="rounded-full data-[state=open]:bg-elevated hover:ring-accented"
+          multiple
+          :search-input="{ placeholder: 'Search users...' }"
+          :open="isReviewersOpen"
+          @update:model-value="onUpdateReviewers"
+          @update:open="handleReviewersOpen"
+        >
+          <template #default>
+            Add
+          </template>
+          <template #item-leading="{ item }">
+            <UAvatar :src="item.avatarUrl!" :alt="item.login" size="3xs" />
+          </template>
+          <template #item-label="{ item }">
+            {{ item.login }}
+          </template>
+        </USelectMenu>
+      </div>
+    </div>
+
+    <!-- AI Resolution Analysis (issues only) -->
+    <div v-if="resolutionConfig" class="flex flex-col gap-1">
+      <span class="text-xs/6 text-muted font-medium px-1.5">Status</span>
+
+      <div class="flex items-center flex-wrap gap-1">
+        <UTooltip :text="resolutionConfig.description">
+          <UBadge
+            :icon="resolutionConfig.icon"
+            :color="resolutionConfig.color"
+            variant="subtle"
+            class="rounded-full"
+          >
+            <span class="truncate">{{ resolutionConfig.label }}</span>
+            <span v-if="issue.resolutionConfidence" class="italic">
+              ({{ issue.resolutionConfidence }}%)
+            </span>
+          </UBadge>
+        </UTooltip>
+
+        <!-- Show who answered if available -->
+        <UButton
+          v-if="issue.resolutionAnsweredBy"
+          :disabled="!issue.resolutionAnswerCommentId"
+          trailing-icon="i-lucide-arrow-right"
+          variant="link"
+          size="xs"
+          @click="issue.resolutionAnswerCommentId && emit('scroll-to-answer', issue.resolutionAnswerCommentId)"
+        >
+          Answered by
+          <span class="font-medium">{{ issue.resolutionAnsweredBy.login }}</span>
+        </UButton>
+      </div>
+    </div>
+
+    <!-- Linked PRs (issues only) -->
+    <div v-if="!issue.pullRequest && issue.linkedPrs?.length" class="flex flex-col gap-1">
+      <span class="text-xs/6 text-muted font-medium px-1.5">Linked PRs</span>
+
+      <div class="flex flex-col gap-1">
+        <UButton
+          v-for="pr in issue.linkedPrs"
+          :key="pr.id"
+          :to="pr.htmlUrl!"
+          target="_blank"
+          icon="i-lucide-git-pull-request"
+          :ui="{ leadingIcon: 'text-success' }"
+          variant="ghost"
+          class="text-sm/4 px-2"
+        >
+          <span class="text-muted">#{{ pr.number }}</span>
+          <span class="truncate">{{ pr.title }}</span>
+        </UButton>
+      </div>
+    </div>
+
+    <!-- Linked Issues (PRs only) -->
+    <div v-if="issue.pullRequest && issue.linkedIssues?.length" class="flex flex-col gap-1">
+      <span class="text-xs/6 text-muted font-medium px-1.5">Linked issues</span>
+
+      <div class="flex flex-col gap-1">
+        <UButton
+          v-for="linkedIssue in issue.linkedIssues"
+          :key="linkedIssue.id"
+          :to="linkedIssue.htmlUrl!"
+          target="_blank"
+          :icon="linkedIssue.state === 'open' ? 'i-lucide-circle-dot' : 'i-lucide-circle-check'"
+          :ui="{ leadingIcon: linkedIssue.state === 'open' ? 'text-success' : 'text-important' }"
+          variant="ghost"
+          class="text-sm/4 px-2"
+        >
+          <span class="text-muted">#{{ linkedIssue.number }}</span>
+          <span class="truncate">{{ linkedIssue.title }}</span>
+        </UButton>
+      </div>
+    </div>
   </div>
 </template>
