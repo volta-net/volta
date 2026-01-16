@@ -96,7 +96,7 @@ const { items: mentionItems } = useEditorMentions({
 })
 
 // Reference items (async search when user types #)
-const { query: referenceQuery, items: referenceItems } = useEditorReferences({
+const { searchTerm, items: referenceItems } = useEditorReferences({
   excludeNumber: props.issue.number,
   repositoryFullName: props.issue.repository.fullName
 })
@@ -227,7 +227,7 @@ const appendToBody = import.meta.client ? () => document.body : undefined
       :append-to="appendToBody"
     />
     <UEditorMentionMenu
-      v-model:query="referenceQuery"
+      v-model:search-term="searchTerm"
       :editor="editor"
       :items="referenceItems"
       char="#"

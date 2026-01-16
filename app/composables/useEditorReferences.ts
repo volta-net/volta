@@ -25,14 +25,14 @@ interface UseEditorReferencesOptions {
 
 /**
  * Composable for async issue/PR references in the editor
- * Uses v-model:query and ignore-filter from UEditorMentionMenu
+ * Uses v-model:search-term and ignore-filter from UEditorMentionMenu
  */
 export function useEditorReferences(options: UseEditorReferencesOptions = {}) {
-  const query = ref('')
+  const searchTerm = ref('')
   const results = ref<IssueReference[]>([])
 
-  // Watch query with debounce and fetch from API
-  watchDebounced(query, async (q) => {
+  // Watch searchTerm with debounce and fetch from API
+  watchDebounced(searchTerm, async (q) => {
     if (!q) {
       results.value = []
       return
@@ -43,7 +43,7 @@ export function useEditorReferences(options: UseEditorReferencesOptions = {}) {
         query: {
           q,
           repo: options.repositoryFullName,
-          limit: 20
+          limit: 10
         }
       })
       results.value = response || []
@@ -53,9 +53,9 @@ export function useEditorReferences(options: UseEditorReferencesOptions = {}) {
     }
   }, { debounce: 200 })
 
-  // Items computed - only show results when we have query AND results
+  // Items computed - only show results when we have searchTerm AND results
   const items = computed<ReferenceMenuItem[]>(() => {
-    if (!query.value || !results.value.length) {
+    if (!searchTerm.value || !results.value.length) {
       return []
     }
 
@@ -70,7 +70,7 @@ export function useEditorReferences(options: UseEditorReferencesOptions = {}) {
   })
 
   return {
-    query,
+    searchTerm,
     items
   }
 }
