@@ -3,10 +3,11 @@ import type { Notification } from '#shared/types'
 
 const props = defineProps<{
   notification: Notification
+  onClose?: () => void
 }>()
 
 const emit = defineEmits<{
-  (e: 'close' | 'refresh'): void
+  (e: 'refresh'): void
   (e: 'read' | 'delete', id: number): void
 }>()
 
@@ -28,6 +29,7 @@ watch(() => props.notification.id, async () => {
     <NotificationIssue
       v-if="notification.issue"
       :notification="notification"
+      :on-close="onClose"
       @refresh="emit('refresh')"
       @delete="emit('delete', $event)"
     />
@@ -36,6 +38,7 @@ watch(() => props.notification.id, async () => {
     <NotificationRelease
       v-else-if="notification.release"
       :notification="notification"
+      :on-close="onClose"
       @delete="emit('delete', $event)"
     />
 
@@ -43,6 +46,7 @@ watch(() => props.notification.id, async () => {
     <NotificationWorkflow
       v-else-if="notification.workflowRun"
       :notification="notification"
+      :on-close="onClose"
       @delete="emit('delete', $event)"
     />
 

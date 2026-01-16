@@ -239,7 +239,6 @@ useSeoMeta({
   <UDashboardPanel v-if="selectedNotification" id="inbox-2">
     <Notification
       :notification="selectedNotification"
-      @close="selectedNotification = null"
       @refresh="refresh"
       @read="markAsRead"
       @delete="deleteNotification"
@@ -258,13 +257,14 @@ useSeoMeta({
 
   <ClientOnly>
     <USlideover
-      v-if="isMobile && selectedNotification"
+      v-if="isMobile"
       v-model:open="isPanelOpen"
     >
-      <template #content>
+      <template #content="{ close }">
         <Notification
-          :notification="selectedNotification"
-          @close="selectedNotification = null"
+          v-if="selectedNotification"
+          :notification="selectedNotification!"
+          :on-close="close"
           @refresh="refresh"
           @read="markAsRead"
           @delete="deleteNotification"

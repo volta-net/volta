@@ -191,6 +191,7 @@ const isMobile = breakpoints.smaller('lg')
             placeholder="Search..."
             variant="soft"
             icon="i-lucide-search"
+            class="hidden sm:inline-flex"
           >
             <template #trailing>
               <UButton
@@ -292,13 +293,14 @@ const isMobile = breakpoints.smaller('lg')
 
   <ClientOnly>
     <USlideover
-      v-if="isMobile && selectedItem"
+      v-if="isMobile"
       v-model:open="isPanelOpen"
     >
-      <template #content>
+      <template #content="{ close }">
         <Issue
+          v-if="selectedItem"
           :item="selectedItem"
-          @close="selectedItem = null"
+          :on-close="close"
           @refresh="refresh"
         />
       </template>

@@ -3,6 +3,7 @@ import type { Notification } from '#shared/types'
 
 const props = defineProps<{
   notification: Notification
+  onClose?: () => void
 }>()
 
 const emit = defineEmits<{
@@ -54,6 +55,13 @@ defineShortcuts({
           @click="emit('delete', notification.id)"
         />
       </UTooltip>
+
+      <UButton
+        v-if="onClose"
+        icon="i-lucide-x"
+        variant="soft"
+        @click="onClose"
+      />
     </template>
   </UDashboardNavbar>
 

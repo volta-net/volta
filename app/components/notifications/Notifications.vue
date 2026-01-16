@@ -57,18 +57,18 @@ defineShortcuts({
     const index = props.notifications.findIndex(notification => notification.id === selectedNotification.value?.id)
 
     if (index === -1) {
-      selectNotification(props.notifications[0])
+      selectNotification(props.notifications[0]!)
     } else if (index < props.notifications.length - 1) {
-      selectNotification(props.notifications[index + 1])
+      selectNotification(props.notifications[index + 1]!)
     }
   },
   arrowup: () => {
     const index = props.notifications.findIndex(notification => notification.id === selectedNotification.value?.id)
 
     if (index === -1) {
-      selectNotification(props.notifications[props.notifications.length - 1])
+      selectNotification(props.notifications[props.notifications.length - 1]!)
     } else if (index > 0) {
-      selectNotification(props.notifications[index - 1])
+      selectNotification(props.notifications[index - 1]!)
     }
   },
   u: toggleRead,

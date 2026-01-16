@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import type { Notification } from '#shared/types'
 
-defineProps<{
+const props = defineProps<{
   notification: Notification
+  onClose?: () => void
 }>()
 
 const emit = defineEmits<{
@@ -18,6 +19,7 @@ const emit = defineEmits<{
       ...notification.issue,
       repository: notification.repository
     }"
+    :on-close="props.onClose"
     @refresh="emit('refresh')"
   >
     <template #right>

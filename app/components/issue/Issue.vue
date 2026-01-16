@@ -3,10 +3,11 @@ import type { MentionUser } from '~/composables/useEditorMentions'
 
 const props = defineProps<{
   item: Issue
+  onClose?: () => void
 }>()
 
 const emit = defineEmits<{
-  (e: 'close' | 'refresh'): void
+  (e: 'refresh'): void
 }>()
 
 const toast = useToast()
@@ -179,7 +180,7 @@ defineShortcuts({
 
 <template>
   <div class="flex flex-col h-full overflow-hidden">
-    <UDashboardNavbar :ui="{ left: 'gap-0.5' }">
+    <UDashboardNavbar :ui="{ left: 'gap-0.5', toggle: 'hidden' }">
       <template v-if="item.repository" #leading>
         <UButton
           :label="item.repository.fullName"
@@ -233,10 +234,18 @@ defineShortcuts({
           :label="isSubscribed ? 'Unsubscribe' : 'Subscribe'"
           variant="soft"
           square
+          class="hidden lg:inline-flex"
           @click="toggleSubscription"
         />
 
         <slot name="right" />
+
+        <UButton
+          v-if="onClose"
+          icon="i-lucide-x"
+          variant="soft"
+          @click="onClose"
+        />
       </template>
     </UDashboardNavbar>
 
@@ -244,8 +253,12 @@ defineShortcuts({
     <Loading v-if="status === 'pending' && !issue" />
 
     <!-- Issue/PR View -->
-    <div v-else-if="issue" class="grid grid-cols-3 flex-1 min-h-0">
-      <div :key="issue.id" class="flex-1 overflow-y-auto p-4 sm:px-6 flex flex-col gap-4 col-span-2 pb-22">
+    <div v-else-if="issue" class="flex flex-col lg:grid lg:grid-cols-3 flex-1 min-h-0 overflow-y-auto lg:overflow-hidden">
+      <div class="border-b lg:border-b-0 lg:border-l border-default lg:order-last lg:overflow-y-auto p-4 sm:px-6">
+        <IssueMeta :issue="issue" @refresh="handleRefresh" @scroll-to-answer="scrollToAnswerComment" />
+      </div>
+
+      <div :key="issue.id" class="flex-1 lg:overflow-y-auto p-4 sm:px-6 flex flex-col gap-4 lg:col-span-2 pb-22">
         <IssueTitle :issue="issue" @update:title="handleRefresh" />
 
         <IssueBody
@@ -260,10 +273,6 @@ defineShortcuts({
           :collaborators="collaborators"
           @refresh="handleRefresh"
         />
-      </div>
-
-      <div class="border-l border-default overflow-y-auto p-4 sm:px-6">
-        <IssueMeta :issue="issue" @refresh="handleRefresh" @scroll-to-answer="scrollToAnswerComment" />
       </div>
     </div>
 
