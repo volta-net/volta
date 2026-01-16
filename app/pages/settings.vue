@@ -22,6 +22,7 @@ const links = [{
         <UNavigationMenu
           :items="links"
           highlight
+          highlight-color="neutral"
           class="-mx-2.5 flex-1"
         />
       </UDashboardToolbar>
