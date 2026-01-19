@@ -6,7 +6,7 @@ type ResolutionStatusConfig = BadgeProps & {
 
 const resolutionStatusConfigs: Record<ResolutionStatus, ResolutionStatusConfig> = {
   answered: {
-    icon: 'i-lucide-message-circle-love',
+    icon: 'i-lucide-message-circle-heart',
     color: 'success',
     label: 'Answered',
     description: 'A quality answer has been provided'

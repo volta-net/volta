@@ -1,6 +1,7 @@
 <script setup lang="ts">
 const props = defineProps<{
   issue: IssueDetail
+  analyzingResolution?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -466,10 +467,11 @@ const ciStatusConfig = computed(() => getAggregatedCIStatus(props.issue.ciStatus
     </div>
 
     <!-- AI Resolution Analysis (issues only) -->
-    <div v-if="resolutionConfig" class="flex flex-col gap-1">
-      <span class="text-xs/6 text-muted font-medium px-1.5">Status</span>
+    <div v-if="!issue.pullRequest" class="flex flex-col gap-1">
+      <span class="text-xs/6 text-muted font-medium">Analysis</span>
 
-      <div class="flex items-center flex-wrap gap-1">
+      <!-- Resolution status (show existing data from DB) -->
+      <div v-if="resolutionConfig" class="flex items-center flex-wrap gap-1">
         <UTooltip :text="resolutionConfig.description">
           <UBadge
             :icon="resolutionConfig.icon"
@@ -496,6 +498,27 @@ const ciStatusConfig = computed(() => getAggregatedCIStatus(props.issue.ciStatus
           Answered by
           <span class="font-medium">{{ issue.resolutionAnsweredBy.login }}</span>
         </UButton>
+      </div>
+
+      <!-- Analyzing state (only when no existing data) -->
+      <div v-else-if="analyzingResolution">
+        <UBadge
+          icon="i-lucide-loader-2"
+          label="Analyzing..."
+          variant="subtle"
+          :ui="{ leadingIcon: 'animate-spin' }"
+          class="rounded-full"
+        />
+      </div>
+
+      <!-- Not yet analyzed -->
+      <div v-else>
+        <UBadge
+          icon="i-lucide-sparkles"
+          label="Not analyzed yet"
+          variant="subtle"
+          class="rounded-full"
+        />
       </div>
     </div>
 
