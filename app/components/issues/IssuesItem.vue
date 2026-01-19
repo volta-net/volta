@@ -62,7 +62,7 @@ const resolutionConfig = computed(() => {
         v-if="item.hasMaintainerComment"
         text="Maintainer replied"
       >
-        <UIcon name="i-lucide-message-circle-reply" class="size-4 shrink-0 text-primary" />
+        <UIcon name="i-lucide-circle-user-round" class="size-4 shrink-0 text-primary" />
       </UTooltip>
 
       <!-- AI Resolution Status (for issues only) -->

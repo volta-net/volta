@@ -418,7 +418,7 @@ function getNotificationDropdownItems(repo: InstallationRepository): DropdownMen
         {
           type: 'checkbox',
           label: 'Issues',
-          icon: 'i-octicon-issue-opened-16',
+          icon: 'i-lucide-circle-dot',
           checked: sub.issues,
           onUpdateChecked: (checked: boolean) => updateSubscription(repo, { issues: checked }),
           onSelect: e => e.preventDefault()
@@ -426,7 +426,7 @@ function getNotificationDropdownItems(repo: InstallationRepository): DropdownMen
         {
           type: 'checkbox',
           label: 'Pull requests',
-          icon: 'i-octicon-git-pull-request-16',
+          icon: 'i-lucide-git-pull-request',
           checked: sub.pullRequests,
           onUpdateChecked: (checked: boolean) => updateSubscription(repo, { pullRequests: checked }),
           onSelect: e => e.preventDefault()
@@ -434,7 +434,7 @@ function getNotificationDropdownItems(repo: InstallationRepository): DropdownMen
         {
           type: 'checkbox',
           label: 'Releases',
-          icon: 'i-octicon-tag-16',
+          icon: 'i-lucide-tag',
           checked: sub.releases,
           onUpdateChecked: (checked: boolean) => updateSubscription(repo, { releases: checked }),
           onSelect: e => e.preventDefault()
@@ -442,7 +442,7 @@ function getNotificationDropdownItems(repo: InstallationRepository): DropdownMen
         {
           type: 'checkbox',
           label: 'CI failures',
-          icon: 'i-octicon-x-circle-16',
+          icon: 'i-lucide-circle-x',
           checked: sub.ci,
           onUpdateChecked: (checked: boolean) => updateSubscription(repo, { ci: checked }),
           onSelect: e => e.preventDefault()
@@ -450,7 +450,7 @@ function getNotificationDropdownItems(repo: InstallationRepository): DropdownMen
         {
           type: 'checkbox',
           label: 'Mentions',
-          icon: 'i-octicon-mention-16',
+          icon: 'i-lucide-at-sign',
           checked: sub.mentions,
           onUpdateChecked: (checked: boolean) => updateSubscription(repo, { mentions: checked }),
           onSelect: e => e.preventDefault()
@@ -458,7 +458,7 @@ function getNotificationDropdownItems(repo: InstallationRepository): DropdownMen
         {
           type: 'checkbox',
           label: 'Activities',
-          icon: 'i-octicon-bell-16',
+          icon: 'i-lucide-bell',
           checked: sub.activity,
           onUpdateChecked: (checked: boolean) => updateSubscription(repo, { activity: checked }),
           onSelect: e => e.preventDefault()
@@ -610,7 +610,7 @@ function getSubscriptionSummary(repo: InstallationRepository): { label: string, 
                 <p class="text-xs text-muted truncate flex items-center gap-1">
                   <span class="inline-flex items-center gap-1">
                     <UIcon name="i-lucide-star" class="size-3" />
-                    {{ repo.stars.toLocaleString() }}
+                    {{ repo.stars?.toLocaleString() ?? 0 }}
                   </span>
                   <span class="text-muted">·</span>
                   <span class="inline-flex items-center gap-1">

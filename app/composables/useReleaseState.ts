@@ -11,19 +11,19 @@ interface ReleaseStateConfig {
 
 const releaseStates: Record<string, ReleaseStateConfig> = {
   draft: {
-    icon: 'i-octicon-tag-16',
+    icon: 'i-lucide-tag',
     color: 'text-muted',
     label: 'Draft',
     badgeColor: 'neutral'
   },
   prerelease: {
-    icon: 'i-octicon-tag-16',
+    icon: 'i-lucide-tag',
     color: 'text-warning',
     label: 'Pre-release',
     badgeColor: 'warning'
   },
   published: {
-    icon: 'i-octicon-tag-16',
+    icon: 'i-lucide-tag',
     color: 'text-success',
     label: 'Published',
     badgeColor: 'success'

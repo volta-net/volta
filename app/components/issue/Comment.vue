@@ -20,7 +20,7 @@ function getDiffHunkWithoutHeader(diffHunk: string): string {
   <div class="ring ring-default rounded-md overflow-hidden">
     <!-- File path header for review comments -->
     <div v-if="filePath" class="flex items-center gap-2 px-4 py-3 bg-muted/50 border-b border-default text-xs text-muted">
-      <UIcon name="i-octicon-file-16" class="size-3.5 shrink-0" />
+      <UIcon name="i-lucide-file" class="size-3.5 shrink-0" />
       <span class="truncate font-mono text-highlighted">{{ filePath }}</span>
     </div>
 

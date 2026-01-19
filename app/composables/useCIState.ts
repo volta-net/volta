@@ -9,55 +9,55 @@ interface CIStateConfig {
 
 const ciStates: Record<string, CIStateConfig> = {
   success: {
-    icon: 'i-octicon-check-circle-16',
+    icon: 'i-lucide-circle-check',
     color: 'text-success',
     label: 'Success',
     badgeColor: 'success'
   },
   neutral: {
-    icon: 'i-octicon-check-circle-16',
+    icon: 'i-lucide-circle-check',
     color: 'text-success',
     label: 'Success',
     badgeColor: 'success'
   },
   failure: {
-    icon: 'i-octicon-x-circle-16',
+    icon: 'i-lucide-circle-x',
     color: 'text-error',
     label: 'Failed',
     badgeColor: 'error'
   },
   timed_out: {
-    icon: 'i-octicon-x-circle-16',
+    icon: 'i-lucide-circle-x',
     color: 'text-error',
     label: 'Timed out',
     badgeColor: 'error'
   },
   startup_failure: {
-    icon: 'i-octicon-x-circle-16',
+    icon: 'i-lucide-circle-x',
     color: 'text-error',
     label: 'Startup failure',
     badgeColor: 'error'
   },
   cancelled: {
-    icon: 'i-octicon-stop-16',
+    icon: 'i-lucide-circle-stop',
     color: 'text-muted',
     label: 'Cancelled',
     badgeColor: 'neutral'
   },
   skipped: {
-    icon: 'i-octicon-skip-16',
+    icon: 'i-lucide-circle-slash',
     color: 'text-muted',
     label: 'Skipped',
     badgeColor: 'neutral'
   },
   stale: {
-    icon: 'i-octicon-skip-16',
+    icon: 'i-lucide-circle-slash',
     color: 'text-muted',
     label: 'Stale',
     badgeColor: 'neutral'
   },
   action_required: {
-    icon: 'i-octicon-alert-16',
+    icon: 'i-lucide-alert-circle',
     color: 'text-warning',
     label: 'Action required',
     badgeColor: 'warning'
@@ -65,7 +65,7 @@ const ciStates: Record<string, CIStateConfig> = {
 }
 
 const defaultState: CIStateConfig = {
-  icon: 'i-octicon-clock-16',
+  icon: 'i-lucide-clock',
   color: 'text-warning',
   label: 'Running',
   badgeColor: 'warning'

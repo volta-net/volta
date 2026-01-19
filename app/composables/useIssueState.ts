@@ -13,44 +13,44 @@ interface IssueStateConfig {
 const issueStates: Record<string, IssueStateConfig> = {
   // Pull Request states
   pr_draft: {
-    icon: 'i-octicon-git-pull-request-draft-16',
+    icon: 'i-lucide-git-pull-request-draft',
     color: 'text-muted',
     label: 'Draft',
     badgeColor: 'neutral'
   },
   pr_merged: {
-    icon: 'i-octicon-git-merge-16',
+    icon: 'i-lucide-git-merge',
     color: 'text-important',
     label: 'Merged',
     badgeColor: 'info'
   },
   pr_closed: {
-    icon: 'i-octicon-git-pull-request-closed-16',
+    icon: 'i-lucide-git-pull-request-closed',
     color: 'text-error',
     label: 'Closed',
     badgeColor: 'error'
   },
   pr_open: {
-    icon: 'i-octicon-git-pull-request-16',
+    icon: 'i-lucide-git-pull-request',
     color: 'text-success',
     label: 'Open',
     badgeColor: 'success'
   },
   // Issue states
   issue_open: {
-    icon: 'i-octicon-issue-opened-16',
+    icon: 'i-lucide-circle-dot',
     color: 'text-success',
     label: 'Open',
     badgeColor: 'success'
   },
   issue_not_planned: {
-    icon: 'i-octicon-skip-16',
+    icon: 'i-lucide-circle-slash',
     color: 'text-muted',
     label: 'Not planned',
     badgeColor: 'neutral'
   },
   issue_closed: {
-    icon: 'i-octicon-issue-closed-16',
+    icon: 'i-lucide-circle-check',
     color: 'text-important',
     label: 'Closed',
     badgeColor: 'info'

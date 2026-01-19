@@ -18,7 +18,7 @@ export function useNotificationHelpers() {
     }
 
     // Issue/PR - reuse shared utility
-    if (!notification.issue) return 'i-octicon-bell-16'
+    if (!notification.issue) return 'i-lucide-bell'
     return getIssueStateIcon(notification.issue)
   }
 

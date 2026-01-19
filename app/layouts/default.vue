@@ -14,9 +14,9 @@ const issuesIcon = computed(() => {
   const tab = route.query.tab
   switch (tab) {
     case 'merge': return 'i-lucide-git-merge'
-    case 'review': return 'i-lucide-eye'
-    case 'triage': return 'i-lucide-circle-dashed'
-    default: return 'i-lucide-circle-dashed'
+    case 'review': return 'i-lucide-git-pull-request'
+    case 'triage': return 'i-lucide-circle-dot'
+    default: return 'i-lucide-circle-dot'
   }
 })
 
@@ -57,7 +57,7 @@ const searchedIssueItems = computed(() => {
     id: issue.id,
     label: issue.title,
     prefix: `${issue.repository.fullName}#${issue.number}`,
-    icon: issue.pullRequest ? 'i-octicon-git-pull-request-16' : 'i-octicon-issue-opened-16',
+    icon: issue.pullRequest ? 'i-lucide-git-pull-request' : 'i-lucide-circle-dot',
     onSelect: () => {
       selectIssue({
         id: issue.id,
@@ -118,12 +118,12 @@ const groups = computed(() => [{
     icon: issuesIcon.value,
     children: [{
       label: 'Needs Triage',
-      icon: 'i-lucide-circle-dashed',
+      icon: 'i-lucide-circle-dot',
       to: '/issues?tab=triage',
       exactQuery: true
     }, {
       label: 'Needs Review',
-      icon: 'i-lucide-eye',
+      icon: 'i-lucide-git-pull-request',
       to: '/issues?tab=review',
       exactQuery: true
     }, {
@@ -142,7 +142,7 @@ const groups = computed(() => [{
   label: 'Favorites',
   items: [{
     label: 'Issues',
-    icon: 'i-lucide-circle-dashed',
+    icon: 'i-lucide-circle-dot',
     onSelect: () => { favoriteIssuesOpen.value = true }
   }, {
     label: 'Repositories',
