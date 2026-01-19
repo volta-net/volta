@@ -8,6 +8,13 @@
       "when": 1768492768553,
       "tag": "0000_quick_multiple_man",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1768842682794,
+      "tag": "0001_deep_starjammers",
+      "breakpoints": true
     }
   ]
 }

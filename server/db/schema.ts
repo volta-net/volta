@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, bigint, boolean, serial, primaryKey, uniqueIndex, integer } from 'drizzle-orm/pg-core'
+import { pgTable, text, timestamp, bigint, boolean, serial, primaryKey, uniqueIndex, index, integer } from 'drizzle-orm/pg-core'
 import { relations } from 'drizzle-orm'
 
 // Users (GitHub users - both registered and shadow users from imports)
@@ -277,7 +277,11 @@ export const issues = pgTable('issues', {
   resolutionAnalyzedAt: timestamp('resolution_analyzed_at', { withTimezone: true })
 }, table => ([
   // The true unique identifier is (repositoryId, number), not GitHub's ID
-  uniqueIndex('issues_repo_number_idx').on(table.repositoryId, table.number)
+  uniqueIndex('issues_repo_number_idx').on(table.repositoryId, table.number),
+  // Performance indexes for common queries
+  index('issues_state_idx').on(table.state),
+  index('issues_head_sha_idx').on(table.headSha),
+  index('issues_number_idx').on(table.number)
 ]))
 
 // Issue Assignees (many-to-many: issues <-> users)
@@ -324,7 +328,8 @@ export const issueComments = pgTable('issue_comments', {
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
 }, table => ([
-  uniqueIndex('issue_comments_github_id_idx').on(table.githubId)
+  uniqueIndex('issue_comments_github_id_idx').on(table.githubId),
+  index('issue_comments_issue_id_idx').on(table.issueId)
 ]))
 
 // Review state
@@ -680,7 +685,9 @@ export const favoriteRepositories = pgTable('favorite_repositories', {
   userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   repositoryId: integer('repository_id').notNull().references(() => repositories.id, { onDelete: 'cascade' }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
-})
+}, table => ([
+  index('favorite_repositories_user_id_idx').on(table.userId)
+]))
 
 export const favoriteRepositoriesRelations = relations(favoriteRepositories, ({ one }) => ({
   user: one(users, {
@@ -703,7 +710,8 @@ export const repositoryCollaborators = pgTable('repository_collaborators', {
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
 }, table => ([
-  primaryKey({ columns: [table.repositoryId, table.userId] })
+  primaryKey({ columns: [table.repositoryId, table.userId] }),
+  index('repository_collaborators_user_id_idx').on(table.userId)
 ]))
 
 export const repositoryCollaboratorsRelations = relations(repositoryCollaborators, ({ one }) => ({
