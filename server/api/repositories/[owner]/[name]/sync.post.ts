@@ -18,7 +18,7 @@ export default defineEventHandler(async (event) => {
   const fullName = `${owner}/${repo}`
   const existingRepo = await db.query.repositories.findFirst({
     where: eq(schema.repositories.fullName, fullName),
-    columns: { lastSyncedAt: true, syncing: true }
+    columns: { id: true, lastSyncedAt: true, syncing: true }
   })
 
   if (existingRepo?.syncing) {
@@ -26,15 +26,20 @@ export default defineEventHandler(async (event) => {
     return {
       started: false,
       alreadySyncing: true,
-      repository: fullName,
-      previousSyncedAt: existingRepo.lastSyncedAt?.toISOString() ?? null
+      repository: fullName
     }
   }
 
-  const previousSyncedAt = existingRepo?.lastSyncedAt?.toISOString() ?? null
+  // Set syncing=true BEFORE starting workflow to avoid race condition
+  // This ensures the client will see syncing=true after refresh
+  if (existingRepo) {
+    await db.update(schema.repositories)
+      .set({ syncing: true })
+      .where(eq(schema.repositories.id, existingRepo.id))
+  }
 
   // Start the durable workflow (fire and forget)
-  // The workflow will update lastSyncedAt when complete
+  // The workflow will update lastSyncedAt and set syncing=false when complete
   await start(syncRepositoryWorkflow, [{
     accessToken,
     owner,
@@ -45,7 +50,6 @@ export default defineEventHandler(async (event) => {
   // Return immediately - frontend should poll /api/installations to detect completion
   return {
     started: true,
-    repository: fullName,
-    previousSyncedAt
+    repository: fullName
   }
 })

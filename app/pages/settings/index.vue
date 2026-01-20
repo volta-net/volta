@@ -5,128 +5,39 @@ import type { DropdownMenuItem } from '@nuxt/ui'
 const toast = useToast()
 const config = useRuntimeConfig().public
 
-const { data: installations, status: installationsStatus, refresh } = useLazyFetch<Installation[]>('/api/installations')
+const {
+  installations,
+  installationsStatus,
+  refresh,
+  isSyncing,
+  isBeingPolled,
+  syncRepository,
+  syncMultiple
+} = useRepositorySync()
 
-// Refresh data when window gains focus
-const focused = useWindowFocus()
-watch(focused, (isFocused) => {
-  if (isFocused) {
-    refresh()
-  }
-})
+const {
+  getDropdownItems: getSubscriptionDropdownItems,
+  getSummary: getSubscriptionSummary
+} = useRepositorySubscription(installations)
 
-// Track locally initiated syncs (for immediate UI feedback before server confirms)
-const localSyncing = ref<Set<string>>(new Set())
-// Track repos with active polling loops to prevent duplicates
-const activePolls = ref<Set<string>>(new Set())
+// Local loading states
 const deleting = ref<Set<string>>(new Set())
-const updatingSubscription = ref<string | null>(null)
 
-// Combined syncing state: server-side OR locally initiated
-function isSyncing(fullName: string) {
-  if (localSyncing.value.has(fullName)) return true
-  const repo = installations.value
-    ?.flatMap(inst => inst.repositories)
-    .find(r => r.fullName === fullName)
-  return repo?.syncing ?? false
-}
-
-// Auto-poll when there are server-side syncing repos (for page refresh case)
-const serverSyncingRepos = computed(() =>
-  installations.value
-    ?.flatMap(inst => inst.repositories)
-    .filter(r => r.syncing)
-    .map(r => r.fullName) ?? []
-)
-
-// Poll for server-side syncing repos on page load
-watch(serverSyncingRepos, (repos) => {
-  for (const fullName of repos) {
-    // Only start polling if no active poll exists for this repo
-    if (!activePolls.value.has(fullName)) {
-      localSyncing.value.add(fullName)
-      startPolling(fullName, true)
-    }
-  }
-}, { immediate: true })
-
-/**
- * Start polling for a repository sync completion.
- * @param fullName - Repository full name (owner/repo)
- * @param showToast - Whether to show a success toast on completion
- */
-async function startPolling(fullName: string, showToast = true) {
-  // Prevent duplicate polling loops
-  if (activePolls.value.has(fullName)) {
-    return
-  }
-
-  activePolls.value.add(fullName)
-  const [, name] = fullName.split('/')
-  const maxAttempts = 180
-  const pollInterval = 1000
-
-  try {
-    for (let i = 0; i < maxAttempts; i++) {
-      await new Promise(resolve => setTimeout(resolve, pollInterval))
-      await refresh()
-
-      const repo = installations.value
-        ?.flatMap(inst => inst.repositories)
-        .find(r => r.fullName === fullName)
-
-      if (repo && !repo.syncing) {
-        localSyncing.value.delete(fullName)
-        if (showToast) {
-          toast.add({
-            title: `Repo ${name} imported`,
-            description: 'Repository sync completed successfully',
-            color: 'success'
-          })
-        }
-        return
-      }
-    }
-
-    // Timeout
-    localSyncing.value.delete(fullName)
-    if (showToast) {
-      toast.add({
-        title: 'Sync in progress',
-        description: 'The sync is taking longer than expected. It will complete in the background.',
-        color: 'warning'
-      })
-    }
-  } finally {
-    activePolls.value.delete(fullName)
-  }
-}
-
-// Installation-level bulk operation loading states
+// Installation-level bulk operation states
 const importingAll = ref<Set<number>>(new Set())
 const syncingAll = ref<Set<number>>(new Set())
 const removingAll = ref<Set<number>>(new Set())
 
-interface SyncStartResult {
-  started: boolean
-  alreadySyncing?: boolean
-  repository: string
-  previousSyncedAt: string | null
-}
-
 // Sort repositories: synced first, then by stars (desc), then by updatedAt (desc)
 function sortRepositories(repos: InstallationRepository[]) {
   return [...repos].sort((a, b) => {
-    // First: synced repos come first
     if (a.synced && !b.synced) return -1
     if (!a.synced && b.synced) return 1
 
-    // Second: sort by stars (descending)
     const starsA = a.stars ?? 0
     const starsB = b.stars ?? 0
     if (starsA !== starsB) return starsB - starsA
 
-    // Third: sort by updatedAt (descending)
     const updatedA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0
     const updatedB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0
     return updatedB - updatedA
@@ -146,72 +57,9 @@ const accordionItems = computed(() => {
   }))
 })
 
-async function syncRepository(fullName: string) {
-  const [owner, name] = fullName.split('/')
-
-  // Check if already polling (prevents double-click issues)
-  if (activePolls.value.has(fullName)) {
-    return
-  }
-
-  localSyncing.value.add(fullName)
-
-  try {
-    // Start the workflow (returns immediately, server sets syncing=true)
-    const result = await $fetch<SyncStartResult>(`/api/repositories/${owner}/${name}/sync`, {
-      method: 'POST'
-    })
-
-    // If server says already syncing, just start polling without showing duplicate toast
-    if (result.alreadySyncing) {
-      await startPolling(fullName, true)
-      return
-    }
-
-    // Poll until server-side syncing flag is false (workflow completed)
-    await startPolling(fullName, true)
-  } catch (error: any) {
-    localSyncing.value.delete(fullName)
-    toast.add({
-      title: 'Sync failed',
-      description: error.data?.message || 'An error occurred',
-      color: 'error'
-    })
-  }
-}
-
-/**
- * Poll until all repositories in the list finish syncing.
- * Returns true if all completed, false if timeout.
- */
-async function pollUntilAllComplete(repoFullNames: string[]): Promise<boolean> {
-  const maxAttempts = 180
-  const pollInterval = 2000
-
-  // Mark all as having active polls
-  repoFullNames.forEach(name => activePolls.value.add(name))
-
-  try {
-    for (let i = 0; i < maxAttempts; i++) {
-      await new Promise(resolve => setTimeout(resolve, pollInterval))
-      await refresh()
-
-      const stillSyncing = repoFullNames.filter((fullName) => {
-        const current = installations.value
-          ?.flatMap(inst => inst.repositories)
-          .find(r => r.fullName === fullName)
-        return current?.syncing
-      })
-
-      if (stillSyncing.length === 0) {
-        return true
-      }
-    }
-    return false
-  } finally {
-    repoFullNames.forEach(name => activePolls.value.delete(name))
-  }
-}
+// ============================================================================
+// Bulk Operations
+// ============================================================================
 
 async function importAllRepositories(installation: Installation) {
   const unsyncedRepos = installation.repositories.filter(r => !r.synced)
@@ -225,8 +73,7 @@ async function importAllRepositories(installation: Installation) {
 
   const repoNames = unsyncedRepos.map(r => r.fullName)
 
-  // Check if any are already being polled
-  if (repoNames.some(name => activePolls.value.has(name))) {
+  if (repoNames.some(name => isBeingPolled(name))) {
     toast.add({
       title: 'Import in progress',
       description: 'Some repositories are already being imported.'
@@ -235,19 +82,16 @@ async function importAllRepositories(installation: Installation) {
   }
 
   importingAll.value.add(installation.id)
-  repoNames.forEach(name => localSyncing.value.add(name))
 
   try {
-    // Start all workflows
+    // Start all workflows (server sets syncing=true synchronously)
     await Promise.all(unsyncedRepos.map(async (repo) => {
       const [owner, name] = repo.fullName.split('/')
       await $fetch(`/api/repositories/${owner}/${name}/sync`, { method: 'POST' })
     }))
 
-    // Poll until all are done
-    const allCompleted = await pollUntilAllComplete(repoNames)
-
-    repoNames.forEach(name => localSyncing.value.delete(name))
+    // Poll until all are done (syncMultiple handles refresh internally)
+    const allCompleted = await syncMultiple(repoNames)
 
     if (allCompleted) {
       toast.add({
@@ -263,7 +107,6 @@ async function importAllRepositories(installation: Installation) {
       })
     }
   } catch (error: any) {
-    repoNames.forEach(name => localSyncing.value.delete(name))
     await refresh()
     toast.add({
       title: 'Import failed',
@@ -277,14 +120,11 @@ async function importAllRepositories(installation: Installation) {
 
 async function syncAllRepositories(installation: Installation) {
   const syncedRepos = installation.repositories.filter(r => r.synced)
-  if (!syncedRepos.length) {
-    return
-  }
+  if (!syncedRepos.length) return
 
   const repoNames = syncedRepos.map(r => r.fullName)
 
-  // Check if any are already being polled
-  if (repoNames.some(name => activePolls.value.has(name))) {
+  if (repoNames.some(name => isBeingPolled(name))) {
     toast.add({
       title: 'Sync in progress',
       description: 'Some repositories are already being synced.'
@@ -293,19 +133,16 @@ async function syncAllRepositories(installation: Installation) {
   }
 
   syncingAll.value.add(installation.id)
-  repoNames.forEach(name => localSyncing.value.add(name))
 
   try {
-    // Start all workflows
+    // Start all workflows (server sets syncing=true synchronously)
     await Promise.all(syncedRepos.map(async (repo) => {
       const [owner, name] = repo.fullName.split('/')
       await $fetch(`/api/repositories/${owner}/${name}/sync`, { method: 'POST' })
     }))
 
-    // Poll until all are done
-    const allCompleted = await pollUntilAllComplete(repoNames)
-
-    repoNames.forEach(name => localSyncing.value.delete(name))
+    // Poll until all are done (syncMultiple handles refresh internally)
+    const allCompleted = await syncMultiple(repoNames)
 
     if (allCompleted) {
       toast.add({
@@ -321,7 +158,6 @@ async function syncAllRepositories(installation: Installation) {
       })
     }
   } catch (error: any) {
-    repoNames.forEach(name => localSyncing.value.delete(name))
     await refresh()
     toast.add({
       title: 'Sync failed',
@@ -335,9 +171,7 @@ async function syncAllRepositories(installation: Installation) {
 
 async function removeAllRepositories(installation: Installation) {
   const syncedRepos = installation.repositories.filter(r => r.synced)
-  if (!syncedRepos.length) {
-    return
-  }
+  if (!syncedRepos.length) return
 
   removingAll.value.add(installation.id)
   syncedRepos.forEach(repo => deleting.value.add(repo.fullName))
@@ -347,7 +181,6 @@ async function removeAllRepositories(installation: Installation) {
       const [owner, name] = repo.fullName.split('/')
       try {
         await $fetch(`/api/repositories/${owner}/${name}`, { method: 'DELETE' })
-        // Optimistically update local state
         repo.synced = false
         repo.lastSyncedAt = null
         triggerRef(installations)
@@ -373,67 +206,9 @@ async function removeAllRepositories(installation: Installation) {
   }
 }
 
-function getInstallationDropdownItems(installation: Installation) {
-  const hasUnsynced = installation.repositories.some(r => !r.synced)
-  const hasSynced = installation.repositories.some(r => r.synced)
-
-  const isImporting = importingAll.value.has(installation.id)
-  const isSyncing = syncingAll.value.has(installation.id)
-  const isRemoving = removingAll.value.has(installation.id)
-
-  const items: DropdownMenuItem[][] = [
-    [{
-      label: 'Configure',
-      icon: 'i-lucide-external-link',
-      to: getGitHubConfigUrl(installation),
-      target: '_blank'
-    }]
-  ]
-
-  const actionItems: DropdownMenuItem[] = []
-
-  if (hasUnsynced) {
-    actionItems.push({
-      label: 'Import all',
-      icon: 'i-lucide-download',
-      loading: isImporting,
-      disabled: isImporting || isSyncing || isRemoving,
-      onSelect: (e) => {
-        e.preventDefault()
-        importAllRepositories(installation)
-      }
-    })
-  }
-
-  if (hasSynced) {
-    actionItems.push({
-      label: 'Sync all',
-      icon: 'i-lucide-refresh-cw',
-      loading: isSyncing,
-      disabled: isImporting || isSyncing || isRemoving,
-      onSelect: (e) => {
-        e.preventDefault()
-        syncAllRepositories(installation)
-      }
-    }, {
-      label: 'Remove all',
-      icon: 'i-lucide-trash-2',
-      loading: isRemoving,
-      color: 'error' as const,
-      disabled: isImporting || isSyncing || isRemoving,
-      onSelect: (e) => {
-        e.preventDefault()
-        removeAllRepositories(installation)
-      }
-    })
-  }
-
-  if (actionItems.length > 0) {
-    items.push(actionItems)
-  }
-
-  return items
-}
+// ============================================================================
+// Single Repository Operations
+// ============================================================================
 
 async function deleteRepository(fullName: string) {
   const [owner, name] = fullName.split('/')
@@ -441,11 +216,7 @@ async function deleteRepository(fullName: string) {
   deleting.value.add(fullName)
 
   try {
-    await $fetch(`/api/repositories/${owner}/${name}`, {
-      method: 'DELETE'
-    })
-
-    // Refresh installations to update sync status
+    await $fetch(`/api/repositories/${owner}/${name}`, { method: 'DELETE' })
     await refresh()
 
     toast.add({
@@ -464,6 +235,76 @@ async function deleteRepository(fullName: string) {
   }
 }
 
+// ============================================================================
+// Dropdown Menus
+// ============================================================================
+
+function getInstallationDropdownItems(installation: Installation) {
+  const hasUnsynced = installation.repositories.some(r => !r.synced)
+  const hasSynced = installation.repositories.some(r => r.synced)
+
+  const isImporting = importingAll.value.has(installation.id)
+  const isSyncingAll = syncingAll.value.has(installation.id)
+  const isRemoving = removingAll.value.has(installation.id)
+
+  const items: DropdownMenuItem[][] = [
+    [{
+      label: 'Configure',
+      icon: 'i-lucide-external-link',
+      to: getGitHubConfigUrl(installation),
+      target: '_blank'
+    }]
+  ]
+
+  const actionItems: DropdownMenuItem[] = []
+
+  if (hasUnsynced) {
+    actionItems.push({
+      label: 'Import all',
+      icon: 'i-lucide-download',
+      loading: isImporting,
+      disabled: isImporting || isSyncingAll || isRemoving,
+      onSelect: (e) => {
+        e.preventDefault()
+        importAllRepositories(installation)
+      }
+    })
+  }
+
+  if (hasSynced) {
+    actionItems.push({
+      label: 'Sync all',
+      icon: 'i-lucide-refresh-cw',
+      loading: isSyncingAll,
+      disabled: isImporting || isSyncingAll || isRemoving,
+      onSelect: (e) => {
+        e.preventDefault()
+        syncAllRepositories(installation)
+      }
+    }, {
+      label: 'Remove all',
+      icon: 'i-lucide-trash-2',
+      loading: isRemoving,
+      color: 'error' as const,
+      disabled: isImporting || isSyncingAll || isRemoving,
+      onSelect: (e) => {
+        e.preventDefault()
+        removeAllRepositories(installation)
+      }
+    })
+  }
+
+  if (actionItems.length > 0) {
+    items.push(actionItems)
+  }
+
+  return items
+}
+
+// ============================================================================
+// URL Helpers
+// ============================================================================
+
 function getGitHubConfigUrl(installation: Installation) {
   if (installation.account.type === 'Organization') {
     return `https://github.com/organizations/${installation.account.login}/settings/installations/${installation.id}`
@@ -473,173 +314,6 @@ function getGitHubConfigUrl(installation: Installation) {
 
 function getInstallUrl() {
   return `https://github.com/apps/${config.github.appSlug}/installations/new`
-}
-
-// ============================================================================
-// Notification Subscription Logic
-// ============================================================================
-
-// Preset configurations
-const presets = {
-  participating: { issues: false, pullRequests: false, releases: true, ci: false, mentions: true, activity: true },
-  all: { issues: true, pullRequests: true, releases: true, ci: true, mentions: true, activity: true },
-  ignore: { issues: false, pullRequests: false, releases: false, ci: false, mentions: false, activity: false }
-}
-
-// Update subscription preference
-async function updateSubscription(repo: InstallationRepository, updates: Partial<RepositorySubscription>) {
-  const [owner, name] = repo.fullName.split('/')
-
-  updatingSubscription.value = repo.fullName
-
-  try {
-    const result = await $fetch<RepositorySubscription>(`/api/repositories/${owner}/${name}/subscription`, {
-      method: 'PATCH',
-      body: updates
-    })
-
-    // Optimistically update local state
-    if (repo.subscription) {
-      Object.assign(repo.subscription, result)
-    }
-    triggerRef(installations)
-  } catch (error: any) {
-    toast.add({
-      title: 'Failed to update subscription',
-      description: error.data?.message || 'An error occurred',
-      color: 'error'
-    })
-  } finally {
-    updatingSubscription.value = null
-  }
-}
-
-// Check which preset matches the current subscription
-function getActivePreset(sub: RepositorySubscription): 'participating' | 'all' | 'ignore' | 'custom' {
-  for (const [name, preset] of Object.entries(presets)) {
-    const matches = Object.entries(preset).every(([key, value]) => sub[key as keyof typeof preset] === value)
-    if (matches) {
-      return name as 'participating' | 'all' | 'ignore'
-    }
-  }
-  return 'custom'
-}
-
-// Build dropdown items for notification settings
-function getNotificationDropdownItems(repo: InstallationRepository): DropdownMenuItem[][] {
-  if (!repo.subscription) return []
-
-  const sub = repo.subscription
-  const activePreset = getActivePreset(sub)
-
-  return [[
-    {
-      label: 'Participating and @mentions',
-      description: 'Releases, @mentions, and activity on subscribed issues.',
-      icon: 'i-lucide-users',
-      active: activePreset === 'participating',
-      onSelect: (e) => {
-        e.preventDefault()
-        updateSubscription(repo, presets.participating)
-      }
-    },
-    {
-      label: 'All activity',
-      description: 'All activity in the repository.',
-      icon: 'i-lucide-activity',
-      active: activePreset === 'all',
-      onSelect: (e) => {
-        e.preventDefault()
-        updateSubscription(repo, presets.all)
-      }
-    },
-    {
-      label: 'Ignore',
-      description: 'Receive no notifications.',
-      icon: 'i-lucide-eye-off',
-      active: activePreset === 'ignore',
-      onSelect: (e) => {
-        e.preventDefault()
-        updateSubscription(repo, presets.ignore)
-      }
-    },
-    {
-      label: 'Custom',
-      description: 'Choose specific activity types.',
-      icon: 'i-lucide-settings',
-      active: activePreset === 'custom',
-      children: [[
-        {
-          type: 'checkbox',
-          label: 'Issues',
-          icon: 'i-lucide-circle-dot',
-          checked: sub.issues,
-          onUpdateChecked: (checked: boolean) => updateSubscription(repo, { issues: checked }),
-          onSelect: e => e.preventDefault()
-        },
-        {
-          type: 'checkbox',
-          label: 'Pull requests',
-          icon: 'i-lucide-git-pull-request',
-          checked: sub.pullRequests,
-          onUpdateChecked: (checked: boolean) => updateSubscription(repo, { pullRequests: checked }),
-          onSelect: e => e.preventDefault()
-        },
-        {
-          type: 'checkbox',
-          label: 'Releases',
-          icon: 'i-lucide-tag',
-          checked: sub.releases,
-          onUpdateChecked: (checked: boolean) => updateSubscription(repo, { releases: checked }),
-          onSelect: e => e.preventDefault()
-        },
-        {
-          type: 'checkbox',
-          label: 'CI failures',
-          icon: 'i-lucide-circle-x',
-          checked: sub.ci,
-          onUpdateChecked: (checked: boolean) => updateSubscription(repo, { ci: checked }),
-          onSelect: e => e.preventDefault()
-        },
-        {
-          type: 'checkbox',
-          label: 'Mentions',
-          icon: 'i-lucide-at-sign',
-          checked: sub.mentions,
-          onUpdateChecked: (checked: boolean) => updateSubscription(repo, { mentions: checked }),
-          onSelect: e => e.preventDefault()
-        },
-        {
-          type: 'checkbox',
-          label: 'Activities',
-          icon: 'i-lucide-bell',
-          checked: sub.activity,
-          onUpdateChecked: (checked: boolean) => updateSubscription(repo, { activity: checked }),
-          onSelect: e => e.preventDefault()
-        }
-      ]]
-    }
-  ]]
-}
-
-// Get label and icon for the notification dropdown button
-function getSubscriptionSummary(repo: InstallationRepository): { label: string, icon: string } {
-  if (!repo.subscription) {
-    return { label: 'Default', icon: 'i-lucide-bell' }
-  }
-
-  const preset = getActivePreset(repo.subscription)
-
-  switch (preset) {
-    case 'participating':
-      return { label: 'Participating', icon: 'i-lucide-users' }
-    case 'all':
-      return { label: 'All', icon: 'i-lucide-activity' }
-    case 'ignore':
-      return { label: 'Ignore', icon: 'i-lucide-eye-off' }
-    case 'custom':
-      return { label: 'Custom', icon: 'i-lucide-settings' }
-  }
 }
 </script>
 
@@ -788,7 +462,7 @@ function getSubscriptionSummary(repo: InstallationRepository): { label: string, 
               <!-- Notification dropdown -->
               <UDropdownMenu
                 v-if="repo.subscription"
-                :items="getNotificationDropdownItems(repo)"
+                :items="getSubscriptionDropdownItems(repo)"
                 :content="{ align: 'end' }"
                 :ui="{ content: 'w-72', itemDescription: 'text-clip' }"
               >

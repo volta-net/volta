@@ -23,13 +23,9 @@ export interface SyncRepositoryResult {
 async function stepSyncRepositoryInfo(accessToken: string, owner: string, repo: string) {
   'use step'
   const { syncRepositoryInfo } = await import('../utils/sync.js')
-  const { eq } = await import('drizzle-orm')
-  const { db, schema } = await import('@nuxthub/db')
   console.log(`[Workflow] Step 1: Syncing repository info for ${owner}/${repo}`)
-  const result = await syncRepositoryInfo(accessToken, owner, repo)
-  // Mark as syncing
-  await db.update(schema.repositories).set({ syncing: true }).where(eq(schema.repositories.id, result.repository.id))
-  return result
+  // Note: syncing=true is set by the API endpoint before starting the workflow
+  return await syncRepositoryInfo(accessToken, owner, repo)
 }
 
 async function stepSyncCollaborators(accessToken: string, owner: string, repo: string, repositoryId: number) {
