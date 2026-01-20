@@ -1,5 +1,5 @@
 import { and, eq } from 'drizzle-orm'
-import { db, schema } from 'hub:db'
+import { db, schema } from '@nuxthub/db'
 import { Octokit } from 'octokit'
 
 export default defineEventHandler(async (event) => {

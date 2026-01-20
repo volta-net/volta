@@ -1,7 +1,7 @@
 import { streamText } from 'ai'
 import { gateway } from '@ai-sdk/gateway'
 import { eq, and, inArray, desc, ne, isNotNull } from 'drizzle-orm'
-import { db, schema } from 'hub:db'
+import { db, schema } from '@nuxthub/db'
 
 /**
  * Fetch user's recent comments from other issues to analyze their writing style

@@ -1,5 +1,5 @@
 import { eq, and } from 'drizzle-orm'
-import { db, schema } from 'hub:db'
+import { db, schema } from '@nuxthub/db'
 
 /**
  * Check if a user is a collaborator (has write access) to a repository

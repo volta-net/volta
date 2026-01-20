@@ -1,6 +1,6 @@
 import { eq, and, sql } from 'drizzle-orm'
-import { db, schema } from 'hub:db'
-import type { ReviewState } from '../db/schema'
+import { db, schema } from '@nuxthub/db'
+import type { ReviewState } from '@nuxthub/db/schema'
 import type {
   GitHubUser,
   GitHubRepository,
@@ -18,9 +18,9 @@ import type {
   GitHubInstallation,
   GitHubInstallationRepository
 } from '../types/github'
-import { ensureUser, getDbUserId, getDbRepositoryId, getDbInstallationId } from './users'
-import { subscribeUserToIssue, ensureType, updateLinkedIssues, fetchLinkedIssueNumbers, getDbLabelId, getDbMilestoneId } from './sync'
-import { useOctokitAsInstallation } from './octokit'
+import { ensureUser, getDbUserId, getDbRepositoryId, getDbInstallationId } from '../utils/users'
+import { subscribeUserToIssue, ensureType, updateLinkedIssues, fetchLinkedIssueNumbers, getDbLabelId, getDbMilestoneId } from '../utils/sync'
+import { useOctokitAsInstallation } from '../utils/octokit'
 
 // ============================================================================
 // Issues
