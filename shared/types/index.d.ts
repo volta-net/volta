@@ -123,6 +123,7 @@ export interface FavoriteRepository extends Pick<Serialized<DBFavoriteRepository
 export interface InstallationRepository extends Repository {
   subscription?: RepositorySubscription
   synced?: boolean
+  syncing?: boolean
   stars?: number
 }
 

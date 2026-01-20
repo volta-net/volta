@@ -84,6 +84,7 @@ export const repositories = pgTable('repositories', {
   disabled: boolean().default(false),
   // Volta-specific
   syncEnabled: boolean('sync_enabled').default(true),
+  syncing: boolean().default(false),
   lastSyncedAt: timestamp('last_synced_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()

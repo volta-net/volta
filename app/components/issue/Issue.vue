@@ -253,7 +253,7 @@ defineShortcuts({
     </UDashboardNavbar>
 
     <!-- Loading state (only on initial load, not refetches) -->
-    <Loading v-if="status === 'pending' && !issue" />
+    <AppLoading v-if="status === 'pending' && !issue" />
 
     <!-- Issue/PR View -->
     <div v-else-if="issue" class="flex flex-col lg:grid lg:grid-cols-3 flex-1 min-h-0 overflow-y-auto lg:overflow-hidden">

@@ -1,7 +1,7 @@
 import { eq, and } from 'drizzle-orm'
 import { db, schema } from '@nuxthub/db'
 import { Octokit } from 'octokit'
-import { ensureUser } from '../utils/users'
+import { ensureUser } from './users'
 
 /**
  * Fetch linked issues for a PR using GitHub's GraphQL API (closingIssuesReferences)

@@ -46,6 +46,7 @@ export default defineEventHandler(async (event) => {
           archived: repo.archived,
           disabled: repo.disabled,
           syncEnabled: null,
+          syncing: false,
           lastSyncedAt: null,
           createdAt: repo.created_at,
           updatedAt: repo.updated_at,
@@ -70,7 +71,7 @@ export default defineEventHandler(async (event) => {
 
         // Map synced repos by GitHub ID for quick lookup
         const syncedRepoMap = new Map(
-          dbInstallation.repositories.map(r => [r.githubId, { id: r.id, lastSyncedAt: r.lastSyncedAt }])
+          dbInstallation.repositories.map(r => [r.githubId, { id: r.id, lastSyncedAt: r.lastSyncedAt, syncing: r.syncing }])
         )
 
         // Get subscriptions for synced repos
@@ -115,6 +116,7 @@ export default defineEventHandler(async (event) => {
             archived: repo.archived,
             disabled: repo.disabled,
             syncEnabled: null,
+            syncing: syncedRepoMap.get(repo.id)?.syncing ?? false,
             lastSyncedAt: syncedRepoMap.get(repo.id)?.lastSyncedAt?.toISOString() ?? null,
             createdAt: repo.created_at,
             updatedAt: repo.updated_at,

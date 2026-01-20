@@ -18,9 +18,9 @@ import type {
   GitHubInstallation,
   GitHubInstallationRepository
 } from '../types/github'
-import { ensureUser, getDbUserId, getDbRepositoryId, getDbInstallationId } from '../utils/users'
-import { subscribeUserToIssue, ensureType, updateLinkedIssues, fetchLinkedIssueNumbers, getDbLabelId, getDbMilestoneId } from '../utils/sync'
-import { useOctokitAsInstallation } from '../utils/octokit'
+import { ensureUser, getDbUserId, getDbRepositoryId, getDbInstallationId } from './users'
+import { subscribeUserToIssue, ensureType, updateLinkedIssues, fetchLinkedIssueNumbers, getDbLabelId, getDbMilestoneId } from './sync'
+import { useOctokitAsInstallation } from './octokit'
 
 // ============================================================================
 // Issues

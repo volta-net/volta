@@ -22,14 +22,19 @@ export interface SyncRepositoryResult {
 
 async function stepSyncRepositoryInfo(accessToken: string, owner: string, repo: string) {
   'use step'
-  const { syncRepositoryInfo } = await import('../utils/sync')
+  const { syncRepositoryInfo } = await import('../utils/sync.js')
+  const { eq } = await import('drizzle-orm')
+  const { db, schema } = await import('@nuxthub/db')
   console.log(`[Workflow] Step 1: Syncing repository info for ${owner}/${repo}`)
-  return await syncRepositoryInfo(accessToken, owner, repo)
+  const result = await syncRepositoryInfo(accessToken, owner, repo)
+  // Mark as syncing
+  await db.update(schema.repositories).set({ syncing: true }).where(eq(schema.repositories.id, result.repository.id))
+  return result
 }
 
 async function stepSyncCollaborators(accessToken: string, owner: string, repo: string, repositoryId: number) {
   'use step'
-  const { syncCollaborators } = await import('../utils/sync')
+  const { syncCollaborators } = await import('../utils/sync.js')
   console.log(`[Workflow] Step 2: Syncing collaborators for ${owner}/${repo}`)
   return await syncCollaborators(accessToken, owner, repo, repositoryId)
 }
@@ -52,37 +57,41 @@ async function stepVerifyAccess(userId: number, repositoryId: number) {
 
 async function stepSyncLabels(accessToken: string, owner: string, repo: string, repositoryId: number) {
   'use step'
-  const { syncLabels } = await import('../utils/sync')
+  const { syncLabels } = await import('../utils/sync.js')
   console.log(`[Workflow] Step 4: Syncing labels for ${owner}/${repo}`)
   return await syncLabels(accessToken, owner, repo, repositoryId)
 }
 
 async function stepSyncMilestones(accessToken: string, owner: string, repo: string, repositoryId: number) {
   'use step'
-  const { syncMilestones } = await import('../utils/sync')
+  const { syncMilestones } = await import('../utils/sync.js')
   console.log(`[Workflow] Step 5: Syncing milestones for ${owner}/${repo}`)
   return await syncMilestones(accessToken, owner, repo, repositoryId)
 }
 
 async function stepSyncTypes(accessToken: string, owner: string, repo: string, repositoryId: number) {
   'use step'
-  const { syncTypes } = await import('../utils/sync')
+  const { syncTypes } = await import('../utils/sync.js')
   console.log(`[Workflow] Step 6: Syncing types for ${owner}/${repo}`)
   return await syncTypes(accessToken, owner, repo, repositoryId)
 }
 
 async function stepSyncIssues(accessToken: string, owner: string, repo: string, repositoryId: number) {
   'use step'
-  const { syncIssues } = await import('../utils/sync')
+  const { syncIssues } = await import('../utils/sync.js')
   console.log(`[Workflow] Step 7: Syncing issues and PRs for ${owner}/${repo}`)
   return await syncIssues(accessToken, owner, repo, repositoryId)
 }
 
 async function stepUpdateLastSynced(repositoryId: number) {
   'use step'
-  const { updateRepositoryLastSynced } = await import('../utils/sync')
-  console.log(`[Workflow] Step 8: Updating last synced timestamp`)
-  await updateRepositoryLastSynced(repositoryId)
+  const { eq } = await import('drizzle-orm')
+  const { db, schema } = await import('@nuxthub/db')
+  console.log(`[Workflow] Step 8: Updating last synced timestamp and clearing syncing flag`)
+  await db.update(schema.repositories).set({
+    lastSyncedAt: new Date(),
+    syncing: false
+  }).where(eq(schema.repositories.id, repositoryId))
 }
 
 async function stepEnsureSubscription(userId: number, repositoryId: number) {
