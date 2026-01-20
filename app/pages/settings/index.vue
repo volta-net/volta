@@ -750,15 +750,24 @@ function getSubscriptionSummary(repo: InstallationRepository): { label: string, 
             <div class="flex items-center gap-3 min-w-0">
               <UAvatar :icon="repo.private ? 'i-lucide-lock' : 'i-lucide-book'" size="md" />
               <div class="min-w-0">
-                <p class="font-medium truncate flex items-center gap-2">
+                <p class="font-medium truncate flex items-center gap-1.5">
                   <NuxtLink :to="`https://github.com/${repo.fullName}`" target="_blank">{{ repo.name }}</NuxtLink>
                   <UBadge
-                    v-if="repo.synced"
+                    v-if="isSyncing(repo.fullName)"
+                    color="important"
+                    variant="subtle"
+                    icon="i-lucide-loader-circle"
+                    label="Syncing"
+                    size="xs"
+                    :ui="{ leadingIcon: 'animate-spin' }"
+                  />
+                  <UBadge
+                    v-else-if="repo.synced && repo.lastSyncedAt"
                     color="success"
                     variant="subtle"
                     size="xs"
                   >
-                    Synced
+                    Synced {{ useTimeAgo(repo.lastSyncedAt).value }}
                   </UBadge>
                 </p>
                 <p class="text-xs text-muted truncate flex items-center gap-1">
@@ -771,14 +780,6 @@ function getSubscriptionSummary(repo: InstallationRepository): { label: string, 
                     <UIcon name="i-lucide-clock" class="size-3" />
                     {{ useTimeAgo(repo.updatedAt).value }}
                   </span>
-                  <span class="text-muted">·</span>
-
-                  <template v-if="repo.synced && repo.lastSyncedAt">
-                    Synced {{ useTimeAgo(repo.lastSyncedAt).value }}
-                  </template>
-                  <template v-else>
-                    Not imported yet
-                  </template>
                 </p>
               </div>
             </div>

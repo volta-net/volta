@@ -43,7 +43,8 @@ export default defineEventHandler(async (event) => {
 
   console.log(`[Webhook] Received ${githubEvent} event (${deliveryId})`)
 
-  switch (githubEvent) {
+  try {
+    switch (githubEvent) {
     case 'ping':
       return { message: 'pong' }
 
@@ -254,7 +255,14 @@ export default defineEventHandler(async (event) => {
 
     default:
       console.log(`[Webhook] Unhandled event: ${githubEvent}`)
-  }
+    }
 
-  return { success: true }
+    return { success: true }
+  } catch (error) {
+    console.error(`[Webhook] Error processing ${githubEvent}:`, error)
+    throw createError({
+      statusCode: 500,
+      statusMessage: 'Webhook processing failed'
+    })
+  }
 })
