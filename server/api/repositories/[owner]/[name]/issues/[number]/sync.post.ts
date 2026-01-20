@@ -167,7 +167,7 @@ async function syncIssueFromGitHub(
 
     // Sync labels
     const labelGithubIds = prData.labels
-      .filter((l): l is { id: number } => typeof l === 'object' && 'id' in l)
+      .filter(l => typeof l === 'object' && 'id' in l)
       .map(l => l.id)
     await syncLabels(issueId, labelGithubIds)
 
