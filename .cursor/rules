@@ -73,8 +73,8 @@ We use [Vercel Workflow DevKit](https://useworkflow.dev) for long-running operat
 
 **Key workflows:**
 - `syncRepository.ts` - Full repository sync (collaborators, labels, milestones, issues)
-- `handleWebhook.ts` - GitHub webhook event processing
-- `syncIssue.ts` - Individual issue/PR sync
+
+Note: Webhooks and individual issue sync run synchronously (not as workflows) since they need immediate responses.
 
 **Workflow pattern:**
 ```ts
