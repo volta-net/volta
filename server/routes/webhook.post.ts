@@ -8,7 +8,7 @@ export default defineEventHandler(async (event) => {
 
   // Handle ping immediately (no workflow needed)
   if (githubEvent === 'ping') {
-        return { message: 'pong' }
+    return { message: 'pong' }
   }
 
   try {
