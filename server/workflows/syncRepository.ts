@@ -120,6 +120,14 @@ async function stepEnsureSubscription(userId: number, repositoryId: number) {
   }
 }
 
+async function stepClearSyncingFlag(repositoryId: number) {
+  'use step'
+  const { eq } = await import('drizzle-orm')
+  const { db, schema } = await import('@nuxthub/db')
+  console.log(`[Workflow] Clearing syncing flag for repository ${repositoryId}`)
+  await db.update(schema.repositories).set({ syncing: false }).where(eq(schema.repositories.id, repositoryId))
+}
+
 /**
  * Durable workflow to sync a GitHub repository.
  * Each step is independently resumable, solving serverless timeout issues.
@@ -128,45 +136,56 @@ export async function syncRepositoryWorkflow(input: SyncRepositoryInput): Promis
   'use workflow'
   const { accessToken, owner, repo, userId } = input
 
-  // Step 1: Sync repository info and get repository ID
-  const { repository } = await stepSyncRepositoryInfo(accessToken, owner, repo)
+  let repositoryId: number | null = null
 
-  // Step 2: Sync collaborators (needed for access verification)
-  const collaboratorsCount = await stepSyncCollaborators(accessToken, owner, repo, repository.id)
+  try {
+    // Step 1: Sync repository info and get repository ID
+    const { repository } = await stepSyncRepositoryInfo(accessToken, owner, repo)
+    repositoryId = repository.id
 
-  // Step 3: Verify user has access (must be after syncCollaborators for first-time sync)
-  await stepVerifyAccess(userId, repository.id)
+    // Step 2: Sync collaborators (needed for access verification)
+    const collaboratorsCount = await stepSyncCollaborators(accessToken, owner, repo, repository.id)
 
-  // Step 4: Sync labels
-  const labelsCount = await stepSyncLabels(accessToken, owner, repo, repository.id)
+    // Step 3: Verify user has access (must be after syncCollaborators for first-time sync)
+    await stepVerifyAccess(userId, repository.id)
 
-  // Step 5: Sync milestones
-  const milestonesCount = await stepSyncMilestones(accessToken, owner, repo, repository.id)
+    // Step 4: Sync labels
+    const labelsCount = await stepSyncLabels(accessToken, owner, repo, repository.id)
 
-  // Step 6: Sync types (organization issue types)
-  const typesCount = await stepSyncTypes(accessToken, owner, repo, repository.id)
+    // Step 5: Sync milestones
+    const milestonesCount = await stepSyncMilestones(accessToken, owner, repo, repository.id)
 
-  // Step 7: Sync issues and PRs (the longest operation)
-  const issuesCount = await stepSyncIssues(accessToken, owner, repo, repository.id)
+    // Step 6: Sync types (organization issue types)
+    const typesCount = await stepSyncTypes(accessToken, owner, repo, repository.id)
 
-  // Step 8: Update last synced timestamp
-  await stepUpdateLastSynced(repository.id)
+    // Step 7: Sync issues and PRs (the longest operation)
+    const issuesCount = await stepSyncIssues(accessToken, owner, repo, repository.id)
 
-  // Step 9: Ensure user subscription exists
-  await stepEnsureSubscription(userId, repository.id)
+    // Step 8: Update last synced timestamp (also clears syncing flag)
+    await stepUpdateLastSynced(repository.id)
 
-  console.log(`[Workflow] Repository sync completed for ${owner}/${repo}`)
+    // Step 9: Ensure user subscription exists
+    await stepEnsureSubscription(userId, repository.id)
 
-  return {
-    success: true,
-    repository: repository.fullName,
-    synced: {
-      collaborators: collaboratorsCount,
-      labels: labelsCount,
-      milestones: milestonesCount,
-      types: typesCount,
-      issues: issuesCount.issues,
-      pullRequests: issuesCount.pullRequests
+    console.log(`[Workflow] Repository sync completed for ${owner}/${repo}`)
+
+    return {
+      success: true,
+      repository: repository.fullName,
+      synced: {
+        collaborators: collaboratorsCount,
+        labels: labelsCount,
+        milestones: milestonesCount,
+        types: typesCount,
+        issues: issuesCount.issues,
+        pullRequests: issuesCount.pullRequests
+      }
     }
+  } catch (error) {
+    // Clear syncing flag on error to prevent stuck state
+    if (repositoryId) {
+      await stepClearSyncingFlag(repositoryId)
+    }
+    throw error
   }
 }

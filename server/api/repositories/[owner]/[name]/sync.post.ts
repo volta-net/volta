@@ -1,4 +1,4 @@
-import { eq, and } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import { db, schema } from '@nuxthub/db'
 import { start } from 'workflow/api'
 import { syncRepositoryWorkflow } from '../../../../workflows/syncRepository'
@@ -14,12 +14,23 @@ export default defineEventHandler(async (event) => {
 
   const accessToken = await getValidAccessToken(event)
 
-  // Get current lastSyncedAt before starting (for polling comparison)
+  // Check if already syncing (prevent double-sync)
   const fullName = `${owner}/${repo}`
   const existingRepo = await db.query.repositories.findFirst({
     where: eq(schema.repositories.fullName, fullName),
-    columns: { lastSyncedAt: true }
+    columns: { lastSyncedAt: true, syncing: true }
   })
+
+  if (existingRepo?.syncing) {
+    // Already syncing, just return current state
+    return {
+      started: false,
+      alreadySyncing: true,
+      repository: fullName,
+      previousSyncedAt: existingRepo.lastSyncedAt?.toISOString() ?? null
+    }
+  }
+
   const previousSyncedAt = existingRepo?.lastSyncedAt?.toISOString() ?? null
 
   // Start the durable workflow (fire and forget)

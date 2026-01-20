@@ -82,6 +82,7 @@ const removingAll = ref<Set<number>>(new Set())
 
 interface SyncStartResult {
   started: boolean
+  alreadySyncing?: boolean
   repository: string
   previousSyncedAt: string | null
 }
@@ -255,7 +256,7 @@ async function syncAllRepositories(installation: Installation) {
 
     // Poll until all are done
     const maxAttempts = 180
-    const pollInterval = 5000
+    const pollInterval = 2000
 
     for (let i = 0; i < maxAttempts; i++) {
       await new Promise(resolve => setTimeout(resolve, pollInterval))
