@@ -23,7 +23,7 @@ import type {
   NotificationAction,
   ReviewState,
   WorkflowConclusion
-} from '../../server/db/schema'
+} from '@nuxthub/db/schema'
 
 /**
  * Utility type to convert Date to string (for JSON serialized API responses)

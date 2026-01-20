@@ -1,5 +1,5 @@
 import { and, inArray, notInArray, eq, desc, ilike, sql, gt, isNull } from 'drizzle-orm'
-import { db, schema } from 'hub:db'
+import { db, schema } from '@nuxthub/db'
 
 /**
  * Flexible issues endpoint with query parameter filters

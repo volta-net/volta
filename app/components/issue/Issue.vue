@@ -253,12 +253,17 @@ defineShortcuts({
     </UDashboardNavbar>
 
     <!-- Loading state (only on initial load, not refetches) -->
-    <Loading v-if="status === 'pending' && !issue" />
+    <AppLoading v-if="status === 'pending' && !issue" />
 
     <!-- Issue/PR View -->
     <div v-else-if="issue" class="flex flex-col lg:grid lg:grid-cols-3 flex-1 min-h-0 overflow-y-auto lg:overflow-hidden">
       <div class="border-b lg:border-b-0 lg:border-l border-default lg:order-last lg:overflow-y-auto p-4 sm:px-6">
-        <IssueMeta :issue="issue" :analyzing-resolution="analyzingResolution" @refresh="handleRefresh" @scroll-to-answer="scrollToAnswerComment" />
+        <IssueMeta
+          :issue="issue"
+          :analyzing-resolution="analyzingResolution"
+          @refresh="handleRefresh"
+          @scroll-to-answer="scrollToAnswerComment"
+        />
       </div>
 
       <div :key="issue.id" class="flex-1 lg:overflow-y-auto p-4 sm:px-6 flex flex-col gap-4 lg:col-span-2 pb-22">

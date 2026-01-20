@@ -15,24 +15,103 @@ watch(focused, (isFocused) => {
   }
 })
 
-const syncing = ref<Set<string>>(new Set())
+// Track locally initiated syncs (for immediate UI feedback before server confirms)
+const localSyncing = ref<Set<string>>(new Set())
+// Track repos with active polling loops to prevent duplicates
+const activePolls = ref<Set<string>>(new Set())
 const deleting = ref<Set<string>>(new Set())
 const updatingSubscription = ref<string | null>(null)
+
+// Combined syncing state: server-side OR locally initiated
+function isSyncing(fullName: string) {
+  if (localSyncing.value.has(fullName)) return true
+  const repo = installations.value
+    ?.flatMap(inst => inst.repositories)
+    .find(r => r.fullName === fullName)
+  return repo?.syncing ?? false
+}
+
+// Auto-poll when there are server-side syncing repos (for page refresh case)
+const serverSyncingRepos = computed(() =>
+  installations.value
+    ?.flatMap(inst => inst.repositories)
+    .filter(r => r.syncing)
+    .map(r => r.fullName) ?? []
+)
+
+// Poll for server-side syncing repos on page load
+watch(serverSyncingRepos, (repos) => {
+  for (const fullName of repos) {
+    // Only start polling if no active poll exists for this repo
+    if (!activePolls.value.has(fullName)) {
+      localSyncing.value.add(fullName)
+      startPolling(fullName, true)
+    }
+  }
+}, { immediate: true })
+
+/**
+ * Start polling for a repository sync completion.
+ * @param fullName - Repository full name (owner/repo)
+ * @param showToast - Whether to show a success toast on completion
+ */
+async function startPolling(fullName: string, showToast = true) {
+  // Prevent duplicate polling loops
+  if (activePolls.value.has(fullName)) {
+    return
+  }
+
+  activePolls.value.add(fullName)
+  const [, name] = fullName.split('/')
+  const maxAttempts = 180
+  const pollInterval = 1000
+
+  try {
+    for (let i = 0; i < maxAttempts; i++) {
+      await new Promise(resolve => setTimeout(resolve, pollInterval))
+      await refresh()
+
+      const repo = installations.value
+        ?.flatMap(inst => inst.repositories)
+        .find(r => r.fullName === fullName)
+
+      if (repo && !repo.syncing) {
+        localSyncing.value.delete(fullName)
+        if (showToast) {
+          toast.add({
+            title: `Repo ${name} imported`,
+            description: 'Repository sync completed successfully',
+            color: 'success'
+          })
+        }
+        return
+      }
+    }
+
+    // Timeout
+    localSyncing.value.delete(fullName)
+    if (showToast) {
+      toast.add({
+        title: 'Sync in progress',
+        description: 'The sync is taking longer than expected. It will complete in the background.',
+        color: 'warning'
+      })
+    }
+  } finally {
+    activePolls.value.delete(fullName)
+  }
+}
 
 // Installation-level bulk operation loading states
 const importingAll = ref<Set<number>>(new Set())
 const syncingAll = ref<Set<number>>(new Set())
 const removingAll = ref<Set<number>>(new Set())
 
-interface SyncResult {
-  success: boolean
+interface SyncStartResult {
+  started: boolean
+  alreadySyncing?: boolean
   repository: string
-  synced: {
-    labels: number
-    milestones: number
-    issues: number
-    pullRequests: number
-  }
+  previousSyncedAt: string | null
 }
 
 // Sort repositories: synced first, then by stars (desc), then by updatedAt (desc)
@@ -70,29 +149,67 @@ const accordionItems = computed(() => {
 async function syncRepository(fullName: string) {
   const [owner, name] = fullName.split('/')
 
-  syncing.value.add(fullName)
+  // Check if already polling (prevents double-click issues)
+  if (activePolls.value.has(fullName)) {
+    return
+  }
+
+  localSyncing.value.add(fullName)
 
   try {
-    const result = await $fetch<SyncResult>(`/api/repositories/${owner}/${name}/sync`, {
+    // Start the workflow (returns immediately, server sets syncing=true)
+    const result = await $fetch<SyncStartResult>(`/api/repositories/${owner}/${name}/sync`, {
       method: 'POST'
     })
 
-    // Refresh installations to update sync status
-    await refresh()
+    // If server says already syncing, just start polling without showing duplicate toast
+    if (result.alreadySyncing) {
+      await startPolling(fullName, true)
+      return
+    }
 
-    toast.add({
-      title: `Repo ${name} imported`,
-      description: `Imported ${result.synced.issues} issues, ${result.synced.pullRequests} PRs, ${result.synced.labels} labels, ${result.synced.milestones} milestones`,
-      color: 'success'
-    })
+    // Poll until server-side syncing flag is false (workflow completed)
+    await startPolling(fullName, true)
   } catch (error: any) {
+    localSyncing.value.delete(fullName)
     toast.add({
       title: 'Sync failed',
       description: error.data?.message || 'An error occurred',
       color: 'error'
     })
+  }
+}
+
+/**
+ * Poll until all repositories in the list finish syncing.
+ * Returns true if all completed, false if timeout.
+ */
+async function pollUntilAllComplete(repoFullNames: string[]): Promise<boolean> {
+  const maxAttempts = 180
+  const pollInterval = 2000
+
+  // Mark all as having active polls
+  repoFullNames.forEach(name => activePolls.value.add(name))
+
+  try {
+    for (let i = 0; i < maxAttempts; i++) {
+      await new Promise(resolve => setTimeout(resolve, pollInterval))
+      await refresh()
+
+      const stillSyncing = repoFullNames.filter((fullName) => {
+        const current = installations.value
+          ?.flatMap(inst => inst.repositories)
+          .find(r => r.fullName === fullName)
+        return current?.syncing
+      })
+
+      if (stillSyncing.length === 0) {
+        return true
+      }
+    }
+    return false
   } finally {
-    syncing.value.delete(fullName)
+    repoFullNames.forEach(name => activePolls.value.delete(name))
   }
 }
 
@@ -106,29 +223,47 @@ async function importAllRepositories(installation: Installation) {
     return
   }
 
+  const repoNames = unsyncedRepos.map(r => r.fullName)
+
+  // Check if any are already being polled
+  if (repoNames.some(name => activePolls.value.has(name))) {
+    toast.add({
+      title: 'Import in progress',
+      description: 'Some repositories are already being imported.'
+    })
+    return
+  }
+
   importingAll.value.add(installation.id)
-  unsyncedRepos.forEach(repo => syncing.value.add(repo.fullName))
+  repoNames.forEach(name => localSyncing.value.add(name))
 
   try {
+    // Start all workflows
     await Promise.all(unsyncedRepos.map(async (repo) => {
       const [owner, name] = repo.fullName.split('/')
-      try {
-        await $fetch(`/api/repositories/${owner}/${name}/sync`, { method: 'POST' })
-        // Optimistically update local state
-        repo.synced = true
-        repo.lastSyncedAt = new Date().toISOString()
-        triggerRef(installations)
-      } finally {
-        syncing.value.delete(repo.fullName)
-      }
+      await $fetch(`/api/repositories/${owner}/${name}/sync`, { method: 'POST' })
     }))
 
-    toast.add({
-      title: 'Repositories imported',
-      description: `Successfully imported ${unsyncedRepos.length} repositories.`,
-      color: 'success'
-    })
+    // Poll until all are done
+    const allCompleted = await pollUntilAllComplete(repoNames)
+
+    repoNames.forEach(name => localSyncing.value.delete(name))
+
+    if (allCompleted) {
+      toast.add({
+        title: 'Repositories imported',
+        description: `Successfully imported ${unsyncedRepos.length} repositories.`,
+        color: 'success'
+      })
+    } else {
+      toast.add({
+        title: 'Import in progress',
+        description: 'Some repositories are still importing in the background.',
+        color: 'warning'
+      })
+    }
   } catch (error: any) {
+    repoNames.forEach(name => localSyncing.value.delete(name))
     await refresh()
     toast.add({
       title: 'Import failed',
@@ -146,28 +281,47 @@ async function syncAllRepositories(installation: Installation) {
     return
   }
 
+  const repoNames = syncedRepos.map(r => r.fullName)
+
+  // Check if any are already being polled
+  if (repoNames.some(name => activePolls.value.has(name))) {
+    toast.add({
+      title: 'Sync in progress',
+      description: 'Some repositories are already being synced.'
+    })
+    return
+  }
+
   syncingAll.value.add(installation.id)
-  syncedRepos.forEach(repo => syncing.value.add(repo.fullName))
+  repoNames.forEach(name => localSyncing.value.add(name))
 
   try {
+    // Start all workflows
     await Promise.all(syncedRepos.map(async (repo) => {
       const [owner, name] = repo.fullName.split('/')
-      try {
-        await $fetch(`/api/repositories/${owner}/${name}/sync`, { method: 'POST' })
-        // Optimistically update local state
-        repo.lastSyncedAt = new Date().toISOString()
-        triggerRef(installations)
-      } finally {
-        syncing.value.delete(repo.fullName)
-      }
+      await $fetch(`/api/repositories/${owner}/${name}/sync`, { method: 'POST' })
     }))
 
-    toast.add({
-      title: 'Repositories synced',
-      description: `Successfully synced ${syncedRepos.length} repositories.`,
-      color: 'success'
-    })
+    // Poll until all are done
+    const allCompleted = await pollUntilAllComplete(repoNames)
+
+    repoNames.forEach(name => localSyncing.value.delete(name))
+
+    if (allCompleted) {
+      toast.add({
+        title: 'Repositories synced',
+        description: `Successfully synced ${syncedRepos.length} repositories.`,
+        color: 'success'
+      })
+    } else {
+      toast.add({
+        title: 'Sync in progress',
+        description: 'Some repositories are still syncing in the background.',
+        color: 'warning'
+      })
+    }
   } catch (error: any) {
+    repoNames.forEach(name => localSyncing.value.delete(name))
     await refresh()
     toast.add({
       title: 'Sync failed',
@@ -596,15 +750,24 @@ function getSubscriptionSummary(repo: InstallationRepository): { label: string, 
             <div class="flex items-center gap-3 min-w-0">
               <UAvatar :icon="repo.private ? 'i-lucide-lock' : 'i-lucide-book'" size="md" />
               <div class="min-w-0">
-                <p class="font-medium truncate flex items-center gap-2">
+                <p class="font-medium truncate flex items-center gap-1.5">
                   <NuxtLink :to="`https://github.com/${repo.fullName}`" target="_blank">{{ repo.name }}</NuxtLink>
                   <UBadge
-                    v-if="repo.synced"
+                    v-if="isSyncing(repo.fullName)"
+                    color="important"
+                    variant="subtle"
+                    icon="i-lucide-loader-circle"
+                    label="Syncing"
+                    size="xs"
+                    :ui="{ leadingIcon: 'animate-spin' }"
+                  />
+                  <UBadge
+                    v-else-if="repo.synced && repo.lastSyncedAt"
                     color="success"
                     variant="subtle"
                     size="xs"
                   >
-                    Synced
+                    Synced {{ useTimeAgo(repo.lastSyncedAt).value }}
                   </UBadge>
                 </p>
                 <p class="text-xs text-muted truncate flex items-center gap-1">
@@ -617,14 +780,6 @@ function getSubscriptionSummary(repo: InstallationRepository): { label: string, 
                     <UIcon name="i-lucide-clock" class="size-3" />
                     {{ useTimeAgo(repo.updatedAt).value }}
                   </span>
-                  <span class="text-muted">·</span>
-
-                  <template v-if="repo.synced && repo.lastSyncedAt">
-                    Synced {{ useTimeAgo(repo.lastSyncedAt).value }}
-                  </template>
-                  <template v-else>
-                    Not imported yet
-                  </template>
                 </p>
               </div>
             </div>
@@ -656,8 +811,8 @@ function getSubscriptionSummary(repo: InstallationRepository): { label: string, 
                   {
                     label: 'Sync now',
                     icon: 'i-lucide-refresh-cw',
-                    loading: syncing.has(repo.fullName),
-                    disabled: syncing.has(repo.fullName) || deleting.has(repo.fullName),
+                    loading: isSyncing(repo.fullName),
+                    disabled: isSyncing(repo.fullName) || deleting.has(repo.fullName),
                     onSelect: (e) => {
                       e.preventDefault()
                       syncRepository(repo.fullName)
@@ -668,7 +823,7 @@ function getSubscriptionSummary(repo: InstallationRepository): { label: string, 
                     icon: 'i-lucide-trash-2',
                     color: 'error' as const,
                     loading: deleting.has(repo.fullName),
-                    disabled: syncing.has(repo.fullName) || deleting.has(repo.fullName),
+                    disabled: isSyncing(repo.fullName) || deleting.has(repo.fullName),
                     onSelect: (e) => {
                       e.preventDefault()
                       deleteRepository(repo.fullName)
@@ -688,7 +843,7 @@ function getSubscriptionSummary(repo: InstallationRepository): { label: string, 
               v-else
               icon="i-lucide-download"
               variant="soft"
-              :loading="syncing.has(repo.fullName)"
+              :loading="isSyncing(repo.fullName)"
               @click="syncRepository(repo.fullName)"
             >
               Import

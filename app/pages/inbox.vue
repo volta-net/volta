@@ -214,7 +214,7 @@ useSeoMeta({
 
     <template #body>
       <!-- Loading state (only on initial load, not refetches) -->
-      <Loading v-if="status === 'pending' && !notifications?.length" />
+      <AppLoading v-if="status === 'pending' && !notifications?.length" />
 
       <Notifications
         v-else

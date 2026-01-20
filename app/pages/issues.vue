@@ -254,7 +254,7 @@ const isMobile = breakpoints.smaller('lg')
       />
 
       <!-- Loading state (only on initial load, not refetches) -->
-      <Loading v-else-if="status === 'pending' && !items?.length" />
+      <AppLoading v-else-if="status === 'pending' && !items?.length" />
 
       <!-- Empty state -->
       <UEmpty

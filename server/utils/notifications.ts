@@ -1,6 +1,6 @@
 import { eq, and, inArray } from 'drizzle-orm'
-import { db, schema } from 'hub:db'
-import type { NotificationType, NotificationAction } from '../db/schema'
+import { db, schema } from '@nuxthub/db'
+import type { NotificationType, NotificationAction } from '@nuxthub/db/schema'
 import type {
   GitHubUser,
   GitHubRepository,

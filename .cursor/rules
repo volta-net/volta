@@ -18,6 +18,7 @@ Volta is a **GitHub inbox replacement** — a fast, beautiful way to manage GitH
 - **Database**: NuxtHub with Drizzle ORM (PostgreSQL)
 - **Editor**: TipTap with custom extensions
 - **AI**: Vercel AI SDK (`ai` package) for issue completion
+- **Durable Functions**: Vercel Workflow DevKit for long-running operations
 
 ## Critical Context
 
@@ -63,7 +64,47 @@ We subscribe to these GitHub events to keep Volta in sync:
 - `server/db/` - Database schema and migrations (Drizzle ORM)
 - `server/routes/` - Auth and webhook handlers
 - `server/utils/` - Server utilities (Octokit, webhooks, sync)
+- `server/workflows/` - Durable workflows (Vercel Workflow DevKit)
 - `shared/types/` - Shared TypeScript types
+
+### Durable Workflows
+
+We use [Vercel Workflow DevKit](https://useworkflow.dev) for long-running operations that would timeout in serverless environments. Workflows use the `"use workflow"` and `"use step"` directives.
+
+**Key workflows:**
+- `syncRepository.ts` - Full repository sync (collaborators, labels, milestones, issues)
+
+Note: Webhooks and individual issue sync run synchronously (not as workflows) since they need immediate responses.
+
+**Workflow pattern:**
+```ts
+// server/workflows/example.ts
+"use workflow";
+
+export async function myWorkflow(input: Input) {
+  // Each step is durable and resumable
+  const result1 = await (async () => {
+    "use step";
+    return await longRunningOperation();
+  })();
+
+  const result2 = await (async () => {
+    "use step";
+    return await anotherOperation(result1);
+  })();
+
+  return { result1, result2 };
+}
+```
+
+**Triggering workflows:**
+```ts
+import { start } from 'workflow'
+import { myWorkflow } from '~/server/workflows/example'
+
+// In an API route
+await start(myWorkflow, [{ input: 'value' }])
+```
 
 ## API Route Conventions
 
@@ -103,7 +144,7 @@ The database uses auto-generated `id` (serial) as primary key, with `githubId` f
 
 ```ts
 import { eq } from 'drizzle-orm'
-import { db, schema } from 'hub:db'
+import { db, schema } from '@nuxthub/db'
 
 // Find by GitHub ID
 const [repo] = await db.select()

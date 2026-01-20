@@ -1,6 +1,7 @@
-import { eq, and } from 'drizzle-orm'
-import { db, schema } from 'hub:db'
-import { Octokit } from 'octokit'
+import { eq } from 'drizzle-orm'
+import { db, schema } from '@nuxthub/db'
+import { start } from 'workflow/api'
+import { syncRepositoryWorkflow } from '../../../../workflows/syncRepository'
 
 export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
@@ -13,69 +14,38 @@ export default defineEventHandler(async (event) => {
 
   const accessToken = await getValidAccessToken(event)
 
-  // Sync repository (runs directly without workflow for now)
-  const { repository } = await syncRepositoryInfo(accessToken, owner, repo)
+  // Check if already syncing (prevent double-sync)
+  const fullName = `${owner}/${repo}`
+  const existingRepo = await db.query.repositories.findFirst({
+    where: eq(schema.repositories.fullName, fullName),
+    columns: { lastSyncedAt: true, syncing: true }
+  })
 
-  // Sync collaborators first (so we can verify access)
-  const collaboratorsCount = await syncCollaborators(accessToken, owner, repo, repository.id)
-
-  // Verify user has access to this repository (must be after syncCollaborators for first-time sync)
-  await requireRepositoryAccess(user.id, repository.id)
-  const labelsCount = await syncLabels(accessToken, owner, repo, repository.id)
-  const milestonesCount = await syncMilestones(accessToken, owner, repo, repository.id)
-  const typesCount = await syncTypes(accessToken, owner, repo, repository.id)
-  const issuesCount = await syncIssues(accessToken, owner, repo, repository.id)
-  await updateRepositoryLastSynced(repository.id)
-
-  // Also ensure the current user is subscribed
-  // Fetch user ID from GitHub if not in session (for older sessions)
-  let userId = user?.id
-  if (!userId) {
-    try {
-      const octokit = new Octokit({ auth: accessToken })
-      const { data: ghUser } = await octokit.rest.users.getAuthenticated()
-      userId = ghUser.id
-    } catch (error) {
-      console.warn('[sync] Failed to fetch user info from GitHub:', error)
+  if (existingRepo?.syncing) {
+    // Already syncing, just return current state
+    return {
+      started: false,
+      alreadySyncing: true,
+      repository: fullName,
+      previousSyncedAt: existingRepo.lastSyncedAt?.toISOString() ?? null
     }
   }
 
-  if (userId) {
-    try {
-      const existingSubscription = await db.query.repositorySubscriptions.findFirst({
-        where: and(
-          eq(schema.repositorySubscriptions.userId, userId),
-          eq(schema.repositorySubscriptions.repositoryId, repository.id)
-        )
-      })
+  const previousSyncedAt = existingRepo?.lastSyncedAt?.toISOString() ?? null
 
-      if (!existingSubscription) {
-        await db.insert(schema.repositorySubscriptions).values({
-          userId,
-          repositoryId: repository.id,
-          issues: true,
-          pullRequests: true,
-          releases: true,
-          ci: true,
-          mentions: true,
-          activity: true
-        })
-      }
-    } catch (error) {
-      console.warn('[sync] Failed to create subscription:', error)
-    }
-  }
+  // Start the durable workflow (fire and forget)
+  // The workflow will update lastSyncedAt when complete
+  await start(syncRepositoryWorkflow, [{
+    accessToken,
+    owner,
+    repo,
+    userId: user.id
+  }])
 
+  // Return immediately - frontend should poll /api/installations to detect completion
   return {
-    success: true,
-    repository: repository.fullName,
-    synced: {
-      collaborators: collaboratorsCount,
-      labels: labelsCount,
-      milestones: milestonesCount,
-      types: typesCount,
-      issues: issuesCount.issues,
-      pullRequests: issuesCount.pullRequests
-    }
+    started: true,
+    repository: fullName,
+    previousSyncedAt
   }
 })

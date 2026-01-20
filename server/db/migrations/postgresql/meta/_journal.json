@@ -15,6 +15,13 @@
       "when": 1768842682794,
       "tag": "0001_deep_starjammers",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1768919155477,
+      "tag": "0002_ancient_darkstar",
+      "breakpoints": true
     }
   ]
 }

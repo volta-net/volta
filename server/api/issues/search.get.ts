@@ -1,5 +1,5 @@
 import { and, inArray, eq, desc, ilike, or, sql } from 'drizzle-orm'
-import { db, schema } from 'hub:db'
+import { db, schema } from '@nuxthub/db'
 
 /**
  * Search issues across all repositories the user has access to

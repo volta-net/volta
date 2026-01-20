@@ -1,6 +1,8 @@
 import { eq, and } from 'drizzle-orm'
-import { db, schema } from 'hub:db'
+import { db, schema } from '@nuxthub/db'
 import { Octokit } from 'octokit'
+import { ensureUser } from '../../../../../../utils/users'
+import { getDbLabelId } from '../../../../../../utils/sync'
 
 export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
@@ -48,8 +50,8 @@ export default defineEventHandler(async (event) => {
   // Get valid access token (refreshes if expired)
   const accessToken = await getValidAccessToken(event)
 
-  // Force re-sync from GitHub
-  await syncIssueFromGitHub(accessToken, issue)
+  // Sync issue directly (synchronous - needed for UI to wait)
+  await syncIssueFromGitHub(accessToken, owner, name, issue.id, issueNumber, issue.pullRequest)
 
   // Re-fetch issue with fresh data and all relations
   const freshIssue = await db.query.issues.findFirst({
@@ -99,139 +101,146 @@ export default defineEventHandler(async (event) => {
   }
 })
 
-// Re-sync issue from GitHub (force fetch latest data)
-async function syncIssueFromGitHub(accessToken: string, issue: any) {
+// Direct sync function (not a workflow)
+async function syncIssueFromGitHub(
+  accessToken: string,
+  owner: string,
+  repo: string,
+  issueId: number,
+  issueNumber: number,
+  isPullRequest: boolean
+) {
   const octokit = new Octokit({ auth: accessToken })
-  const [owner, repo] = issue.repository.fullName.split('/')
 
-  const isPR = issue.pullRequest
-
-  if (isPR) {
-    const { data: ghPr } = await octokit.rest.pulls.get({
+  if (isPullRequest) {
+    // Fetch PR data
+    const { data: prData } = await octokit.rest.pulls.get({
       owner,
       repo,
-      pull_number: issue.number
+      pull_number: issueNumber
     })
 
-    // Ensure author exists in database
-    if (ghPr.user) {
+    // Ensure user exists
+    if (prData.user) {
       await ensureUser({
-        id: ghPr.user.id,
-        login: ghPr.user.login,
-        avatar_url: ghPr.user.avatar_url
+        id: prData.user.id,
+        login: prData.user.login,
+        avatar_url: prData.user.avatar_url
       })
     }
 
-    // Ensure merged_by user exists and get internal ID
     let mergedById: number | null = null
-    if (ghPr.merged_by) {
+    if (prData.merged_by) {
       mergedById = await ensureUser({
-        id: ghPr.merged_by.id,
-        login: ghPr.merged_by.login,
-        avatar_url: ghPr.merged_by.avatar_url
+        id: prData.merged_by.id,
+        login: prData.merged_by.login,
+        avatar_url: prData.merged_by.avatar_url
       })
     }
 
-    // Update issue data
+    // Update PR data
     await db.update(schema.issues).set({
-      title: ghPr.title,
-      body: ghPr.body,
-      state: ghPr.state,
-      locked: ghPr.locked,
-      draft: ghPr.draft,
-      merged: ghPr.merged_at !== null,
-      commits: ghPr.commits,
-      additions: ghPr.additions,
-      deletions: ghPr.deletions,
-      changedFiles: ghPr.changed_files,
-      headRef: ghPr.head.ref,
-      headSha: ghPr.head.sha,
-      baseRef: ghPr.base.ref,
-      baseSha: ghPr.base.sha,
-      mergedAt: ghPr.merged_at ? new Date(ghPr.merged_at) : null,
+      title: prData.title,
+      body: prData.body,
+      state: prData.state,
+      locked: prData.locked,
+      draft: prData.draft,
+      merged: prData.merged_at !== null,
+      commits: prData.commits,
+      additions: prData.additions,
+      deletions: prData.deletions,
+      changedFiles: prData.changed_files,
+      headRef: prData.head.ref,
+      headSha: prData.head.sha,
+      baseRef: prData.base.ref,
+      baseSha: prData.base.sha,
+      mergedAt: prData.merged_at ? new Date(prData.merged_at) : null,
       mergedById,
-      closedAt: ghPr.closed_at ? new Date(ghPr.closed_at) : null,
+      closedAt: prData.closed_at ? new Date(prData.closed_at) : null,
       closedById: mergedById,
-      commentCount: ghPr.comments,
-      updatedAt: new Date(ghPr.updated_at)
-    }).where(eq(schema.issues.id, issue.id))
+      commentCount: prData.comments,
+      updatedAt: new Date(prData.updated_at)
+    }).where(eq(schema.issues.id, issueId))
 
     // Sync assignees
-    await syncAssignees(issue.id, ghPr.assignees || [])
+    await syncAssignees(issueId, prData.assignees || [])
 
     // Sync labels
-    await syncLabels(issue.id, ghPr.labels.map(l => l.id))
+    const labelGithubIds = prData.labels
+      .filter(l => typeof l === 'object' && 'id' in l)
+      .map(l => l.id)
+    await syncLabels(issueId, labelGithubIds)
 
     // Sync requested reviewers
-    const reviewers = (ghPr.requested_reviewers as any[])?.filter(r => r.id) || []
-    await syncRequestedReviewers(issue.id, reviewers)
+    const reviewers = (prData.requested_reviewers as any[])?.filter(r => r.id) || []
+    await syncRequestedReviewers(issueId, reviewers)
 
-    // Sync comments (general PR comments)
-    await syncComments(accessToken, owner, repo, issue.number, issue.id)
+    // Sync comments
+    await syncComments(octokit, owner, repo, issueNumber, issueId)
 
-    // Sync PR reviews and review comments
-    await syncReviews(accessToken, owner, repo, issue.number, issue.id)
-    await syncReviewComments(accessToken, owner, repo, issue.number, issue.id)
+    // Sync reviews
+    await syncReviews(octokit, owner, repo, issueNumber, issueId)
 
-    // Mark as fully synced
-    await db.update(schema.issues).set({ synced: true, syncedAt: new Date() }).where(eq(schema.issues.id, issue.id))
+    // Sync review comments
+    await syncReviewComments(octokit, owner, repo, issueNumber, issueId)
   } else {
-    const { data: ghIssue } = await octokit.rest.issues.get({
+    // Fetch issue data
+    const { data: issueData } = await octokit.rest.issues.get({
       owner,
       repo,
-      issue_number: issue.number
+      issue_number: issueNumber
     })
 
-    // Ensure author exists in database
-    if (ghIssue.user) {
+    // Ensure user exists
+    if (issueData.user) {
       await ensureUser({
-        id: ghIssue.user.id,
-        login: ghIssue.user.login,
-        avatar_url: ghIssue.user.avatar_url
+        id: issueData.user.id,
+        login: issueData.user.login,
+        avatar_url: issueData.user.avatar_url
       })
     }
 
-    // Ensure closed_by user exists and get internal ID
     let closedById: number | null = null
-    if (ghIssue.closed_by) {
+    if (issueData.closed_by) {
       closedById = await ensureUser({
-        id: ghIssue.closed_by.id,
-        login: ghIssue.closed_by.login,
-        avatar_url: ghIssue.closed_by.avatar_url
+        id: issueData.closed_by.id,
+        login: issueData.closed_by.login,
+        avatar_url: issueData.closed_by.avatar_url
       })
     }
 
     // Update issue data
     await db.update(schema.issues).set({
-      title: ghIssue.title,
-      body: ghIssue.body,
-      state: ghIssue.state,
-      stateReason: ghIssue.state_reason,
-      locked: ghIssue.locked,
-      closedAt: ghIssue.closed_at ? new Date(ghIssue.closed_at) : null,
+      title: issueData.title,
+      body: issueData.body,
+      state: issueData.state,
+      stateReason: issueData.state_reason,
+      locked: issueData.locked,
+      closedAt: issueData.closed_at ? new Date(issueData.closed_at) : null,
       closedById,
-      commentCount: ghIssue.comments,
-      reactionCount: ghIssue.reactions?.total_count ?? 0,
-      updatedAt: new Date(ghIssue.updated_at)
-    }).where(eq(schema.issues.id, issue.id))
+      commentCount: issueData.comments,
+      reactionCount: issueData.reactions?.total_count ?? 0,
+      updatedAt: new Date(issueData.updated_at)
+    }).where(eq(schema.issues.id, issueId))
 
     // Sync assignees
-    await syncAssignees(issue.id, ghIssue.assignees || [])
+    await syncAssignees(issueId, issueData.assignees || [])
 
     // Sync labels
-    const labelGithubIds = ghIssue.labels
+    const labelGithubIds = issueData.labels
       .filter((l): l is { id: number } => typeof l === 'object' && 'id' in l)
       .map(l => l.id)
-    await syncLabels(issue.id, labelGithubIds)
+    await syncLabels(issueId, labelGithubIds)
 
     // Sync comments
-    await syncComments(accessToken, owner, repo, issue.number, issue.id)
-
-    // Mark as fully synced
-    await db.update(schema.issues).set({ synced: true, syncedAt: new Date() }).where(eq(schema.issues.id, issue.id))
+    await syncComments(octokit, owner, repo, issueNumber, issueId)
   }
+
+  // Mark as synced
+  await db.update(schema.issues).set({ synced: true, syncedAt: new Date() }).where(eq(schema.issues.id, issueId))
 }
 
+// Helper functions
 async function syncAssignees(issueId: number, assignees: { id: number, login: string, avatar_url: string }[]) {
   const existingAssignees = await db
     .select()
@@ -356,9 +365,7 @@ async function syncRequestedReviewers(issueId: number, reviewers: { id: number, 
   }
 }
 
-async function syncComments(accessToken: string, owner: string, repo: string, issueNumber: number, issueId: number) {
-  const octokit = new Octokit({ auth: accessToken })
-
+async function syncComments(octokit: Octokit, owner: string, repo: string, issueNumber: number, issueId: number) {
   const { data: comments } = await octokit.rest.issues.listComments({
     owner,
     repo,
@@ -400,9 +407,7 @@ async function syncComments(accessToken: string, owner: string, repo: string, is
   }
 }
 
-async function syncReviews(accessToken: string, owner: string, repo: string, prNumber: number, issueId: number) {
-  const octokit = new Octokit({ auth: accessToken })
-
+async function syncReviews(octokit: Octokit, owner: string, repo: string, prNumber: number, issueId: number) {
   const { data: reviews } = await octokit.rest.pulls.listReviews({
     owner,
     repo,
@@ -445,9 +450,7 @@ async function syncReviews(accessToken: string, owner: string, repo: string, prN
   }
 }
 
-async function syncReviewComments(accessToken: string, owner: string, repo: string, prNumber: number, issueId: number) {
-  const octokit = new Octokit({ auth: accessToken })
-
+async function syncReviewComments(octokit: Octokit, owner: string, repo: string, prNumber: number, issueId: number) {
   const { data: comments } = await octokit.rest.pulls.listReviewComments({
     owner,
     repo,

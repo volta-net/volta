@@ -1,5 +1,5 @@
 import { eq, and } from 'drizzle-orm'
-import { db, schema } from 'hub:db'
+import { db, schema } from '@nuxthub/db'
 import { Octokit } from 'octokit'
 import { ensureUser } from './users'
 

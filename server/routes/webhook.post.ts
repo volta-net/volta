@@ -1,3 +1,43 @@
+import {
+  handleInstallationEvent,
+  handleInstallationRepositoriesEvent,
+  handleIssueEvent,
+  handleCommentEvent,
+  handleLabelEvent,
+  handleMilestoneEvent,
+  handlePullRequestEvent,
+  handleReviewEvent,
+  handleReviewCommentEvent,
+  handleRepositoryEvent,
+  handleMemberEvent,
+  handleReleaseEvent,
+  handleWorkflowRunEvent,
+  handleCheckRunEvent,
+  handleStatusEvent
+} from '../utils/webhooks'
+import {
+  notifyIssueOpened,
+  notifyIssueReopened,
+  notifyIssueClosed,
+  notifyIssueAssigned,
+  notifyIssueComment,
+  notifyPROpened,
+  notifyPRReopened,
+  notifyPRAssigned,
+  notifyPRReviewRequested,
+  notifyPRReadyForReview,
+  notifyPRMerged,
+  notifyPRClosed,
+  notifyPRComment,
+  notifyPRReviewSubmitted,
+  notifyPRReviewDismissed,
+  notifyReleasePublished,
+  notifyWorkflowFailed
+} from '../utils/notifications'
+import { triggerResolutionAnalysisOnComment } from '../utils/resolution'
+import { ensureUser, getDbRepositoryId } from '../utils/users'
+import { getDbIssueId, subscribeUserToIssue } from '../utils/sync'
+
 export default defineEventHandler(async (event) => {
   const { payload, event: githubEvent, deliveryId } = await parseWebhookEvent(event)
 
@@ -8,7 +48,7 @@ export default defineEventHandler(async (event) => {
       case 'ping':
         return { message: 'pong' }
 
-      // Installation events
+        // Installation events
       case 'installation':
         await handleInstallationEvent(
           payload.action,
@@ -27,45 +67,26 @@ export default defineEventHandler(async (event) => {
         break
 
       case 'installation_target':
-        break
-
       case 'meta':
+      // No-op
         break
 
-      // Issue events
+        // Issue events
       case 'issues':
         await handleIssueEvent(payload.action, payload.issue, payload.repository, payload.installation?.id, payload.sender)
         // Create notifications
         if (payload.action === 'opened') {
-          await notifyIssueOpened(
-            payload.issue,
-            payload.repository,
-            payload.sender,
-            payload.installation?.id
-          )
+          await notifyIssueOpened(payload.issue, payload.repository, payload.sender, payload.installation?.id)
         }
         if (payload.action === 'reopened') {
-          await notifyIssueReopened(
-            payload.issue,
-            payload.repository,
-            payload.sender
-          )
+          await notifyIssueReopened(payload.issue, payload.repository, payload.sender)
         }
         if (payload.action === 'closed') {
-          await notifyIssueClosed(
-            payload.issue,
-            payload.repository,
-            payload.sender
-          )
+          await notifyIssueClosed(payload.issue, payload.repository, payload.sender)
         }
         if (payload.action === 'assigned' && payload.assignee) {
-          await notifyIssueAssigned(
-            payload.issue,
-            payload.repository,
-            payload.assignee,
-            payload.sender
-          )
-          // Auto-subscribe assignee to the issue (using internal IDs)
+          await notifyIssueAssigned(payload.issue, payload.repository, payload.assignee, payload.sender)
+          // Auto-subscribe assignee to the issue
           const assigneeDbId = await ensureUser({
             id: payload.assignee.id,
             login: payload.assignee.login,
@@ -82,46 +103,18 @@ export default defineEventHandler(async (event) => {
         break
 
       case 'issue_comment': {
-        // Note: GitHub sends issue_comment for both issues and PRs
-        // Check if this is a PR comment (issue.pull_request exists)
         const isPRComment = !!payload.issue?.pull_request
-        if (payload.issue) {
-          // Only update issue metadata for actual issues, NOT for PRs
-          // The issue_comment webhook's `issue` object for PRs is incomplete -
-          // it doesn't have PR-specific fields (merged, merged_at, etc.) and
-          // could have stale state data that would overwrite correct values
-          if (!isPRComment) {
-            await handleIssueEvent('edited', payload.issue, payload.repository, payload.installation?.id)
-          }
+        if (payload.issue && !isPRComment) {
+          await handleIssueEvent('edited', payload.issue, payload.repository, payload.installation?.id)
         }
-        // Sync the comment to our database
         if (payload.comment) {
-          await handleCommentEvent(
-            payload.action,
-            payload.comment,
-            payload.issue,
-            payload.repository,
-            payload.installation?.id
-          )
+          await handleCommentEvent(payload.action, payload.comment, payload.issue, payload.repository, payload.installation?.id)
         }
-        // Create notification for comment
         if (payload.action === 'created' && payload.comment) {
           if (isPRComment) {
-            await notifyPRComment(
-              payload.issue,
-              payload.comment,
-              payload.repository,
-              payload.sender
-            )
+            await notifyPRComment(payload.issue, payload.comment, payload.repository, payload.sender)
           } else {
-            await notifyIssueComment(
-              payload.issue,
-              payload.comment,
-              payload.repository,
-              payload.sender
-            )
-
-            // Trigger AI resolution analysis for issues (not PRs)
+            await notifyIssueComment(payload.issue, payload.comment, payload.repository, payload.sender)
             triggerResolutionAnalysisOnComment(payload.issue, payload.comment, payload.repository)
           }
         }
@@ -133,37 +126,22 @@ export default defineEventHandler(async (event) => {
         await handleLabelEvent(payload.action, payload.label, payload.repository)
         break
 
-      // Milestone events
+        // Milestone events
       case 'milestone':
         await handleMilestoneEvent(payload.action, payload.milestone, payload.repository)
         break
 
-      // Pull request events
+        // Pull request events
       case 'pull_request':
         await handlePullRequestEvent(payload.action, payload.pull_request, payload.repository, payload.installation?.id, payload.sender)
-        // Create notifications
         if (payload.action === 'opened') {
-          await notifyPROpened(
-            payload.pull_request,
-            payload.repository,
-            payload.sender
-          )
+          await notifyPROpened(payload.pull_request, payload.repository, payload.sender)
         }
         if (payload.action === 'reopened') {
-          await notifyPRReopened(
-            payload.pull_request,
-            payload.repository,
-            payload.sender
-          )
+          await notifyPRReopened(payload.pull_request, payload.repository, payload.sender)
         }
         if (payload.action === 'assigned' && payload.assignee) {
-          await notifyPRAssigned(
-            payload.pull_request,
-            payload.repository,
-            payload.assignee,
-            payload.sender
-          )
-          // Auto-subscribe assignee to the PR (using internal IDs)
+          await notifyPRAssigned(payload.pull_request, payload.repository, payload.assignee, payload.sender)
           const assigneeDbId = await ensureUser({
             id: payload.assignee.id,
             login: payload.assignee.login,
@@ -178,13 +156,7 @@ export default defineEventHandler(async (event) => {
           }
         }
         if (payload.action === 'review_requested' && payload.requested_reviewer) {
-          await notifyPRReviewRequested(
-            payload.pull_request,
-            payload.repository,
-            payload.requested_reviewer,
-            payload.sender
-          )
-          // Auto-subscribe requested reviewer to the PR (using internal IDs)
+          await notifyPRReviewRequested(payload.pull_request, payload.repository, payload.requested_reviewer, payload.sender)
           const reviewerDbId = await ensureUser({
             id: payload.requested_reviewer.id,
             login: payload.requested_reviewer.login,
@@ -199,133 +171,72 @@ export default defineEventHandler(async (event) => {
           }
         }
         if (payload.action === 'ready_for_review') {
-          await notifyPRReadyForReview(
-            payload.pull_request,
-            payload.repository,
-            payload.sender
-          )
+          await notifyPRReadyForReview(payload.pull_request, payload.repository, payload.sender)
         }
         if (payload.action === 'closed') {
           if (payload.pull_request.merged) {
-            await notifyPRMerged(
-              payload.pull_request,
-              payload.repository,
-              payload.sender
-            )
+            await notifyPRMerged(payload.pull_request, payload.repository, payload.sender)
           } else {
-            await notifyPRClosed(
-              payload.pull_request,
-              payload.repository,
-              payload.sender
-            )
+            await notifyPRClosed(payload.pull_request, payload.repository, payload.sender)
           }
         }
         break
 
       case 'pull_request_review':
-        // Note: We intentionally do NOT call handlePullRequestEvent here.
-        // The pull_request object in review events may have stale state data
-        // (e.g., state: 'open' for a merged PR if events arrive out of order).
-        // The main pull_request webhook already handles all PR state updates.
-        // Sync the review to our database
         if (payload.review) {
-          await handleReviewEvent(
-            payload.action,
-            payload.review,
-            payload.pull_request,
-            payload.repository,
-            payload.installation?.id
-          )
+          await handleReviewEvent(payload.action, payload.review, payload.pull_request, payload.repository, payload.installation?.id)
         }
-        // Create notification for review
         if (payload.action === 'submitted' && payload.review) {
-          await notifyPRReviewSubmitted(
-            payload.pull_request,
-            payload.review,
-            payload.repository,
-            payload.sender
-          )
+          await notifyPRReviewSubmitted(payload.pull_request, payload.review, payload.repository, payload.sender)
         }
         if (payload.action === 'dismissed' && payload.review) {
-          await notifyPRReviewDismissed(
-            payload.pull_request,
-            payload.review,
-            payload.repository,
-            payload.sender
-          )
+          await notifyPRReviewDismissed(payload.pull_request, payload.review, payload.repository, payload.sender)
         }
         break
 
       case 'pull_request_review_comment':
-        // Note: We intentionally do NOT call handlePullRequestEvent here.
-        // The pull_request object in review comment events may have stale state data.
-        // The main pull_request webhook already handles all PR state updates.
-        // Sync the review comment to our database
         if (payload.comment) {
-          await handleReviewCommentEvent(
-            payload.action,
-            payload.comment,
-            payload.pull_request,
-            payload.repository,
-            payload.installation?.id
-          )
+          await handleReviewCommentEvent(payload.action, payload.comment, payload.pull_request, payload.repository, payload.installation?.id)
         }
-        // Create notification for comment
         if (payload.action === 'created' && payload.comment) {
-          await notifyPRComment(
-            payload.pull_request,
-            payload.comment,
-            payload.repository,
-            payload.sender
-          )
+          await notifyPRComment(payload.pull_request, payload.comment, payload.repository, payload.sender)
         }
         break
 
       case 'pull_request_review_thread':
-        // Note: We intentionally do NOT call handlePullRequestEvent here.
-        // The pull_request object may have stale state data.
-        // The main pull_request webhook already handles all PR state updates.
+      // No-op
         break
 
-      // Repository events
+        // Repository events
       case 'repository':
         await handleRepositoryEvent(payload.action, payload.repository)
         break
 
       case 'public':
-        // Repository changed from private to public
         await handleRepositoryEvent('publicized', payload.repository)
         break
 
-      // Collaborator events (requires organization "Members" permission)
+        // Collaborator events
       case 'member':
         await handleMemberEvent(payload.action, payload.member, payload.repository)
         break
 
       case 'push':
+      // No-op
         break
 
       case 'release':
         if (payload.action === 'published' && payload.release) {
           await handleReleaseEvent(payload.action, payload.release, payload.repository)
-          await notifyReleasePublished(
-            payload.release,
-            payload.repository,
-            payload.sender
-          )
+          await notifyReleasePublished(payload.release, payload.repository, payload.sender)
         }
         break
 
       case 'workflow_run':
         if (payload.action === 'completed' && payload.workflow_run) {
           await handleWorkflowRunEvent(payload.action, payload.workflow_run, payload.repository)
-          // Only notify on failure
           if (payload.workflow_run.conclusion === 'failure') {
-            await notifyWorkflowFailed(
-              payload.workflow_run,
-              payload.repository,
-              payload.sender
-            )
+            await notifyWorkflowFailed(payload.workflow_run, payload.repository, payload.sender)
           }
         }
         break

@@ -1,0 +1,1 @@
+ALTER TABLE "repositories" ADD COLUMN "syncing" boolean DEFAULT false;

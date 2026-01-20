@@ -1,5 +1,5 @@
 import { eq, and, inArray } from 'drizzle-orm'
-import { db, schema } from 'hub:db'
+import { db, schema } from '@nuxthub/db'
 
 export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)

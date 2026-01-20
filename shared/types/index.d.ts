@@ -18,7 +18,7 @@ import type {
   Serialized
 } from './db'
 
-export type { ResolutionStatus } from '../../server/db/schema'
+export type { ResolutionStatus } from '@nuxthub/db/schema'
 
 // Base serialized types
 export type Label = Serialized<DBLabel>
@@ -123,6 +123,7 @@ export interface FavoriteRepository extends Pick<Serialized<DBFavoriteRepository
 export interface InstallationRepository extends Repository {
   subscription?: RepositorySubscription
   synced?: boolean
+  syncing?: boolean
   stars?: number
 }
 

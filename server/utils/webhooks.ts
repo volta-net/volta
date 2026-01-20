@@ -1,6 +1,6 @@
 import { eq, and, sql } from 'drizzle-orm'
-import { db, schema } from 'hub:db'
-import type { ReviewState } from '../db/schema'
+import { db, schema } from '@nuxthub/db'
+import type { ReviewState } from '@nuxthub/db/schema'
 import type {
   GitHubUser,
   GitHubRepository,

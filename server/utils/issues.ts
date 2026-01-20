@@ -1,5 +1,5 @@
 import { inArray, desc, eq, and } from 'drizzle-orm'
-import { db, schema } from 'hub:db'
+import { db, schema } from '@nuxthub/db'
 
 // Minimal label data returned by getLabelsForIssues
 interface LabelData {

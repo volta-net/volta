@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm'
-import { db, schema } from 'hub:db'
+import { db, schema } from '@nuxthub/db'
 
 export default defineNitroPlugin(() => {
   // Called when the session is fetched during SSR for the Vue composable (/api/_auth/session)

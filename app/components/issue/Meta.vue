@@ -503,7 +503,7 @@ const ciStatusConfig = computed(() => getAggregatedCIStatus(props.issue.ciStatus
       <!-- Analyzing state (only when no existing data) -->
       <div v-else-if="analyzingResolution">
         <UBadge
-          icon="i-lucide-loader-2"
+          icon="i-lucide-loader-circle"
           label="Analyzing..."
           variant="subtle"
           :ui="{ leadingIcon: 'animate-spin' }"
