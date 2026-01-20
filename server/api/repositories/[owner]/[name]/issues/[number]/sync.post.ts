@@ -166,7 +166,10 @@ async function syncIssueFromGitHub(
     await syncAssignees(issueId, prData.assignees || [])
 
     // Sync labels
-    await syncLabels(issueId, prData.labels.map(l => l.id))
+    const labelGithubIds = prData.labels
+      .filter((l): l is { id: number } => typeof l === 'object' && 'id' in l)
+      .map(l => l.id)
+    await syncLabels(issueId, labelGithubIds)
 
     // Sync requested reviewers
     const reviewers = (prData.requested_reviewers as any[])?.filter(r => r.id) || []

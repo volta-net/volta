@@ -17,6 +17,8 @@ watch(focused, (isFocused) => {
 
 // Track locally initiated syncs (for immediate UI feedback before server confirms)
 const localSyncing = ref<Set<string>>(new Set())
+// Track repos with active polling loops to prevent duplicates
+const activePolls = ref<Set<string>>(new Set())
 const deleting = ref<Set<string>>(new Set())
 const updatingSubscription = ref<string | null>(null)
 
@@ -38,41 +40,66 @@ const serverSyncingRepos = computed(() =>
 )
 
 // Poll for server-side syncing repos on page load
-watch(serverSyncingRepos, async (repos) => {
+watch(serverSyncingRepos, (repos) => {
   for (const fullName of repos) {
-    if (!localSyncing.value.has(fullName)) {
-      // Server says it's syncing but we didn't initiate - start polling
+    // Only start polling if no active poll exists for this repo
+    if (!activePolls.value.has(fullName)) {
       localSyncing.value.add(fullName)
-      pollUntilComplete(fullName)
+      startPolling(fullName, true)
     }
   }
 }, { immediate: true })
 
-async function pollUntilComplete(fullName: string) {
+/**
+ * Start polling for a repository sync completion.
+ * @param fullName - Repository full name (owner/repo)
+ * @param showToast - Whether to show a success toast on completion
+ */
+async function startPolling(fullName: string, showToast = true) {
+  // Prevent duplicate polling loops
+  if (activePolls.value.has(fullName)) {
+    return
+  }
+
+  activePolls.value.add(fullName)
   const [, name] = fullName.split('/')
   const maxAttempts = 180
   const pollInterval = 1000
 
-  for (let i = 0; i < maxAttempts; i++) {
-    await new Promise(resolve => setTimeout(resolve, pollInterval))
-    await refresh()
+  try {
+    for (let i = 0; i < maxAttempts; i++) {
+      await new Promise(resolve => setTimeout(resolve, pollInterval))
+      await refresh()
 
-    const repo = installations.value
-      ?.flatMap(inst => inst.repositories)
-      .find(r => r.fullName === fullName)
+      const repo = installations.value
+        ?.flatMap(inst => inst.repositories)
+        .find(r => r.fullName === fullName)
 
-    if (repo && !repo.syncing) {
-      localSyncing.value.delete(fullName)
-      toast.add({
-        title: `Repo ${name} imported`,
-        description: 'Repository sync completed successfully',
-        color: 'success'
-      })
-      return
+      if (repo && !repo.syncing) {
+        localSyncing.value.delete(fullName)
+        if (showToast) {
+          toast.add({
+            title: `Repo ${name} imported`,
+            description: 'Repository sync completed successfully',
+            color: 'success'
+          })
+        }
+        return
+      }
     }
-  }
 
-  localSyncing.value.delete(fullName)
+    // Timeout
+    localSyncing.value.delete(fullName)
+    if (showToast) {
+      toast.add({
+        title: 'Sync in progress',
+        description: 'The sync is taking longer than expected. It will complete in the background.',
+        color: 'warning'
+      })
+    }
+  } finally {
+    activePolls.value.delete(fullName)
+  }
 }
 
 // Installation-level bulk operation loading states
@@ -122,46 +149,27 @@ const accordionItems = computed(() => {
 async function syncRepository(fullName: string) {
   const [owner, name] = fullName.split('/')
 
+  // Check if already polling (prevents double-click issues)
+  if (activePolls.value.has(fullName)) {
+    return
+  }
+
   localSyncing.value.add(fullName)
 
   try {
     // Start the workflow (returns immediately, server sets syncing=true)
-    await $fetch<SyncStartResult>(`/api/repositories/${owner}/${name}/sync`, {
+    const result = await $fetch<SyncStartResult>(`/api/repositories/${owner}/${name}/sync`, {
       method: 'POST'
     })
 
-    // Poll until server-side syncing flag is false (workflow completed)
-    const maxAttempts = 180 // 3 minutes max
-    const pollInterval = 1000 // 1 second
-
-    for (let i = 0; i < maxAttempts; i++) {
-      await new Promise(resolve => setTimeout(resolve, pollInterval))
-      await refresh()
-
-      // Find the repo in the refreshed data
-      const repo = installations.value
-        ?.flatMap(inst => inst.repositories)
-        .find(r => r.fullName === fullName)
-
-      if (repo && !repo.syncing) {
-        // Sync completed!
-        localSyncing.value.delete(fullName)
-        toast.add({
-          title: `Repo ${name} imported`,
-          description: 'Repository sync completed successfully',
-          color: 'success'
-        })
-        return
-      }
+    // If server says already syncing, just start polling without showing duplicate toast
+    if (result.alreadySyncing) {
+      await startPolling(fullName, true)
+      return
     }
 
-    // Timeout - workflow might still be running
-    localSyncing.value.delete(fullName)
-    toast.add({
-      title: 'Sync in progress',
-      description: 'The sync is taking longer than expected. It will complete in the background.',
-      color: 'warning'
-    })
+    // Poll until server-side syncing flag is false (workflow completed)
+    await startPolling(fullName, true)
   } catch (error: any) {
     localSyncing.value.delete(fullName)
     toast.add({
@@ -169,6 +177,39 @@ async function syncRepository(fullName: string) {
       description: error.data?.message || 'An error occurred',
       color: 'error'
     })
+  }
+}
+
+/**
+ * Poll until all repositories in the list finish syncing.
+ * Returns true if all completed, false if timeout.
+ */
+async function pollUntilAllComplete(repoFullNames: string[]): Promise<boolean> {
+  const maxAttempts = 180
+  const pollInterval = 2000
+
+  // Mark all as having active polls
+  repoFullNames.forEach(name => activePolls.value.add(name))
+
+  try {
+    for (let i = 0; i < maxAttempts; i++) {
+      await new Promise(resolve => setTimeout(resolve, pollInterval))
+      await refresh()
+
+      const stillSyncing = repoFullNames.filter((fullName) => {
+        const current = installations.value
+          ?.flatMap(inst => inst.repositories)
+          .find(r => r.fullName === fullName)
+        return current?.syncing
+      })
+
+      if (stillSyncing.length === 0) {
+        return true
+      }
+    }
+    return false
+  } finally {
+    repoFullNames.forEach(name => activePolls.value.delete(name))
   }
 }
 
@@ -182,8 +223,19 @@ async function importAllRepositories(installation: Installation) {
     return
   }
 
+  const repoNames = unsyncedRepos.map(r => r.fullName)
+
+  // Check if any are already being polled
+  if (repoNames.some(name => activePolls.value.has(name))) {
+    toast.add({
+      title: 'Import in progress',
+      description: 'Some repositories are already being imported.'
+    })
+    return
+  }
+
   importingAll.value.add(installation.id)
-  unsyncedRepos.forEach(repo => localSyncing.value.add(repo.fullName))
+  repoNames.forEach(name => localSyncing.value.add(name))
 
   try {
     // Start all workflows
@@ -193,40 +245,25 @@ async function importAllRepositories(installation: Installation) {
     }))
 
     // Poll until all are done
-    const maxAttempts = 180
-    const pollInterval = 2000
+    const allCompleted = await pollUntilAllComplete(repoNames)
 
-    for (let i = 0; i < maxAttempts; i++) {
-      await new Promise(resolve => setTimeout(resolve, pollInterval))
-      await refresh()
+    repoNames.forEach(name => localSyncing.value.delete(name))
 
-      const stillSyncing = unsyncedRepos.filter((repo) => {
-        const current = installations.value
-          ?.flatMap(inst => inst.repositories)
-          .find(r => r.fullName === repo.fullName)
-        return current?.syncing
+    if (allCompleted) {
+      toast.add({
+        title: 'Repositories imported',
+        description: `Successfully imported ${unsyncedRepos.length} repositories.`,
+        color: 'success'
       })
-
-      if (stillSyncing.length === 0) {
-        unsyncedRepos.forEach(repo => localSyncing.value.delete(repo.fullName))
-        toast.add({
-          title: 'Repositories imported',
-          description: `Successfully imported ${unsyncedRepos.length} repositories.`,
-          color: 'success'
-        })
-        return
-      }
+    } else {
+      toast.add({
+        title: 'Import in progress',
+        description: 'Some repositories are still importing in the background.',
+        color: 'warning'
+      })
     }
-
-    // Timeout
-    unsyncedRepos.forEach(repo => localSyncing.value.delete(repo.fullName))
-    toast.add({
-      title: 'Import in progress',
-      description: 'Some repositories are still importing in the background.',
-      color: 'warning'
-    })
   } catch (error: any) {
-    unsyncedRepos.forEach(repo => localSyncing.value.delete(repo.fullName))
+    repoNames.forEach(name => localSyncing.value.delete(name))
     await refresh()
     toast.add({
       title: 'Import failed',
@@ -244,8 +281,19 @@ async function syncAllRepositories(installation: Installation) {
     return
   }
 
+  const repoNames = syncedRepos.map(r => r.fullName)
+
+  // Check if any are already being polled
+  if (repoNames.some(name => activePolls.value.has(name))) {
+    toast.add({
+      title: 'Sync in progress',
+      description: 'Some repositories are already being synced.'
+    })
+    return
+  }
+
   syncingAll.value.add(installation.id)
-  syncedRepos.forEach(repo => localSyncing.value.add(repo.fullName))
+  repoNames.forEach(name => localSyncing.value.add(name))
 
   try {
     // Start all workflows
@@ -255,40 +303,25 @@ async function syncAllRepositories(installation: Installation) {
     }))
 
     // Poll until all are done
-    const maxAttempts = 180
-    const pollInterval = 2000
+    const allCompleted = await pollUntilAllComplete(repoNames)
 
-    for (let i = 0; i < maxAttempts; i++) {
-      await new Promise(resolve => setTimeout(resolve, pollInterval))
-      await refresh()
+    repoNames.forEach(name => localSyncing.value.delete(name))
 
-      const stillSyncing = syncedRepos.filter((repo) => {
-        const current = installations.value
-          ?.flatMap(inst => inst.repositories)
-          .find(r => r.fullName === repo.fullName)
-        return current?.syncing
+    if (allCompleted) {
+      toast.add({
+        title: 'Repositories synced',
+        description: `Successfully synced ${syncedRepos.length} repositories.`,
+        color: 'success'
       })
-
-      if (stillSyncing.length === 0) {
-        syncedRepos.forEach(repo => localSyncing.value.delete(repo.fullName))
-        toast.add({
-          title: 'Repositories synced',
-          description: `Successfully synced ${syncedRepos.length} repositories.`,
-          color: 'success'
-        })
-        return
-      }
+    } else {
+      toast.add({
+        title: 'Sync in progress',
+        description: 'Some repositories are still syncing in the background.',
+        color: 'warning'
+      })
     }
-
-    // Timeout
-    syncedRepos.forEach(repo => localSyncing.value.delete(repo.fullName))
-    toast.add({
-      title: 'Sync in progress',
-      description: 'Some repositories are still syncing in the background.',
-      color: 'warning'
-    })
   } catch (error: any) {
-    syncedRepos.forEach(repo => localSyncing.value.delete(repo.fullName))
+    repoNames.forEach(name => localSyncing.value.delete(name))
     await refresh()
     toast.add({
       title: 'Sync failed',

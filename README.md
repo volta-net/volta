@@ -130,15 +130,15 @@ Locally preview production build:
 pnpm preview
 ```
 
-### Deploying to Vercel
+## Deployment
 
-Volta uses [Vercel Workflow DevKit](https://useworkflow.dev) for durable functions that handle long-running operations like repository syncing and webhook processing. This requires deployment to Vercel for full functionality.
+Volta uses [Vercel Workflow DevKit](https://useworkflow.dev) for durable functions that handle long-running operations like repository syncing. This requires deployment to **Vercel** for full functionality.
 
 1. Connect your repository to Vercel
 2. Vercel will automatically detect the Nuxt configuration
 3. Set all environment variables in the Vercel dashboard
 4. Deploy!
 
-> **Note:** The durable workflows (`server/workflows/`) are designed specifically for Vercel's serverless infrastructure. They ensure that long-running sync operations complete successfully even if they exceed typical serverless timeouts.
+> **Note:** The durable workflows (`server/workflows/`) ensure that long-running sync operations complete successfully even if they exceed typical serverless timeouts.
 
 For other deployment options, check out the [Nuxt deployment documentation](https://nuxt.com/docs/getting-started/deployment).
