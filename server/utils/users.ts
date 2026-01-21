@@ -71,37 +71,29 @@ interface GitHubUser {
  */
 export async function ensureUser(user: GitHubUser): Promise<number | null> {
   try {
-    // Look up by GitHub ID
-    const [existing] = await db
-      .select({ id: schema.users.id, registered: schema.users.registered })
-      .from(schema.users)
-      .where(eq(schema.users.githubId, user.id))
-
-    if (existing) {
-      // Only update shadow users (registered = false)
-      if (!existing.registered) {
-        await db.update(schema.users).set({
-          login: user.login,
-          avatarUrl: user.avatar_url,
-          name: user.name,
-          email: user.email,
-          updatedAt: new Date()
-        }).where(eq(schema.users.id, existing.id))
-      }
-      return existing.id
-    }
-
-    // Insert new shadow user
-    const [inserted] = await db.insert(schema.users).values({
+    // Use upsert to avoid race conditions when multiple webhooks process the same user
+    // Only update shadow users (registered = false) to preserve registered user data
+    const [result] = await db.insert(schema.users).values({
       githubId: user.id,
       login: user.login,
       avatarUrl: user.avatar_url,
       name: user.name,
       email: user.email,
       registered: false // Shadow user
+    }).onConflictDoUpdate({
+      target: schema.users.githubId,
+      set: {
+        login: user.login,
+        avatarUrl: user.avatar_url,
+        name: user.name,
+        email: user.email,
+        updatedAt: new Date()
+      },
+      // Only update if user is a shadow user (not registered)
+      setWhere: eq(schema.users.registered, false)
     }).returning({ id: schema.users.id })
 
-    return inserted!.id
+    return result!.id
   } catch (error) {
     console.debug('[users] Failed to ensure user:', user.id, error)
     return null

@@ -97,30 +97,24 @@ export async function clearLinkedIssues(prId: number) {
 
 // Helper: ensure type exists in the database
 export async function ensureType(repositoryId: number, type: { id: number, name: string, color?: string | null, description?: string | null }): Promise<number | null> {
-  const [existing] = await db
-    .select()
-    .from(schema.types)
-    .where(eq(schema.types.githubId, type.id))
-
-  if (existing) {
-    // Update if name/color/description changed
-    await db.update(schema.types).set({
-      name: type.name,
-      color: type.color ?? null,
-      description: type.description ?? null,
-      updatedAt: new Date()
-    }).where(eq(schema.types.id, existing.id))
-    return existing.id
-  } else {
-    const [inserted] = await db.insert(schema.types).values({
-      githubId: type.id,
-      repositoryId,
-      name: type.name,
-      color: type.color ?? null,
-      description: type.description ?? null
-    }).returning({ id: schema.types.id })
-    return inserted!.id
+  const typeData = {
+    name: type.name,
+    color: type.color ?? null,
+    description: type.description ?? null,
+    updatedAt: new Date()
   }
+
+  // Use upsert to avoid race conditions
+  const [result] = await db.insert(schema.types).values({
+    githubId: type.id,
+    repositoryId,
+    ...typeData
+  }).onConflictDoUpdate({
+    target: schema.types.githubId,
+    set: typeData
+  }).returning({ id: schema.types.id })
+
+  return result!.id
 }
 
 // Helper: subscribe a user to an issue (idempotent)
@@ -245,26 +239,23 @@ export async function syncLabels(accessToken: string, owner: string, repo: strin
   })
 
   for (const label of labelsData) {
-    const [existingLabel] = await db.select().from(schema.labels).where(eq(schema.labels.githubId, label.id))
-
-    if (existingLabel) {
-      await db.update(schema.labels).set({
-        name: label.name,
-        color: label.color,
-        description: label.description,
-        default: label.default,
-        updatedAt: new Date()
-      }).where(eq(schema.labels.id, existingLabel.id))
-    } else {
-      await db.insert(schema.labels).values({
-        githubId: label.id,
-        repositoryId,
-        name: label.name,
-        color: label.color,
-        description: label.description,
-        default: label.default
-      })
+    const labelData = {
+      name: label.name,
+      color: label.color,
+      description: label.description,
+      default: label.default,
+      updatedAt: new Date()
     }
+
+    // Use upsert to avoid race conditions
+    await db.insert(schema.labels).values({
+      githubId: label.id,
+      repositoryId,
+      ...labelData
+    }).onConflictDoUpdate({
+      target: schema.labels.githubId,
+      set: labelData
+    })
   }
 
   return labelsData.length
@@ -281,35 +272,28 @@ export async function syncMilestones(accessToken: string, owner: string, repo: s
   })
 
   for (const milestone of milestonesData) {
-    const [existingMilestone] = await db.select().from(schema.milestones).where(eq(schema.milestones.githubId, milestone.id))
-
-    if (existingMilestone) {
-      await db.update(schema.milestones).set({
-        title: milestone.title,
-        description: milestone.description,
-        state: milestone.state,
-        htmlUrl: milestone.html_url,
-        openIssues: milestone.open_issues,
-        closedIssues: milestone.closed_issues,
-        dueOn: milestone.due_on ? new Date(milestone.due_on) : null,
-        closedAt: milestone.closed_at ? new Date(milestone.closed_at) : null,
-        updatedAt: new Date()
-      }).where(eq(schema.milestones.id, existingMilestone.id))
-    } else {
-      await db.insert(schema.milestones).values({
-        githubId: milestone.id,
-        repositoryId,
-        number: milestone.number,
-        title: milestone.title,
-        description: milestone.description,
-        state: milestone.state,
-        htmlUrl: milestone.html_url,
-        openIssues: milestone.open_issues,
-        closedIssues: milestone.closed_issues,
-        dueOn: milestone.due_on ? new Date(milestone.due_on) : null,
-        closedAt: milestone.closed_at ? new Date(milestone.closed_at) : null
-      })
+    const milestoneData = {
+      title: milestone.title,
+      description: milestone.description,
+      state: milestone.state,
+      htmlUrl: milestone.html_url,
+      openIssues: milestone.open_issues,
+      closedIssues: milestone.closed_issues,
+      dueOn: milestone.due_on ? new Date(milestone.due_on) : null,
+      closedAt: milestone.closed_at ? new Date(milestone.closed_at) : null,
+      updatedAt: new Date()
     }
+
+    // Use upsert to avoid race conditions
+    await db.insert(schema.milestones).values({
+      githubId: milestone.id,
+      repositoryId,
+      number: milestone.number,
+      ...milestoneData
+    }).onConflictDoUpdate({
+      target: schema.milestones.githubId,
+      set: milestoneData
+    })
   }
 
   return milestonesData.length
@@ -328,24 +312,22 @@ export async function syncTypes(accessToken: string, owner: string, repo: string
     for (const type of typesData) {
       if (!type) continue
 
-      const [existingType] = await db.select().from(schema.types).where(eq(schema.types.githubId, type.id))
-
-      if (existingType) {
-        await db.update(schema.types).set({
-          name: type.name,
-          description: type.description,
-          color: type.color,
-          updatedAt: new Date()
-        }).where(eq(schema.types.id, existingType.id))
-      } else {
-        await db.insert(schema.types).values({
-          githubId: type.id,
-          repositoryId,
-          name: type.name,
-          description: type.description,
-          color: type.color
-        })
+      const typeData = {
+        name: type.name,
+        description: type.description,
+        color: type.color,
+        updatedAt: new Date()
       }
+
+      // Use upsert to avoid race conditions
+      await db.insert(schema.types).values({
+        githubId: type.id,
+        repositoryId,
+        ...typeData
+      }).onConflictDoUpdate({
+        target: schema.types.githubId,
+        set: typeData
+      })
     }
 
     return typesData.length
@@ -400,15 +382,6 @@ export async function syncIssues(accessToken: string, owner: string, repo: strin
       typeId = await getDbTypeId(issue.type.id)
     }
 
-    // Look up by repositoryId + number (unique) instead of id
-    // because GitHub returns different IDs from issues vs pulls API
-    const [existingIssue] = await db.select().from(schema.issues).where(
-      and(
-        eq(schema.issues.repositoryId, repositoryId),
-        eq(schema.issues.number, issue.number)
-      )
-    )
-
     const issueData = {
       githubId: issue.id, // Store GitHub's ID for reference
       pullRequest: false,
@@ -432,14 +405,16 @@ export async function syncIssues(accessToken: string, owner: string, repo: strin
       updatedAt: new Date(issue.updated_at)
     }
 
-    let issueId: number
-    if (existingIssue) {
-      await db.update(schema.issues).set(issueData).where(eq(schema.issues.id, existingIssue.id))
-      issueId = existingIssue.id
-    } else {
-      const [inserted] = await db.insert(schema.issues).values(issueData).returning({ id: schema.issues.id })
-      issueId = inserted!.id
-    }
+    // Use upsert to avoid race conditions (compound key: repositoryId + number)
+    const [result] = await db.insert(schema.issues)
+      .values(issueData)
+      .onConflictDoUpdate({
+        target: [schema.issues.repositoryId, schema.issues.number],
+        set: issueData
+      })
+      .returning({ id: schema.issues.id })
+
+    const issueId = result!.id
 
     // Subscribe issue author to the issue
     if (userId) {
@@ -489,15 +464,6 @@ export async function syncIssues(accessToken: string, owner: string, repo: strin
       milestoneId = await getDbMilestoneId(pr.milestone.id)
     }
 
-    // Look up by repositoryId + number (unique) instead of id
-    // because GitHub returns different IDs from issues vs pulls API
-    const [existingPR] = await db.select().from(schema.issues).where(
-      and(
-        eq(schema.issues.repositoryId, repositoryId),
-        eq(schema.issues.number, pr.number)
-      )
-    )
-
     const prData = {
       githubId: pr.id, // Store GitHub's ID for reference
       pullRequest: true,
@@ -527,14 +493,16 @@ export async function syncIssues(accessToken: string, owner: string, repo: strin
       updatedAt: new Date(pr.updated_at)
     }
 
-    let prId: number
-    if (existingPR) {
-      await db.update(schema.issues).set(prData).where(eq(schema.issues.id, existingPR.id))
-      prId = existingPR.id
-    } else {
-      const [inserted] = await db.insert(schema.issues).values(prData).returning({ id: schema.issues.id })
-      prId = inserted!.id
-    }
+    // Use upsert to avoid race conditions (compound key: repositoryId + number)
+    const [result] = await db.insert(schema.issues)
+      .values(prData)
+      .onConflictDoUpdate({
+        target: [schema.issues.repositoryId, schema.issues.number],
+        set: prData
+      })
+      .returning({ id: schema.issues.id })
+
+    const prId = result!.id
 
     // Subscribe PR author to the PR
     if (userId) {
@@ -753,16 +721,14 @@ async function syncIssueComments(octokit: Octokit, owner: string, repo: string, 
         updatedAt: new Date(comment.updated_at)
       }
 
-      const [existing] = await db.select().from(schema.issueComments).where(eq(schema.issueComments.githubId, comment.id))
-
-      if (existing) {
-        await db.update(schema.issueComments).set(commentData).where(eq(schema.issueComments.id, existing.id))
-      } else {
-        await db.insert(schema.issueComments).values({
-          githubId: comment.id,
-          ...commentData
-        })
-      }
+      // Use upsert to avoid race conditions
+      await db.insert(schema.issueComments).values({
+        githubId: comment.id,
+        ...commentData
+      }).onConflictDoUpdate({
+        target: schema.issueComments.githubId,
+        set: commentData
+      })
     }
   } catch (error) {
     console.error(`[Sync] Failed to sync comments for issue #${issueNumber}:`, error)
@@ -805,16 +771,14 @@ async function syncPRReviews(octokit: Octokit, owner: string, repo: string, prNu
         updatedAt: new Date()
       }
 
-      const [existing] = await db.select().from(schema.issueReviews).where(eq(schema.issueReviews.githubId, review.id))
-
-      if (existing) {
-        await db.update(schema.issueReviews).set(reviewData).where(eq(schema.issueReviews.id, existing.id))
-      } else {
-        await db.insert(schema.issueReviews).values({
-          githubId: review.id,
-          ...reviewData
-        })
-      }
+      // Use upsert to avoid race conditions
+      await db.insert(schema.issueReviews).values({
+        githubId: review.id,
+        ...reviewData
+      }).onConflictDoUpdate({
+        target: schema.issueReviews.githubId,
+        set: reviewData
+      })
     }
   } catch (error) {
     console.error(`[Sync] Failed to sync reviews for PR #${prNumber}:`, error)
@@ -870,16 +834,14 @@ async function syncPRReviewComments(octokit: Octokit, owner: string, repo: strin
         updatedAt: new Date(comment.updated_at)
       }
 
-      const [existing] = await db.select().from(schema.issueReviewComments).where(eq(schema.issueReviewComments.githubId, comment.id))
-
-      if (existing) {
-        await db.update(schema.issueReviewComments).set(commentData).where(eq(schema.issueReviewComments.id, existing.id))
-      } else {
-        await db.insert(schema.issueReviewComments).values({
-          githubId: comment.id,
-          ...commentData
-        })
-      }
+      // Use upsert to avoid race conditions
+      await db.insert(schema.issueReviewComments).values({
+        githubId: comment.id,
+        ...commentData
+      }).onConflictDoUpdate({
+        target: schema.issueReviewComments.githubId,
+        set: commentData
+      })
     }
   } catch (error) {
     console.error(`[Sync] Failed to sync review comments for PR #${prNumber}:`, error)
@@ -915,16 +877,14 @@ async function syncPRCheckRuns(octokit: Octokit, owner: string, repo: string, re
         updatedAt: new Date()
       }
 
-      const [existing] = await db.select().from(schema.checkRuns).where(eq(schema.checkRuns.githubId, check.id))
-
-      if (existing) {
-        await db.update(schema.checkRuns).set(checkData).where(eq(schema.checkRuns.id, existing.id))
-      } else {
-        await db.insert(schema.checkRuns).values({
-          githubId: check.id,
-          ...checkData
-        })
-      }
+      // Use upsert to avoid race conditions
+      await db.insert(schema.checkRuns).values({
+        githubId: check.id,
+        ...checkData
+      }).onConflictDoUpdate({
+        target: schema.checkRuns.githubId,
+        set: checkData
+      })
     }
   } catch (error: any) {
     // Checks API may not be available for all repositories
@@ -971,16 +931,14 @@ async function syncPRCommitStatuses(octokit: Octokit, owner: string, repo: strin
         updatedAt: new Date()
       }
 
-      const [existing] = await db.select().from(schema.commitStatuses).where(eq(schema.commitStatuses.githubId, status.id))
-
-      if (existing) {
-        await db.update(schema.commitStatuses).set(statusData).where(eq(schema.commitStatuses.id, existing.id))
-      } else {
-        await db.insert(schema.commitStatuses).values({
-          githubId: status.id,
-          ...statusData
-        })
-      }
+      // Use upsert to avoid race conditions
+      await db.insert(schema.commitStatuses).values({
+        githubId: status.id,
+        ...statusData
+      }).onConflictDoUpdate({
+        target: schema.commitStatuses.githubId,
+        set: statusData
+      })
     }
   } catch (error: any) {
     // Statuses API may not be available for all repositories

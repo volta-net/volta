@@ -212,43 +212,37 @@ async function upsertIssue(item: GitHubIssueOrPR, repositoryId: number, _reposit
     itemData.mergedById = mergedById
   }
 
-  // Look up by repositoryId + number (unique) instead of id
-  // because GitHub returns different IDs for issues vs PRs
-  const [existing] = await db.select().from(schema.issues).where(
-    and(
-      eq(schema.issues.repositoryId, repositoryId),
-      eq(schema.issues.number, item.number)
-    )
-  )
+  // NEW issue/PR - determine if we can mark it as synced
+  // Webhooks keep data up-to-date incrementally, so we can skip the initial sync IF:
+  // - It's an OPEN issue/PR with no comments (truly new, no historical data to fetch)
+  // - Closed/merged items synced on-demand may have historical data we need to fetch
+  const isOpen = item.state === 'open'
+  const hasNoComments = (item.comments ?? 0) === 0
+  const canSkipSync = isOpen && hasNoComments
 
-  let itemId: number
+  // Prepare insert data with conditional synced status for new items
+  const insertData = { ...itemData }
+  if (canSkipSync) {
+    insertData.synced = true
+    insertData.syncedAt = new Date()
+  }
 
-  if (existing) {
-    // Update existing issue - don't change synced status
-    await db.update(schema.issues).set(itemData).where(eq(schema.issues.id, existing.id))
-    itemId = existing.id
-  } else {
-    // NEW issue/PR - determine if we can mark it as synced
-    // Webhooks keep data up-to-date incrementally, so we can skip the initial sync IF:
-    // - It's an OPEN issue/PR with no comments (truly new, no historical data to fetch)
-    // - Closed/merged items synced on-demand may have historical data we need to fetch
-    const isOpen = item.state === 'open'
-    const hasNoComments = (item.comments ?? 0) === 0
-    const canSkipSync = isOpen && hasNoComments
+  // Use upsert to avoid race conditions when multiple webhooks arrive simultaneously
+  // On conflict (update): use itemData which doesn't include synced status
+  // On insert: use insertData which may include synced=true for new open issues
+  const [result] = await db.insert(schema.issues)
+    .values(insertData)
+    .onConflictDoUpdate({
+      target: [schema.issues.repositoryId, schema.issues.number],
+      set: itemData
+    })
+    .returning({ id: schema.issues.id })
 
-    if (canSkipSync) {
-      itemData.synced = true
-      itemData.syncedAt = new Date()
-    }
+  const itemId = result!.id
 
-    // Insert without specifying id - let serial auto-generate it
-    const [inserted] = await db.insert(schema.issues).values(itemData).returning({ id: schema.issues.id })
-    itemId = inserted!.id
-
-    // Subscribe author to the new issue/PR
-    if (userId) {
-      await subscribeUserToIssue(itemId, userId)
-    }
+  // Subscribe author to the issue/PR (idempotent - safe to call on updates too)
+  if (userId) {
+    await subscribeUserToIssue(itemId, userId)
   }
 
   // Sync assignees
@@ -490,16 +484,14 @@ async function upsertComment(comment: GitHubComment, issueId: number) {
     updatedAt: new Date(comment.updated_at)
   }
 
-  const [existing] = await db.select().from(schema.issueComments).where(eq(schema.issueComments.githubId, comment.id))
-
-  if (existing) {
-    await db.update(schema.issueComments).set(commentData).where(eq(schema.issueComments.id, existing.id))
-  } else {
-    await db.insert(schema.issueComments).values({
-      githubId: comment.id,
-      ...commentData
-    })
-  }
+  // Use upsert to avoid race conditions when multiple webhooks arrive simultaneously
+  await db.insert(schema.issueComments).values({
+    githubId: comment.id,
+    ...commentData
+  }).onConflictDoUpdate({
+    target: schema.issueComments.githubId,
+    set: commentData
+  })
 }
 
 // ============================================================================
@@ -574,16 +566,14 @@ async function upsertReview(review: GitHubReview, issueId: number) {
     updatedAt: new Date()
   }
 
-  const [existing] = await db.select().from(schema.issueReviews).where(eq(schema.issueReviews.githubId, review.id))
-
-  if (existing) {
-    await db.update(schema.issueReviews).set(reviewData).where(eq(schema.issueReviews.id, existing.id))
-  } else {
-    await db.insert(schema.issueReviews).values({
-      githubId: review.id,
-      ...reviewData
-    })
-  }
+  // Use upsert to avoid race conditions when multiple webhooks arrive simultaneously
+  await db.insert(schema.issueReviews).values({
+    githubId: review.id,
+    ...reviewData
+  }).onConflictDoUpdate({
+    target: schema.issueReviews.githubId,
+    set: reviewData
+  })
 }
 
 // ============================================================================
@@ -664,16 +654,14 @@ async function upsertReviewComment(comment: GitHubReviewComment, issueId: number
     updatedAt: new Date(comment.updated_at)
   }
 
-  const [existing] = await db.select().from(schema.issueReviewComments).where(eq(schema.issueReviewComments.githubId, comment.id))
-
-  if (existing) {
-    await db.update(schema.issueReviewComments).set(commentData).where(eq(schema.issueReviewComments.id, existing.id))
-  } else {
-    await db.insert(schema.issueReviewComments).values({
-      githubId: comment.id,
-      ...commentData
-    })
-  }
+  // Use upsert to avoid race conditions when multiple webhooks arrive simultaneously
+  await db.insert(schema.issueReviewComments).values({
+    githubId: comment.id,
+    ...commentData
+  }).onConflictDoUpdate({
+    target: schema.issueReviewComments.githubId,
+    set: commentData
+  })
 }
 
 // ============================================================================
@@ -708,16 +696,14 @@ async function upsertLabel(label: GitHubLabel, repositoryId: number) {
     updatedAt: new Date()
   }
 
-  const [existing] = await db.select().from(schema.labels).where(eq(schema.labels.githubId, label.id))
-
-  if (existing) {
-    await db.update(schema.labels).set(labelData).where(eq(schema.labels.id, existing.id))
-  } else {
-    await db.insert(schema.labels).values({
-      githubId: label.id,
-      ...labelData
-    })
-  }
+  // Use upsert to avoid race conditions when multiple webhooks arrive simultaneously
+  await db.insert(schema.labels).values({
+    githubId: label.id,
+    ...labelData
+  }).onConflictDoUpdate({
+    target: schema.labels.githubId,
+    set: labelData
+  })
 }
 
 // ============================================================================
@@ -759,16 +745,14 @@ async function upsertMilestone(milestone: GitHubMilestone, repositoryId: number)
     updatedAt: new Date()
   }
 
-  const [existing] = await db.select().from(schema.milestones).where(eq(schema.milestones.githubId, milestone.id))
-
-  if (existing) {
-    await db.update(schema.milestones).set(milestoneData).where(eq(schema.milestones.id, existing.id))
-  } else {
-    await db.insert(schema.milestones).values({
-      githubId: milestone.id,
-      ...milestoneData
-    })
-  }
+  // Use upsert to avoid race conditions when multiple webhooks arrive simultaneously
+  await db.insert(schema.milestones).values({
+    githubId: milestone.id,
+    ...milestoneData
+  }).onConflictDoUpdate({
+    target: schema.milestones.githubId,
+    set: milestoneData
+  })
 }
 
 // ============================================================================
@@ -953,25 +937,22 @@ export async function handleInstallationEvent(action: string, installation: GitH
 async function createInstallation(installation: GitHubInstallation, _repositories: GitHubInstallationRepository[]) {
   const account = installation.account
 
-  // Check if installation exists
-  const [existing] = await db.select().from(schema.installations).where(eq(schema.installations.githubId, installation.id))
-
-  if (existing) {
-    await db.update(schema.installations).set({
+  // Use upsert to avoid race conditions when multiple webhooks arrive simultaneously
+  await db.insert(schema.installations).values({
+    githubId: installation.id,
+    accountId: account.id,
+    accountLogin: account.login,
+    accountType: account.type,
+    avatarUrl: account.avatar_url
+  }).onConflictDoUpdate({
+    target: schema.installations.githubId,
+    set: {
       accountLogin: account.login,
       avatarUrl: account.avatar_url,
       suspended: false,
       updatedAt: new Date()
-    }).where(eq(schema.installations.id, existing.id))
-  } else {
-    await db.insert(schema.installations).values({
-      githubId: installation.id,
-      accountId: account.id,
-      accountLogin: account.login,
-      accountType: account.type,
-      avatarUrl: account.avatar_url
-    })
-  }
+    }
+  })
 }
 
 export async function handleInstallationRepositoriesEvent(action: string, installation: GitHubInstallation, _repositoriesAdded?: GitHubInstallationRepository[], repositoriesRemoved?: GitHubInstallationRepository[]) {
@@ -1014,10 +995,21 @@ export async function handleReleaseEvent(action: string, release: GitHubRelease,
       })
     }
 
-    const [existing] = await db.select().from(schema.releases).where(eq(schema.releases.githubId, release.id))
-
-    if (existing) {
-      await db.update(schema.releases).set({
+    // Use upsert to avoid race conditions when multiple webhooks arrive simultaneously
+    await db.insert(schema.releases).values({
+      githubId: release.id,
+      repositoryId: dbRepoId,
+      authorId,
+      tagName: release.tag_name,
+      name: release.name,
+      body: release.body,
+      draft: release.draft,
+      prerelease: release.prerelease,
+      htmlUrl: release.html_url,
+      publishedAt: release.published_at ? new Date(release.published_at) : null
+    }).onConflictDoUpdate({
+      target: schema.releases.githubId,
+      set: {
         tagName: release.tag_name,
         name: release.name,
         body: release.body,
@@ -1025,21 +1017,8 @@ export async function handleReleaseEvent(action: string, release: GitHubRelease,
         prerelease: release.prerelease,
         htmlUrl: release.html_url,
         publishedAt: release.published_at ? new Date(release.published_at) : null
-      }).where(eq(schema.releases.id, existing.id))
-    } else {
-      await db.insert(schema.releases).values({
-        githubId: release.id,
-        repositoryId: dbRepoId,
-        authorId,
-        tagName: release.tag_name,
-        name: release.name,
-        body: release.body,
-        draft: release.draft,
-        prerelease: release.prerelease,
-        htmlUrl: release.html_url,
-        publishedAt: release.published_at ? new Date(release.published_at) : null
-      })
-    }
+      }
+    })
   } else if (action === 'deleted') {
     await db.delete(schema.releases).where(eq(schema.releases.githubId, release.id))
   }
@@ -1100,37 +1079,35 @@ export async function handleWorkflowRunEvent(action: string, workflowRun: GitHub
       }
     }
 
-    const [existing] = await db.select().from(schema.workflowRuns).where(eq(schema.workflowRuns.githubId, workflowRun.id))
-
-    if (existing) {
-      await db.update(schema.workflowRuns).set({
+    // Use upsert to avoid race conditions when multiple webhooks arrive simultaneously
+    await db.insert(schema.workflowRuns).values({
+      githubId: workflowRun.id,
+      repositoryId: dbRepoId,
+      issueId,
+      actorId,
+      workflowId: workflowRun.workflow_id,
+      workflowName: workflowRun.workflow?.name || workflowRun.name,
+      name: workflowRun.name || workflowRun.display_title,
+      headBranch: workflowRun.head_branch,
+      headSha: workflowRun.head_sha,
+      event: workflowRun.event,
+      status: workflowRun.status,
+      conclusion: workflowRun.conclusion,
+      htmlUrl: workflowRun.html_url,
+      runNumber: workflowRun.run_number,
+      runAttempt: workflowRun.run_attempt,
+      startedAt: workflowRun.run_started_at ? new Date(workflowRun.run_started_at) : null,
+      completedAt: workflowRun.updated_at ? new Date(workflowRun.updated_at) : null
+    }).onConflictDoUpdate({
+      target: schema.workflowRuns.githubId,
+      set: {
         issueId,
         status: workflowRun.status,
         conclusion: workflowRun.conclusion,
         completedAt: workflowRun.updated_at ? new Date(workflowRun.updated_at) : null,
         updatedAt: new Date()
-      }).where(eq(schema.workflowRuns.id, existing.id))
-    } else {
-      await db.insert(schema.workflowRuns).values({
-        githubId: workflowRun.id,
-        repositoryId: dbRepoId,
-        issueId,
-        actorId,
-        workflowId: workflowRun.workflow_id,
-        workflowName: workflowRun.workflow?.name || workflowRun.name,
-        name: workflowRun.name || workflowRun.display_title,
-        headBranch: workflowRun.head_branch,
-        headSha: workflowRun.head_sha,
-        event: workflowRun.event,
-        status: workflowRun.status,
-        conclusion: workflowRun.conclusion,
-        htmlUrl: workflowRun.html_url,
-        runNumber: workflowRun.run_number,
-        runAttempt: workflowRun.run_attempt,
-        startedAt: workflowRun.run_started_at ? new Date(workflowRun.run_started_at) : null,
-        completedAt: workflowRun.updated_at ? new Date(workflowRun.updated_at) : null
-      })
-    }
+      }
+    })
   }
 }
 
@@ -1158,16 +1135,14 @@ export async function handleCheckRunEvent(action: string, checkRun: GitHubCheckR
       updatedAt: new Date()
     }
 
-    const [existing] = await db.select().from(schema.checkRuns).where(eq(schema.checkRuns.githubId, checkRun.id))
-
-    if (existing) {
-      await db.update(schema.checkRuns).set(checkData).where(eq(schema.checkRuns.id, existing.id))
-    } else {
-      await db.insert(schema.checkRuns).values({
-        githubId: checkRun.id,
-        ...checkData
-      })
-    }
+    // Use upsert to avoid race conditions when multiple webhooks arrive simultaneously
+    await db.insert(schema.checkRuns).values({
+      githubId: checkRun.id,
+      ...checkData
+    }).onConflictDoUpdate({
+      target: schema.checkRuns.githubId,
+      set: checkData
+    })
 
     console.log(`[Webhook] Check run ${checkRun.name} ${action} for ${repository.full_name}`)
   }
@@ -1203,16 +1178,14 @@ export async function handleStatusEvent(payload: GitHubStatusPayload, repository
     updatedAt: new Date()
   }
 
-  const [existing] = await db.select().from(schema.commitStatuses).where(eq(schema.commitStatuses.githubId, payload.id))
-
-  if (existing) {
-    await db.update(schema.commitStatuses).set(statusData).where(eq(schema.commitStatuses.id, existing.id))
-  } else {
-    await db.insert(schema.commitStatuses).values({
-      githubId: payload.id,
-      ...statusData
-    })
-  }
+  // Use upsert to avoid race conditions when multiple webhooks arrive simultaneously
+  await db.insert(schema.commitStatuses).values({
+    githubId: payload.id,
+    ...statusData
+  }).onConflictDoUpdate({
+    target: schema.commitStatuses.githubId,
+    set: statusData
+  })
 
   console.log(`[Webhook] Commit status ${payload.context}: ${payload.state} for ${repository.full_name}`)
 }

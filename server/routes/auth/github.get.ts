@@ -20,38 +20,29 @@ export default defineOAuthGitHubEventHandler({
     // Cast tokens to extended type that includes refresh token fields
     const tokens = _tokens as GitHubTokensWithRefresh
 
-    // Upsert user in database - look up by GitHub ID, store internal ID in session
+    // Upsert user in database - use upsert to avoid race conditions
     let dbUserId: number
     try {
-      // Look up by GitHub ID
-      const [existingUser] = await db
-        .select()
-        .from(schema.users)
-        .where(eq(schema.users.githubId, user.id))
-
-      if (existingUser) {
-        // Update existing user
-        await db.update(schema.users).set({
+      const [result] = await db.insert(schema.users).values({
+        githubId: user.id,
+        login: user.login,
+        name: user.name,
+        email: user.email,
+        avatarUrl: user.avatar_url,
+        registered: true // Mark as registered on login
+      }).onConflictDoUpdate({
+        target: schema.users.githubId,
+        set: {
           login: user.login,
           name: user.name,
           email: user.email,
           avatarUrl: user.avatar_url,
           registered: true, // Mark as registered on login
           updatedAt: new Date()
-        }).where(eq(schema.users.id, existingUser.id))
-        dbUserId = existingUser.id
-      } else {
-        // Insert new user (auto-generate ID)
-        const [newUser] = await db.insert(schema.users).values({
-          githubId: user.id, // Store GitHub ID for reference
-          login: user.login,
-          name: user.name,
-          email: user.email,
-          avatarUrl: user.avatar_url,
-          registered: true // Mark as registered on login
-        }).returning({ id: schema.users.id })
-        dbUserId = newUser!.id
-      }
+        }
+      }).returning({ id: schema.users.id })
+
+      dbUserId = result!.id
     } catch (error) {
       console.warn('[auth] Failed to save user to database:', error)
       throw createError({
