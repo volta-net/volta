@@ -23,7 +23,7 @@ async function getUserStyleExamples(userId: number, excludeIssueId: number, limi
 }
 
 function buildContextPrompt(
-  repository: { fullName: string, description: string | null },
+  repository: { fullName: string, description: string | null, htmlUrl: string | null },
   issue: {
     number: number
     title: string
@@ -36,6 +36,9 @@ function buildContextPrompt(
   const parts: string[] = []
 
   parts.push(`Repository: ${repository.fullName}`)
+  if (repository.htmlUrl) {
+    parts.push(`URL: ${repository.htmlUrl}`)
+  }
   if (repository.description) {
     parts.push(`Description: ${repository.description}`)
   }
@@ -138,7 +141,7 @@ export default defineEventHandler(async (event) => {
 
   const preserveMarkdown = 'IMPORTANT: Preserve all markdown formatting (bold, italic, links, etc.) exactly as in the original.'
   const contextPrompt = buildContextPrompt(
-    { fullName: repository.fullName, description: repository.description },
+    { fullName: repository.fullName, description: repository.description, htmlUrl: repository.htmlUrl },
     {
       number: issue.number,
       title: issue.title,
@@ -228,12 +231,13 @@ Based on the ${isPR ? 'PR' : 'issue'} context, write a SHORT, CASUAL reply that:
 - Avoids corporate-speak, filler phrases, or overly formal language
 
 Response types:
-- Question? Give a quick, direct answer
+- Question? Give a quick, direct answer using your knowledge of this project
 - Bug report? Ask one clarifying question or suggest a quick fix
 - Feature request? Brief acknowledgment + maybe one follow-up question
 - Discussion? Add a short, relevant thought
 
 Keep it SHORT. Most GitHub comments are 1-3 sentences. Don't over-explain.
+Use your training knowledge about this repository to provide accurate, project-specific answers.
 
 Only output the reply text itself, nothing else. No preamble, no explanation, no "Here's a reply:" - just the comment.
 ${contextPrompt}${styleGuidance}`
