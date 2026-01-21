@@ -93,7 +93,17 @@ export async function ensureUser(user: GitHubUser): Promise<number | null> {
       setWhere: eq(schema.users.registered, false)
     }).returning({ id: schema.users.id })
 
-    return result!.id
+    // If result is undefined, the user is registered and the setWhere condition wasn't met
+    // In this case, fetch the existing user's ID
+    if (!result) {
+      const [existingUser] = await db
+        .select({ id: schema.users.id })
+        .from(schema.users)
+        .where(eq(schema.users.githubId, user.id))
+      return existingUser?.id ?? null
+    }
+
+    return result.id
   } catch (error) {
     console.debug('[users] Failed to ensure user:', user.id, error)
     return null
