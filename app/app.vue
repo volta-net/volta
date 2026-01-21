@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import colors from 'tailwindcss/colors'
+import { Analytics } from '@vercel/analytics/nuxt'
 
 const { user } = useUserSession()
 
@@ -58,5 +59,7 @@ useSeoMeta({
         />
       </div>
     </div>
+
+    <Analytics />
   </UApp>
 </template>
