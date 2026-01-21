@@ -1,18 +1,12 @@
 <script setup lang="ts">
-import colors from 'tailwindcss/colors'
 import { Analytics } from '@vercel/analytics/nuxt'
 
 const { user } = useUserSession()
 
-const colorMode = useColorMode()
-const appConfig = useAppConfig()
-
-const color = computed(() => colorMode.value === 'dark' ? (colors as any)[appConfig.ui.colors.neutral][900] : 'white')
-
 useHead({
   meta: [
     { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-    { key: 'theme-color', name: 'theme-color', content: color }
+    { key: 'theme-color', name: 'theme-color', content: '#0b0809' }
   ],
   link: [
     { rel: 'icon', href: '/favicon.ico' }
