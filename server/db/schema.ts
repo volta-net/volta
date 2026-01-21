@@ -52,7 +52,10 @@ export const notifications = pgTable('notifications', {
   read: boolean().default(false),
   readAt: timestamp('read_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
-})
+}, table => ([
+  index('notifications_user_id_idx').on(table.userId),
+  index('notifications_created_at_idx').on(table.createdAt)
+]))
 
 // GitHub App Installations
 export const installations = pgTable('installations', {
@@ -157,7 +160,9 @@ export const checkRuns = pgTable('check_runs', {
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
 }, table => ([
-  uniqueIndex('check_runs_github_id_idx').on(table.githubId)
+  uniqueIndex('check_runs_github_id_idx').on(table.githubId),
+  index('check_runs_repository_id_idx').on(table.repositoryId),
+  index('check_runs_head_sha_idx').on(table.headSha)
 ]))
 
 // Commit Status state (from GitHub Status API - older API used by Vercel deployments, etc.)
@@ -282,7 +287,8 @@ export const issues = pgTable('issues', {
   // Performance indexes for common queries
   index('issues_state_idx').on(table.state),
   index('issues_head_sha_idx').on(table.headSha),
-  index('issues_number_idx').on(table.number)
+  index('issues_number_idx').on(table.number),
+  index('issues_pull_request_idx').on(table.pullRequest)
 ]))
 
 // Issue Assignees (many-to-many: issues <-> users)
@@ -290,7 +296,8 @@ export const issueAssignees = pgTable('issue_assignees', {
   issueId: integer('issue_id').notNull().references(() => issues.id, { onDelete: 'cascade' }),
   userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' })
 }, table => ([
-  primaryKey({ columns: [table.issueId, table.userId] })
+  primaryKey({ columns: [table.issueId, table.userId] }),
+  index('issue_assignees_issue_id_idx').on(table.issueId)
 ]))
 
 // Issue Labels (many-to-many: issues <-> labels)
@@ -298,7 +305,8 @@ export const issueLabels = pgTable('issue_labels', {
   issueId: integer('issue_id').notNull().references(() => issues.id, { onDelete: 'cascade' }),
   labelId: integer('label_id').notNull().references(() => labels.id, { onDelete: 'cascade' })
 }, table => ([
-  primaryKey({ columns: [table.issueId, table.labelId] })
+  primaryKey({ columns: [table.issueId, table.labelId] }),
+  index('issue_labels_issue_id_idx').on(table.issueId)
 ]))
 
 // Issue Requested Reviewers (many-to-many: issues <-> users, for PRs)
@@ -350,7 +358,8 @@ export const issueReviews = pgTable('issue_reviews', {
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
 }, table => ([
-  uniqueIndex('issue_reviews_github_id_idx').on(table.githubId)
+  uniqueIndex('issue_reviews_github_id_idx').on(table.githubId),
+  index('issue_reviews_issue_id_idx').on(table.issueId)
 ]))
 
 // Issue Review Comments (inline code comments on PRs)
@@ -370,7 +379,8 @@ export const issueReviewComments = pgTable('issue_review_comments', {
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
 }, table => ([
-  uniqueIndex('issue_review_comments_github_id_idx').on(table.githubId)
+  uniqueIndex('issue_review_comments_github_id_idx').on(table.githubId),
+  index('issue_review_comments_issue_id_idx').on(table.issueId)
 ]))
 
 // Relations
