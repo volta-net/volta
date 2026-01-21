@@ -30,7 +30,6 @@ export async function handleIssueEvent(action: string, issue: GitHubIssue, repos
   // Check if repository is synced (lookup by GitHub ID)
   const dbRepoId = await getDbRepositoryId(repository.id)
   if (!dbRepoId) {
-    console.log(`[Webhook] Repository ${repository.full_name} not synced, skipping issue event`)
     return
   }
 
@@ -72,7 +71,6 @@ export async function handlePullRequestEvent(action: string, pullRequest: GitHub
   // Check if repository is synced (lookup by GitHub ID)
   const dbRepoId = await getDbRepositoryId(repository.id)
   if (!dbRepoId) {
-    console.log(`[Webhook] Repository ${repository.full_name} not synced, skipping PR event`)
     return
   }
 
@@ -422,7 +420,6 @@ export async function handleCommentEvent(action: string, comment: GitHubComment,
   // Check if repository is synced (lookup by GitHub ID)
   const dbRepoId = await getDbRepositoryId(repository.id)
   if (!dbRepoId) {
-    console.log(`[Webhook] Repository ${repository.full_name} not synced, skipping comment event`)
     return
   }
 
@@ -513,7 +510,6 @@ export async function handleReviewEvent(action: string, review: GitHubReview, pu
   // Check if repository is synced (lookup by GitHub ID)
   const dbRepoId = await getDbRepositoryId(repository.id)
   if (!dbRepoId) {
-    console.log(`[Webhook] Repository ${repository.full_name} not synced, skipping review event`)
     return
   }
 
@@ -598,7 +594,6 @@ export async function handleReviewCommentEvent(action: string, comment: GitHubRe
   // Check if repository is synced (lookup by GitHub ID)
   const dbRepoId = await getDbRepositoryId(repository.id)
   if (!dbRepoId) {
-    console.log(`[Webhook] Repository ${repository.full_name} not synced, skipping review comment event`)
     return
   }
 
@@ -689,7 +684,6 @@ export async function handleLabelEvent(action: string, label: GitHubLabel, repos
   // Check if repository is synced (lookup by GitHub ID)
   const dbRepoId = await getDbRepositoryId(repository.id)
   if (!dbRepoId) {
-    console.log(`[Webhook] Repository ${repository.full_name} not synced, skipping label event`)
     return
   }
 
@@ -734,7 +728,6 @@ export async function handleMilestoneEvent(action: string, milestone: GitHubMile
   // Check if repository is synced (lookup by GitHub ID)
   const dbRepoId = await getDbRepositoryId(repository.id)
   if (!dbRepoId) {
-    console.log(`[Webhook] Repository ${repository.full_name} not synced, skipping milestone event`)
     return
   }
 
@@ -787,7 +780,6 @@ export async function handleMemberEvent(action: string, member: GitHubUser, repo
   // Check if repository is synced (lookup by GitHub ID)
   const dbRepoId = await getDbRepositoryId(repository.id)
   if (!dbRepoId) {
-    console.log(`[Webhook] Repository ${repository.full_name} not synced, skipping member event`)
     return
   }
 
@@ -1008,7 +1000,6 @@ export async function handleReleaseEvent(action: string, release: GitHubRelease,
   // Check if repository is synced (lookup by GitHub ID)
   const dbRepoId = await getDbRepositoryId(repository.id)
   if (!dbRepoId) {
-    console.log(`[Webhook] Repository ${repository.full_name} not synced, skipping release event`)
     return
   }
 
@@ -1062,7 +1053,6 @@ export async function handleWorkflowRunEvent(action: string, workflowRun: GitHub
   // Check if repository is synced (lookup by GitHub ID)
   const dbRepoId = await getDbRepositoryId(repository.id)
   if (!dbRepoId) {
-    console.log(`[Webhook] Repository ${repository.full_name} not synced, skipping workflow run event`)
     return
   }
 
@@ -1148,7 +1138,6 @@ export async function handleCheckRunEvent(action: string, checkRun: GitHubCheckR
   // Check if repository is synced (lookup by GitHub ID)
   const dbRepoId = await getDbRepositoryId(repository.id)
   if (!dbRepoId) {
-    console.log(`[Webhook] Repository ${repository.full_name} not synced, skipping check run event`)
     return
   }
 
@@ -1201,7 +1190,6 @@ export async function handleStatusEvent(payload: GitHubStatusPayload, repository
   // Check if repository is synced (lookup by GitHub ID)
   const dbRepoId = await getDbRepositoryId(repository.id)
   if (!dbRepoId) {
-    console.log(`[Webhook] Repository ${repository.full_name} not synced, skipping status event`)
     return
   }
 
