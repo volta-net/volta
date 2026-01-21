@@ -74,16 +74,23 @@ async function stepSyncTypes(accessToken: string, owner: string, repo: string, r
 
 async function stepSyncIssues(accessToken: string, owner: string, repo: string, repositoryId: number) {
   'use step'
-  const { syncIssues } = await import('../utils/sync.js')
-  console.log(`[Workflow] Step 7: Syncing issues and PRs for ${owner}/${repo}`)
-  return await syncIssues(accessToken, owner, repo, repositoryId)
+  const { syncIssuesOnly } = await import('../utils/sync.js')
+  console.log(`[Workflow] Step 7: Syncing issues for ${owner}/${repo}`)
+  return await syncIssuesOnly(accessToken, owner, repo, repositoryId)
+}
+
+async function stepSyncPullRequests(accessToken: string, owner: string, repo: string, repositoryId: number) {
+  'use step'
+  const { syncPullRequestsOnly } = await import('../utils/sync.js')
+  console.log(`[Workflow] Step 8: Syncing pull requests for ${owner}/${repo}`)
+  return await syncPullRequestsOnly(accessToken, owner, repo, repositoryId)
 }
 
 async function stepUpdateLastSynced(repositoryId: number) {
   'use step'
   const { eq } = await import('drizzle-orm')
   const { db, schema } = await import('@nuxthub/db')
-  console.log(`[Workflow] Step 8: Updating last synced timestamp and clearing syncing flag`)
+  console.log(`[Workflow] Step 9: Updating last synced timestamp and clearing syncing flag`)
   await db.update(schema.repositories).set({
     lastSyncedAt: new Date(),
     syncing: false
@@ -94,7 +101,7 @@ async function stepEnsureSubscription(userId: number, repositoryId: number) {
   'use step'
   const { eq, and } = await import('drizzle-orm')
   const { db, schema } = await import('@nuxthub/db')
-  console.log(`[Workflow] Step 9: Ensuring user subscription`)
+  console.log(`[Workflow] Step 10: Ensuring user subscription`)
   const existingSubscription = await db.query.repositorySubscriptions.findFirst({
     where: and(
       eq(schema.repositorySubscriptions.userId, userId),
@@ -154,13 +161,16 @@ export async function syncRepositoryWorkflow(input: SyncRepositoryInput): Promis
     // Step 6: Sync types (organization issue types)
     const typesCount = await stepSyncTypes(accessToken, owner, repo, repository.id)
 
-    // Step 7: Sync issues and PRs (the longest operation)
+    // Step 7: Sync issues (separate step to handle large repos)
     const issuesCount = await stepSyncIssues(accessToken, owner, repo, repository.id)
 
-    // Step 8: Update last synced timestamp (also clears syncing flag)
+    // Step 8: Sync pull requests (separate step to handle large repos)
+    const pullRequestsCount = await stepSyncPullRequests(accessToken, owner, repo, repository.id)
+
+    // Step 9: Update last synced timestamp (also clears syncing flag)
     await stepUpdateLastSynced(repository.id)
 
-    // Step 9: Ensure user subscription exists
+    // Step 10: Ensure user subscription exists
     await stepEnsureSubscription(userId, repository.id)
 
     console.log(`[Workflow] Repository sync completed for ${owner}/${repo}`)
@@ -173,8 +183,8 @@ export async function syncRepositoryWorkflow(input: SyncRepositoryInput): Promis
         labels: labelsCount,
         milestones: milestonesCount,
         types: typesCount,
-        issues: issuesCount.issues,
-        pullRequests: issuesCount.pullRequests
+        issues: issuesCount,
+        pullRequests: pullRequestsCount
       }
     }
   } catch (error) {

@@ -341,11 +341,10 @@ export async function syncTypes(accessToken: string, owner: string, repo: string
   }
 }
 
-export async function syncIssues(accessToken: string, owner: string, repo: string, repositoryId: number) {
+export async function syncIssuesOnly(accessToken: string, owner: string, repo: string, repositoryId: number) {
   const octokit = new Octokit({ auth: accessToken })
 
   let issueCount = 0
-  let prCount = 0
 
   // Sync only open issues (closed issues are imported via webhooks/notifications)
   const issuesData = await octokit.paginate(octokit.rest.issues.listForRepo, {
@@ -436,6 +435,14 @@ export async function syncIssues(accessToken: string, owner: string, repo: strin
     // Mark as synced
     await db.update(schema.issues).set({ synced: true, syncedAt: new Date() }).where(eq(schema.issues.id, issueId))
   }
+
+  return issueCount
+}
+
+export async function syncPullRequestsOnly(accessToken: string, owner: string, repo: string, repositoryId: number) {
+  const octokit = new Octokit({ auth: accessToken })
+
+  let prCount = 0
 
   // Sync only open pull requests (closed/merged PRs are imported via webhooks/notifications)
   const prsData = await octokit.paginate(octokit.rest.pulls.list, {
@@ -543,7 +550,7 @@ export async function syncIssues(accessToken: string, owner: string, repo: strin
     await db.update(schema.issues).set({ synced: true, syncedAt: new Date() }).where(eq(schema.issues.id, prId))
   }
 
-  return { issues: issueCount, pullRequests: prCount }
+  return prCount
 }
 
 // Helper: sync issue assignees
