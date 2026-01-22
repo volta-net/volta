@@ -35,11 +35,11 @@ export function useFavoriteRepositories() {
       favorites.value = []
       synced.value = []
     }
-    initialized.value = true
   }
 
   // Auto-fetch on first use (client-side only)
   if (import.meta.client && !initialized.value) {
+    initialized.value = true
     refresh()
   }
 
