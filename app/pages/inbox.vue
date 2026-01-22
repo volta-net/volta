@@ -150,8 +150,9 @@ async function executeDelete(notification: Notification) {
     method: 'DELETE'
   })
 
-  // Refresh will update notifications, and the watch will clean up pendingDeletes
-  await refresh()
+  // Remove from local state instead of refetching
+  notifications.value = notifications.value?.filter(n => n.id !== notification.id) ?? []
+  pendingDeletes.value = pendingDeletes.value.filter(n => n.id !== notification.id)
 }
 
 // Undo most recent delete
