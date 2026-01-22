@@ -22,7 +22,17 @@ export default defineAppConfig({
     slideover: {
       slots: {
         header: 'sm:px-4',
-        body: 'sm:p-4'
+        body: 'sm:p-4',
+        footer: 'sm:px-4',
+        close: '-me-1.5'
+      }
+    },
+    modal: {
+      slots: {
+        header: 'sm:px-4 flex items-center justify-between',
+        body: 'sm:p-4',
+        footer: 'sm:px-4',
+        close: 'static'
       }
     },
     empty: {
@@ -90,21 +100,23 @@ export default defineAppConfig({
     },
     dashboardSidebar: {
       slots: {
-        header: 'h-12'
+        header: 'h-12',
+        toggle: '-ms-1.5'
       },
       variants: {
         menu: {
           true: {
             header: 'sm:px-4',
-            body: 'sm:px-4',
-            footer: 'sm:px-4'
+            body: 'px-2 sm:px-2',
+            footer: 'px-2 sm:px-2'
           }
         }
       }
     },
     dashboardNavbar: {
       slots: {
-        root: 'sm:px-4 h-12'
+        root: 'sm:px-4 h-12',
+        toggle: '-ms-1.5'
       }
     },
     dashboardToolbar: {

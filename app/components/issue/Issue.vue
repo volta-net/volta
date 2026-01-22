@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { MentionUser } from '~/composables/useEditorMentions'
+import type { AgentMode, LabelSuggestion } from '~/composables/useAgentActions'
 
 const props = defineProps<{
   item: Issue
@@ -11,6 +12,9 @@ const emit = defineEmits<{
 }>()
 
 const toast = useToast()
+
+// Agent actions
+const agent = useAgentActions(computed(() => issue.value))
 
 // Repository info (reactive)
 const repoFullName = computed(() => props.item.repository?.fullName)
@@ -179,6 +183,94 @@ defineShortcuts({
     }
   }
 })
+
+// Handle agent action confirmation
+async function handleAgentConfirm(data: { mode: AgentMode, payload: unknown }) {
+  if (!issue.value) return
+
+  try {
+    if (data.mode === 'labels') {
+      const labels = data.payload as LabelSuggestion[]
+      const toAdd = labels.filter(l => l.action === 'add')
+      const toRemove = labels.filter(l => l.action === 'remove')
+
+      // Add labels
+      for (const label of toAdd) {
+        await $fetch(`/api/repositories/${owner.value}/${name.value}/issues/${issue.value.number}/labels`, {
+          method: 'POST',
+          body: { labelId: label.id }
+        })
+      }
+
+      // Remove labels
+      for (const label of toRemove) {
+        await $fetch(`/api/repositories/${owner.value}/${name.value}/issues/${issue.value.number}/labels/${label.id}`, {
+          method: 'DELETE'
+        })
+      }
+
+      // Build toast message
+      const parts: string[] = []
+      if (toAdd.length > 0) parts.push(`Added ${toAdd.length}`)
+      if (toRemove.length > 0) parts.push(`Removed ${toRemove.length}`)
+
+      toast.add({
+        title: `${parts.join(', ')} label${labels.length > 1 ? 's' : ''}`,
+        icon: 'i-lucide-check'
+      })
+      await handleRefresh()
+    } else if (data.mode === 'title') {
+      const newTitle = data.payload as string
+      await $fetch(`/api/repositories/${owner.value}/${name.value}/issues/${issue.value.number}/title`, {
+        method: 'PATCH',
+        body: { title: newTitle }
+      })
+      toast.add({
+        title: 'Title updated',
+        icon: 'i-lucide-check'
+      })
+      await handleRefresh()
+    }
+    agent.close()
+  } catch (err: any) {
+    toast.add({
+      title: 'Failed to apply suggestion',
+      description: err.data?.message || err.message,
+      color: 'error',
+      icon: 'i-lucide-x'
+    })
+  }
+}
+
+// Agent dropdown items
+const agentItems = computed(() => {
+  const baseItems = [
+    {
+      label: 'Suggest title',
+      icon: 'i-lucide-heading',
+      onSelect: () => agent.suggest('title')
+    },
+    {
+      label: 'Suggest labels',
+      icon: 'i-lucide-tag',
+      onSelect: () => agent.suggest('labels')
+    }
+  ]
+
+  // Add find duplicates only for issues (not PRs)
+  if (!props.item.pullRequest) {
+    return [
+      baseItems,
+      [{
+        label: 'Find duplicates',
+        icon: 'i-lucide-copy',
+        onSelect: () => agent.suggest('duplicates')
+      }]
+    ]
+  }
+
+  return [baseItems]
+})
 </script>
 
 <template>
@@ -232,6 +324,18 @@ defineShortcuts({
       </template>
 
       <template #right>
+        <UDropdownMenu
+          :items="agentItems"
+          :content="{ align: 'end' }"
+        >
+          <UButton
+            icon="i-lucide-sparkles"
+            variant="soft"
+            label="Ask AI"
+            :loading="agent.isLoading.value"
+          />
+        </UDropdownMenu>
+
         <UButton
           :icon="isSubscribed ? 'i-lucide-bell-off' : 'i-lucide-bell'"
           :label="isSubscribed ? 'Unsubscribe' : 'Subscribe'"
@@ -290,5 +394,16 @@ defineShortcuts({
         Failed to load issue details
       </p>
     </div>
+
+    <!-- Agent Action Modal -->
+    <AgentActionModal
+      v-model:open="agent.isOpen.value"
+      :mode="agent.mode.value"
+      :result="agent.result.value"
+      :loading="agent.isLoading.value"
+      :error="agent.error.value"
+      @confirm="handleAgentConfirm"
+      @close="agent.close"
+    />
   </div>
 </template>
