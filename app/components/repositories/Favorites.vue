@@ -122,7 +122,7 @@ async function setFavorite(repositoryId: number, value: boolean) {
       <UCommandPalette
         v-model="selected"
         :groups="groups"
-        placeholder="Search repositories..."
+        placeholder="Search..."
         multiple
         class="flex-1"
         selected-icon="i-lucide-star"

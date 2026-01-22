@@ -72,7 +72,7 @@ async function removeFavorite(issueId: number) {
     <template #body>
       <UCommandPalette
         :groups="groups"
-        placeholder="Search favorite issues..."
+        placeholder="Search..."
         class="flex-1"
         :loading="updating.size > 0"
         :input="{

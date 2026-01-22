@@ -110,7 +110,11 @@ export interface AggregatedCIStatus {
 export function getAggregatedCIStatus(statuses: CIStatus[] | undefined): AggregatedCIStatus | null {
   if (!statuses || statuses.length === 0) return null
 
-  const total = statuses.length
+  // Filter out informational checks like "Vercel Agent Review" that don't represent actual CI
+  const filteredStatuses = statuses.filter(ci => ci.name !== 'Vercel Agent Review')
+  if (filteredStatuses.length === 0) return null
+
+  const total = filteredStatuses.length
 
   // Count by status
   let inProgress = 0
@@ -118,10 +122,10 @@ export function getAggregatedCIStatus(statuses: CIStatus[] | undefined): Aggrega
   let failed = 0
   let failedRun: CIStatus | null = null
 
-  for (const ci of statuses) {
+  for (const ci of filteredStatuses) {
     if (ci.status === 'in_progress' || ci.status === 'queued') {
       inProgress++
-    } else if (ci.conclusion === 'success' || ci.conclusion === 'skipped') {
+    } else if (ci.conclusion === 'success' || ci.conclusion === 'skipped' || ci.conclusion === 'neutral') {
       passed++
     } else {
       failed++
@@ -147,7 +151,7 @@ export function getAggregatedCIStatus(statuses: CIStatus[] | undefined): Aggrega
     : `${passed} / ${total} passed`
 
   // Link to failed run if any, otherwise first run
-  const representativeRun = failedRun || statuses[0]!
+  const representativeRun = failedRun || filteredStatuses[0]!
 
   return {
     icon: state.icon,

@@ -7,18 +7,6 @@ useSeoMeta({
 })
 
 const router = useRouter()
-const route = useRoute()
-
-// Issues icon based on current tab
-const issuesIcon = computed(() => {
-  const tab = route.query.tab
-  switch (tab) {
-    case 'merge': return 'i-lucide-git-merge'
-    case 'review': return 'i-lucide-git-pull-request'
-    case 'triage': return 'i-lucide-circle-dot'
-    default: return 'i-lucide-circle-dot'
-  }
-})
 
 // Favorite issues
 const {
@@ -30,7 +18,7 @@ const {
 
 function handleSelectFavoriteIssue(issue: Parameters<typeof selectIssue>[0]) {
   selectIssue(issue)
-  router.push('/issues')
+  router.push(issue.pullRequest ? '/pulls' : '/issues')
 }
 
 // Favorite repositories
@@ -75,7 +63,7 @@ const searchedIssueItems = computed(() => {
           fullName: issue.repository.fullName
         }
       })
-      router.push('/issues')
+      router.push(issue.pullRequest ? '/pulls' : '/issues')
     }
   }))
 })
@@ -86,8 +74,12 @@ const links = computed<NavigationMenuItem[][]>(() => [[{
   to: '/inbox'
 }, {
   label: 'Issues',
-  icon: issuesIcon.value,
+  icon: 'i-lucide-circle-dot',
   to: '/issues'
+}, {
+  label: 'Pull Requests',
+  icon: 'i-lucide-git-pull-request',
+  to: '/pulls'
 }, {
   label: 'Settings',
   icon: 'i-lucide-settings',
@@ -115,23 +107,12 @@ const groups = computed(() => [{
     to: '/inbox'
   }, {
     label: 'Issues',
-    icon: issuesIcon.value,
-    children: [{
-      label: 'Needs Triage',
-      icon: 'i-lucide-circle-dot',
-      to: '/issues?tab=triage',
-      exactQuery: true
-    }, {
-      label: 'Needs Review',
-      icon: 'i-lucide-git-pull-request',
-      to: '/issues?tab=review',
-      exactQuery: true
-    }, {
-      label: 'Ready To Merge',
-      icon: 'i-lucide-git-merge',
-      to: '/issues?tab=merge',
-      exactQuery: true
-    }]
+    icon: 'i-lucide-circle-dot',
+    to: '/issues'
+  }, {
+    label: 'Pull Requests',
+    icon: 'i-lucide-git-pull-request',
+    to: '/pulls'
   }, {
     label: 'Settings',
     icon: 'i-lucide-settings',
@@ -141,7 +122,7 @@ const groups = computed(() => [{
   id: 'favorites',
   label: 'Favorites',
   items: [{
-    label: 'Issues',
+    label: 'Issues & Pull Requests',
     icon: 'i-lucide-circle-dot',
     onSelect: () => { favoriteIssuesOpen.value = true }
   }, {

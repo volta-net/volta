@@ -1,6 +1,6 @@
 <script setup lang="ts">
 useSeoMeta({
-  title: 'Issues'
+  title: 'Pull Requests'
 })
 
 const {
@@ -20,17 +20,17 @@ const {
   hasSynced,
   isMobile
 } = await useIssuesList({
-  title: 'Issues',
-  icon: 'i-lucide-circle-dot',
-  api: '/api/issues?pullRequest=false&state=open&excludeBots=true',
-  emptyText: 'All triaged!',
-  panelId: 'issues'
+  title: 'Pull Requests',
+  icon: 'i-lucide-git-pull-request',
+  api: '/api/issues?pullRequest=true&state=open',
+  emptyText: 'No open pull requests',
+  panelId: 'pulls'
 })
 </script>
 
 <template>
   <UDashboardPanel
-    :id="`${config.panelId}-1`"
+    id="pulls-1"
     :default-size="30"
     :min-size="25"
     :max-size="!selectedItem ? 100 : 50"
@@ -150,7 +150,7 @@ const {
     </template>
   </UDashboardPanel>
 
-  <UDashboardPanel v-if="selectedItem" :id="`${config.panelId}-2`">
+  <UDashboardPanel v-if="selectedItem" id="pulls-2">
     <Issue
       :item="selectedItem"
       @close="selectedItem = null"

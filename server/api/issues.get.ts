@@ -19,7 +19,6 @@ import { db, schema } from '@nuxthub/db'
  * - hasChangesRequested: 'true' | 'false' - has changes requested review (PRs only)
  * - hasRequestedReviewers: 'true' | 'false' - has pending review requests (PRs only)
  * - ciPassing: 'true' | 'false' - CI checks are passing (PRs only)
- * - excludeBotWithPassingCi: 'true' - exclude bot PRs that have passing CI (for needs review)
  * - isBug: 'true' | 'false' - has bug label/type
  * - hasLabels: 'true' | 'false' - has any labels or not
  * - hasType: 'true' | 'false' - has issue type or not
@@ -52,7 +51,6 @@ export default defineEventHandler(async (event) => {
   const hasChangesRequested = query.hasChangesRequested === 'true' ? true : query.hasChangesRequested === 'false' ? false : undefined
   const hasRequestedReviewers = query.hasRequestedReviewers === 'true' ? true : query.hasRequestedReviewers === 'false' ? false : undefined
   const ciPassing = query.ciPassing === 'true' ? true : query.ciPassing === 'false' ? false : undefined
-  const excludeBotWithPassingCi = query.excludeBotWithPassingCi === 'true'
   const isBug = query.isBug === 'true' ? true : query.isBug === 'false' ? false : undefined
   const hasLabels = query.hasLabels === 'true' ? true : query.hasLabels === 'false' ? false : undefined
   const hasType = query.hasType === 'true' ? true : query.hasType === 'false' ? false : undefined
@@ -316,7 +314,7 @@ export default defineEventHandler(async (event) => {
 
   // Get CI status if needed
   let ciByHeadSha: Map<string, any[]> | null = null
-  if (ciPassing !== undefined || excludeBotWithPassingCi) {
+  if (ciPassing !== undefined) {
     const prsWithHeadSha = issues
       .filter(i => i.pullRequest && i.headSha)
       .map(pr => ({ repositoryId: pr.repositoryId, headSha: pr.headSha! }))
@@ -353,23 +351,13 @@ export default defineEventHandler(async (event) => {
     }
 
     // Filter by isApproved (PRs only)
-    // Bot PRs (renovate, dependabot) are considered auto-approved
     if (isApproved !== undefined && issue.pullRequest) {
-      const authorLogin = issue.user?.login || ''
-      const isBot = authorLogin.includes('[bot]')
+      const reviews = (issue as any).reviews || []
+      const hasChangesRequestedReview = reviews.some((r: any) => r.state === 'CHANGES_REQUESTED')
+      const hasApproval = reviews.some((r: any) => r.state === 'APPROVED')
+      const approved = hasApproval && !hasChangesRequestedReview
 
-      if (isBot) {
-        // Bot PRs are auto-approved, no human review needed
-        if (isApproved !== true) return false
-      } else {
-        // Human PRs need actual approval
-        const reviews = (issue as any).reviews || []
-        const hasChangesRequestedReview = reviews.some((r: any) => r.state === 'CHANGES_REQUESTED')
-        const hasApproval = reviews.some((r: any) => r.state === 'APPROVED')
-        const approved = hasApproval && !hasChangesRequestedReview
-
-        if (isApproved !== approved) return false
-      }
+      if (isApproved !== approved) return false
     }
 
     // Filter by hasChangesRequested (PRs only)
@@ -387,31 +375,14 @@ export default defineEventHandler(async (event) => {
       // No CI = considered passing (some repos don't have CI)
       let passing = true
       if (ciStatuses && ciStatuses.length > 0) {
+        // success, skipped, neutral are all considered passing
+        // neutral is used by informational checks like "Vercel Agent Review"
         passing = ciStatuses.every(ci =>
-          ci.conclusion === 'success' || ci.conclusion === 'skipped'
+          ci.conclusion === 'success' || ci.conclusion === 'skipped' || ci.conclusion === 'neutral'
         )
       }
 
       if (ciPassing !== passing) return false
-    }
-
-    // Exclude bot PRs that have passing CI (they should be in Ready to Merge instead)
-    if (excludeBotWithPassingCi && issue.pullRequest && ciByHeadSha) {
-      const authorLogin = issue.user?.login || ''
-      const isBot = authorLogin.includes('[bot]')
-
-      if (isBot) {
-        const ciStatuses = issue.headSha ? ciByHeadSha.get(`${issue.repositoryId}:${issue.headSha}`) : null
-        // No CI = considered passing
-        let passing = true
-        if (ciStatuses && ciStatuses.length > 0) {
-          passing = ciStatuses.every(ci =>
-            ci.conclusion === 'success' || ci.conclusion === 'skipped'
-          )
-        }
-        // Exclude bot PRs with passing CI
-        if (passing) return false
-      }
     }
 
     return true

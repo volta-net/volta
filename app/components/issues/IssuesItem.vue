@@ -107,6 +107,7 @@ const resolutionConfig = computed(() => {
 
         <IssueType v-if="item.type" :type="item.type" />
         <IssueLabel v-for="label in item.labels" :key="label.id" :label="label" />
+        <IssueUser v-if="item.user" :user="item.user" />
       </div>
 
       <!-- Time -->
