@@ -4,8 +4,8 @@ import { z } from 'zod'
 import { eq, and, inArray } from 'drizzle-orm'
 import { db, schema } from '@nuxthub/db'
 import type { ResolutionStatus } from '@nuxthub/db/schema'
-import type { GitHubIssue, GitHubComment, GitHubRepository } from '../types/github'
-import { ensureUser, getDbRepositoryId } from './users'
+import type { GitHubIssue, GitHubRepository } from '../types/github'
+import { getDbRepositoryId } from './users'
 import { getDbIssueId } from './sync'
 
 // Schema for AI response
@@ -168,38 +168,6 @@ If a good answer was provided and no follow-up for 7+ days, use "likely_resolved
 }
 
 /**
- * Determine if we should analyze this issue based on a new comment
- */
-export function shouldAnalyzeOnComment(
-  issue: { userId: number | null, pullRequest: boolean, state: string },
-  comment: { userId: number | null },
-  totalComments: number
-): boolean {
-  // Never analyze PRs
-  if (issue.pullRequest) {
-    return false
-  }
-
-  // Never analyze closed issues
-  if (issue.state === 'closed') {
-    return false
-  }
-
-  // Analyze if commenter is not the issue author (someone might be answering)
-  if (comment.userId !== issue.userId) {
-    return true
-  }
-
-  // Also analyze if author responds after others have commented
-  // (might be saying "that worked" or "still broken")
-  if (comment.userId === issue.userId && totalComments > 1) {
-    return true
-  }
-
-  return false
-}
-
-/**
  * Fetch and analyze resolution for an issue, then store the result
  */
 export async function analyzeAndStoreResolution(issueId: number): Promise<AnalysisResult | null> {
@@ -287,49 +255,31 @@ export function isResolutionStale(analyzedAt: Date | string | null): boolean {
 }
 
 /**
- * Trigger resolution analysis from a webhook comment event
- * Handles all the user/issue lookups and runs analysis async
+ * Invalidate resolution cache when a new comment arrives
+ * This sets resolutionAnalyzedAt to null so the next view triggers fresh analysis
  */
-export async function triggerResolutionAnalysisOnComment(
+export function invalidateResolutionCache(
   issue: GitHubIssue,
-  comment: GitHubComment,
   repository: GitHubRepository
-): Promise<void> {
-  // Get internal repository ID
-  const dbRepoId = await getDbRepositoryId(repository.id)
-  if (!dbRepoId) return
+): void {
+  // Skip PRs
+  if (issue.pull_request) return
 
-  // Get internal issue ID
-  const dbIssueId = await getDbIssueId(dbRepoId, issue.number)
-  if (!dbIssueId) return
+  // Skip closed issues
+  if (issue.state === 'closed') return
 
-  // Get comment author's internal ID
-  const commentAuthorId = comment.user?.id
-    ? await ensureUser({
-        id: comment.user.id,
-        login: comment.user.login,
-        avatar_url: comment.user.avatar_url
-      })
-    : null
+  // Run async without waiting
+  (async () => {
+    const dbRepoId = await getDbRepositoryId(repository.id)
+    if (!dbRepoId) return
 
-  // Get issue author's internal ID
-  const issueAuthorId = issue.user?.id
-    ? await ensureUser({
-        id: issue.user.id,
-        login: issue.user.login,
-        avatar_url: issue.user.avatar_url
-      })
-    : null
+    const dbIssueId = await getDbIssueId(dbRepoId, issue.number)
+    if (!dbIssueId) return
 
-  // Check if we should analyze
-  if (shouldAnalyzeOnComment(
-    { userId: issueAuthorId, pullRequest: false, state: issue.state },
-    { userId: commentAuthorId },
-    issue.comments || 1
-  )) {
-    // Run analysis async (don't await)
-    analyzeAndStoreResolution(dbIssueId).catch((err) => {
-      console.error('[resolution] Analysis on comment failed:', err)
-    })
-  }
+    await db.update(schema.issues).set({
+      resolutionAnalyzedAt: null
+    }).where(eq(schema.issues.id, dbIssueId))
+  })().catch((err) => {
+    console.error('[resolution] Cache invalidation failed:', err)
+  })
 }

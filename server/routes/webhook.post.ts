@@ -34,7 +34,7 @@ import {
   notifyReleasePublished,
   notifyWorkflowFailed
 } from '../utils/notifications'
-import { triggerResolutionAnalysisOnComment } from '../utils/resolution'
+import { invalidateResolutionCache } from '../utils/resolution'
 import { ensureUser, getDbRepositoryId } from '../utils/users'
 import { getDbIssueId, subscribeUserToIssue } from '../utils/sync'
 
@@ -115,7 +115,8 @@ export default defineEventHandler(async (event) => {
             await notifyPRComment(payload.issue, payload.comment, payload.repository, payload.sender)
           } else {
             await notifyIssueComment(payload.issue, payload.comment, payload.repository, payload.sender)
-            triggerResolutionAnalysisOnComment(payload.issue, payload.comment, payload.repository)
+            // Invalidate resolution cache so next view triggers fresh analysis
+            invalidateResolutionCache(payload.issue, payload.repository)
           }
         }
         break
