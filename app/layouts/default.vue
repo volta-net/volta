@@ -36,7 +36,8 @@ const searchTermDebounced = refDebounced(searchTerm, 300)
 
 const { data: searchedIssues, status: searchStatus } = useLazyFetch('/api/issues/search', {
   query: { q: searchTermDebounced },
-  default: () => []
+  default: () => [],
+  immediate: false
 })
 
 const searchedIssueItems = computed(() => {
