@@ -11,6 +11,8 @@ export const users = pgTable('users', {
   avatarUrl: text('avatar_url'),
   // True if user has logged into the app, false for shadow users from imports
   registered: boolean().default(false).notNull(),
+  // User's AI Gateway token for AI features (resolution analysis, completions)
+  aiGatewayToken: text('ai_gateway_token'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
 }, table => ([

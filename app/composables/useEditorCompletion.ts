@@ -10,6 +10,8 @@ export interface UseEditorCompletionOptions {
 }
 
 export function useEditorCompletion(editorRef: Ref<{ editor: Editor | undefined } | null | undefined>, options: UseEditorCompletionOptions = {}) {
+  const toast = useToast()
+
   // State for direct insertion/transform mode
   const insertState = ref<{
     pos: number
@@ -65,6 +67,33 @@ export function useEditorCompletion(editorRef: Ref<{ editor: Editor | undefined 
       console.error('AI completion error:', error)
       insertState.value = undefined
       getCompletionStorage()?.clearSuggestion()
+
+      // Extract error message from various possible locations
+      let description = 'An error occurred while generating AI completion.'
+
+      // Try to parse the error message as JSON (AI SDK sometimes wraps the response)
+      try {
+        const parsed = JSON.parse(error.message)
+        description = parsed.message || parsed.statusMessage || description
+      } catch {
+        // Not JSON, check other properties
+        const cause = error.cause as { message?: string } | undefined
+        description = cause?.message || error.message || description
+      }
+
+      // Show toast with error message
+      toast.add({
+        title: 'AI completion failed',
+        description,
+        color: 'error',
+        actions: [{
+          label: 'Configure token',
+          color: 'neutral',
+          variant: 'subtle',
+          size: 'sm',
+          to: '/settings/ai'
+        }]
+      })
     }
   })
 

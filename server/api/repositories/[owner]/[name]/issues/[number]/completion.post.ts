@@ -1,5 +1,5 @@
 import { streamText } from 'ai'
-import { gateway } from '@ai-sdk/gateway'
+import type { GatewayModelId } from '@ai-sdk/gateway'
 import { eq, and, inArray, desc, ne, isNotNull } from 'drizzle-orm'
 import { db, schema } from '@nuxthub/db'
 
@@ -136,6 +136,17 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'Prompt is required' })
   }
 
+  // Get user's AI token
+  const userToken = await getUserAiToken(user.id)
+  const userGateway = createUserGateway(userToken)
+
+  if (!userGateway) {
+    throw createError({
+      statusCode: 403,
+      message: 'Vercel AI Gateway token not configured. Add your token in Settings to enable AI features.'
+    })
+  }
+
   let system: string
   let maxOutputTokens: number
 
@@ -259,7 +270,7 @@ CRITICAL RULES:
   }
 
   return streamText({
-    model: gateway('anthropic/claude-sonnet-4.5'),
+    model: userGateway('anthropic/claude-sonnet-4.5' as GatewayModelId),
     system,
     prompt,
     maxOutputTokens

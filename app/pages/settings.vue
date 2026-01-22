@@ -10,6 +10,10 @@ const links = [{
   icon: 'i-lucide-package',
   to: '/settings',
   exact: true
+}, {
+  label: 'AI Gateway',
+  icon: 'i-lucide-sparkles',
+  to: '/settings/ai'
 }] satisfies NavigationMenuItem[]
 </script>
 

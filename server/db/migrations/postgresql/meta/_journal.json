@@ -36,6 +36,13 @@
       "when": 1769089483165,
       "tag": "0004_curious_mentor",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1769101782026,
+      "tag": "0005_true_kingpin",
+      "breakpoints": true
     }
   ]
 }

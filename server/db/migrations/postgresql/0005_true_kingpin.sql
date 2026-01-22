@@ -1,0 +1,1 @@
+ALTER TABLE "users" ADD COLUMN "ai_gateway_token" text;

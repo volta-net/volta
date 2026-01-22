@@ -1,12 +1,15 @@
-import { generateText, Output } from 'ai'
-import { gateway } from '@ai-sdk/gateway'
+import { generateText, Output, type LanguageModel } from 'ai'
+import type { GatewayModelId } from '@ai-sdk/gateway'
 import { z } from 'zod'
 import { eq, and, inArray } from 'drizzle-orm'
 import { db, schema } from '@nuxthub/db'
 import type { ResolutionStatus } from '@nuxthub/db/schema'
-import type { GitHubIssue, GitHubRepository } from '../types/github'
+import type { GitHubRepository } from '../types/github'
 import { getDbRepositoryId } from './users'
 import { getDbIssueId } from './sync'
+
+// Type for the gateway function returned by createGateway
+type GatewayFn = (modelId: GatewayModelId) => LanguageModel
 
 // Schema for AI response
 const resolutionAnalysisSchema = z.object({
@@ -85,11 +88,13 @@ function daysSince(date: Date | string): number {
 
 /**
  * Analyze if an issue has been answered using AI
+ * @param userGateway - Gateway instance with user's token (required)
  */
 export async function analyzeIssueResolution(
   issue: IssueForAnalysis,
   comments: CommentForAnalysis[],
-  maintainerIds: Set<number>
+  maintainerIds: Set<number>,
+  userGateway: GatewayFn
 ): Promise<AnalysisResult> {
   // No comments = needs attention
   if (comments.length === 0) {
@@ -126,7 +131,7 @@ If a good answer was provided and no follow-up for 7+ days, use "likely_resolved
 
   try {
     const { output } = await generateText({
-      model: gateway('anthropic/claude-sonnet-4.5'),
+      model: userGateway('anthropic/claude-sonnet-4.5' as GatewayModelId),
       output: Output.object({ schema: resolutionAnalysisSchema }),
       system: systemPrompt,
       prompt
@@ -169,8 +174,9 @@ If a good answer was provided and no follow-up for 7+ days, use "likely_resolved
 
 /**
  * Fetch and analyze resolution for an issue, then store the result
+ * @param userGateway - Gateway instance with user's token (required)
  */
-export async function analyzeAndStoreResolution(issueId: number): Promise<AnalysisResult | null> {
+export async function analyzeAndStoreResolution(issueId: number, userGateway: GatewayFn): Promise<AnalysisResult | null> {
   // Fetch issue with comments
   const issue = await db.query.issues.findFirst({
     where: eq(schema.issues.id, issueId),
@@ -227,7 +233,8 @@ export async function analyzeAndStoreResolution(issueId: number): Promise<Analys
       createdAt: c.createdAt,
       user: c.user ? { id: c.user.id, login: c.user.login } : null
     })),
-    maintainerIds
+    maintainerIds,
+    userGateway
   )
 
   // Store result in database
@@ -254,12 +261,19 @@ export function isResolutionStale(analyzedAt: Date | string | null): boolean {
   return d.getTime() < oneHourAgo
 }
 
+// Issue from webhook payload (includes pull_request field that GitHubIssue doesn't have)
+interface WebhookIssue {
+  number: number
+  state: string
+  pull_request?: unknown // Present if this is a PR
+}
+
 /**
  * Invalidate resolution cache when a new comment arrives
  * This sets resolutionAnalyzedAt to null so the next view triggers fresh analysis
  */
 export function invalidateResolutionCache(
-  issue: GitHubIssue,
+  issue: WebhookIssue,
   repository: GitHubRepository
 ): void {
   // Skip PRs

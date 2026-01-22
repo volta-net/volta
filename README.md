@@ -83,6 +83,7 @@ cp .env.example .env
 | `NUXT_GITHUB_APP_ID` | GitHub App → App ID |
 | `NUXT_GITHUB_PRIVATE_KEY` | GitHub App → Private keys → Generate (convert newlines to `\n`) |
 | `NUXT_GITHUB_WEBHOOK_SECRET` | The webhook secret you set when creating the app |
+| `ENCRYPTION_KEY` | A 256-bit key for encrypting user AI tokens (run `openssl rand -hex 32`) |
 
 > **Tip:** To convert the private key, run: `awk 'NF {sub(/\r/, ""); printf "%s\\n",$0;}' your-app.pem`
 
