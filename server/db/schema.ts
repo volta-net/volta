@@ -14,7 +14,9 @@ export const users = pgTable('users', {
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
 }, table => ([
-  uniqueIndex('users_github_id_idx').on(table.githubId)
+  uniqueIndex('users_github_id_idx').on(table.githubId),
+  // Index for @mention lookups (getMentionedUserIds in notifications.ts)
+  index('users_login_idx').on(table.login)
 ]))
 
 // Notification types (what entity the notification is about)
@@ -53,8 +55,10 @@ export const notifications = pgTable('notifications', {
   readAt: timestamp('read_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
 }, table => ([
-  index('notifications_user_id_idx').on(table.userId),
-  index('notifications_created_at_idx').on(table.createdAt)
+  // Composite index for all notification queries (userId + read filter + createdAt sort)
+  index('notifications_user_read_created_idx').on(table.userId, table.read, table.createdAt),
+  // Index for notification deduplication (checking if notification exists for user+issue)
+  index('notifications_user_issue_idx').on(table.userId, table.issueId)
 ]))
 
 // GitHub App Installations
@@ -69,7 +73,9 @@ export const installations = pgTable('installations', {
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
 }, table => ([
-  uniqueIndex('installations_github_id_idx').on(table.githubId)
+  uniqueIndex('installations_github_id_idx').on(table.githubId),
+  // Index for account-based lookups (installations.get.ts, sync.ts)
+  index('installations_account_id_idx').on(table.accountId)
 ]))
 
 // Repositories (matches GitHub API)
@@ -92,7 +98,9 @@ export const repositories = pgTable('repositories', {
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
 }, table => ([
-  uniqueIndex('repositories_github_id_idx').on(table.githubId)
+  uniqueIndex('repositories_github_id_idx').on(table.githubId),
+  // Index for owner/name lookups (used by all issue detail routes)
+  uniqueIndex('repositories_full_name_idx').on(table.fullName)
 ]))
 
 // Releases (matches GitHub API)
@@ -110,7 +118,9 @@ export const releases = pgTable('releases', {
   publishedAt: timestamp('published_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
 }, table => ([
-  uniqueIndex('releases_github_id_idx').on(table.githubId)
+  uniqueIndex('releases_github_id_idx').on(table.githubId),
+  // Index for fetching releases by repository
+  index('releases_repository_id_idx').on(table.repositoryId)
 ]))
 
 // Workflow run conclusions
@@ -161,8 +171,8 @@ export const checkRuns = pgTable('check_runs', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
 }, table => ([
   uniqueIndex('check_runs_github_id_idx').on(table.githubId),
-  index('check_runs_repository_id_idx').on(table.repositoryId),
-  index('check_runs_head_sha_idx').on(table.headSha)
+  // Composite index for CI status queries (filters by both repositoryId AND headSha)
+  index('check_runs_repo_sha_idx').on(table.repositoryId, table.headSha)
 ]))
 
 // Commit Status state (from GitHub Status API - older API used by Vercel deployments, etc.)
@@ -181,7 +191,8 @@ export const commitStatuses = pgTable('commit_statuses', {
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
 }, table => ([
-  uniqueIndex('commit_statuses_github_id_idx').on(table.githubId)
+  uniqueIndex('commit_statuses_github_id_idx').on(table.githubId),
+  index('commit_statuses_repo_sha_idx').on(table.repositoryId, table.sha)
 ]))
 
 // Labels (matches GitHub API)
@@ -196,7 +207,9 @@ export const labels = pgTable('labels', {
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
 }, table => ([
-  uniqueIndex('labels_github_id_idx').on(table.githubId)
+  uniqueIndex('labels_github_id_idx').on(table.githubId),
+  // Index for fetching labels by repository (labels.get.ts)
+  index('labels_repository_id_idx').on(table.repositoryId)
 ]))
 
 // Types (GitHub issue types - Bug, Feature, etc.)
@@ -210,7 +223,9 @@ export const types = pgTable('types', {
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
 }, table => ([
-  uniqueIndex('types_github_id_idx').on(table.githubId)
+  uniqueIndex('types_github_id_idx').on(table.githubId),
+  // Index for fetching types by repository (consistent with labels)
+  index('types_repository_id_idx').on(table.repositoryId)
 ]))
 
 // Milestones (matches GitHub API)
@@ -230,7 +245,9 @@ export const milestones = pgTable('milestones', {
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
 }, table => ([
-  uniqueIndex('milestones_github_id_idx').on(table.githubId)
+  uniqueIndex('milestones_github_id_idx').on(table.githubId),
+  // Index for fetching milestones by repository
+  index('milestones_repository_id_idx').on(table.repositoryId)
 ]))
 
 // Issues (Issues & Pull Requests unified)
@@ -284,11 +301,13 @@ export const issues = pgTable('issues', {
 }, table => ([
   // The true unique identifier is (repositoryId, number), not GitHub's ID
   uniqueIndex('issues_repo_number_idx').on(table.repositoryId, table.number),
-  // Performance indexes for common queries
-  index('issues_state_idx').on(table.state),
+  // Composite index for main filter pattern (repository + pull_request + state + sort)
+  // Covers queries filtering by any prefix: repo, repo+pr, repo+pr+state, repo+pr+state+updatedAt
+  index('issues_repo_pr_state_updated_idx').on(table.repositoryId, table.pullRequest, table.state, table.updatedAt),
+  // Index for CI status lookups (headSha not covered by composite)
   index('issues_head_sha_idx').on(table.headSha),
-  index('issues_number_idx').on(table.number),
-  index('issues_pull_request_idx').on(table.pullRequest)
+  // Index for author lookups
+  index('issues_user_id_idx').on(table.userId)
 ]))
 
 // Issue Assignees (many-to-many: issues <-> users)
@@ -323,7 +342,9 @@ export const issueLinkedPrs = pgTable('issue_linked_prs', {
   issueId: integer('issue_id').notNull().references(() => issues.id, { onDelete: 'cascade' }),
   prId: integer('pr_id').notNull().references(() => issues.id, { onDelete: 'cascade' })
 }, table => ([
-  primaryKey({ columns: [table.issueId, table.prId] })
+  primaryKey({ columns: [table.issueId, table.prId] }),
+  // Index for reverse lookups (getLinkedIssuesForPRs - finding issues linked to a PR)
+  index('issue_linked_prs_pr_id_idx').on(table.prId)
 ]))
 
 // Issue Comments (general comments on issues/PRs)
@@ -338,7 +359,8 @@ export const issueComments = pgTable('issue_comments', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
 }, table => ([
   uniqueIndex('issue_comments_github_id_idx').on(table.githubId),
-  index('issue_comments_issue_id_idx').on(table.issueId)
+  index('issue_comments_issue_id_idx').on(table.issueId),
+  index('issue_comments_user_id_idx').on(table.userId)
 ]))
 
 // Review state
@@ -657,7 +679,12 @@ export const repositorySubscriptions = pgTable('repository_subscriptions', {
   mentions: boolean().default(true), // @mentions
   activity: boolean().default(true), // All activity (comments, reviews, etc.)
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
-})
+}, table => ([
+  // Unique constraint prevents duplicate subscriptions (user can't subscribe to same repo twice)
+  uniqueIndex('repository_subscriptions_user_repo_idx').on(table.userId, table.repositoryId),
+  // Index for getting all subscribers of a repository (notifications)
+  index('repository_subscriptions_repo_idx').on(table.repositoryId)
+]))
 
 export const repositorySubscriptionsRelations = relations(repositorySubscriptions, ({ one }) => ({
   user: one(users, {
@@ -676,7 +703,9 @@ export const issueSubscriptions = pgTable('issue_subscriptions', {
   userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
 }, table => ([
-  primaryKey({ columns: [table.issueId, table.userId] })
+  primaryKey({ columns: [table.issueId, table.userId] }),
+  // Index for getting all issues a user is subscribed to
+  index('issue_subscriptions_user_id_idx').on(table.userId)
 ]))
 
 export const issueSubscriptionsRelations = relations(issueSubscriptions, ({ one }) => ({
@@ -697,7 +726,8 @@ export const favoriteRepositories = pgTable('favorite_repositories', {
   repositoryId: integer('repository_id').notNull().references(() => repositories.id, { onDelete: 'cascade' }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
 }, table => ([
-  index('favorite_repositories_user_id_idx').on(table.userId)
+  // Unique constraint prevents duplicate favorites + serves as index for user lookups
+  uniqueIndex('favorite_repositories_user_repo_idx').on(table.userId, table.repositoryId)
 ]))
 
 export const favoriteRepositoriesRelations = relations(favoriteRepositories, ({ one }) => ({
@@ -742,7 +772,10 @@ export const favoriteIssues = pgTable('favorite_issues', {
   userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   issueId: integer('issue_id').notNull().references(() => issues.id, { onDelete: 'cascade' }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
-})
+}, table => ([
+  // Unique constraint prevents duplicate favorites + serves as index for user lookups
+  uniqueIndex('favorite_issues_user_issue_idx').on(table.userId, table.issueId)
+]))
 
 export const favoriteIssuesRelations = relations(favoriteIssues, ({ one }) => ({
   user: one(users, {
