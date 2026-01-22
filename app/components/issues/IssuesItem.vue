@@ -29,6 +29,9 @@ const resolutionConfig = computed(() => {
   if (props.item.pullRequest) return null
   return getResolutionConfig(props.item.resolutionStatus)
 })
+
+// Review state (PRs only)
+const reviewState = useReviewState(computed(() => props.item))
 </script>
 
 <template>
@@ -39,43 +42,42 @@ const resolutionConfig = computed(() => {
     @click="emit('select', item)"
   >
     <div class="flex items-center gap-1.5 min-w-0 flex-1">
-      <UIcon :name="stateIcon" :class="stateColor" class="size-4 shrink-0" />
+      <UIcon :name="stateIcon" :class="`text-${stateColor}`" class="size-4 shrink-0" />
 
       <span class="text-sm/6 truncate @max-3xl:flex-1">
         <span class="text-muted">{{ item.repository?.fullName }}#{{ item.number }}</span> <span class="text-highlighted font-medium">{{ item.title }}</span>
       </span>
 
-      <!-- CI Status -->
-      <UTooltip
-        v-if="ciStatusConfig"
-        :text="ciStatusConfig.label"
-      >
-        <UIcon
-          :name="ciStatusConfig.icon"
-          :class="[ciStatusConfig.color, ciStatusConfig.animate && 'animate-pulse']"
-          class="size-4 shrink-0"
+      <div class="hidden @3xl:flex items-center gap-1.5">
+        <!-- CI Status -->
+        <UBadge
+          v-if="ciStatusConfig"
+          :label="ciStatusConfig.label"
+          :icon="ciStatusConfig.icon"
+          :ui="{ leadingIcon: [`text-${ciStatusConfig.color}`, ciStatusConfig.animate && 'animate-pulse'] }"
+          class="rounded-full"
         />
-      </UTooltip>
 
-      <!-- Maintainer replied (for issues) -->
-      <UTooltip
-        v-if="item.hasMaintainerComment"
-        text="Maintainer replied"
-      >
-        <UIcon name="i-lucide-circle-user-round" class="size-4 shrink-0 text-primary" />
-      </UTooltip>
+        <!-- Review state (for PRs) -->
+        <UBadge
+          v-if="reviewState"
+          :label="reviewState.label"
+          class="rounded-full"
+        >
+          <template #leading>
+            <UChip :color="reviewState.color" standalone inset />
+          </template>
+        </UBadge>
 
-      <!-- AI Resolution Status (for issues only) -->
-      <UTooltip
-        v-if="resolutionConfig"
-        :text="String(resolutionConfig.label)"
-      >
-        <UIcon
-          :name="resolutionConfig.icon"
-          :class="`text-${resolutionConfig.color}`"
-          class="size-4 shrink-0"
+        <!-- AI Resolution Status (for issues only) -->
+        <UBadge
+          v-if="resolutionConfig"
+          :label="resolutionConfig.label"
+          :icon="resolutionConfig.icon"
+          :ui="{ leadingIcon: `text-${resolutionConfig.color}` }"
+          class="rounded-full"
         />
-      </UTooltip>
+      </div>
     </div>
 
     <div class="flex items-center gap-1.5 ms-auto">
@@ -98,12 +100,18 @@ const resolutionConfig = computed(() => {
           icon="i-lucide-heart"
           class="rounded-full"
         />
-        <UBadge
-          v-if="(item.commentCount ?? 0) > 0"
-          :label="item.commentCount ?? 0"
-          icon="i-lucide-message-circle"
-          class="rounded-full"
-        />
+        <UTooltip
+          text="Maintainer replied"
+          :disabled="!item.hasMaintainerComment"
+        >
+          <UBadge
+            v-if="(item.commentCount ?? 0) > 0"
+            :label="item.commentCount ?? 0"
+            icon="i-lucide-message-circle"
+            :color="item.hasMaintainerComment ? 'primary' : 'neutral'"
+            class="rounded-full"
+          />
+        </UTooltip>
 
         <IssueType v-if="item.type" :type="item.type" />
         <IssueLabel v-for="label in item.labels" :key="label.id" :label="label" />

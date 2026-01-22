@@ -1,74 +1,63 @@
-type BadgeColor = 'success' | 'error' | 'neutral' | 'warning'
+type CIColor = 'success' | 'error' | 'neutral' | 'warning'
 
 interface CIStateConfig {
   icon: string
-  color: string
+  color: CIColor
   label: string
-  badgeColor: BadgeColor
 }
 
 const ciStates: Record<string, CIStateConfig> = {
   success: {
     icon: 'i-lucide-circle-check',
-    color: 'text-success',
-    label: 'Success',
-    badgeColor: 'success'
+    color: 'success',
+    label: 'Success'
   },
   neutral: {
     icon: 'i-lucide-circle-check',
-    color: 'text-success',
-    label: 'Success',
-    badgeColor: 'success'
+    color: 'success',
+    label: 'Success'
   },
   failure: {
     icon: 'i-lucide-circle-x',
-    color: 'text-error',
-    label: 'Failed',
-    badgeColor: 'error'
+    color: 'error',
+    label: 'Failed'
   },
   timed_out: {
     icon: 'i-lucide-circle-x',
-    color: 'text-error',
-    label: 'Timed out',
-    badgeColor: 'error'
+    color: 'error',
+    label: 'Timed out'
   },
   startup_failure: {
     icon: 'i-lucide-circle-x',
-    color: 'text-error',
-    label: 'Startup failure',
-    badgeColor: 'error'
+    color: 'error',
+    label: 'Startup failure'
   },
   cancelled: {
     icon: 'i-lucide-circle-stop',
-    color: 'text-muted',
-    label: 'Cancelled',
-    badgeColor: 'neutral'
+    color: 'neutral',
+    label: 'Cancelled'
   },
   skipped: {
     icon: 'i-lucide-circle-slash',
-    color: 'text-muted',
-    label: 'Skipped',
-    badgeColor: 'neutral'
+    color: 'neutral',
+    label: 'Skipped'
   },
   stale: {
     icon: 'i-lucide-circle-slash',
-    color: 'text-muted',
-    label: 'Stale',
-    badgeColor: 'neutral'
+    color: 'neutral',
+    label: 'Stale'
   },
   action_required: {
     icon: 'i-lucide-alert-circle',
-    color: 'text-warning',
-    label: 'Action required',
-    badgeColor: 'warning'
+    color: 'warning',
+    label: 'Action required'
   }
 }
 
 const defaultState: CIStateConfig = {
   icon: 'i-lucide-clock',
-  color: 'text-warning',
-  label: 'Running',
-  badgeColor: 'warning'
+  color: 'warning',
+  label: 'Running'
 }
 
 // Get full state config
@@ -82,7 +71,7 @@ export const getCIStateIcon = (conclusion: WorkflowConclusion | null | undefined
 export const getCIStateColor = (conclusion: WorkflowConclusion | null | undefined) => getCIState(conclusion).color
 export const getCIStateBadge = (conclusion: WorkflowConclusion | null | undefined) => {
   const state = getCIState(conclusion)
-  return { label: state.label, color: state.badgeColor }
+  return { label: state.label, color: state.color }
 }
 
 // Composable for reactive use
@@ -93,15 +82,14 @@ export function useCIState(conclusion: Ref<WorkflowConclusion | null | undefined
     state,
     icon: computed(() => state.value.icon),
     color: computed(() => state.value.color),
-    label: computed(() => state.value.label),
-    badgeColor: computed(() => state.value.badgeColor)
+    label: computed(() => state.value.label)
   }
 }
 
 // Aggregate multiple CI statuses into a single status config
 export interface AggregatedCIStatus {
   icon: string
-  color: string
+  color: CIColor
   label: string
   animate: boolean
   htmlUrl: string | null

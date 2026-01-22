@@ -195,6 +195,9 @@ const selectedReviewers = computed<UserItem[]>(() => {
     avatarUrl: u.avatarUrl
   }))
 })
+
+// Build list of all reviewers with their state (combines submitted reviews + pending requests)
+const reviewersWithState = useReviewersWithState(computed(() => props.issue))
 const availableReviewers = ref<UserItem[]>([])
 const isReviewersOpen = ref(false)
 
@@ -260,6 +263,9 @@ const resolutionConfig = computed(() => {
 
 // CI Status (PRs only)
 const ciStatusConfig = computed(() => getAggregatedCIStatus(props.issue.ciStatuses))
+
+// Review state (PRs only)
+const reviewState = useReviewState(computed(() => props.issue))
 </script>
 
 <template>
@@ -273,7 +279,7 @@ const ciStatusConfig = computed(() => getAggregatedCIStatus(props.issue.ciStatus
         as="div"
         :icon="stateIcon"
         variant="ghost"
-        :ui="{ leadingIcon: stateColor }"
+        :ui="{ leadingIcon: `text-${stateColor}` }"
         class="text-sm/4 hover:bg-transparent active:bg-transparent pl-2 pr-0"
       >
         {{ stateLabel }} {{ issue.pullRequest ? 'pull request' : 'issue' }}
@@ -326,10 +332,58 @@ const ciStatusConfig = computed(() => getAggregatedCIStatus(props.issue.ciStatus
         :to="ciStatusConfig.htmlUrl!"
         :label="ciStatusConfig.label"
         :icon="ciStatusConfig.icon"
-        :ui="{ leadingIcon: [ciStatusConfig.color, ciStatusConfig.animate && 'animate-pulse'] }"
+        :ui="{ leadingIcon: [`text-${ciStatusConfig.color}`, ciStatusConfig.animate && 'animate-pulse'] }"
         target="_blank"
         variant="ghost"
         class="text-sm/4 px-2"
+      />
+
+      <!-- Review state (PRs only) -->
+      <UButton
+        v-if="reviewState"
+        as="div"
+        :label="reviewState.label"
+        :icon="reviewState.icon"
+        :ui="{ leadingIcon: `text-${reviewState.color}` }"
+        variant="ghost"
+        class="text-sm/4 px-2 hover:bg-transparent active:bg-transparent"
+      />
+
+      <!-- Resolution status (issues only) -->
+      <UButton
+        v-if="!issue.pullRequest && resolutionConfig"
+        as="div"
+        :icon="resolutionConfig.icon"
+        :ui="{ leadingIcon: `text-${resolutionConfig.color}` }"
+        variant="ghost"
+        class="text-sm/4 px-2 hover:bg-transparent active:bg-transparent"
+      >
+        {{ resolutionConfig.label }}
+        <span v-if="issue.resolutionConfidence" class="text-muted italic">
+          ({{ issue.resolutionConfidence }}% confidence)
+        </span>
+      </UButton>
+
+      <!-- Analyzing state (issues only) -->
+      <UButton
+        v-else-if="!issue.pullRequest && analyzingResolution"
+        as="div"
+        icon="i-lucide-loader-circle"
+        label="Analyzing..."
+        :ui="{ leadingIcon: 'animate-spin' }"
+        variant="ghost"
+        class="text-sm/4 px-2 hover:bg-transparent active:bg-transparent"
+      />
+
+      <!-- Not yet analyzed (issues only) -->
+      <UButton
+        v-else-if="!issue.pullRequest"
+        as="div"
+        icon="i-lucide-sparkles"
+        label="Not analyzed yet"
+        :ui="{ leadingIcon: 'text-muted' }"
+        variant="ghost"
+        class="text-sm/4 px-2 hover:bg-transparent active:bg-transparent"
       />
 
       <!-- View changes link (PRs only) -->
@@ -431,11 +485,20 @@ const ciStatusConfig = computed(() => getAggregatedCIStatus(props.issue.ciStatus
       <span class="text-xs/6 text-muted font-medium px-1.5">Reviewers</span>
 
       <div class="flex-1 flex items-center gap-1 flex-wrap">
-        <IssueUser
-          v-for="reviewer in selectedReviewers"
+        <UBadge
+          v-for="reviewer in reviewersWithState"
           :key="reviewer.id"
-          :user="reviewer"
-        />
+          :label="reviewer.login"
+          :avatar="{
+            src: `https://github.com/${reviewer.login}.png`,
+            alt: reviewer.login
+          }"
+          class="rounded-full"
+        >
+          <template v-if="reviewer.color" #trailing>
+            <UChip :color="reviewer.color" standalone inset />
+          </template>
+        </UBadge>
 
         <USelectMenu
           :model-value="selectedReviewers"
@@ -466,62 +529,6 @@ const ciStatusConfig = computed(() => getAggregatedCIStatus(props.issue.ciStatus
       </div>
     </div>
 
-    <!-- AI Resolution Analysis (issues only) -->
-    <div v-if="!issue.pullRequest" class="flex flex-col gap-1">
-      <span class="text-xs/6 text-muted font-medium">Analysis</span>
-
-      <!-- Resolution status (show existing data from DB) -->
-      <div v-if="resolutionConfig" class="flex items-center flex-wrap gap-1">
-        <UTooltip :text="resolutionConfig.description">
-          <UBadge
-            :icon="resolutionConfig.icon"
-            :color="resolutionConfig.color"
-            variant="subtle"
-            class="rounded-full"
-          >
-            <span class="truncate">{{ resolutionConfig.label }}</span>
-            <span v-if="issue.resolutionConfidence" class="italic">
-              ({{ issue.resolutionConfidence }}%)
-            </span>
-          </UBadge>
-        </UTooltip>
-
-        <!-- Show who answered if available -->
-        <UButton
-          v-if="issue.resolutionAnsweredBy"
-          :disabled="!issue.resolutionAnswerCommentId"
-          trailing-icon="i-lucide-arrow-right"
-          variant="link"
-          size="xs"
-          @click="issue.resolutionAnswerCommentId && emit('scroll-to-answer', issue.resolutionAnswerCommentId)"
-        >
-          Answered by
-          <span class="font-medium">{{ issue.resolutionAnsweredBy.login }}</span>
-        </UButton>
-      </div>
-
-      <!-- Analyzing state (only when no existing data) -->
-      <div v-else-if="analyzingResolution">
-        <UBadge
-          icon="i-lucide-loader-circle"
-          label="Analyzing..."
-          variant="subtle"
-          :ui="{ leadingIcon: 'animate-spin' }"
-          class="rounded-full"
-        />
-      </div>
-
-      <!-- Not yet analyzed -->
-      <div v-else>
-        <UBadge
-          icon="i-lucide-sparkles"
-          label="Not analyzed yet"
-          variant="subtle"
-          class="rounded-full"
-        />
-      </div>
-    </div>
-
     <!-- Linked PRs (issues only) -->
     <div v-if="!issue.pullRequest && issue.linkedPrs?.length" class="flex flex-col gap-1">
       <span class="text-xs/6 text-muted font-medium px-1.5">Linked PRs</span>
@@ -537,7 +544,7 @@ const ciStatusConfig = computed(() => getAggregatedCIStatus(props.issue.ciStatus
           variant="ghost"
           class="text-sm/4 px-2"
         >
-          <span class="text-muted">#{{ pr.number }}</span>
+          <span class="text-muted font-normal">#{{ pr.number }}</span>
           <span class="truncate">{{ pr.title }}</span>
         </UButton>
       </div>
@@ -558,7 +565,7 @@ const ciStatusConfig = computed(() => getAggregatedCIStatus(props.issue.ciStatus
           variant="ghost"
           class="text-sm/4 px-2"
         >
-          <span class="text-muted">#{{ linkedIssue.number }}</span>
+          <span class="text-muted font-normal">#{{ linkedIssue.number }}</span>
           <span class="truncate">{{ linkedIssue.title }}</span>
         </UButton>
       </div>

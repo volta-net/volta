@@ -1,14 +1,23 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
+@source inline("text-primary text-success text-warning text-error text-important text-neutral");
 
-@theme static {
-  --font-sans: 'Inter', sans-serif;
+@theme inline {
+  --font-sans: 'Geist', sans-serif;
+  --color-neutral: var(--ui-neutral);
 }
 
 @layer base {
   body {
     @apply bg-neutral-50 dark:bg-neutral-950;
   }
+}
+
+:root, .light {
+  --ui-neutral: var(--ui-color-neutral-500);
+}
+.dark {
+  --ui-neutral: var(--ui-color-neutral-400);
 }
 
 html.dark .tiptap .shiki,

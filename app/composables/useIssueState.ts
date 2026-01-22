@@ -1,59 +1,51 @@
 export type IssueStateLike = Pick<Issue, 'pullRequest' | 'state' | 'stateReason' | 'draft' | 'merged'>
 
-type BadgeColor = 'success' | 'error' | 'info' | 'neutral'
+type IssueColor = 'success' | 'error' | 'info' | 'neutral' | 'important'
 
 interface IssueStateConfig {
   icon: string
-  color: string
+  color: IssueColor
   label: string
-  badgeColor: BadgeColor
 }
 
-// State configurations (icon uses {size} placeholder)
+// State configurations
 const issueStates: Record<string, IssueStateConfig> = {
   // Pull Request states
   pr_draft: {
     icon: 'i-lucide-git-pull-request-draft',
-    color: 'text-muted',
-    label: 'Draft',
-    badgeColor: 'neutral'
+    color: 'neutral',
+    label: 'Draft'
   },
   pr_merged: {
     icon: 'i-lucide-git-merge',
-    color: 'text-important',
-    label: 'Merged',
-    badgeColor: 'info'
+    color: 'important',
+    label: 'Merged'
   },
   pr_closed: {
     icon: 'i-lucide-git-pull-request-closed',
-    color: 'text-error',
-    label: 'Closed',
-    badgeColor: 'error'
+    color: 'error',
+    label: 'Closed'
   },
   pr_open: {
     icon: 'i-lucide-git-pull-request',
-    color: 'text-success',
-    label: 'Open',
-    badgeColor: 'success'
+    color: 'success',
+    label: 'Open'
   },
   // Issue states
   issue_open: {
     icon: 'i-lucide-circle-dot',
-    color: 'text-success',
-    label: 'Open',
-    badgeColor: 'success'
+    color: 'success',
+    label: 'Open'
   },
   issue_not_planned: {
     icon: 'i-lucide-circle-slash',
-    color: 'text-muted',
-    label: 'Not planned',
-    badgeColor: 'neutral'
+    color: 'neutral',
+    label: 'Not planned'
   },
   issue_closed: {
     icon: 'i-lucide-circle-check',
-    color: 'text-important',
-    label: 'Closed',
-    badgeColor: 'info'
+    color: 'important',
+    label: 'Closed'
   }
 }
 
@@ -85,7 +77,7 @@ export const getIssueStateIcon = (issue: IssueStateLike | null | undefined) => g
 export const getIssueStateColor = (issue: IssueStateLike | null | undefined) => getIssueState(issue).color
 export const getIssueStateBadge = (issue: IssueStateLike | null | undefined) => {
   const state = getIssueState(issue)
-  return { label: state.label, color: state.badgeColor }
+  return { label: state.label, color: state.color }
 }
 
 // Composable for reactive use
@@ -96,11 +88,6 @@ export function useIssueState(issue: Ref<IssueStateLike | null | undefined>) {
     state,
     icon: computed(() => state.value.icon),
     color: computed(() => state.value.color),
-    label: computed(() => state.value.label),
-    badgeColor: computed(() => state.value.badgeColor),
-    // Legacy methods for backward compatibility
-    getStateIcon: () => getIssueStateIcon(issue.value),
-    getStateColor: () => getIssueStateColor(issue.value),
-    getStateBadge: () => getIssueStateBadge(issue.value)
+    label: computed(() => state.value.label)
   }
 }

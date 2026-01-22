@@ -72,9 +72,9 @@ defineShortcuts({
         <div class="flex items-center gap-3 min-w-0">
           <div
             class="flex items-center justify-center size-10 rounded-full shrink-0"
-            :class="getReleaseState(notification.release).color.replace('text-', 'bg-').replace('dark:', 'dark:bg-') + '/10'"
+            :class="`bg-${getReleaseState(notification.release).color}`"
           >
-            <UIcon :name="getReleaseState(notification.release).icon" class="size-5" :class="getReleaseState(notification.release).color" />
+            <UIcon :name="getReleaseState(notification.release).icon" class="size-5" :class="`text-${getReleaseState(notification.release).color}`" />
           </div>
           <div class="min-w-0">
             <h2 class="font-semibold text-highlighted truncate">

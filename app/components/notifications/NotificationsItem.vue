@@ -54,7 +54,7 @@ function stripMarkdown(text: string | null | undefined): string {
         <span v-if="!notification.read" class="size-2 rounded-full bg-primary shrink-0 m-1" />
         <UIcon
           :name="getIcon(notification)"
-          :class="getColor(notification)"
+          :class="`text-${getColor(notification)}`"
           class="size-4 shrink-0"
         />
       </div>

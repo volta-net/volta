@@ -1,32 +1,28 @@
 export type ReleaseStateLike = Pick<Release, 'draft' | 'prerelease'>
 
-type BadgeColor = 'success' | 'warning' | 'neutral'
+type ReleaseColor = 'success' | 'warning' | 'neutral'
 
 interface ReleaseStateConfig {
   icon: string
-  color: string
+  color: ReleaseColor
   label: string
-  badgeColor: BadgeColor
 }
 
 const releaseStates: Record<string, ReleaseStateConfig> = {
   draft: {
     icon: 'i-lucide-tag',
-    color: 'text-muted',
-    label: 'Draft',
-    badgeColor: 'neutral'
+    color: 'neutral',
+    label: 'Draft'
   },
   prerelease: {
     icon: 'i-lucide-tag',
-    color: 'text-warning',
-    label: 'Pre-release',
-    badgeColor: 'warning'
+    color: 'warning',
+    label: 'Pre-release'
   },
   published: {
     icon: 'i-lucide-tag',
-    color: 'text-success',
-    label: 'Published',
-    badgeColor: 'success'
+    color: 'success',
+    label: 'Published'
   }
 }
 
@@ -49,7 +45,7 @@ export const getReleaseStateIcon = (release: ReleaseStateLike | null | undefined
 export const getReleaseStateColor = (release: ReleaseStateLike | null | undefined) => getReleaseState(release).color
 export const getReleaseStateBadge = (release: ReleaseStateLike | null | undefined) => {
   const state = getReleaseState(release)
-  return { label: state.label, color: state.badgeColor }
+  return { label: state.label, color: state.color }
 }
 
 // Composable for reactive use
@@ -60,7 +56,6 @@ export function useReleaseState(release: Ref<ReleaseStateLike | null | undefined
     state,
     icon: computed(() => state.value.icon),
     color: computed(() => state.value.color),
-    label: computed(() => state.value.label),
-    badgeColor: computed(() => state.value.badgeColor)
+    label: computed(() => state.value.label)
   }
 }

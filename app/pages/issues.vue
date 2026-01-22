@@ -22,7 +22,7 @@ const {
 } = await useIssuesList({
   title: 'Issues',
   icon: 'i-lucide-circle-dot',
-  api: '/api/issues?pullRequest=false&state=open&excludeBots=true',
+  api: '/api/issues?pullRequest=false&state=open',
   emptyText: 'All triaged!',
   panelId: 'issues'
 })

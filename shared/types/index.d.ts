@@ -68,6 +68,9 @@ export interface Issue extends Serialized<DBIssue> {
   hasMaintainerComment?: boolean
   // AI Resolution Analysis (issues only)
   resolutionAnsweredBy?: User | null
+  // PR Review data (for client-side computation)
+  reviews?: Array<{ state: string }>
+  requestedReviewers?: Array<{ id: number }>
 }
 
 // Review with user relation

@@ -36,7 +36,7 @@ export function useNotificationHelpers() {
     }
 
     // Issue/PR - reuse shared utility
-    if (!notification.issue) return 'text-muted'
+    if (!notification.issue) return 'neutral'
     return getIssueStateColor(notification.issue)
   }
 
