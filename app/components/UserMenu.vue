@@ -13,6 +13,11 @@ const items = computed<DropdownMenuItem[][]>(() => ([[{
   label: user.value?.username,
   avatar: user.value?.avatar ? { src: user.value.avatar } : undefined
 }], [{
+  label: 'Feedback',
+  icon: 'i-lucide-message-circle',
+  to: 'https://github.com/volta-net/volta',
+  target: '_blank'
+}], [{
   label: 'Appearance',
   icon: 'i-lucide-sun-moon',
   children: [{

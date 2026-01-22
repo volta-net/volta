@@ -93,11 +93,6 @@ const links = computed<NavigationMenuItem[][]>(() => [[{
   label: 'Favorites',
   icon: 'i-lucide-star',
   onSelect: () => { favoriteIssuesOpen.value = !favoriteIssuesOpen.value }
-}, {
-  label: 'Feedback',
-  icon: 'i-lucide-message-circle',
-  to: 'https://github.com/volta-net/volta',
-  target: '_blank'
 }]])
 
 const groups = computed(() => [{
