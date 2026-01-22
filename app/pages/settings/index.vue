@@ -482,13 +482,20 @@ function getInstallUrl() {
               <UDropdownMenu
                 :content="{ align: 'start' }"
                 :items="[
-                  {
+                  isSyncing(repo.fullName) ? {
+                    label: 'Force sync',
+                    icon: 'i-lucide-refresh-cw',
+                    loading: false,
+                    disabled: deleting.has(repo.fullName),
+                    onSelect: () => {
+                      syncRepository(repo.fullName, true)
+                    }
+                  } : {
                     label: 'Sync now',
                     icon: 'i-lucide-refresh-cw',
-                    loading: isSyncing(repo.fullName),
-                    disabled: isSyncing(repo.fullName) || deleting.has(repo.fullName),
-                    onSelect: (e) => {
-                      e.preventDefault()
+                    loading: false,
+                    disabled: deleting.has(repo.fullName),
+                    onSelect: () => {
                       syncRepository(repo.fullName)
                     }
                   },

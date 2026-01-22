@@ -12,6 +12,9 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'Owner and repository name are required' })
   }
 
+  const query = getQuery(event)
+  const force = query.force === 'true'
+
   const accessToken = await getValidAccessToken(event)
 
   // Check if already syncing (prevent double-sync)
@@ -21,8 +24,8 @@ export default defineEventHandler(async (event) => {
     columns: { id: true, lastSyncedAt: true, syncing: true }
   })
 
-  if (existingRepo?.syncing) {
-    // Already syncing, just return current state
+  if (existingRepo?.syncing && !force) {
+    // Already syncing, just return current state (unless force is true)
     return {
       started: false,
       alreadySyncing: true,

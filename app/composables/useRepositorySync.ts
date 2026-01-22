@@ -138,16 +138,20 @@ export function useRepositorySync() {
 
   /**
    * Sync a single repository.
+   * @param force - If true, bypasses the syncing check to recover from stuck states
    */
-  async function syncRepository(fullName: string) {
+  async function syncRepository(fullName: string, force = false) {
     const [owner, name] = fullName.split('/')
 
-    if (pollQueue.value.has(fullName)) return
+    if (pollQueue.value.has(fullName) && !force) return
 
     localSyncing.value.add(fullName)
 
     try {
-      await $fetch(`/api/repositories/${owner}/${name}/sync`, { method: 'POST' })
+      await $fetch(`/api/repositories/${owner}/${name}/sync`, {
+        method: 'POST',
+        query: force ? { force: 'true' } : undefined
+      })
       // Refresh to pick up syncing=true state (now set synchronously by server)
       await refresh()
       // Start polling for completion
