@@ -17,7 +17,6 @@ export default defineEventHandler(async (event) => {
   const notifications = await db.query.notifications.findMany({
     where: and(...conditions),
     orderBy: desc(schema.notifications.createdAt),
-    limit: 50,
     with: {
       repository: true,
       issue: true,
