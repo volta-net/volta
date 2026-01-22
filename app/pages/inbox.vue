@@ -186,7 +186,7 @@ useSeoMeta({
           <span class="inline-flex">Inbox</span>
 
           <UBadge
-            :label="String(unreadNotifications.length)"
+            :label="String(notifications.length)"
             variant="subtle"
             size="sm"
           />
