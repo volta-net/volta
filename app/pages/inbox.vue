@@ -100,15 +100,21 @@ function deleteNotification() {
 
   const notification = selectedNotification.value
 
+  // Get the index BEFORE adding to pending deletes (since visibleNotifications will change)
+  const index = visibleNotifications.value.findIndex(n => n.id === notification.id)
+
   // Add to pending deletes stack
   pendingDeletes.value.push(notification)
 
-  // Move selection to next notification (skip other pending deletes)
-  const index = visibleNotifications.value.findIndex(n => n.id === notification.id)
-  if (index < visibleNotifications.value.length - 1) {
-    selectedNotification.value = visibleNotifications.value[index + 1]
-  } else if (index > 0) {
-    selectedNotification.value = visibleNotifications.value[index - 1]
+  // After push, visibleNotifications has shifted - the item at `index` is now what was at `index + 1`
+  if (visibleNotifications.value.length > 0) {
+    if (index < visibleNotifications.value.length) {
+      // Select the item that's now at the same index (was the next item)
+      selectedNotification.value = visibleNotifications.value[index]
+    } else {
+      // We were at the end, select the new last item
+      selectedNotification.value = visibleNotifications.value[visibleNotifications.value.length - 1]
+    }
   } else {
     selectedNotification.value = null
   }
