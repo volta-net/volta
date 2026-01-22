@@ -48,36 +48,44 @@ const reviewState = useReviewState(computed(() => props.item))
         <span class="text-muted">{{ item.repository?.fullName }}#{{ item.number }}</span> <span class="text-highlighted font-medium">{{ item.title }}</span>
       </span>
 
-      <div class="hidden @3xl:flex items-center gap-1.5">
-        <!-- CI Status -->
-        <UBadge
-          v-if="ciStatusConfig"
-          :label="ciStatusConfig.label"
-          :icon="ciStatusConfig.icon"
-          :ui="{ leadingIcon: [`text-${ciStatusConfig.color}`, ciStatusConfig.animate && 'animate-pulse'] }"
-          class="rounded-full"
-        />
+      <!-- CI Status -->
+      <UBadge
+        v-if="ciStatusConfig"
+        :label="ciStatusConfig.label"
+        :icon="ciStatusConfig.icon"
+        variant="soft"
+        :ui="{ label: 'hidden @3xl:block', leadingIcon: [`text-${ciStatusConfig.color}`, ciStatusConfig.animate && 'animate-pulse'] }"
+        class="rounded-full px-1 @3xl:px-2"
+      />
 
-        <!-- Review state (for PRs) -->
-        <UBadge
-          v-if="reviewState"
-          :label="reviewState.label"
-          class="rounded-full"
-        >
-          <template #leading>
-            <UChip :color="reviewState.color" standalone inset />
-          </template>
-        </UBadge>
+      <!-- Review state (for PRs) -->
+      <UBadge
+        v-if="reviewState"
+        :label="reviewState.label"
+        variant="soft"
+        :ui="{ label: 'hidden @3xl:block' }"
+        class="rounded-full px-1 @3xl:px-2"
+      >
+        <template #leading>
+          <UChip
+            :color="reviewState.color"
+            standalone
+            inset
+            size="md"
+            class="p-1"
+          />
+        </template>
+      </UBadge>
 
-        <!-- AI Resolution Status (for issues only) -->
-        <UBadge
-          v-if="resolutionConfig"
-          :label="resolutionConfig.label"
-          :icon="resolutionConfig.icon"
-          :ui="{ leadingIcon: `text-${resolutionConfig.color}` }"
-          class="rounded-full"
-        />
-      </div>
+      <!-- AI Resolution Status (for issues only) -->
+      <UBadge
+        v-if="resolutionConfig"
+        :label="resolutionConfig.label"
+        :icon="resolutionConfig.icon"
+        variant="soft"
+        :ui="{ label: 'hidden @3xl:block', leadingIcon: `text-${resolutionConfig.color}` }"
+        class="rounded-full px-1 @3xl:px-2"
+      />
     </div>
 
     <div class="flex items-center gap-1.5 ms-auto">
@@ -90,16 +98,12 @@ const reviewState = useReviewState(computed(() => props.item))
           <UBadge
             :label="item.linkedPrs.length"
             icon="i-lucide-git-pull-request"
+            variant="soft"
             class="rounded-full"
           />
         </UTooltip>
 
-        <UBadge
-          v-if="(item.reactionCount ?? 0) > 0"
-          :label="item.reactionCount ?? 0"
-          icon="i-lucide-heart"
-          class="rounded-full"
-        />
+        <!-- Comments -->
         <UTooltip
           text="Maintainer replied"
           :disabled="!item.hasMaintainerComment"
@@ -109,9 +113,19 @@ const reviewState = useReviewState(computed(() => props.item))
             :label="item.commentCount ?? 0"
             icon="i-lucide-message-circle"
             :color="item.hasMaintainerComment ? 'primary' : 'neutral'"
+            variant="soft"
             class="rounded-full"
           />
         </UTooltip>
+
+        <!-- Reactions -->
+        <UBadge
+          v-if="(item.reactionCount ?? 0) > 0"
+          :label="item.reactionCount ?? 0"
+          icon="i-lucide-heart"
+          variant="soft"
+          class="rounded-full"
+        />
 
         <IssueType v-if="item.type" :type="item.type" />
         <IssueLabel v-for="label in item.labels" :key="label.id" :label="label" />

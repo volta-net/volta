@@ -496,7 +496,13 @@ const reviewState = useReviewState(computed(() => props.issue))
           class="rounded-full"
         >
           <template v-if="reviewer.color" #trailing>
-            <UChip :color="reviewer.color" standalone inset />
+            <UChip
+              :color="reviewer.color"
+              standalone
+              inset
+              size="md"
+              class="p-1"
+            />
           </template>
         </UBadge>
 
