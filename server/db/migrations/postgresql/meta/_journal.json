@@ -43,6 +43,13 @@
       "when": 1769101782026,
       "tag": "0005_true_kingpin",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1769162154041,
+      "tag": "0006_tiresome_switch",
+      "breakpoints": true
     }
   ]
 }

@@ -22,12 +22,11 @@ const links = [{
     <template #header>
       <UDashboardNavbar title="Settings" />
 
-      <UDashboardToolbar>
+      <UDashboardToolbar class="min-h-0">
         <UNavigationMenu
           :items="links"
-          highlight
-          highlight-color="neutral"
           class="-mx-2.5 flex-1"
+          :ui="{ item: 'py-1.5' }"
         />
       </UDashboardToolbar>
     </template>

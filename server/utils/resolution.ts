@@ -7,6 +7,7 @@ import type { ResolutionStatus } from '@nuxthub/db/schema'
 import type { GitHubRepository } from '../types/github'
 import { getDbRepositoryId } from './users'
 import { getDbIssueId } from './sync'
+import { DEFAULT_AI_MODEL } from './ai'
 
 // Type for the gateway function returned by createGateway
 type GatewayFn = (modelId: GatewayModelId) => LanguageModel
@@ -89,12 +90,14 @@ function daysSince(date: Date | string): number {
 /**
  * Analyze if an issue has been answered using AI
  * @param userGateway - Gateway instance with user's token (required)
+ * @param modelId - AI model to use (defaults to DEFAULT_AI_MODEL)
  */
 export async function analyzeIssueResolution(
   issue: IssueForAnalysis,
   comments: CommentForAnalysis[],
   maintainerIds: Set<number>,
-  userGateway: GatewayFn
+  userGateway: GatewayFn,
+  modelId: GatewayModelId = DEFAULT_AI_MODEL
 ): Promise<AnalysisResult> {
   // No comments = needs attention
   if (comments.length === 0) {
@@ -131,7 +134,7 @@ If a good answer was provided and no follow-up for 7+ days, use "likely_resolved
 
   try {
     const { output } = await generateText({
-      model: userGateway('anthropic/claude-sonnet-4.5' as GatewayModelId),
+      model: userGateway(modelId),
       output: Output.object({ schema: resolutionAnalysisSchema }),
       system: systemPrompt,
       prompt
@@ -175,8 +178,9 @@ If a good answer was provided and no follow-up for 7+ days, use "likely_resolved
 /**
  * Fetch and analyze resolution for an issue, then store the result
  * @param userGateway - Gateway instance with user's token (required)
+ * @param modelId - AI model to use (defaults to DEFAULT_AI_MODEL)
  */
-export async function analyzeAndStoreResolution(issueId: number, userGateway: GatewayFn): Promise<AnalysisResult | null> {
+export async function analyzeAndStoreResolution(issueId: number, userGateway: GatewayFn, modelId: GatewayModelId = DEFAULT_AI_MODEL): Promise<AnalysisResult | null> {
   // Fetch issue with comments
   const issue = await db.query.issues.findFirst({
     where: eq(schema.issues.id, issueId),
@@ -234,7 +238,8 @@ export async function analyzeAndStoreResolution(issueId: number, userGateway: Ga
       user: c.user ? { id: c.user.id, login: c.user.login } : null
     })),
     maintainerIds,
-    userGateway
+    userGateway,
+    modelId
   )
 
   // Store result in database

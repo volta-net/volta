@@ -189,6 +189,7 @@ const groups = computed(() => [{
       v-model:search-term="searchTerm"
       :loading="searchStatus === 'pending'"
       :groups="groups"
+      :ui="{ input: '[&>input]:h-12' }"
     />
 
     <LazyIssuesFavorites

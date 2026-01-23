@@ -6,6 +6,7 @@ export default defineEventHandler(async (event) => {
 
   const body = await readBody<{
     aiGatewayToken?: string | null
+    aiModel?: string | null
   }>(event)
 
   // Update user settings
@@ -21,12 +22,18 @@ export default defineEventHandler(async (event) => {
       : null
   }
 
+  // Allow setting or clearing the AI model
+  if ('aiModel' in body) {
+    updateData.aiModel = body.aiModel || null
+  }
+
   await db.update(schema.users)
     .set(updateData)
     .where(eq(schema.users.id, user.id))
 
   return {
     success: true,
-    hasAiGatewayToken: !!body.aiGatewayToken
+    hasAiGatewayToken: 'aiGatewayToken' in body ? !!body.aiGatewayToken : undefined,
+    aiModel: 'aiModel' in body ? body.aiModel : undefined
   }
 })

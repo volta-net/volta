@@ -74,8 +74,8 @@ export default defineEventHandler(async (event) => {
 
   // If never analyzed, stale, or force re-analyze requested, await fresh analysis
   if (forceReanalyze || isResolutionStale(issue.resolutionAnalyzedAt)) {
-    // Get user's AI token
-    const userToken = await getUserAiToken(user.id)
+    // Get user's AI settings (token and model)
+    const { token: userToken, model: userModel } = await getUserAiSettings(user.id)
     const userGateway = createUserGateway(userToken)
 
     // Throw 403 if user has no AI token configured
@@ -87,7 +87,7 @@ export default defineEventHandler(async (event) => {
     }
 
     try {
-      const result = await analyzeAndStoreResolution(issue.id, userGateway)
+      const result = await analyzeAndStoreResolution(issue.id, userGateway, userModel)
       if (result) {
         // Re-fetch to get the answeredBy user relation
         const freshIssue = await db.query.issues.findFirst({

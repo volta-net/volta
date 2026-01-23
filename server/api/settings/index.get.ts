@@ -14,6 +14,8 @@ export default defineEventHandler(async (event) => {
 
   return {
     // Return whether token is set, not the actual token for security
-    hasAiGatewayToken: !!dbUser.aiGatewayToken
+    hasAiGatewayToken: !!dbUser.aiGatewayToken,
+    // Return the user's selected AI model
+    aiModel: dbUser.aiModel
   }
 })

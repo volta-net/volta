@@ -136,8 +136,8 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'Prompt is required' })
   }
 
-  // Get user's AI token
-  const userToken = await getUserAiToken(user.id)
+  // Get user's AI settings (token and model)
+  const { token: userToken, model: userModel } = await getUserAiSettings(user.id)
   const userGateway = createUserGateway(userToken)
 
   if (!userGateway) {
@@ -270,7 +270,7 @@ CRITICAL RULES:
   }
 
   return streamText({
-    model: userGateway('anthropic/claude-sonnet-4.5' as GatewayModelId),
+    model: userGateway(userModel),
     system,
     prompt,
     maxOutputTokens

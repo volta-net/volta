@@ -88,8 +88,8 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, message: 'Issue not found' })
   }
 
-  // Get user's AI token
-  const userToken = await getUserAiToken(user.id)
+  // Get user's AI settings (token and model)
+  const { token: userToken, model: userModel } = await getUserAiSettings(user.id)
   const userGateway = createUserGateway(userToken)
 
   if (!userGateway) {
@@ -104,11 +104,11 @@ export default defineEventHandler(async (event) => {
 
   switch (mode) {
     case 'labels':
-      return await suggestLabels(issue, repository, issueContext, userGateway)
+      return await suggestLabels(issue, repository, issueContext, userGateway, userModel)
     case 'title':
-      return await suggestTitle(issue, issueContext, userGateway)
+      return await suggestTitle(issue, issueContext, userGateway, userModel)
     case 'duplicates':
-      return await findDuplicates(issue, repository, issueContext, userGateway)
+      return await findDuplicates(issue, repository, issueContext, userGateway, userModel)
     default:
       throw createError({ statusCode: 400, message: 'Invalid mode' })
   }
@@ -158,7 +158,8 @@ async function suggestLabels(
   issue: { id: number, labels: { label: { id: number, name: string, color: string } }[] },
   repository: { id: number },
   issueContext: string,
-  userGateway: ReturnType<typeof createUserGateway>
+  userGateway: ReturnType<typeof createUserGateway>,
+  modelId: GatewayModelId
 ) {
   // Fetch all available labels for this repository
   const availableLabels = await db.query.labels.findMany({
@@ -207,7 +208,7 @@ Rules:
 - Maximum 3-4 total suggestions`
 
   const { output } = await generateText({
-    model: userGateway!('anthropic/claude-sonnet-4.5' as GatewayModelId),
+    model: userGateway!(modelId),
     output: Output.object({ schema: labelSuggestionSchema }),
     system: systemPrompt,
     prompt: issueContext
@@ -241,7 +242,8 @@ Rules:
 async function suggestTitle(
   issue: { title: string },
   issueContext: string,
-  userGateway: ReturnType<typeof createUserGateway>
+  userGateway: ReturnType<typeof createUserGateway>,
+  modelId: GatewayModelId
 ) {
   const systemPrompt = `You are an AI that improves GitHub issue titles to be clearer and more descriptive.
 
@@ -256,7 +258,7 @@ Rules:
 Current title: "${issue.title}"`
 
   const { output } = await generateText({
-    model: userGateway!('anthropic/claude-sonnet-4.5' as GatewayModelId),
+    model: userGateway!(modelId),
     output: Output.object({ schema: titleSuggestionSchema }),
     system: systemPrompt,
     prompt: issueContext
@@ -269,7 +271,8 @@ async function findDuplicates(
   issue: { id: number, number: number, title: string, body: string | null },
   repository: { id: number },
   issueContext: string,
-  userGateway: ReturnType<typeof createUserGateway>
+  userGateway: ReturnType<typeof createUserGateway>,
+  modelId: GatewayModelId
 ) {
   // Fetch other open issues from the same repository
   const otherIssues = await db.query.issues.findMany({
@@ -309,7 +312,7 @@ Rules:
 - Maximum 3 suggestions`
 
   const { output } = await generateText({
-    model: userGateway!('anthropic/claude-sonnet-4.5' as GatewayModelId),
+    model: userGateway!(modelId),
     output: Output.object({ schema: duplicateSuggestionSchema }),
     system: systemPrompt,
     prompt: issueContext
