@@ -5,7 +5,7 @@ const { user } = useUserSession()
 const colorMode = useColorMode()
 const colorScheme = usePreferredColorScheme()
 
-const color = computed(() => colorMode.value === 'dark' ? '#0b0809' : 'white')
+const color = computed(() => colorMode.value === 'dark' ? '#0b0809' : '#fafafa')
 const href = computed(() => colorScheme.value === 'dark' ? '/logo-dark.svg' : '/logo-light.svg')
 
 useHead({
