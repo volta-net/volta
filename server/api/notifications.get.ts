@@ -22,7 +22,9 @@ export default defineEventHandler(async (event) => {
       issue: true,
       release: true,
       workflowRun: true,
-      actor: true
+      actor: {
+        columns: PRIVATE_USER_COLUMNS
+      }
     }
   })
 

@@ -59,22 +59,22 @@ export default defineEventHandler(async (event) => {
     with: {
       repository: true,
       milestone: true,
-      user: true,
-      closedBy: true,
-      mergedBy: true,
-      assignees: { with: { user: true } },
+      user: { columns: PRIVATE_USER_COLUMNS },
+      closedBy: { columns: PRIVATE_USER_COLUMNS },
+      mergedBy: { columns: PRIVATE_USER_COLUMNS },
+      assignees: { with: { user: { columns: PRIVATE_USER_COLUMNS } } },
       labels: { with: { label: true } },
-      requestedReviewers: { with: { user: true } },
+      requestedReviewers: { with: { user: { columns: PRIVATE_USER_COLUMNS } } },
       comments: {
-        with: { user: true },
+        with: { user: { columns: PRIVATE_USER_COLUMNS } },
         orderBy: (comments, { asc }) => [asc(comments.createdAt)]
       },
       reviews: {
-        with: { user: true },
+        with: { user: { columns: PRIVATE_USER_COLUMNS } },
         orderBy: (reviews, { asc }) => [asc(reviews.submittedAt)]
       },
       reviewComments: {
-        with: { user: true, review: true },
+        with: { user: { columns: PRIVATE_USER_COLUMNS }, review: true },
         orderBy: (reviewComments, { asc }) => [asc(reviewComments.createdAt)]
       }
     }

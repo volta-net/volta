@@ -35,10 +35,10 @@ export default defineEventHandler(async (event) => {
     orderBy: desc(schema.issues.updatedAt),
     with: {
       repository: true,
-      user: true,
+      user: { columns: PRIVATE_USER_COLUMNS },
       type: true,
       labels: { with: { label: true } },
-      resolutionAnsweredBy: true,
+      resolutionAnsweredBy: { columns: PRIVATE_USER_COLUMNS },
       // PRs only
       reviews: pullRequest !== false ? true : undefined,
       requestedReviewers: pullRequest !== false ? true : undefined,
