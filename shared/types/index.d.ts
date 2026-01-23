@@ -128,6 +128,7 @@ export interface InstallationRepository extends Repository {
   synced?: boolean
   syncing?: boolean
   stars?: number
+  permission?: 'admin' | 'maintain' | 'write' | 'triage' | 'read' | 'none'
 }
 
 export interface Installation extends Pick<DBInstallation, 'id'> {

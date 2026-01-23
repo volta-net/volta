@@ -28,6 +28,11 @@ const importingAll = ref<Set<number>>(new Set())
 const syncingAll = ref<Set<number>>(new Set())
 const removingAll = ref<Set<number>>(new Set())
 
+// Check if user can sync (requires write access or higher)
+function canSync(repo: InstallationRepository) {
+  return repo.permission === 'admin' || repo.permission === 'maintain' || repo.permission === 'write'
+}
+
 // Sort repositories: synced first, then by stars (desc), then by updatedAt (desc)
 function sortRepositories(repos: InstallationRepository[]) {
   return [...repos].sort((a, b) => {
@@ -62,11 +67,15 @@ const accordionItems = computed(() => {
 // ============================================================================
 
 async function importAllRepositories(installation: Installation) {
-  const unsyncedRepos = installation.repositories.filter(r => !r.synced)
+  // Only import repos where user has write access
+  const unsyncedRepos = installation.repositories.filter(r => !r.synced && canSync(r))
   if (!unsyncedRepos.length) {
+    const hasReadOnlyRepos = installation.repositories.some(r => !r.synced && !canSync(r))
     toast.add({
-      title: 'All repositories imported',
-      description: 'All repositories are already imported.'
+      title: hasReadOnlyRepos ? 'No importable repositories' : 'All repositories imported',
+      description: hasReadOnlyRepos
+        ? 'You need write access to import repositories.'
+        : 'All repositories are already imported.'
     })
     return
   }
@@ -119,7 +128,8 @@ async function importAllRepositories(installation: Installation) {
 }
 
 async function syncAllRepositories(installation: Installation) {
-  const syncedRepos = installation.repositories.filter(r => r.synced)
+  // Only sync repos where user has write access
+  const syncedRepos = installation.repositories.filter(r => r.synced && canSync(r))
   if (!syncedRepos.length) return
 
   const repoNames = syncedRepos.map(r => r.fullName)
@@ -240,8 +250,9 @@ async function deleteRepository(fullName: string) {
 // ============================================================================
 
 function getInstallationDropdownItems(installation: Installation) {
-  const hasUnsynced = installation.repositories.some(r => !r.synced)
-  const hasSynced = installation.repositories.some(r => r.synced)
+  // Only count repos where user can sync (has write access)
+  const hasUnsyncedWithAccess = installation.repositories.some(r => !r.synced && canSync(r))
+  const hasSyncedWithAccess = installation.repositories.some(r => r.synced && canSync(r))
 
   const isImporting = importingAll.value.has(installation.id)
   const isSyncingAll = syncingAll.value.has(installation.id)
@@ -258,7 +269,7 @@ function getInstallationDropdownItems(installation: Installation) {
 
   const actionItems: DropdownMenuItem[] = []
 
-  if (hasUnsynced) {
+  if (hasUnsyncedWithAccess) {
     actionItems.push({
       label: 'Import all',
       icon: 'i-lucide-download',
@@ -271,7 +282,7 @@ function getInstallationDropdownItems(installation: Installation) {
     })
   }
 
-  if (hasSynced) {
+  if (hasSyncedWithAccess) {
     actionItems.push({
       label: 'Sync all',
       icon: 'i-lucide-refresh-cw',
@@ -281,7 +292,13 @@ function getInstallationDropdownItems(installation: Installation) {
         e.preventDefault()
         syncAllRepositories(installation)
       }
-    }, {
+    })
+  }
+
+  // Remove all is available for any synced repos (doesn't require write access)
+  const hasSynced = installation.repositories.some(r => r.synced)
+  if (hasSynced) {
+    actionItems.push({
       label: 'Remove all',
       icon: 'i-lucide-trash-2',
       loading: isRemoving,
@@ -443,6 +460,14 @@ function getInstallUrl() {
                   >
                     Synced {{ useTimeAgo(repo.lastSyncedAt).value }}
                   </UBadge>
+                  <UBadge
+                    v-if="!canSync(repo)"
+                    color="neutral"
+                    variant="subtle"
+                    size="xs"
+                  >
+                    {{ repo.permission }}
+                  </UBadge>
                 </p>
                 <p class="text-xs text-muted truncate flex items-center gap-1">
                   <span class="inline-flex items-center gap-1">
@@ -486,15 +511,15 @@ function getInstallUrl() {
                     label: 'Force sync',
                     icon: 'i-lucide-refresh-cw',
                     loading: false,
-                    disabled: deleting.has(repo.fullName),
+                    disabled: deleting.has(repo.fullName) || !canSync(repo),
                     onSelect: () => {
                       syncRepository(repo.fullName, true)
                     }
                   } : {
-                    label: 'Sync now',
+                    label: canSync(repo) ? 'Sync now' : `Sync (requires write access)`,
                     icon: 'i-lucide-refresh-cw',
                     loading: false,
-                    disabled: deleting.has(repo.fullName),
+                    disabled: deleting.has(repo.fullName) || !canSync(repo),
                     onSelect: () => {
                       syncRepository(repo.fullName)
                     }
@@ -520,15 +545,21 @@ function getInstallUrl() {
               </UDropdownMenu>
             </div>
 
-            <UButton
+            <UTooltip
               v-else
-              icon="i-lucide-download"
-              variant="soft"
-              :loading="isSyncing(repo.fullName)"
-              @click="syncRepository(repo.fullName)"
+              :text="`You need write access to import this repository (current: ${repo.permission})`"
+              :disabled="canSync(repo)"
             >
-              Import
-            </UButton>
+              <UButton
+                icon="i-lucide-download"
+                variant="soft"
+                :loading="isSyncing(repo.fullName)"
+                :disabled="!canSync(repo)"
+                @click="syncRepository(repo.fullName)"
+              >
+                Import
+              </UButton>
+            </UTooltip>
           </div>
 
           <div v-if="!item.installation.repositories?.length" class="text-center py-8 text-muted">

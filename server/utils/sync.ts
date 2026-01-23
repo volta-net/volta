@@ -964,11 +964,61 @@ export async function updateRepositoryLastSynced(repositoryId: number) {
   }).where(eq(schema.repositories.id, repositoryId))
 }
 
+/**
+ * Verify the current user has write access and add them as a collaborator.
+ * This uses getCollaboratorPermissionLevel which works even without admin access.
+ * Returns the user's permission level or null if they don't have write access.
+ */
+export async function verifyAndAddCurrentUserAccess(
+  accessToken: string,
+  owner: string,
+  repo: string,
+  repositoryId: number,
+  userId: number,
+  userLogin: string
+): Promise<'admin' | 'maintain' | 'write' | null> {
+  const octokit = new Octokit({ auth: accessToken })
+
+  try {
+    // Check the current user's permission level (doesn't require admin access)
+    const { data } = await octokit.rest.repos.getCollaboratorPermissionLevel({
+      owner,
+      repo,
+      username: userLogin
+    })
+
+    const permission = data.permission
+    const hasWriteAccess = permission === 'admin' || permission === 'maintain' || permission === 'write'
+
+    if (!hasWriteAccess) {
+      return null
+    }
+
+    // Add user as collaborator with their permission level
+    const dbPermission = permission as 'admin' | 'maintain' | 'write'
+    await db.insert(schema.repositoryCollaborators)
+      .values({ repositoryId, userId, permission: dbPermission })
+      .onConflictDoUpdate({
+        target: [schema.repositoryCollaborators.repositoryId, schema.repositoryCollaborators.userId],
+        set: { permission: dbPermission, updatedAt: new Date() }
+      })
+
+    return dbPermission
+  } catch (error: any) {
+    // 404 means user is not a collaborator
+    if (error.status === 404 || error.status === 403) {
+      return null
+    }
+    throw error
+  }
+}
+
 export async function syncCollaborators(accessToken: string, owner: string, repo: string, repositoryId: number) {
   const octokit = new Octokit({ auth: accessToken })
 
   try {
     // Fetch collaborators with write access or higher (paginated)
+    // Note: This requires admin access for public repos, so it may fail
     const collaborators = await octokit.paginate(octokit.rest.repos.listCollaborators, {
       owner,
       repo,

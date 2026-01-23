@@ -3,6 +3,8 @@ export interface SyncRepositoryInput {
   owner: string
   repo: string
   userId: number
+  userLogin: string
+  existingRepoId?: number // Pass existing repo ID to handle error cleanup
 }
 
 export interface SyncRepositoryResult {
@@ -28,27 +30,39 @@ async function stepSyncRepositoryInfo(accessToken: string, owner: string, repo: 
   return await syncRepositoryInfo(accessToken, owner, repo)
 }
 
+async function stepVerifyAccess(
+  accessToken: string,
+  owner: string,
+  repo: string,
+  repositoryId: number,
+  userId: number,
+  userLogin: string
+) {
+  'use step'
+  const { verifyAndAddCurrentUserAccess } = await import('../utils/sync.js')
+  console.log(`[Workflow] Step 2: Verifying user ${userLogin} has write access to ${owner}/${repo}`)
+
+  const permission = await verifyAndAddCurrentUserAccess(
+    accessToken,
+    owner,
+    repo,
+    repositoryId,
+    userId,
+    userLogin
+  )
+
+  if (!permission) {
+    throw new Error(`You don't have write access to ${owner}/${repo}. Only collaborators with push permissions can sync repositories.`)
+  }
+
+  console.log(`[Workflow] User ${userLogin} has ${permission} access to ${owner}/${repo}`)
+}
+
 async function stepSyncCollaborators(accessToken: string, owner: string, repo: string, repositoryId: number) {
   'use step'
   const { syncCollaborators } = await import('../utils/sync.js')
-  console.log(`[Workflow] Step 2: Syncing collaborators for ${owner}/${repo}`)
+  console.log(`[Workflow] Step 3: Syncing collaborators for ${owner}/${repo}`)
   return await syncCollaborators(accessToken, owner, repo, repositoryId)
-}
-
-async function stepVerifyAccess(userId: number, repositoryId: number) {
-  'use step'
-  const { eq, and } = await import('drizzle-orm')
-  const { db, schema } = await import('@nuxthub/db')
-  console.log(`[Workflow] Step 3: Verifying user access for repository ${repositoryId}`)
-  const collaborator = await db.query.repositoryCollaborators.findFirst({
-    where: and(
-      eq(schema.repositoryCollaborators.repositoryId, repositoryId),
-      eq(schema.repositoryCollaborators.userId, userId)
-    )
-  })
-  if (!collaborator) {
-    throw new Error(`User ${userId} does not have access to repository ${repositoryId}`)
-  }
 }
 
 async function stepSyncLabels(accessToken: string, owner: string, repo: string, repositoryId: number) {
@@ -137,20 +151,22 @@ async function stepClearSyncingFlag(repositoryId: number) {
  */
 export async function syncRepositoryWorkflow(input: SyncRepositoryInput): Promise<SyncRepositoryResult> {
   'use workflow'
-  const { accessToken, owner, repo, userId } = input
+  const { accessToken, owner, repo, userId, userLogin, existingRepoId } = input
 
-  let repositoryId: number | null = null
+  // Use existingRepoId as fallback for error cleanup if Step 1 fails
+  let repositoryId: number | null = existingRepoId ?? null
 
   try {
     // Step 1: Sync repository info and get repository ID
     const { repository } = await stepSyncRepositoryInfo(accessToken, owner, repo)
     repositoryId = repository.id
 
-    // Step 2: Sync collaborators (needed for access verification)
-    const collaboratorsCount = await stepSyncCollaborators(accessToken, owner, repo, repository.id)
+    // Step 2: Verify user has write access (also adds them as collaborator)
+    // This uses getCollaboratorPermissionLevel which works without admin access
+    await stepVerifyAccess(accessToken, owner, repo, repository.id, userId, userLogin)
 
-    // Step 3: Verify user has access (must be after syncCollaborators for first-time sync)
-    await stepVerifyAccess(userId, repository.id)
+    // Step 3: Sync all collaborators (may fail for public repos without admin access - that's ok)
+    const collaboratorsCount = await stepSyncCollaborators(accessToken, owner, repo, repository.id)
 
     // Step 4: Sync labels
     const labelsCount = await stepSyncLabels(accessToken, owner, repo, repository.id)

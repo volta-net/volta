@@ -47,7 +47,9 @@ export default defineEventHandler(async (event) => {
     accessToken,
     owner,
     repo,
-    userId: user.id
+    userId: user.id,
+    userLogin: user.username,
+    existingRepoId: existingRepo?.id
   }])
 
   // Return immediately - frontend should poll /api/installations to detect completion

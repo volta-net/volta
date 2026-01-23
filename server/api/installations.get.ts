@@ -31,6 +31,16 @@ export default defineEventHandler(async (event) => {
       const login = account && 'login' in account ? account.login : account?.name
       const type = account && 'type' in account ? account.type : 'Enterprise'
 
+      // Helper to determine user's permission level from GitHub permissions object
+      const getPermissionLevel = (permissions: typeof allRepos[0]['permissions']) => {
+        if (permissions?.admin) return 'admin'
+        if (permissions?.maintain) return 'maintain'
+        if (permissions?.push) return 'write'
+        if (permissions?.triage) return 'triage'
+        if (permissions?.pull) return 'read'
+        return 'none'
+      }
+
       // Default response for unsynced installation
       const defaultResponse = {
         id: installation.id,
@@ -52,7 +62,8 @@ export default defineEventHandler(async (event) => {
           updatedAt: repo.updated_at,
           synced: false,
           subscription: undefined,
-          stars: repo.stargazers_count ?? 0
+          stars: repo.stargazers_count ?? 0,
+          permission: getPermissionLevel(repo.permissions)
         }))
       }
 
@@ -122,7 +133,8 @@ export default defineEventHandler(async (event) => {
             updatedAt: repo.updated_at,
             synced: syncedRepoMap.has(repo.id),
             subscription: subscriptionMap.get(repo.id),
-            stars: repo.stargazers_count ?? 0
+            stars: repo.stargazers_count ?? 0,
+            permission: getPermissionLevel(repo.permissions)
           }))
         }
       } catch (error) {
