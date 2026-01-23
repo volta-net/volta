@@ -105,7 +105,12 @@ defineShortcuts({
 
       <!-- Actor -->
       <div v-if="notification.actor" class="flex items-center gap-2 pt-4 border-t border-default">
-        <UAvatar :src="notification.actor.avatarUrl!" :alt="notification.actor.login" size="xs" />
+        <UAvatar
+          :src="notification.actor.avatarUrl!"
+          :alt="notification.actor.login"
+          size="xs"
+          loading="lazy"
+        />
         <span class="text-sm text-muted">Released by <span class="text-highlighted">{{ notification.actor.login }}</span></span>
       </div>
     </div>

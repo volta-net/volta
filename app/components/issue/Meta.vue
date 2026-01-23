@@ -470,7 +470,12 @@ const reviewState = useReviewState(computed(() => props.issue))
           </template>
 
           <template #item-leading="{ item }">
-            <UAvatar :src="item.avatarUrl!" :alt="item.login" size="3xs" />
+            <UAvatar
+              :src="item.avatarUrl!"
+              :alt="item.login"
+              size="3xs"
+              loading="lazy"
+            />
           </template>
 
           <template #item-label="{ item }">
@@ -526,7 +531,12 @@ const reviewState = useReviewState(computed(() => props.issue))
             Add
           </template>
           <template #item-leading="{ item }">
-            <UAvatar :src="item.avatarUrl!" :alt="item.login" size="3xs" />
+            <UAvatar
+              :src="item.avatarUrl!"
+              :alt="item.login"
+              size="3xs"
+              loading="lazy"
+            />
           </template>
           <template #item-label="{ item }">
             {{ item.login }}

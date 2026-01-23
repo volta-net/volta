@@ -386,6 +386,7 @@ function getInstallUrl() {
             :alt="item.label"
             class="rounded-md"
             size="md"
+            loading="lazy"
           />
         </template>
 
@@ -439,7 +440,7 @@ function getInstallUrl() {
         <template #body="{ item }">
           <div v-for="repo in item.installation.repositories" :key="repo.id" class="flex items-center justify-between py-3 px-4 bg-default gap-3">
             <div class="flex items-center gap-3 min-w-0">
-              <UAvatar :icon="repo.private ? 'i-lucide-lock' : 'i-lucide-book'" size="md" />
+              <UAvatar :icon="repo.private ? 'i-lucide-lock' : 'i-lucide-book'" size="md" loading="lazy" />
               <div class="min-w-0">
                 <p class="font-medium truncate flex items-center gap-1.5">
                   <NuxtLink :to="`https://github.com/${repo.fullName}`" target="_blank">{{ repo.name }}</NuxtLink>

@@ -43,6 +43,7 @@ function stripMarkdown(text: string | null | undefined): string {
       :alt="notification.actor?.login"
       size="lg"
       class="shrink-0"
+      loading="lazy"
     />
 
     <!-- Content -->
@@ -52,11 +53,7 @@ function stripMarkdown(text: string | null | undefined): string {
           {{ getTitle(notification) }}
         </p>
         <span v-if="!notification.read" class="size-2 rounded-full bg-primary shrink-0 m-1" />
-        <UIcon
-          :name="getIcon(notification)"
-          :class="`text-${getColor(notification)}`"
-          class="size-4 shrink-0"
-        />
+        <UIcon :name="getIcon(notification)" :class="`text-${getColor(notification)}`" class="size-4 shrink-0" />
       </div>
 
       <div class="flex items-center gap-1 text-muted">
@@ -64,7 +61,16 @@ function stripMarkdown(text: string | null | undefined): string {
           <span v-if="notification.actor && notification.type !== 'workflow_run'" class="text-default">{{ notification.actor.login }}</span>
           {{ getActionVerb(notification) }}
           <template v-if="notification.action !== 'comment' && getSubjectLabel(notification.type)"> {{ getSubjectLabel(notification.type) }}</template>
-          <template v-if="notification.repository"> in <span class="text-default hover:text-primary transition-colors">{{ notification.repository.fullName }}</span></template>
+          <template v-if="notification.repository"> in <span class="text-highlighted font-medium text-xs/5 hover:bg-accented/50 transition-colors border border-dashed border-muted px-1 py-[2.5px] rounded-sm">
+            <UAvatar
+              size="3xs"
+              :src="`https://github.com/${notification.repository.fullName.split('/')[0]}.png`"
+              :alt="notification.repository.fullName"
+              loading="lazy"
+              class="-mt-[2px]"
+            />
+            {{ notification.repository.fullName }}</span>
+          </template>
           <span v-if="notification.action === 'comment' && notification.body">: {{ stripMarkdown(notification.body) }}</span>
         </span>
         <span class="shrink-0 ms-auto flex items-center gap-1 text-sm text-dimmed">

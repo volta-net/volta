@@ -135,7 +135,12 @@ const diffHunkWithoutHeader = computed(() => {
     <!-- Comment body with user info -->
     <div class="px-4 py-3" :class="{ 'border-t border-default': comment.diffHunk }">
       <div class="flex items-center gap-2 mb-2">
-        <UAvatar v-if="comment.user?.avatarUrl" :src="comment.user.avatarUrl" size="2xs" />
+        <UAvatar
+          v-if="comment.user?.avatarUrl"
+          :src="comment.user.avatarUrl"
+          size="2xs"
+          loading="lazy"
+        />
         <span class="text-sm font-medium text-highlighted">
           {{ comment.user?.login || 'Unknown' }}
           <span class="font-normal text-muted">{{ hasSuggestion ? 'suggested change' : 'commented' }}</span>
