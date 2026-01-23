@@ -52,6 +52,7 @@ defineShortcuts({
           icon="i-lucide-trash-2"
           label="Delete notification"
           variant="soft"
+          class="hidden lg:inline-flex"
           @click="emit('delete', notification.id)"
         />
       </UTooltip>

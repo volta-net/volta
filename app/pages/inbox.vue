@@ -266,6 +266,7 @@ useSeoMeta({
     <USlideover
       v-if="isMobile"
       v-model:open="isPanelOpen"
+      inset
     >
       <template #content="{ close }">
         <Notification

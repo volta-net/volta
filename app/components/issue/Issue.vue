@@ -284,15 +284,18 @@ const agentItems = computed(() => {
     <UDashboardNavbar :ui="{ left: 'gap-0.5', toggle: 'hidden' }">
       <template v-if="item.repository" #leading>
         <UButton
-          :label="item.repository.fullName"
           :avatar="{ src: `https://github.com/${item.repository.fullName.split('/')[0]}.png`, alt: item.repository.fullName }"
           :to="item.repository.htmlUrl!"
           target="_blank"
           variant="ghost"
-          class="text-sm/4 text-highlighted px-2"
-        />
+          class="text-sm/4 text-highlighted px-2 min-w-0"
+        >
+          <span class="truncate">
+            <span class="hidden lg:inline">{{ item.repository.fullName.split('/')[0] }}/</span>{{ item.repository.name }}
+          </span>
+        </UButton>
 
-        <UIcon name="i-lucide-chevron-right" class="size-4 text-muted" />
+        <UIcon name="i-lucide-chevron-right" class="size-4 text-muted shrink-0" />
       </template>
 
       <template #title>
