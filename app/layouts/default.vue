@@ -120,11 +120,19 @@ const groups = computed(() => [{
   items: [{
     label: 'Issues & Pull Requests',
     icon: 'i-lucide-circle-dot',
-    onSelect: () => { favoriteIssuesOpen.value = true }
+    onSelect: () => {
+      setTimeout(() => {
+        favoriteIssuesOpen.value = true
+      }, 250)
+    }
   }, {
     label: 'Repositories',
     icon: 'i-lucide-book',
-    onSelect: () => { favoriteRepositoriesOpen.value = true }
+    onSelect: () => {
+      setTimeout(() => {
+        favoriteRepositoriesOpen.value = true
+      }, 250)
+    }
   }]
 }, {
   id: 'search-issues',
