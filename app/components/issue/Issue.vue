@@ -185,8 +185,12 @@ defineShortcuts({
 })
 
 // Handle agent action confirmation
+const applyingAgent = ref(false)
+
 async function handleAgentConfirm(data: { mode: AgentMode, payload: unknown }) {
   if (!issue.value) return
+
+  applyingAgent.value = true
 
   try {
     if (data.mode === 'labels') {
@@ -239,6 +243,8 @@ async function handleAgentConfirm(data: { mode: AgentMode, payload: unknown }) {
       color: 'error',
       icon: 'i-lucide-x'
     })
+  } finally {
+    applyingAgent.value = false
   }
 }
 
@@ -401,6 +407,7 @@ const agentItems = computed(() => {
       :mode="agent.mode.value"
       :result="agent.result.value"
       :loading="agent.isLoading.value"
+      :applying="applyingAgent"
       :error="agent.error.value"
       @confirm="handleAgentConfirm"
       @close="agent.close"

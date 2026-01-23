@@ -5,6 +5,7 @@ const props = defineProps<{
   mode: AgentMode | null
   result: AgentResult | null
   loading: boolean
+  applying: boolean
   error: string | null
 }>()
 
@@ -75,7 +76,7 @@ function handleConfirm() {
 
 // Check if confirm button should be disabled
 const isConfirmDisabled = computed(() => {
-  if (props.loading || !props.result) return true
+  if (props.loading || props.applying || !props.result) return true
 
   if (props.result.mode === 'labels') {
     return selectedLabels.value.size === 0
@@ -155,7 +156,7 @@ const labelsToRemove = computed(() => {
         <!-- Labels to add -->
         <fieldset v-if="labelsToAdd.length > 0" class="flex flex-col gap-2">
           <legend class="flex items-center gap-2 text-sm font-medium text-success mb-2">
-            <span>Add</span>
+            <span>+ Add</span>
           </legend>
 
           <div
@@ -167,6 +168,7 @@ const labelsToRemove = computed(() => {
           >
             <UCheckbox
               :model-value="selectedLabels.has(label.id)"
+              size="md"
               @click.stop
               @update:model-value="toggleLabel(label.id)"
             />
@@ -193,7 +195,7 @@ const labelsToRemove = computed(() => {
         <!-- Labels to remove -->
         <fieldset v-if="labelsToRemove.length > 0" class="flex flex-col gap-2">
           <legend class="flex items-center gap-2 text-sm font-medium text-error mb-2">
-            <span>Remove</span>
+            <span>- Remove</span>
           </legend>
 
           <div
@@ -205,6 +207,7 @@ const labelsToRemove = computed(() => {
           >
             <UCheckbox
               :model-value="selectedLabels.has(label.id)"
+              size="md"
               @click.stop
               @update:model-value="toggleLabel(label.id)"
             />
@@ -293,6 +296,7 @@ const labelsToRemove = computed(() => {
       <UButton
         v-if="!loading && result && mode !== 'duplicates'"
         :label="mode === 'labels' ? 'Apply changes' : 'Update title'"
+        :loading="applying"
         :disabled="isConfirmDisabled"
         @click="handleConfirm"
       />
