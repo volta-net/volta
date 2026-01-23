@@ -22,10 +22,10 @@ export interface DuplicateSuggestion {
   reason: string
 }
 
-export type AgentResult =
-  | { mode: 'labels', suggestions: LabelSuggestion[] }
-  | { mode: 'title', title: string, reason: string }
-  | { mode: 'duplicates', duplicates: DuplicateSuggestion[] }
+export type AgentResult
+  = | { mode: 'labels', suggestions: LabelSuggestion[] }
+    | { mode: 'title', title: string, reason: string }
+    | { mode: 'duplicates', duplicates: DuplicateSuggestion[] }
 
 export function useAgentActions(issue: Ref<IssueDetail | null | undefined>) {
   const isOpen = ref(false)

@@ -1,4 +1,3 @@
-import { eq } from 'drizzle-orm'
 import { db, schema } from '@nuxthub/db'
 
 // Extended GitHub tokens type (when token expiration is enabled in GitHub App)
