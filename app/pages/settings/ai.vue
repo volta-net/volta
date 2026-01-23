@@ -214,6 +214,7 @@ async function saveModel() {
           >
             <template #trailing>
               <UButton
+                v-if="token"
                 :icon="showToken ? 'i-lucide-eye-off' : 'i-lucide-eye'"
                 variant="ghost"
                 color="neutral"
