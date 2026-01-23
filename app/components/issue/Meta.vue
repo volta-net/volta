@@ -352,14 +352,19 @@ const reviewState = useReviewState(computed(() => props.issue))
       <!-- Resolution status (issues only) -->
       <UButton
         v-if="!issue.pullRequest && resolutionConfig"
-        as="div"
+        :as="issue.resolutionAnswerCommentId ? 'button' : 'div'"
         :icon="resolutionConfig.icon"
-        :ui="{ leadingIcon: `text-${resolutionConfig.color}` }"
+        :trailing-icon="issue.resolutionAnswerCommentId ? 'i-lucide-arrow-right' : ''"
+        :ui="{ leadingIcon: `text-${resolutionConfig.color}`, trailingIcon: 'ms-auto' }"
         variant="ghost"
-        class="text-sm/4 px-2 hover:bg-transparent active:bg-transparent"
+        :class="[
+          'text-sm/4 px-2',
+          !issue.resolutionAnswerCommentId && 'hover:bg-transparent active:bg-transparent'
+        ]"
+        @click="issue.resolutionAnswerCommentId && emit('scroll-to-answer', issue.resolutionAnswerCommentId)"
       >
         {{ resolutionConfig.label }}
-        <span v-if="issue.resolutionConfidence" class="text-muted italic">
+        <span v-if="issue.resolutionConfidence" class="text-muted italic text-xs">
           ({{ issue.resolutionConfidence }}% confidence)
         </span>
       </UButton>
