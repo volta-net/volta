@@ -98,7 +98,7 @@ const reviewState = useReviewState(computed(() => props.item))
           <UBadge
             :label="item.linkedPrs.length"
             icon="i-lucide-git-pull-request"
-            variant="soft"
+            variant="subtle"
             class="rounded-full"
           />
         </UTooltip>
@@ -113,7 +113,7 @@ const reviewState = useReviewState(computed(() => props.item))
             :label="item.commentCount ?? 0"
             icon="i-lucide-message-circle"
             :color="item.hasMaintainerComment ? 'primary' : 'neutral'"
-            variant="soft"
+            variant="subtle"
             class="rounded-full"
           />
         </UTooltip>
@@ -123,7 +123,7 @@ const reviewState = useReviewState(computed(() => props.item))
           v-if="(item.reactionCount ?? 0) > 0"
           :label="item.reactionCount ?? 0"
           icon="i-lucide-heart"
-          variant="soft"
+          variant="subtle"
           class="rounded-full"
         />
 
