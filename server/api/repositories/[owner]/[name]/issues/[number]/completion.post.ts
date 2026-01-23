@@ -1,5 +1,4 @@
 import { streamText } from 'ai'
-import type { GatewayModelId } from '@ai-sdk/gateway'
 import { eq, and, inArray, desc, ne, isNotNull } from 'drizzle-orm'
 import { db, schema } from '@nuxthub/db'
 
