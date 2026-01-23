@@ -485,9 +485,8 @@ function getInstallUrl() {
             </div>
 
             <div v-if="repo.synced" class="flex items-center gap-2 shrink-0">
-              <!-- Notification dropdown -->
+              <!-- Notification dropdown (available for all synced repos, regardless of permission level) -->
               <UDropdownMenu
-                v-if="repo.subscription"
                 :items="getSubscriptionDropdownItems(repo)"
                 :content="{ align: 'end' }"
                 :ui="{ content: 'w-72', itemDescription: 'text-clip' }"

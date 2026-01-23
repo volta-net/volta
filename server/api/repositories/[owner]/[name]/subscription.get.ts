@@ -21,8 +21,15 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, message: 'Repository not found' })
   }
 
-  // Verify user has access to this repository
-  await requireRepositoryAccess(user.id, repository.id)
+  // For private repos, verify user has GitHub access (allows read/triage users to manage subscriptions)
+  // Public repos are accessible to everyone, so skip the API call
+  if (repository.private) {
+    const accessToken = await getValidAccessToken(event)
+    const hasAccess = await verifyGitHubRepoAccess(accessToken, owner, name)
+    if (!hasAccess) {
+      throw createError({ statusCode: 403, message: 'You do not have access to this repository' })
+    }
+  }
 
   // Get user's subscription
   const subscription = await db.query.repositorySubscriptions.findFirst({

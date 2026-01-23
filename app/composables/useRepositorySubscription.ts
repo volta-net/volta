@@ -21,6 +21,7 @@ export function useRepositorySubscription(installations: Ref<Installation[] | nu
 
   /**
    * Update subscription preferences for a repository.
+   * Creates a new subscription if one doesn't exist.
    */
   async function updateSubscription(repo: InstallationRepository, updates: Partial<RepositorySubscription>) {
     const [owner, name] = repo.fullName.split('/')
@@ -35,6 +36,9 @@ export function useRepositorySubscription(installations: Ref<Installation[] | nu
 
       if (repo.subscription) {
         Object.assign(repo.subscription, result)
+      } else {
+        // New subscription created - assign it to the repo
+        repo.subscription = result
       }
       triggerRef(installations)
     } catch (error: any) {
@@ -65,12 +69,21 @@ export function useRepositorySubscription(installations: Ref<Installation[] | nu
 
   /**
    * Build dropdown menu items for notification settings.
+   * Works with or without an existing subscription (defaults to "unsubscribed" state).
    */
   function getDropdownItems(repo: InstallationRepository): DropdownMenuItem[][] {
-    if (!repo.subscription) return []
+    // Default subscription state for repos without a subscription (not subscribed to anything)
+    const defaultSub: RepositorySubscription = {
+      issues: false,
+      pullRequests: false,
+      releases: false,
+      ci: false,
+      mentions: false,
+      activity: false
+    } as RepositorySubscription
 
-    const sub = repo.subscription
-    const activePreset = getActivePreset(sub)
+    const sub = repo.subscription ?? defaultSub
+    const activePreset = repo.subscription ? getActivePreset(sub) : 'ignore'
 
     return [[
       {
@@ -167,7 +180,7 @@ export function useRepositorySubscription(installations: Ref<Installation[] | nu
    */
   function getSummary(repo: InstallationRepository): { label: string, icon: string } {
     if (!repo.subscription) {
-      return { label: 'Default', icon: 'i-lucide-bell' }
+      return { label: 'Not subscribed', icon: 'i-lucide-bell-off' }
     }
 
     const preset = getActivePreset(repo.subscription)

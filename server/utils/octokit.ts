@@ -42,6 +42,28 @@ export function useOctokitWithToken(token: string) {
 }
 
 /**
+ * Verify if a user has GitHub access to a repository.
+ * Uses the user's token to check if they can access the repo via GitHub's API.
+ * Returns true if they have any level of access (read, triage, write, maintain, admin).
+ */
+export async function verifyGitHubRepoAccess(accessToken: string, owner: string, repo: string): Promise<boolean> {
+  try {
+    const octokit = useOctokitWithToken(accessToken)
+    // Try to get the repository - this will fail with 404 if user has no access
+    await octokit.rest.repos.get({ owner, repo })
+    return true
+  } catch (error: any) {
+    // 404 means no access, 403 means rate limited or blocked
+    if (error.status === 404 || error.status === 403) {
+      return false
+    }
+    // For other errors, log and deny access to be safe
+    console.warn(`[octokit] Failed to verify repo access for ${owner}/${repo}:`, error.message)
+    return false
+  }
+}
+
+/**
  * Get a valid access token, refreshing if necessary.
  * Returns the access token from the session, refreshing it if expired.
  */
