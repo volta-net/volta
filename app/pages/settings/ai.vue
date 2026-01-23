@@ -4,6 +4,12 @@ const toast = useToast()
 // Fetch current settings
 const { data: settings, refresh } = await useFetch('/api/settings')
 
+// Fetch credits when token is configured
+const { data: credits, execute: fetchCredits, status: creditsStatus } = useLazyFetch('/api/settings/credits', {
+  default: () => null,
+  immediate: Boolean(settings.value?.hasAiGatewayToken)
+})
+
 // AI model options (from https://vercel.com/ai-gateway/models)
 const modelOptions = [
   // Anthropic
@@ -50,6 +56,10 @@ async function saveToken() {
     })
 
     await refresh()
+    // Refresh credits if token was set
+    if (token.value) {
+      fetchCredits()
+    }
     token.value = ''
     showToken.value = false
 
@@ -143,38 +153,56 @@ async function saveModel() {
 
     <UCard class="overflow-y-auto" :ui="{ header: 'sm:px-4', body: 'sm:p-4', footer: 'p-0!' }">
       <template #header>
-        <div class="flex items-center gap-3">
-          <div class="flex items-center justify-center size-10 rounded-lg bg-elevated">
-            <UIcon
-              :name="hasToken ? 'i-lucide-check-circle' : 'i-lucide-alert-circle'"
-              :class="hasToken ? 'text-success' : 'text-warning'"
-              class="size-5"
-            />
+        <div class="flex items-center justify-between gap-3">
+          <div class="flex items-center gap-3">
+            <div class="flex items-center justify-center size-10 rounded-lg bg-elevated">
+              <UIcon
+                :name="hasToken ? 'i-lucide-check-circle' : 'i-lucide-alert-circle'"
+                :class="hasToken ? 'text-success' : 'text-warning'"
+                class="size-5"
+              />
+            </div>
+            <div>
+              <p class="font-medium">
+                {{ hasToken ? 'Token configured' : 'Token not configured' }}
+              </p>
+              <p class="text-sm text-muted">
+                {{ hasToken
+                  ? 'AI features are enabled for your account.'
+                  : 'Add your Vercel AI Gateway token to enable AI features.'
+                }}
+              </p>
+            </div>
           </div>
-          <div>
-            <p class="font-medium">
-              {{ hasToken ? 'Token configured' : 'Token not configured' }}
-            </p>
-            <p class="text-sm text-muted">
-              {{ hasToken
-                ? 'AI features are enabled for your account.'
-                : 'Add your Vercel AI Gateway token to enable AI features.'
-              }}
-            </p>
-          </div>
+
+          <!-- Credits display -->
+          <UBadge v-if="hasToken && credits" variant="soft" icon="i-lucide-coins">
+            {{ Number(credits.balance).toFixed(2) }} Credit{{ Number(credits.balance) !== 1 ? 's' : '' }}
+          </UBadge>
+          <UBadge
+            v-else-if="hasToken && creditsStatus === 'pending'"
+            variant="soft"
+            icon="i-lucide-coins"
+            class="animate-pulse"
+          >
+            Loading...
+          </UBadge>
         </div>
       </template>
 
       <template #default>
         <UFormField label="AI Gateway Token" size="md" class="mb-4">
           <template #hint>
-            <ULink
+            <UButton
               to="https://vercel.com/d?to=/%5Bteam%5D/~/ai-gateway/api-keys&title=AI+Gateway+API+Keys"
               target="_blank"
-              class="text-primary font-medium"
+              trailing-icon="i-lucide-arrow-up-right"
+              variant="link"
+              square
+              color="primary"
             >
               Get a token
-            </ULink>
+            </UButton>
           </template>
 
           <UInput
@@ -211,6 +239,7 @@ async function saveModel() {
           <UButton
             :label="hasToken ? 'Update token' : 'Save token'"
             :loading="saving"
+            :variant="token ? 'solid' : 'soft'"
             :disabled="!token"
             @click="saveToken"
           />
@@ -242,6 +271,7 @@ async function saveModel() {
           <UButton
             label="Save model"
             :loading="saving"
+            :variant="selectedModel === (settings?.aiModel || defaultModel) ? 'soft' : 'solid'"
             :disabled="selectedModel === (settings?.aiModel || defaultModel)"
             @click="saveModel"
           />
