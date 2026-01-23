@@ -2,14 +2,19 @@
 import { Analytics } from '@vercel/analytics/nuxt'
 
 const { user } = useUserSession()
+const colorMode = useColorMode()
+const colorScheme = usePreferredColorScheme()
+
+const color = computed(() => colorMode.value === 'dark' ? '#0b0809' : 'white')
+const href = computed(() => colorScheme.value === 'dark' ? '/logo-dark.svg' : '/logo-light.svg')
 
 useHead({
   meta: [
     { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-    { key: 'theme-color', name: 'theme-color', content: '#0b0809' }
+    { key: 'theme-color', name: 'theme-color', content: color }
   ],
   link: [
-    { rel: 'icon', href: '/favicon.ico' }
+    { rel: 'icon', type: 'image/svg+xml', href }
   ],
   htmlAttrs: {
     lang: 'en'

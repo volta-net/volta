@@ -152,7 +152,7 @@ const groups = computed(() => [{
     >
       <template #header>
         <NuxtLink to="/" class="mx-auto">
-          <AppIcon class="size-6" />
+          <AppIcon class="size-6 text-highlighted" />
         </NuxtLink>
       </template>
 
