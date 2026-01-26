@@ -30,6 +30,14 @@ const { data: issue, status, refresh: refreshIssue } = await useLazyFetch<IssueD
   immediate: !!issueUrl.value
 })
 
+// Refresh issue when window regains focus
+const focused = useWindowFocus()
+watch(focused, async (isFocused) => {
+  if (isFocused && issue.value) {
+    await refreshIssue()
+  }
+})
+
 // Fetch AI resolution analysis for issues (not PRs)
 const resolutionUrl = computed(() => {
   if (!issueUrl.value || props.item.pullRequest) return ''
