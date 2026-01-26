@@ -9,7 +9,6 @@ export interface GitHubUser {
   id: number
   login: string
   avatar_url?: string
-  type?: 'User' | 'Bot' | 'Organization'
 }
 
 // ============================================================================
