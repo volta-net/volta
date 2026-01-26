@@ -16,6 +16,25 @@ export default defineNuxtConfig({
     enabled: true
   },
 
+  app: {
+    head: {
+      title: 'Volta',
+      meta: [
+        { key: 'theme-color', name: 'theme-color', content: '#0b0809' },
+        { name: 'apple-mobile-web-app-capable', content: 'yes' },
+        { name: 'apple-mobile-web-app-status-bar-style', content: 'default' },
+        { name: 'apple-mobile-web-app-title', content: 'Volta' }
+      ],
+      link: [
+        { rel: 'icon', type: 'image/svg+xml', href: '/logo-dark.svg' },
+        { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' }
+      ],
+      htmlAttrs: {
+        lang: 'en'
+      }
+    }
+  },
+
   css: ['~/assets/css/main.css'],
 
   mdc: {

@@ -10,19 +10,11 @@ const href = computed(() => colorScheme.value === 'dark' ? '/logo-dark.svg' : '/
 
 useHead({
   meta: [
-    { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-    { key: 'theme-color', name: 'theme-color', content: color },
-    { name: 'apple-mobile-web-app-capable', content: 'yes' },
-    { name: 'apple-mobile-web-app-status-bar-style', content: 'default' },
-    { name: 'apple-mobile-web-app-title', content: 'Volta' }
+    { key: 'theme-color', name: 'theme-color', content: color }
   ],
   link: [
-    { rel: 'icon', type: 'image/svg+xml', href },
-    { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' }
-  ],
-  htmlAttrs: {
-    lang: 'en'
-  }
+    { rel: 'icon', type: 'image/svg+xml', href }
+  ]
 })
 
 const title = 'Volta'
