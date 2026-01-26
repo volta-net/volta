@@ -20,6 +20,11 @@ function shouldSkipSelfNotification(actorDbId: number, recipientDbId: number): b
   return actorDbId === recipientDbId
 }
 
+// Check if a user is a bot (e.g., dependabot, renovate-bot, etc.)
+function isBot(user: GitHubUser): boolean {
+  return user.type === 'Bot' || user.login.endsWith('[bot]')
+}
+
 interface NotificationData {
   userId: number
   type: NotificationType
@@ -464,6 +469,9 @@ export async function notifyIssueComment(
   repository: GitHubRepository,
   actor: GitHubUser
 ) {
+  // Skip notifications from bots
+  if (isBot(actor)) return
+
   // Get internal repository ID
   const dbRepoId = await getDbRepositoryId(repository.id)
   if (!dbRepoId) return
@@ -975,6 +983,9 @@ export async function notifyPRComment(
   repository: GitHubRepository,
   actor: GitHubUser
 ) {
+  // Skip notifications from bots
+  if (isBot(actor)) return
+
   // Get internal repository ID
   const dbRepoId = await getDbRepositoryId(repository.id)
   if (!dbRepoId) return
