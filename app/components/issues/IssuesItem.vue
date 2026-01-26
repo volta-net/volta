@@ -32,10 +32,16 @@ const resolutionConfig = computed(() => {
 
 // Review state (PRs only)
 const reviewState = useReviewState(computed(() => props.item))
+
+// Track container width to show tooltips only when labels are hidden (below @3xl: 896px)
+const containerRef = ref<HTMLElement | null>(null)
+const { width: containerWidth } = useElementSize(containerRef)
+const showBadgeTooltips = computed(() => containerWidth.value < 768)
 </script>
 
 <template>
   <button
+    ref="containerRef"
     type="button"
     class="w-full flex items-center gap-1.5 px-4 py-2.5 transition-colors text-left focus:outline-none @container"
     :class="[selected ? 'bg-elevated/50' : 'hover:bg-elevated/50']"
@@ -48,44 +54,65 @@ const reviewState = useReviewState(computed(() => props.item))
         <span class="text-muted">{{ item.repository?.fullName }}#{{ item.number }}</span> <span class="text-highlighted font-medium">{{ item.title }}</span>
       </span>
 
-      <!-- CI Status -->
-      <UBadge
-        v-if="ciStatusConfig"
-        :label="ciStatusConfig.label"
-        :icon="ciStatusConfig.icon"
-        variant="soft"
-        :ui="{ label: 'hidden @3xl:block', leadingIcon: [`text-${ciStatusConfig.color}`, ciStatusConfig.animate && 'animate-pulse'] }"
-        class="rounded-full px-1 @3xl:px-2"
-      />
-
       <!-- Review state (for PRs) -->
-      <UBadge
+      <UTooltip
         v-if="reviewState"
-        :label="reviewState.label"
-        variant="soft"
-        :ui="{ label: 'hidden @3xl:block' }"
-        class="rounded-full px-1 @3xl:px-2"
+        :text="reviewState.label"
+        :disabled="!showBadgeTooltips"
       >
-        <template #leading>
-          <UChip
-            :color="reviewState.color"
-            standalone
-            inset
-            size="md"
-            class="p-1"
-          />
-        </template>
-      </UBadge>
+        <UBadge
+          :label="reviewState.label"
+          variant="soft"
+          :ui="{ label: 'hidden @3xl:block' }"
+          class="rounded-full px-1 @3xl:px-2"
+        >
+          <template #leading>
+            <UChip
+              :color="reviewState.color"
+              standalone
+              inset
+              size="md"
+              class="p-1"
+            />
+          </template>
+        </UBadge>
+      </UTooltip>
+
+      <!-- CI Status -->
+      <UTooltip
+        v-if="ciStatusConfig"
+        :text="ciStatusConfig.label"
+        :disabled="!showBadgeTooltips"
+      >
+        <UBadge
+          :label="ciStatusConfig.label"
+          :icon="ciStatusConfig.icon"
+          variant="soft"
+          :ui="{
+            label: 'hidden @3xl:block',
+            leadingIcon: [`text-${ciStatusConfig.color}`, ciStatusConfig.animate && 'animate-pulse']
+          }"
+          class="rounded-full px-1 @3xl:px-2"
+        />
+      </UTooltip>
 
       <!-- AI Resolution Status (for issues only) -->
-      <UBadge
+      <UTooltip
         v-if="resolutionConfig"
-        :label="resolutionConfig.label"
-        :icon="resolutionConfig.icon"
-        variant="soft"
-        :ui="{ label: 'hidden @3xl:block', leadingIcon: `text-${resolutionConfig.color}` }"
-        class="rounded-full px-1 @3xl:px-2"
-      />
+        :text="String(resolutionConfig.label)"
+        :disabled="!showBadgeTooltips"
+      >
+        <UBadge
+          :label="resolutionConfig.label"
+          :icon="resolutionConfig.icon"
+          variant="soft"
+          :ui="{
+            label: 'hidden @3xl:block',
+            leadingIcon: `text-${resolutionConfig.color}`
+          }"
+          class="rounded-full px-1 @3xl:px-2"
+        />
+      </UTooltip>
     </div>
 
     <div class="flex items-center gap-1.5 ms-auto">
