@@ -2,9 +2,50 @@
 import type { NavigationMenuItem } from '@nuxt/ui'
 import { refDebounced } from '@vueuse/core'
 
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>
+}
+
 useSeoMeta({
   titleTemplate: '%s - Volta'
 })
+
+// Initialize app badge for dock notification count
+useAppBadge()
+
+// PWA install prompt
+const deferredPrompt = ref<BeforeInstallPromptEvent | null>(null)
+const isInstalled = ref(false)
+
+onMounted(() => {
+  // Check if already installed
+  if (window.matchMedia('(display-mode: standalone)').matches) {
+    isInstalled.value = true
+  }
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault()
+    deferredPrompt.value = e as BeforeInstallPromptEvent
+  })
+
+  window.addEventListener('appinstalled', () => {
+    isInstalled.value = true
+    deferredPrompt.value = null
+  })
+})
+
+async function installApp() {
+  if (!deferredPrompt.value) return
+
+  await deferredPrompt.value.prompt()
+  const { outcome } = await deferredPrompt.value.userChoice
+
+  if (outcome === 'accepted') {
+    isInstalled.value = true
+  }
+  deferredPrompt.value = null
+}
 
 const router = useRouter()
 
@@ -69,31 +110,43 @@ const searchedIssueItems = computed(() => {
   }))
 })
 
-const links = computed<NavigationMenuItem[][]>(() => [[{
-  label: 'Inbox',
-  icon: 'i-lucide-inbox',
-  to: '/inbox'
-}, {
-  label: 'Issues',
-  icon: 'i-lucide-circle-dot',
-  to: '/issues'
-}, {
-  label: 'Pull Requests',
-  icon: 'i-lucide-git-pull-request',
-  to: '/pulls'
-}, {
-  label: 'Settings',
-  icon: 'i-lucide-settings',
-  to: '/settings'
-}], [{
-  label: 'Search',
-  icon: 'i-lucide-search',
-  onSelect: () => { searchOpen.value = true }
-}, {
-  label: 'Favorites',
-  icon: 'i-lucide-star',
-  onSelect: () => { favoriteIssuesOpen.value = !favoriteIssuesOpen.value }
-}]])
+const links = computed<NavigationMenuItem[][]>(() => {
+  const secondaryItems: NavigationMenuItem[] = [{
+    label: 'Favorites',
+    icon: 'i-lucide-star',
+    onSelect: () => { favoriteIssuesOpen.value = !favoriteIssuesOpen.value }
+  }, {
+    label: 'Search',
+    icon: 'i-lucide-search',
+    onSelect: () => { searchOpen.value = true }
+  }]
+
+  if (deferredPrompt.value && !isInstalled.value) {
+    secondaryItems.unshift({
+      label: 'Add to dock',
+      icon: 'i-lucide-download',
+      onSelect: installApp
+    })
+  }
+
+  return [[{
+    label: 'Inbox',
+    icon: 'i-lucide-inbox',
+    to: '/inbox'
+  }, {
+    label: 'Issues',
+    icon: 'i-lucide-circle-dot',
+    to: '/issues'
+  }, {
+    label: 'Pull Requests',
+    icon: 'i-lucide-git-pull-request',
+    to: '/pulls'
+  }, {
+    label: 'Settings',
+    icon: 'i-lucide-settings',
+    to: '/settings'
+  }], secondaryItems]
+})
 
 const groups = computed(() => [{
   id: 'links',

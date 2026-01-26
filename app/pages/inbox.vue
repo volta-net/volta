@@ -21,6 +21,12 @@ const visibleNotifications = computed(() => notifications.value?.filter(n => !pe
 
 const unreadNotifications = computed(() => notifications.value?.filter(notification => !notification.read) ?? [])
 
+// Sync unread count to global state for app badge
+const unreadCount = useUnreadCount()
+watch(() => unreadNotifications.value.length, (count) => {
+  unreadCount.value = count
+}, { immediate: true })
+
 // Refetch notifications when window gains focus
 const focused = useWindowFocus()
 watch(focused, async (isFocused) => {
