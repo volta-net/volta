@@ -86,6 +86,14 @@ export default defineNuxtConfig({
 
   compatibilityDate: '2026-01-15',
 
+  nitro: {
+    otel: {
+      preset: {
+        name: 'node'
+      }
+    }
+  },
+
   hub: {
     db: 'postgresql'
   },
