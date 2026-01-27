@@ -89,7 +89,8 @@ export default defineNuxtConfig({
   nitro: {
     otel: {
       preset: {
-        name: 'node'
+        name: 'custom',
+        filePath: './instrumentation.ts'
       }
     }
   },

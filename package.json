@@ -31,6 +31,7 @@
     "@tiptap/pm": "^3.17.1",
     "@tiptap/vue-3": "^3.17.1",
     "@vercel/analytics": "^1.6.1",
+    "@vercel/otel": "^2.1.0",
     "@vueuse/core": "^14.1.0",
     "@vueuse/nuxt": "^14.1.0",
     "ai": "^6.0.49",
