@@ -1,5 +1,5 @@
 import { eq, and } from 'drizzle-orm'
-import { db, schema } from '@nuxthub/db'
+import { schema } from '@nuxthub/db'
 import { Octokit } from 'octokit'
 
 export default defineEventHandler(async (event) => {
@@ -19,7 +19,7 @@ export default defineEventHandler(async (event) => {
 
   // Find repository by owner/name
   const fullName = `${owner}/${name}`
-  const repository = await db.query.repositories.findFirst({
+  const repository = await dbs.query.repositories.findFirst({
     where: eq(schema.repositories.fullName, fullName)
   })
 
@@ -31,7 +31,7 @@ export default defineEventHandler(async (event) => {
   await requireRepositoryAccess(user.id, repository.id)
 
   // Find issue by repository + number (must be a PR)
-  const issue = await db.query.issues.findFirst({
+  const issue = await dbs.query.issues.findFirst({
     where: and(
       eq(schema.issues.repositoryId, repository.id),
       eq(schema.issues.number, issueNumber)
@@ -68,13 +68,13 @@ export default defineEventHandler(async (event) => {
   }
 
   // Find user in database by login
-  const reviewerUser = await db.query.users.findFirst({
+  const reviewerUser = await dbs.query.users.findFirst({
     where: eq(schema.users.login, body.login)
   })
 
   if (reviewerUser) {
     // Add to database (ignore if already exists)
-    await db.insert(schema.issueRequestedReviewers)
+    await dbs.insert(schema.issueRequestedReviewers)
       .values({ issueId: issue.id, userId: reviewerUser.id })
       .onConflictDoNothing()
   }

@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm'
-import { db, schema } from '@nuxthub/db'
+import { schema } from '@nuxthub/db'
 import { start } from 'workflow/api'
 import { syncRepositoryWorkflow } from '../../../../workflows/syncRepository'
 
@@ -19,7 +19,7 @@ export default defineEventHandler(async (event) => {
 
   // Check if already syncing (prevent double-sync)
   const fullName = `${owner}/${repo}`
-  const existingRepo = await db.query.repositories.findFirst({
+  const existingRepo = await dbs.query.repositories.findFirst({
     where: eq(schema.repositories.fullName, fullName),
     columns: { id: true, lastSyncedAt: true, syncing: true }
   })
@@ -36,7 +36,7 @@ export default defineEventHandler(async (event) => {
   // Set syncing=true BEFORE starting workflow to avoid race condition
   // This ensures the client will see syncing=true after refresh
   if (existingRepo) {
-    await db.update(schema.repositories)
+    await dbs.update(schema.repositories)
       .set({ syncing: true })
       .where(eq(schema.repositories.id, existingRepo.id))
   }

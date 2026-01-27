@@ -1,5 +1,5 @@
 import { eq, and } from 'drizzle-orm'
-import { db, schema } from '@nuxthub/db'
+import { schema } from '@nuxthub/db'
 
 export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
@@ -13,7 +13,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Fetch issue to check access
-  const issue = await db.query.issues.findFirst({
+  const issue = await dbs.query.issues.findFirst({
     where: eq(schema.issues.id, issueId)
   })
 

@@ -1,5 +1,5 @@
 import { and, inArray, eq, desc } from 'drizzle-orm'
-import { db, schema } from '@nuxthub/db'
+import { schema } from '@nuxthub/db'
 
 /**
  * Get issues/PRs for the current user's favorite repositories
@@ -30,7 +30,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Fetch issues
-  const issues = await db.query.issues.findMany({
+  const issues = await dbs.query.issues.findMany({
     where: and(...conditions),
     orderBy: desc(schema.issues.updatedAt),
     with: {

@@ -1,5 +1,5 @@
 import { and, eq, inArray, sql, gte } from 'drizzle-orm'
-import { db, schema } from '@nuxthub/db'
+import { schema } from '@nuxthub/db'
 
 interface WeeklyStats {
   week: string

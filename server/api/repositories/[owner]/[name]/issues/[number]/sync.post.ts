@@ -1,5 +1,5 @@
 import { eq, and } from 'drizzle-orm'
-import { db, schema } from '@nuxthub/db'
+import { schema } from '@nuxthub/db'
 import { Octokit } from 'octokit'
 import { ensureUser } from '../../../../../../utils/users'
 import { getDbLabelId } from '../../../../../../utils/sync'
@@ -21,7 +21,7 @@ export default defineEventHandler(async (event) => {
 
   // Find repository by owner/name
   const fullName = `${owner}/${name}`
-  const repository = await db.query.repositories.findFirst({
+  const repository = await dbs.query.repositories.findFirst({
     where: eq(schema.repositories.fullName, fullName)
   })
 
@@ -33,7 +33,7 @@ export default defineEventHandler(async (event) => {
   await requireRepositoryAccess(user.id, repository.id)
 
   // Fetch issue with relations
-  const issue = await db.query.issues.findFirst({
+  const issue = await dbs.query.issues.findFirst({
     where: and(
       eq(schema.issues.repositoryId, repository.id),
       eq(schema.issues.number, issueNumber)
@@ -54,7 +54,7 @@ export default defineEventHandler(async (event) => {
   await syncIssueFromGitHub(accessToken, owner, name, issue.id, issueNumber, issue.pullRequest)
 
   // Re-fetch issue with fresh data and all relations
-  const freshIssue = await db.query.issues.findFirst({
+  const freshIssue = await dbs.query.issues.findFirst({
     where: eq(schema.issues.id, issue.id),
     with: {
       repository: true,
@@ -85,7 +85,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Check if user is subscribed to this issue
-  const subscription = await db.query.issueSubscriptions.findFirst({
+  const subscription = await dbs.query.issueSubscriptions.findFirst({
     where: and(
       eq(schema.issueSubscriptions.issueId, issue.id),
       eq(schema.issueSubscriptions.userId, user.id)
@@ -139,7 +139,7 @@ async function syncIssueFromGitHub(
     }
 
     // Update PR data
-    await db.update(schema.issues).set({
+    await dbs.update(schema.issues).set({
       title: prData.title,
       body: prData.body,
       state: prData.state,
@@ -210,7 +210,7 @@ async function syncIssueFromGitHub(
     }
 
     // Update issue data
-    await db.update(schema.issues).set({
+    await dbs.update(schema.issues).set({
       title: issueData.title,
       body: issueData.body,
       state: issueData.state,
@@ -237,7 +237,7 @@ async function syncIssueFromGitHub(
   }
 
   // Mark as synced
-  await db.update(schema.issues).set({ synced: true, syncedAt: new Date() }).where(eq(schema.issues.id, issueId))
+  await dbs.update(schema.issues).set({ synced: true, syncedAt: new Date() }).where(eq(schema.issues.id, issueId))
 }
 
 // Helper functions
@@ -265,7 +265,7 @@ async function syncAssignees(issueId: number, assignees: { id: number, login: st
 
   for (const existing of existingAssignees) {
     if (!newDbIds.has(existing.userId)) {
-      await db.delete(schema.issueAssignees).where(
+      await dbs.delete(schema.issueAssignees).where(
         and(
           eq(schema.issueAssignees.issueId, issueId),
           eq(schema.issueAssignees.userId, existing.userId)
@@ -276,7 +276,7 @@ async function syncAssignees(issueId: number, assignees: { id: number, login: st
 
   for (const [_githubId, dbUserId] of newAssigneeDbIds) {
     if (!existingDbIds.has(dbUserId)) {
-      await db.insert(schema.issueAssignees)
+      await dbs.insert(schema.issueAssignees)
         .values({ issueId, userId: dbUserId })
         .onConflictDoNothing()
     }
@@ -301,7 +301,7 @@ async function syncLabels(issueId: number, labelGithubIds: number[]) {
 
   for (const existing of existingLabels) {
     if (!newDbIds.has(existing.labelId)) {
-      await db.delete(schema.issueLabels).where(
+      await dbs.delete(schema.issueLabels).where(
         and(
           eq(schema.issueLabels.issueId, issueId),
           eq(schema.issueLabels.labelId, existing.labelId)
@@ -313,7 +313,7 @@ async function syncLabels(issueId: number, labelGithubIds: number[]) {
   for (const dbLabelId of newDbIds) {
     if (!existingDbIds.has(dbLabelId)) {
       try {
-        await db.insert(schema.issueLabels)
+        await dbs.insert(schema.issueLabels)
           .values({ issueId, labelId: dbLabelId })
           .onConflictDoNothing()
       } catch {
@@ -347,7 +347,7 @@ async function syncRequestedReviewers(issueId: number, reviewers: { id: number, 
 
   for (const existing of existingReviewers) {
     if (!newDbIds.has(existing.userId)) {
-      await db.delete(schema.issueRequestedReviewers).where(
+      await dbs.delete(schema.issueRequestedReviewers).where(
         and(
           eq(schema.issueRequestedReviewers.issueId, issueId),
           eq(schema.issueRequestedReviewers.userId, existing.userId)
@@ -358,7 +358,7 @@ async function syncRequestedReviewers(issueId: number, reviewers: { id: number, 
 
   for (const [_githubId, dbUserId] of newReviewerDbIds) {
     if (!existingDbIds.has(dbUserId)) {
-      await db.insert(schema.issueRequestedReviewers)
+      await dbs.insert(schema.issueRequestedReviewers)
         .values({ issueId, userId: dbUserId })
         .onConflictDoNothing()
     }
@@ -392,14 +392,14 @@ async function syncComments(octokit: Octokit, owner: string, repo: string, issue
       updatedAt: new Date(comment.updated_at)
     }
 
-    const existing = await db.query.issueComments.findFirst({
+    const existing = await dbs.query.issueComments.findFirst({
       where: eq(schema.issueComments.githubId, comment.id)
     })
 
     if (existing) {
-      await db.update(schema.issueComments).set(commentData).where(eq(schema.issueComments.id, existing.id))
+      await dbs.update(schema.issueComments).set(commentData).where(eq(schema.issueComments.id, existing.id))
     } else {
-      await db.insert(schema.issueComments).values({
+      await dbs.insert(schema.issueComments).values({
         githubId: comment.id,
         ...commentData
       })
@@ -435,14 +435,14 @@ async function syncReviews(octokit: Octokit, owner: string, repo: string, prNumb
       submittedAt: review.submitted_at ? new Date(review.submitted_at) : null
     }
 
-    const existing = await db.query.issueReviews.findFirst({
+    const existing = await dbs.query.issueReviews.findFirst({
       where: eq(schema.issueReviews.githubId, review.id)
     })
 
     if (existing) {
-      await db.update(schema.issueReviews).set(reviewData).where(eq(schema.issueReviews.id, existing.id))
+      await dbs.update(schema.issueReviews).set(reviewData).where(eq(schema.issueReviews.id, existing.id))
     } else {
-      await db.insert(schema.issueReviews).values({
+      await dbs.insert(schema.issueReviews).values({
         githubId: review.id,
         ...reviewData
       })
@@ -470,7 +470,7 @@ async function syncReviewComments(octokit: Octokit, owner: string, repo: string,
 
     let reviewId: number | null = null
     if (comment.pull_request_review_id) {
-      const [review] = await db.select({ id: schema.issueReviews.id })
+      const [review] = await dbs.select({ id: schema.issueReviews.id })
         .from(schema.issueReviews)
         .where(eq(schema.issueReviews.githubId, comment.pull_request_review_id))
       reviewId = review?.id ?? null
@@ -491,14 +491,14 @@ async function syncReviewComments(octokit: Octokit, owner: string, repo: string,
       updatedAt: new Date(comment.updated_at)
     }
 
-    const existing = await db.query.issueReviewComments.findFirst({
+    const existing = await dbs.query.issueReviewComments.findFirst({
       where: eq(schema.issueReviewComments.githubId, comment.id)
     })
 
     if (existing) {
-      await db.update(schema.issueReviewComments).set(commentData).where(eq(schema.issueReviewComments.id, existing.id))
+      await dbs.update(schema.issueReviewComments).set(commentData).where(eq(schema.issueReviewComments.id, existing.id))
     } else {
-      await db.insert(schema.issueReviewComments).values({
+      await dbs.insert(schema.issueReviewComments).values({
         githubId: comment.id,
         ...commentData
       })

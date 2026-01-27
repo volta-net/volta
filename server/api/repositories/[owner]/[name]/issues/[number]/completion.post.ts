@@ -1,12 +1,12 @@
 import { streamText } from 'ai'
 import { eq, and, inArray, desc, ne, isNotNull } from 'drizzle-orm'
-import { db, schema } from '@nuxthub/db'
+import { schema } from '@nuxthub/db'
 
 /**
  * Fetch user's recent comments from other issues to analyze their writing style
  */
 async function getUserStyleExamples(userId: number, excludeIssueId: number, limit = 10): Promise<string[]> {
-  const recentComments = await db.query.issueComments.findMany({
+  const recentComments = await dbs.query.issueComments.findMany({
     where: and(
       eq(schema.issueComments.userId, userId),
       ne(schema.issueComments.issueId, excludeIssueId),
@@ -78,7 +78,7 @@ export default defineEventHandler(async (event) => {
 
   // Find repository by owner/name
   const fullName = `${owner}/${name}`
-  const repository = await db.query.repositories.findFirst({
+  const repository = await dbs.query.repositories.findFirst({
     where: eq(schema.repositories.fullName, fullName)
   })
 
@@ -90,7 +90,7 @@ export default defineEventHandler(async (event) => {
   await requireRepositoryAccess(user.id, repository.id)
 
   // Find issue by repository + number with labels and comments
-  const issue = await db.query.issues.findFirst({
+  const issue = await dbs.query.issues.findFirst({
     where: and(
       eq(schema.issues.repositoryId, repository.id),
       eq(schema.issues.number, issueNumber)
@@ -116,7 +116,7 @@ export default defineEventHandler(async (event) => {
 
   // Get maintainer user IDs (collaborators with write access or higher)
   const maintainerPermissions = ['admin', 'maintain', 'write'] as const
-  const collaborators = await db.query.repositoryCollaborators.findMany({
+  const collaborators = await dbs.query.repositoryCollaborators.findMany({
     where: and(
       eq(schema.repositoryCollaborators.repositoryId, repository.id),
       inArray(schema.repositoryCollaborators.permission, [...maintainerPermissions])

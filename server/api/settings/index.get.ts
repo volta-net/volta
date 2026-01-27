@@ -1,10 +1,10 @@
 import { eq } from 'drizzle-orm'
-import { db, schema } from '@nuxthub/db'
+import { schema } from '@nuxthub/db'
 
 export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
 
-  const dbUser = await db.query.users.findFirst({
+  const dbUser = await dbs.query.users.findFirst({
     where: eq(schema.users.id, user.id)
   })
 

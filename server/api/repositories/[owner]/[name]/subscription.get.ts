@@ -1,5 +1,5 @@
 import { eq, and } from 'drizzle-orm'
-import { db, schema } from '@nuxthub/db'
+import { schema } from '@nuxthub/db'
 
 export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
@@ -13,7 +13,7 @@ export default defineEventHandler(async (event) => {
   const fullName = `${owner}/${name}`
 
   // Find the repository
-  const repository = await db.query.repositories.findFirst({
+  const repository = await dbs.query.repositories.findFirst({
     where: eq(schema.repositories.fullName, fullName)
   })
 
@@ -32,7 +32,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Get user's subscription
-  const subscription = await db.query.repositorySubscriptions.findFirst({
+  const subscription = await dbs.query.repositorySubscriptions.findFirst({
     where: and(
       eq(schema.repositorySubscriptions.repositoryId, repository.id),
       eq(schema.repositorySubscriptions.userId, user.id)

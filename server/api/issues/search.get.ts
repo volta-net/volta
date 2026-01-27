@@ -1,5 +1,5 @@
 import { and, inArray, eq, desc, ilike, or, sql } from 'drizzle-orm'
-import { db, schema } from '@nuxthub/db'
+import { schema } from '@nuxthub/db'
 
 /**
  * Search issues across all repositories the user has access to
@@ -36,7 +36,7 @@ export default defineEventHandler(async (event) => {
 
   // Filter by specific repository if provided
   if (repo) {
-    const repository = await db.query.repositories.findFirst({
+    const repository = await dbs.query.repositories.findFirst({
       where: eq(schema.repositories.fullName, repo),
       columns: { id: true }
     })
@@ -56,7 +56,7 @@ export default defineEventHandler(async (event) => {
     conditions.push(ilike(schema.issues.title, `%${q}%`))
   }
 
-  const issues = await db.query.issues.findMany({
+  const issues = await dbs.query.issues.findMany({
     where: and(...conditions),
     orderBy: desc(schema.issues.updatedAt),
     limit,

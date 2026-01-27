@@ -1,11 +1,11 @@
 import { eq, and } from 'drizzle-orm'
-import { db, schema } from '@nuxthub/db'
+import { schema } from '@nuxthub/db'
 
 /**
  * Check if a user is a collaborator (has write access) to a repository
  */
 export async function isRepositoryCollaborator(userId: number, repositoryId: number): Promise<boolean> {
-  const collaborator = await db.query.repositoryCollaborators.findFirst({
+  const collaborator = await dbs.query.repositoryCollaborators.findFirst({
     where: and(
       eq(schema.repositoryCollaborators.repositoryId, repositoryId),
       eq(schema.repositoryCollaborators.userId, userId)
@@ -73,7 +73,7 @@ export async function ensureUser(user: GitHubUser): Promise<number | null> {
   try {
     // Use upsert to avoid race conditions when multiple webhooks process the same user
     // Only update shadow users (registered = false) to preserve registered user data
-    const [result] = await db.insert(schema.users).values({
+    const [result] = await dbs.insert(schema.users).values({
       githubId: user.id,
       login: user.login,
       avatarUrl: user.avatar_url,

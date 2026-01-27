@@ -1,5 +1,5 @@
 import { eq, desc, and } from 'drizzle-orm'
-import { db, schema } from '@nuxthub/db'
+import { schema } from '@nuxthub/db'
 
 export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
@@ -14,7 +14,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Use query API with relations to populate nested objects
-  const notifications = await db.query.notifications.findMany({
+  const notifications = await dbs.query.notifications.findMany({
     where: and(...conditions),
     orderBy: desc(schema.notifications.createdAt),
     with: {

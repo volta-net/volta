@@ -1,5 +1,5 @@
 import { eq, and } from 'drizzle-orm'
-import { db, schema } from '@nuxthub/db'
+import { schema } from '@nuxthub/db'
 import { Octokit } from 'octokit'
 import { ensureUser } from './users'
 
@@ -71,7 +71,7 @@ export async function updateLinkedIssues(prId: number, repositoryId: number, lin
   // Remove links that no longer exist
   for (const currentIssueId of currentIssueIds) {
     if (!newIssueIds.has(currentIssueId)) {
-      await db.delete(schema.issueLinkedPrs).where(and(
+      await dbs.delete(schema.issueLinkedPrs).where(and(
         eq(schema.issueLinkedPrs.prId, prId),
         eq(schema.issueLinkedPrs.issueId, currentIssueId)
       ))
@@ -81,7 +81,7 @@ export async function updateLinkedIssues(prId: number, repositoryId: number, lin
   // Add new links
   for (const newIssueId of newIssueIds) {
     if (!currentIssueIds.has(newIssueId)) {
-      await db.insert(schema.issueLinkedPrs)
+      await dbs.insert(schema.issueLinkedPrs)
         .values({ prId, issueId: newIssueId })
         .onConflictDoNothing()
     }
@@ -92,7 +92,7 @@ export async function updateLinkedIssues(prId: number, repositoryId: number, lin
  * Clear all linked issues when a PR is deleted
  */
 export async function clearLinkedIssues(prId: number) {
-  await db.delete(schema.issueLinkedPrs).where(eq(schema.issueLinkedPrs.prId, prId))
+  await dbs.delete(schema.issueLinkedPrs).where(eq(schema.issueLinkedPrs.prId, prId))
 }
 
 // Helper: ensure type exists in the database
@@ -105,7 +105,7 @@ export async function ensureType(repositoryId: number, type: { id: number, name:
   }
 
   // Use upsert to avoid race conditions
-  const [result] = await db.insert(schema.types).values({
+  const [result] = await dbs.insert(schema.types).values({
     githubId: type.id,
     repositoryId,
     ...typeData
@@ -120,7 +120,7 @@ export async function ensureType(repositoryId: number, type: { id: number, name:
 // Helper: subscribe a user to an issue (idempotent)
 export async function subscribeUserToIssue(issueId: number, userId: number) {
   try {
-    await db.insert(schema.issueSubscriptions)
+    await dbs.insert(schema.issueSubscriptions)
       .values({ issueId, userId })
       .onConflictDoNothing()
   } catch (error) {
@@ -196,10 +196,10 @@ export async function syncRepositoryInfo(accessToken: string, owner: string, rep
 
   // Check if installation exists by account ID, create if not
   const accountId = repoData.owner.id
-  let [installation] = await db.select().from(schema.installations).where(eq(schema.installations.accountId, accountId))
+  let [installation] = await dbs.select().from(schema.installations).where(eq(schema.installations.accountId, accountId))
 
   if (!installation) {
-    [installation] = await db.insert(schema.installations).values({
+    [installation] = await dbs.insert(schema.installations).values({
       githubId: accountId, // Use account ID as GitHub installation ID for now
       accountId,
       accountLogin: repoData.owner.login,
@@ -209,10 +209,10 @@ export async function syncRepositoryInfo(accessToken: string, owner: string, rep
   }
 
   // Check if repository exists by GitHub ID, create or update
-  let [repository] = await db.select().from(schema.repositories).where(eq(schema.repositories.githubId, repoData.id))
+  let [repository] = await dbs.select().from(schema.repositories).where(eq(schema.repositories.githubId, repoData.id))
 
   if (!repository) {
-    [repository] = await db.insert(schema.repositories).values({
+    [repository] = await dbs.insert(schema.repositories).values({
       githubId: repoData.id,
       installationId: installation!.id,
       name: repoData.name,
@@ -248,7 +248,7 @@ export async function syncLabels(accessToken: string, owner: string, repo: strin
     }
 
     // Use upsert to avoid race conditions
-    await db.insert(schema.labels).values({
+    await dbs.insert(schema.labels).values({
       githubId: label.id,
       repositoryId,
       ...labelData
@@ -285,7 +285,7 @@ export async function syncMilestones(accessToken: string, owner: string, repo: s
     }
 
     // Use upsert to avoid race conditions
-    await db.insert(schema.milestones).values({
+    await dbs.insert(schema.milestones).values({
       githubId: milestone.id,
       repositoryId,
       number: milestone.number,
@@ -320,7 +320,7 @@ export async function syncTypes(accessToken: string, owner: string, repo: string
       }
 
       // Use upsert to avoid race conditions
-      await db.insert(schema.types).values({
+      await dbs.insert(schema.types).values({
         githubId: type.id,
         repositoryId,
         ...typeData
@@ -405,7 +405,7 @@ export async function syncIssuesOnly(accessToken: string, owner: string, repo: s
     }
 
     // Use upsert to avoid race conditions (compound key: repositoryId + number)
-    const [result] = await db.insert(schema.issues)
+    const [result] = await dbs.insert(schema.issues)
       .values(issueData)
       .onConflictDoUpdate({
         target: [schema.issues.repositoryId, schema.issues.number],
@@ -433,7 +433,7 @@ export async function syncIssuesOnly(accessToken: string, owner: string, repo: s
     await syncIssueComments(octokit, owner, repo, issue.number, issueId)
 
     // Mark as synced
-    await db.update(schema.issues).set({ synced: true, syncedAt: new Date() }).where(eq(schema.issues.id, issueId))
+    await dbs.update(schema.issues).set({ synced: true, syncedAt: new Date() }).where(eq(schema.issues.id, issueId))
   }
 
   return issueCount
@@ -501,7 +501,7 @@ export async function syncPullRequestsOnly(accessToken: string, owner: string, r
     }
 
     // Use upsert to avoid race conditions (compound key: repositoryId + number)
-    const [result] = await db.insert(schema.issues)
+    const [result] = await dbs.insert(schema.issues)
       .values(prData)
       .onConflictDoUpdate({
         target: [schema.issues.repositoryId, schema.issues.number],
@@ -547,7 +547,7 @@ export async function syncPullRequestsOnly(accessToken: string, owner: string, r
     await updateLinkedIssues(prId, repositoryId, linkedIssueNumbers)
 
     // Mark as synced
-    await db.update(schema.issues).set({ synced: true, syncedAt: new Date() }).where(eq(schema.issues.id, prId))
+    await dbs.update(schema.issues).set({ synced: true, syncedAt: new Date() }).where(eq(schema.issues.id, prId))
   }
 
   return prCount
@@ -581,7 +581,7 @@ async function syncIssueAssignees(issueId: number, assignees: { id: number, logi
   // Delete removed assignees
   for (const existing of existingAssignees) {
     if (!newDbIds.has(existing.userId)) {
-      await db.delete(schema.issueAssignees).where(
+      await dbs.delete(schema.issueAssignees).where(
         and(
           eq(schema.issueAssignees.issueId, issueId),
           eq(schema.issueAssignees.userId, existing.userId)
@@ -593,7 +593,7 @@ async function syncIssueAssignees(issueId: number, assignees: { id: number, logi
   // Insert new assignees
   for (const [_githubId, dbUserId] of newAssigneeDbIds) {
     if (!existingIds.has(dbUserId)) {
-      await db.insert(schema.issueAssignees)
+      await dbs.insert(schema.issueAssignees)
         .values({ issueId, userId: dbUserId })
         .onConflictDoNothing()
     }
@@ -625,7 +625,7 @@ async function syncIssueLabels(issueId: number, labelGithubIds: number[]) {
   // Delete removed labels
   for (const existing of existingLabels) {
     if (!newDbIds.has(existing.labelId)) {
-      await db.delete(schema.issueLabels).where(
+      await dbs.delete(schema.issueLabels).where(
         and(
           eq(schema.issueLabels.issueId, issueId),
           eq(schema.issueLabels.labelId, existing.labelId)
@@ -637,7 +637,7 @@ async function syncIssueLabels(issueId: number, labelGithubIds: number[]) {
   // Insert new labels
   for (const dbLabelId of newDbIds) {
     if (!existingDbIds.has(dbLabelId)) {
-      await db.insert(schema.issueLabels)
+      await dbs.insert(schema.issueLabels)
         .values({ issueId, labelId: dbLabelId })
         .onConflictDoNothing()
     }
@@ -672,7 +672,7 @@ async function syncIssueRequestedReviewers(issueId: number, reviewers: { id: num
   // Delete removed reviewers
   for (const existing of existingReviewers) {
     if (!newDbIds.has(existing.userId)) {
-      await db.delete(schema.issueRequestedReviewers).where(
+      await dbs.delete(schema.issueRequestedReviewers).where(
         and(
           eq(schema.issueRequestedReviewers.issueId, issueId),
           eq(schema.issueRequestedReviewers.userId, existing.userId)
@@ -684,7 +684,7 @@ async function syncIssueRequestedReviewers(issueId: number, reviewers: { id: num
   // Insert new reviewers
   for (const [_githubId, dbUserId] of newReviewerDbIds) {
     if (!existingIds.has(dbUserId)) {
-      await db.insert(schema.issueRequestedReviewers)
+      await dbs.insert(schema.issueRequestedReviewers)
         .values({ issueId, userId: dbUserId })
         .onConflictDoNothing()
     }
@@ -729,7 +729,7 @@ async function syncIssueComments(octokit: Octokit, owner: string, repo: string, 
       }
 
       // Use upsert to avoid race conditions
-      await db.insert(schema.issueComments).values({
+      await dbs.insert(schema.issueComments).values({
         githubId: comment.id,
         ...commentData
       }).onConflictDoUpdate({
@@ -779,7 +779,7 @@ async function syncPRReviews(octokit: Octokit, owner: string, repo: string, prNu
       }
 
       // Use upsert to avoid race conditions
-      await db.insert(schema.issueReviews).values({
+      await dbs.insert(schema.issueReviews).values({
         githubId: review.id,
         ...reviewData
       }).onConflictDoUpdate({
@@ -820,7 +820,7 @@ async function syncPRReviewComments(octokit: Octokit, owner: string, repo: strin
       // Get review ID if present
       let reviewId: number | null = null
       if (comment.pull_request_review_id) {
-        const [review] = await db.select({ id: schema.issueReviews.id })
+        const [review] = await dbs.select({ id: schema.issueReviews.id })
           .from(schema.issueReviews)
           .where(eq(schema.issueReviews.githubId, comment.pull_request_review_id))
         reviewId = review?.id ?? null
@@ -842,7 +842,7 @@ async function syncPRReviewComments(octokit: Octokit, owner: string, repo: strin
       }
 
       // Use upsert to avoid race conditions
-      await db.insert(schema.issueReviewComments).values({
+      await dbs.insert(schema.issueReviewComments).values({
         githubId: comment.id,
         ...commentData
       }).onConflictDoUpdate({
@@ -885,7 +885,7 @@ async function syncPRCheckRuns(octokit: Octokit, owner: string, repo: string, re
       }
 
       // Use upsert to avoid race conditions
-      await db.insert(schema.checkRuns).values({
+      await dbs.insert(schema.checkRuns).values({
         githubId: check.id,
         ...checkData
       }).onConflictDoUpdate({
@@ -939,7 +939,7 @@ async function syncPRCommitStatuses(octokit: Octokit, owner: string, repo: strin
       }
 
       // Use upsert to avoid race conditions
-      await db.insert(schema.commitStatuses).values({
+      await dbs.insert(schema.commitStatuses).values({
         githubId: status.id,
         ...statusData
       }).onConflictDoUpdate({
@@ -958,7 +958,7 @@ async function syncPRCommitStatuses(octokit: Octokit, owner: string, repo: strin
 }
 
 export async function updateRepositoryLastSynced(repositoryId: number) {
-  await db.update(schema.repositories).set({
+  await dbs.update(schema.repositories).set({
     lastSyncedAt: new Date(),
     updatedAt: new Date()
   }).where(eq(schema.repositories.id, repositoryId))
@@ -996,7 +996,7 @@ export async function verifyAndAddCurrentUserAccess(
 
     // Add user as collaborator with their permission level
     const dbPermission = permission as 'admin' | 'maintain' | 'write'
-    await db.insert(schema.repositoryCollaborators)
+    await dbs.insert(schema.repositoryCollaborators)
       .values({ repositoryId, userId, permission: dbPermission })
       .onConflictDoUpdate({
         target: [schema.repositoryCollaborators.repositoryId, schema.repositoryCollaborators.userId],
@@ -1063,7 +1063,7 @@ export async function syncCollaborators(accessToken: string, owner: string, repo
     // Delete collaborators that are no longer maintainers
     for (const existing of existingCollaborators) {
       if (!newCollaboratorDbIds.has(existing.userId)) {
-        await db.delete(schema.repositoryCollaborators).where(
+        await dbs.delete(schema.repositoryCollaborators).where(
           and(
             eq(schema.repositoryCollaborators.repositoryId, repositoryId),
             eq(schema.repositoryCollaborators.userId, existing.userId)
@@ -1086,7 +1086,7 @@ export async function syncCollaborators(accessToken: string, owner: string, repo
             : 'write'
 
         // Insert or update collaborator
-        await db.insert(schema.repositoryCollaborators)
+        await dbs.insert(schema.repositoryCollaborators)
           .values({ repositoryId, userId: dbUserId, permission })
           .onConflictDoUpdate({
             target: [schema.repositoryCollaborators.repositoryId, schema.repositoryCollaborators.userId],
@@ -1095,7 +1095,7 @@ export async function syncCollaborators(accessToken: string, owner: string, repo
 
         // Subscribe if not already subscribed
         if (!subscribedUserIds.has(dbUserId)) {
-          await db.insert(schema.repositorySubscriptions).values({
+          await dbs.insert(schema.repositorySubscriptions).values({
             userId: dbUserId,
             repositoryId,
             issues: true,

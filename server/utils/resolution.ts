@@ -2,7 +2,7 @@ import { generateText, Output, type LanguageModel } from 'ai'
 import type { GatewayModelId } from '@ai-sdk/gateway'
 import { z } from 'zod'
 import { eq, and, inArray } from 'drizzle-orm'
-import { db, schema } from '@nuxthub/db'
+import { schema } from '@nuxthub/db'
 import type { ResolutionStatus } from '@nuxthub/db/schema'
 import type { GitHubRepository } from '../types/github'
 import { getDbRepositoryId } from './users'
@@ -182,7 +182,7 @@ If a good answer was provided and no follow-up for 7+ days, use "likely_resolved
  */
 export async function analyzeAndStoreResolution(issueId: number, userGateway: GatewayFn, modelId: GatewayModelId = DEFAULT_AI_MODEL): Promise<AnalysisResult | null> {
   // Fetch issue with comments
-  const issue = await db.query.issues.findFirst({
+  const issue = await dbs.query.issues.findFirst({
     where: eq(schema.issues.id, issueId),
     with: {
       comments: {
@@ -211,7 +211,7 @@ export async function analyzeAndStoreResolution(issueId: number, userGateway: Ga
 
   // Get maintainer IDs for this repository
   const maintainerPermissions = ['admin', 'maintain', 'write'] as const
-  const collaborators = await db.query.repositoryCollaborators.findMany({
+  const collaborators = await dbs.query.repositoryCollaborators.findMany({
     where: and(
       eq(schema.repositoryCollaborators.repositoryId, issue.repositoryId),
       inArray(schema.repositoryCollaborators.permission, [...maintainerPermissions])
@@ -243,7 +243,7 @@ export async function analyzeAndStoreResolution(issueId: number, userGateway: Ga
   )
 
   // Store result in database
-  await db.update(schema.issues).set({
+  await dbs.update(schema.issues).set({
     resolutionStatus: result.status,
     resolutionAnsweredById: result.answeredByUserId,
     resolutionAnswerCommentId: result.answerCommentId,
@@ -295,7 +295,7 @@ export function invalidateResolutionCache(
     const dbIssueId = await getDbIssueId(dbRepoId, issue.number)
     if (!dbIssueId) return
 
-    await db.update(schema.issues).set({
+    await dbs.update(schema.issues).set({
       resolutionAnalyzedAt: null
     }).where(eq(schema.issues.id, dbIssueId))
   })().catch((err) => {

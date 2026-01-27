@@ -1,7 +1,7 @@
 import { createGateway } from '@ai-sdk/gateway'
 import type { GatewayModelId } from '@ai-sdk/gateway'
 import { eq } from 'drizzle-orm'
-import { db, schema } from '@nuxthub/db'
+import { schema } from '@nuxthub/db'
 import { decrypt, isEncrypted } from './encryption'
 
 // Default AI model to use when none is configured
@@ -11,7 +11,7 @@ export const DEFAULT_AI_MODEL = 'anthropic/claude-sonnet-4.5' as GatewayModelId
  * Get the user's AI settings from the database
  */
 export async function getUserAiSettings(userId: number): Promise<{ token: string | null, model: GatewayModelId }> {
-  const user = await db.query.users.findFirst({
+  const user = await dbs.query.users.findFirst({
     where: eq(schema.users.id, userId),
     columns: {
       aiGatewayToken: true,

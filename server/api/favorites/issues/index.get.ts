@@ -1,5 +1,5 @@
 import { eq, and, inArray } from 'drizzle-orm'
-import { db, schema } from '@nuxthub/db'
+import { schema } from '@nuxthub/db'
 
 export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
@@ -12,12 +12,12 @@ export default defineEventHandler(async (event) => {
     .where(eq(schema.repositoryCollaborators.userId, userId))
 
   // Get favorites with relations, filtered to accessible repositories
-  const favorites = await db.query.favoriteIssues.findMany({
+  const favorites = await dbs.query.favoriteIssues.findMany({
     where: and(
       eq(schema.favoriteIssues.userId, userId),
       inArray(
         schema.favoriteIssues.issueId,
-        db.select({ issueId: schema.issues.id })
+        dbs.select({ issueId: schema.issues.id })
           .from(schema.issues)
           .where(inArray(schema.issues.repositoryId, accessibleRepoIds))
       )

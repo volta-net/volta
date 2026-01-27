@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm'
-import { db, schema } from '@nuxthub/db'
+import { schema } from '@nuxthub/db'
 
 export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
@@ -14,7 +14,7 @@ export default defineEventHandler(async (event) => {
   const fullName = `${owner}/${name}`
 
   // Find the repository
-  const repository = await db.query.repositories.findFirst({
+  const repository = await dbs.query.repositories.findFirst({
     where: eq(schema.repositories.fullName, fullName)
   })
 
@@ -26,7 +26,7 @@ export default defineEventHandler(async (event) => {
   await requireRepositoryAccess(user.id, repository.id)
 
   // Delete the repository (cascade will handle issues, PRs, labels, milestones)
-  await db.delete(schema.repositories).where(eq(schema.repositories.id, repository.id))
+  await dbs.delete(schema.repositories).where(eq(schema.repositories.id, repository.id))
 
   return { success: true, repository: fullName }
 })

@@ -1,5 +1,5 @@
 import { eq, and, sql } from 'drizzle-orm'
-import { db, schema } from '@nuxthub/db'
+import { schema } from '@nuxthub/db'
 import type { ReviewState } from '@nuxthub/db/schema'
 import type {
   GitHubUser,
@@ -53,7 +53,7 @@ export async function handleIssueEvent(action: string, issue: GitHubIssue, repos
     case 'deleted':
     case 'transferred':
       // Delete by repositoryId + number to handle different ID sources
-      await db.delete(schema.issues).where(
+      await dbs.delete(schema.issues).where(
         and(
           eq(schema.issues.repositoryId, dbRepoId),
           eq(schema.issues.number, issue.number)
@@ -230,7 +230,7 @@ async function upsertIssue(item: GitHubIssueOrPR, repositoryId: number, _reposit
   // Use upsert to avoid race conditions when multiple webhooks arrive simultaneously
   // On conflict (update): use itemData which doesn't include synced status
   // On insert: use insertData which may include synced=true for new open issues
-  const [result] = await db.insert(schema.issues)
+  const [result] = await dbs.insert(schema.issues)
     .values(insertData)
     .onConflictDoUpdate({
       target: [schema.issues.repositoryId, schema.issues.number],
@@ -289,7 +289,7 @@ async function syncIssueAssignees(issueId: number, assignees: GitHubUser[]) {
   // Delete removed assignees
   for (const existing of existingAssignees) {
     if (!newDbIds.has(existing.userId)) {
-      await db.delete(schema.issueAssignees).where(
+      await dbs.delete(schema.issueAssignees).where(
         and(
           eq(schema.issueAssignees.issueId, issueId),
           eq(schema.issueAssignees.userId, existing.userId)
@@ -301,7 +301,7 @@ async function syncIssueAssignees(issueId: number, assignees: GitHubUser[]) {
   // Insert new assignees
   for (const [_githubId, dbUserId] of newAssigneeDbIds) {
     if (!existingIds.has(dbUserId)) {
-      await db.insert(schema.issueAssignees)
+      await dbs.insert(schema.issueAssignees)
         .values({ issueId, userId: dbUserId })
         .onConflictDoNothing()
     }
@@ -333,7 +333,7 @@ async function syncIssueLabels(issueId: number, labelGithubIds: number[]) {
   // Delete removed labels
   for (const existing of existingLabels) {
     if (!newDbIds.has(existing.labelId)) {
-      await db.delete(schema.issueLabels).where(
+      await dbs.delete(schema.issueLabels).where(
         and(
           eq(schema.issueLabels.issueId, issueId),
           eq(schema.issueLabels.labelId, existing.labelId)
@@ -346,7 +346,7 @@ async function syncIssueLabels(issueId: number, labelGithubIds: number[]) {
   for (const dbLabelId of newDbIds) {
     if (!existingDbIds.has(dbLabelId)) {
       try {
-        await db.insert(schema.issueLabels)
+        await dbs.insert(schema.issueLabels)
           .values({ issueId, labelId: dbLabelId })
           .onConflictDoNothing()
       } catch {
@@ -384,7 +384,7 @@ async function syncIssueRequestedReviewers(issueId: number, reviewers: GitHubUse
   // Delete removed reviewers
   for (const existing of existingReviewers) {
     if (!newDbIds.has(existing.userId)) {
-      await db.delete(schema.issueRequestedReviewers).where(
+      await dbs.delete(schema.issueRequestedReviewers).where(
         and(
           eq(schema.issueRequestedReviewers.issueId, issueId),
           eq(schema.issueRequestedReviewers.userId, existing.userId)
@@ -396,7 +396,7 @@ async function syncIssueRequestedReviewers(issueId: number, reviewers: GitHubUse
   // Insert new reviewers
   for (const [_githubId, dbUserId] of newReviewerDbIds) {
     if (!existingIds.has(dbUserId)) {
-      await db.insert(schema.issueRequestedReviewers)
+      await dbs.insert(schema.issueRequestedReviewers)
         .values({ issueId, userId: dbUserId })
         .onConflictDoNothing()
     }
@@ -418,7 +418,7 @@ export async function handleCommentEvent(action: string, comment: GitHubComment,
   }
 
   // Check if the issue exists in our DB (lookup by repositoryId + number, not id)
-  let [existingIssue] = await db.select().from(schema.issues).where(
+  let [existingIssue] = await dbs.select().from(schema.issues).where(
     and(
       eq(schema.issues.repositoryId, dbRepoId),
       eq(schema.issues.number, issue.number)
@@ -431,7 +431,7 @@ export async function handleCommentEvent(action: string, comment: GitHubComment,
     const isPullRequest = 'pull_request' in issue && issue.pull_request !== undefined
     const issueId = await upsertIssue(issue as GitHubIssueOrPR, dbRepoId, repository.full_name, isPullRequest)
 
-    const [newIssue] = await db.select().from(schema.issues).where(eq(schema.issues.id, issueId))
+    const [newIssue] = await dbs.select().from(schema.issues).where(eq(schema.issues.id, issueId))
     existingIssue = newIssue
   }
 
@@ -440,7 +440,7 @@ export async function handleCommentEvent(action: string, comment: GitHubComment,
     case 'created':
       await upsertComment(comment, existingIssue!.id)
       // Increment comment count
-      await db.update(schema.issues)
+      await dbs.update(schema.issues)
         .set({ commentCount: sql`${schema.issues.commentCount} + 1` })
         .where(eq(schema.issues.id, existingIssue!.id))
       // Subscribe commenter to the issue
@@ -455,9 +455,9 @@ export async function handleCommentEvent(action: string, comment: GitHubComment,
       await upsertComment(comment, existingIssue!.id)
       break
     case 'deleted':
-      await db.delete(schema.issueComments).where(eq(schema.issueComments.githubId, comment.id))
+      await dbs.delete(schema.issueComments).where(eq(schema.issueComments.githubId, comment.id))
       // Decrement comment count
-      await db.update(schema.issues)
+      await dbs.update(schema.issues)
         .set({ commentCount: sql`GREATEST(${schema.issues.commentCount} - 1, 0)` })
         .where(eq(schema.issues.id, existingIssue!.id))
       break
@@ -485,7 +485,7 @@ async function upsertComment(comment: GitHubComment, issueId: number) {
   }
 
   // Use upsert to avoid race conditions when multiple webhooks arrive simultaneously
-  await db.insert(schema.issueComments).values({
+  await dbs.insert(schema.issueComments).values({
     githubId: comment.id,
     ...commentData
   }).onConflictDoUpdate({
@@ -506,7 +506,7 @@ export async function handleReviewEvent(action: string, review: GitHubReview, pu
   }
 
   // Check if the PR exists in our DB (lookup by repositoryId + number, not id)
-  let [existingPR] = await db.select().from(schema.issues).where(
+  let [existingPR] = await dbs.select().from(schema.issues).where(
     and(
       eq(schema.issues.repositoryId, dbRepoId),
       eq(schema.issues.number, pullRequest.number)
@@ -518,7 +518,7 @@ export async function handleReviewEvent(action: string, review: GitHubReview, pu
     console.log(`[Webhook] PR #${pullRequest.number} not synced, syncing on-demand for review event`)
     const prId = await upsertIssue(pullRequest as GitHubIssueOrPR, dbRepoId, repository.full_name, true)
 
-    const [newPR] = await db.select().from(schema.issues).where(eq(schema.issues.id, prId))
+    const [newPR] = await dbs.select().from(schema.issues).where(eq(schema.issues.id, prId))
     existingPR = newPR
   }
 
@@ -537,7 +537,7 @@ export async function handleReviewEvent(action: string, review: GitHubReview, pu
       await upsertReview(review, existingPR!.id)
       break
     case 'dismissed':
-      await db.update(schema.issueReviews).set({
+      await dbs.update(schema.issueReviews).set({
         state: 'DISMISSED',
         updatedAt: new Date()
       }).where(eq(schema.issueReviews.githubId, review.id))
@@ -567,7 +567,7 @@ async function upsertReview(review: GitHubReview, issueId: number) {
   }
 
   // Use upsert to avoid race conditions when multiple webhooks arrive simultaneously
-  await db.insert(schema.issueReviews).values({
+  await dbs.insert(schema.issueReviews).values({
     githubId: review.id,
     ...reviewData
   }).onConflictDoUpdate({
@@ -588,7 +588,7 @@ export async function handleReviewCommentEvent(action: string, comment: GitHubRe
   }
 
   // Check if the PR exists in our DB (lookup by repositoryId + number, not id)
-  let [existingPR] = await db.select().from(schema.issues).where(
+  let [existingPR] = await dbs.select().from(schema.issues).where(
     and(
       eq(schema.issues.repositoryId, dbRepoId),
       eq(schema.issues.number, pullRequest.number)
@@ -600,7 +600,7 @@ export async function handleReviewCommentEvent(action: string, comment: GitHubRe
     console.log(`[Webhook] PR #${pullRequest.number} not synced, syncing on-demand for review comment event`)
     const prId = await upsertIssue(pullRequest as GitHubIssueOrPR, dbRepoId, repository.full_name, true)
 
-    const [newPR] = await db.select().from(schema.issues).where(eq(schema.issues.id, prId))
+    const [newPR] = await dbs.select().from(schema.issues).where(eq(schema.issues.id, prId))
     existingPR = newPR
   }
 
@@ -610,7 +610,7 @@ export async function handleReviewCommentEvent(action: string, comment: GitHubRe
       await upsertReviewComment(comment, existingPR!.id)
       break
     case 'deleted':
-      await db.delete(schema.issueReviewComments).where(eq(schema.issueReviewComments.githubId, comment.id))
+      await dbs.delete(schema.issueReviewComments).where(eq(schema.issueReviewComments.githubId, comment.id))
       break
   }
 }
@@ -633,7 +633,7 @@ async function upsertReviewComment(comment: GitHubReviewComment, issueId: number
   // Get review ID if present
   let reviewId: number | null = null
   if (comment.pull_request_review_id) {
-    const [review] = await db.select({ id: schema.issueReviews.id })
+    const [review] = await dbs.select({ id: schema.issueReviews.id })
       .from(schema.issueReviews)
       .where(eq(schema.issueReviews.githubId, comment.pull_request_review_id))
     reviewId = review?.id ?? null
@@ -655,7 +655,7 @@ async function upsertReviewComment(comment: GitHubReviewComment, issueId: number
   }
 
   // Use upsert to avoid race conditions when multiple webhooks arrive simultaneously
-  await db.insert(schema.issueReviewComments).values({
+  await dbs.insert(schema.issueReviewComments).values({
     githubId: comment.id,
     ...commentData
   }).onConflictDoUpdate({
@@ -681,7 +681,7 @@ export async function handleLabelEvent(action: string, label: GitHubLabel, repos
       await upsertLabel(label, dbRepoId)
       break
     case 'deleted':
-      await db.delete(schema.labels).where(eq(schema.labels.githubId, label.id))
+      await dbs.delete(schema.labels).where(eq(schema.labels.githubId, label.id))
       break
   }
 }
@@ -697,7 +697,7 @@ async function upsertLabel(label: GitHubLabel, repositoryId: number) {
   }
 
   // Use upsert to avoid race conditions when multiple webhooks arrive simultaneously
-  await db.insert(schema.labels).values({
+  await dbs.insert(schema.labels).values({
     githubId: label.id,
     ...labelData
   }).onConflictDoUpdate({
@@ -725,7 +725,7 @@ export async function handleMilestoneEvent(action: string, milestone: GitHubMile
       await upsertMilestone(milestone, dbRepoId)
       break
     case 'deleted':
-      await db.delete(schema.milestones).where(eq(schema.milestones.githubId, milestone.id))
+      await dbs.delete(schema.milestones).where(eq(schema.milestones.githubId, milestone.id))
       break
   }
 }
@@ -746,7 +746,7 @@ async function upsertMilestone(milestone: GitHubMilestone, repositoryId: number)
   }
 
   // Use upsert to avoid race conditions when multiple webhooks arrive simultaneously
-  await db.insert(schema.milestones).values({
+  await dbs.insert(schema.milestones).values({
     githubId: milestone.id,
     ...milestoneData
   }).onConflictDoUpdate({
@@ -787,7 +787,7 @@ export async function handleMemberEvent(action: string, member: GitHubUser, repo
         ))
 
       if (!existingCollaborator) {
-        await db.insert(schema.repositoryCollaborators)
+        await dbs.insert(schema.repositoryCollaborators)
           .values({ repositoryId: dbRepoId, userId: dbUserId, permission: 'write' })
           .onConflictDoNothing()
         console.log(`[Webhook] Added collaborator ${member.login} to ${repository.full_name}`)
@@ -803,7 +803,7 @@ export async function handleMemberEvent(action: string, member: GitHubUser, repo
         ))
 
       if (!existingSub) {
-        await db.insert(schema.repositorySubscriptions).values({
+        await dbs.insert(schema.repositorySubscriptions).values({
           repositoryId: dbRepoId,
           userId: dbUserId,
           issues: true,
@@ -822,7 +822,7 @@ export async function handleMemberEvent(action: string, member: GitHubUser, repo
       if (!dbUserId) return
 
       // Remove from collaborators
-      await db.delete(schema.repositoryCollaborators).where(
+      await dbs.delete(schema.repositoryCollaborators).where(
         and(
           eq(schema.repositoryCollaborators.repositoryId, dbRepoId),
           eq(schema.repositoryCollaborators.userId, dbUserId)
@@ -856,7 +856,7 @@ export async function handleRepositoryEvent(action: string, repository: GitHubRe
     case 'archived':
     case 'unarchived':
       if (dbRepoId) {
-        await db.update(schema.repositories).set({
+        await dbs.update(schema.repositories).set({
           archived: repository.archived,
           updatedAt: new Date()
         }).where(eq(schema.repositories.id, dbRepoId))
@@ -865,13 +865,13 @@ export async function handleRepositoryEvent(action: string, repository: GitHubRe
     case 'deleted':
       if (dbRepoId) {
         // Cascade will handle related data
-        await db.delete(schema.repositories).where(eq(schema.repositories.id, dbRepoId))
+        await dbs.delete(schema.repositories).where(eq(schema.repositories.id, dbRepoId))
       }
       break
     case 'privatized':
     case 'publicized':
       if (dbRepoId) {
-        await db.update(schema.repositories).set({
+        await dbs.update(schema.repositories).set({
           private: repository.private,
           updatedAt: new Date()
         }).where(eq(schema.repositories.id, dbRepoId))
@@ -881,7 +881,7 @@ export async function handleRepositoryEvent(action: string, repository: GitHubRe
 }
 
 async function updateRepository(repository: GitHubRepository, dbRepoId: number) {
-  await db.update(schema.repositories).set({
+  await dbs.update(schema.repositories).set({
     name: repository.name,
     fullName: repository.full_name,
     description: repository.description,
@@ -908,12 +908,12 @@ export async function handleInstallationEvent(action: string, installation: GitH
     case 'deleted':
       if (dbInstallationId) {
         // Cascade will handle related data
-        await db.delete(schema.installations).where(eq(schema.installations.id, dbInstallationId))
+        await dbs.delete(schema.installations).where(eq(schema.installations.id, dbInstallationId))
       }
       break
     case 'suspend':
       if (dbInstallationId) {
-        await db.update(schema.installations).set({
+        await dbs.update(schema.installations).set({
           suspended: true,
           updatedAt: new Date()
         }).where(eq(schema.installations.id, dbInstallationId))
@@ -921,7 +921,7 @@ export async function handleInstallationEvent(action: string, installation: GitH
       break
     case 'unsuspend':
       if (dbInstallationId) {
-        await db.update(schema.installations).set({
+        await dbs.update(schema.installations).set({
           suspended: false,
           updatedAt: new Date()
         }).where(eq(schema.installations.id, dbInstallationId))
@@ -938,7 +938,7 @@ async function createInstallation(installation: GitHubInstallation, _repositorie
   const account = installation.account
 
   // Use upsert to avoid race conditions when multiple webhooks arrive simultaneously
-  await db.insert(schema.installations).values({
+  await dbs.insert(schema.installations).values({
     githubId: installation.id,
     accountId: account.id,
     accountLogin: account.login,
@@ -967,7 +967,7 @@ export async function handleInstallationRepositoriesEvent(action: string, instal
       break
     case 'removed':
       for (const repo of repositoriesRemoved || []) {
-        await db.delete(schema.repositories).where(eq(schema.repositories.githubId, repo.id))
+        await dbs.delete(schema.repositories).where(eq(schema.repositories.githubId, repo.id))
       }
       break
   }
@@ -996,7 +996,7 @@ export async function handleReleaseEvent(action: string, release: GitHubRelease,
     }
 
     // Use upsert to avoid race conditions when multiple webhooks arrive simultaneously
-    await db.insert(schema.releases).values({
+    await dbs.insert(schema.releases).values({
       githubId: release.id,
       repositoryId: dbRepoId,
       authorId,
@@ -1020,7 +1020,7 @@ export async function handleReleaseEvent(action: string, release: GitHubRelease,
       }
     })
   } else if (action === 'deleted') {
-    await db.delete(schema.releases).where(eq(schema.releases.githubId, release.id))
+    await dbs.delete(schema.releases).where(eq(schema.releases.githubId, release.id))
   }
 }
 
@@ -1052,7 +1052,7 @@ export async function handleWorkflowRunEvent(action: string, workflowRun: GitHub
     // First try using the pull_requests array from the webhook
     if (workflowRun.pull_requests?.length && workflowRun.pull_requests.length > 0) {
       const prNumber = workflowRun.pull_requests[0]!.number
-      const [relatedPR] = await db.select().from(schema.issues).where(
+      const [relatedPR] = await dbs.select().from(schema.issues).where(
         and(
           eq(schema.issues.repositoryId, dbRepoId),
           eq(schema.issues.number, prNumber)
@@ -1067,7 +1067,7 @@ export async function handleWorkflowRunEvent(action: string, workflowRun: GitHub
     // (common for PRs from forks due to GitHub security restrictions),
     // try to find the PR by matching the head SHA
     if (!issueId && workflowRun.event === 'pull_request' && workflowRun.head_sha) {
-      const [relatedPR] = await db.select().from(schema.issues).where(
+      const [relatedPR] = await dbs.select().from(schema.issues).where(
         and(
           eq(schema.issues.repositoryId, dbRepoId),
           eq(schema.issues.pullRequest, true),
@@ -1080,7 +1080,7 @@ export async function handleWorkflowRunEvent(action: string, workflowRun: GitHub
     }
 
     // Use upsert to avoid race conditions when multiple webhooks arrive simultaneously
-    await db.insert(schema.workflowRuns).values({
+    await dbs.insert(schema.workflowRuns).values({
       githubId: workflowRun.id,
       repositoryId: dbRepoId,
       issueId,
@@ -1136,7 +1136,7 @@ export async function handleCheckRunEvent(action: string, checkRun: GitHubCheckR
     }
 
     // Use upsert to avoid race conditions when multiple webhooks arrive simultaneously
-    await db.insert(schema.checkRuns).values({
+    await dbs.insert(schema.checkRuns).values({
       githubId: checkRun.id,
       ...checkData
     }).onConflictDoUpdate({
@@ -1179,7 +1179,7 @@ export async function handleStatusEvent(payload: GitHubStatusPayload, repository
   }
 
   // Use upsert to avoid race conditions when multiple webhooks arrive simultaneously
-  await db.insert(schema.commitStatuses).values({
+  await dbs.insert(schema.commitStatuses).values({
     githubId: payload.id,
     ...statusData
   }).onConflictDoUpdate({

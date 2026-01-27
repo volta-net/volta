@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm'
-import { db, schema } from '@nuxthub/db'
+import { schema } from '@nuxthub/db'
 
 export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
@@ -27,7 +27,7 @@ export default defineEventHandler(async (event) => {
     updateData.aiModel = body.aiModel || null
   }
 
-  await db.update(schema.users)
+  await dbs.update(schema.users)
     .set(updateData)
     .where(eq(schema.users.id, user.id))
 

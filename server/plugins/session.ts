@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm'
-import { db, schema } from '@nuxthub/db'
+import { schema } from '@nuxthub/db'
 
 export default defineNitroPlugin(() => {
   // Called when the session is fetched during SSR for the Vue composable (/api/_auth/session)
@@ -12,7 +12,7 @@ export default defineNitroPlugin(() => {
     }
 
     // Verify user exists in database and is registered
-    const [user] = await db.select().from(schema.users).where(eq(schema.users.id, session.user.id))
+    const [user] = await dbs.select().from(schema.users).where(eq(schema.users.id, session.user.id))
 
     if (!user || !user.registered) {
       // Clear session for non-existent or unregistered users

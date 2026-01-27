@@ -1,5 +1,5 @@
 import { eq, and, inArray } from 'drizzle-orm'
-import { db, schema } from '@nuxthub/db'
+import { schema } from '@nuxthub/db'
 
 export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
@@ -70,8 +70,8 @@ export default defineEventHandler(async (event) => {
       if (!accountId) return defaultResponse
 
       try {
-        // Use db.query to fetch installation with repositories in one go
-        const dbInstallation = await db.query.installations.findFirst({
+        // Use dbs.query to fetch installation with repositories in one go
+        const dbInstallation = await dbs.query.installations.findFirst({
           where: eq(schema.installations.accountId, accountId),
           with: {
             repositories: true
@@ -89,7 +89,7 @@ export default defineEventHandler(async (event) => {
         const subscriptionMap = new Map<number, Pick<RepositorySubscription, 'issues' | 'pullRequests' | 'releases' | 'ci' | 'mentions' | 'activity'>>()
         if (dbInstallation.repositories.length > 0) {
           const repoIds = dbInstallation.repositories.map(r => r.id)
-          const subscriptions = await db.query.repositorySubscriptions.findMany({
+          const subscriptions = await dbs.query.repositorySubscriptions.findMany({
             where: and(
               eq(schema.repositorySubscriptions.userId, user.id),
               inArray(schema.repositorySubscriptions.repositoryId, repoIds)

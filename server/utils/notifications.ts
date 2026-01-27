@@ -1,5 +1,5 @@
 import { eq, and, inArray } from 'drizzle-orm'
-import { db, schema } from '@nuxthub/db'
+import { schema } from '@nuxthub/db'
 import type { NotificationType, NotificationAction } from '@nuxthub/db/schema'
 import type {
   GitHubUser,
@@ -56,7 +56,7 @@ export async function createNotification(data: NotificationData) {
         ))
 
       if (existing) {
-        await db.update(schema.notifications).set({
+        await dbs.update(schema.notifications).set({
           type: data.type,
           action: data.action,
           body: data.body,
@@ -70,7 +70,7 @@ export async function createNotification(data: NotificationData) {
     }
 
     // Create new notification
-    await db.insert(schema.notifications).values({
+    await dbs.insert(schema.notifications).values({
       userId: data.userId,
       type: data.type,
       action: data.action,
@@ -1313,7 +1313,7 @@ export async function notifyWorkflowFailed(
   // (common for PRs from forks due to GitHub security restrictions),
   // try to find the PR by matching the head SHA
   if (!issueId && workflowRun.event === 'pull_request' && workflowRun.head_sha) {
-    const [relatedPR] = await db.select({ id: schema.issues.id }).from(schema.issues).where(
+    const [relatedPR] = await dbs.select({ id: schema.issues.id }).from(schema.issues).where(
       and(
         eq(schema.issues.repositoryId, dbRepoId),
         eq(schema.issues.pullRequest, true),

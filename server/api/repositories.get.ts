@@ -1,5 +1,5 @@
 import { eq, and, inArray } from 'drizzle-orm'
-import { db, schema } from '@nuxthub/db'
+import { schema } from '@nuxthub/db'
 
 export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
@@ -12,7 +12,7 @@ export default defineEventHandler(async (event) => {
     .where(eq(schema.repositoryCollaborators.userId, userId))
 
   // Get all repositories where user has a subscription AND has collaborator access
-  const subscriptions = await db.query.repositorySubscriptions.findMany({
+  const subscriptions = await dbs.query.repositorySubscriptions.findMany({
     where: and(
       eq(schema.repositorySubscriptions.userId, userId),
       inArray(schema.repositorySubscriptions.repositoryId, accessibleRepoIds)

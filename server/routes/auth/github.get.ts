@@ -1,4 +1,4 @@
-import { db, schema } from '@nuxthub/db'
+import { schema } from '@nuxthub/db'
 
 // Extended GitHub tokens type (when token expiration is enabled in GitHub App)
 interface GitHubTokensWithRefresh {
@@ -22,7 +22,7 @@ export default defineOAuthGitHubEventHandler({
     // Upsert user in database - use upsert to avoid race conditions
     let dbUserId: number
     try {
-      const [result] = await db.insert(schema.users).values({
+      const [result] = await dbs.insert(schema.users).values({
         githubId: user.id,
         login: user.login,
         name: user.name,

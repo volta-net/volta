@@ -2,7 +2,7 @@ import { generateText, Output } from 'ai'
 import type { GatewayModelId } from '@ai-sdk/gateway'
 import { z } from 'zod'
 import { eq, and, ne, desc } from 'drizzle-orm'
-import { db, schema } from '@nuxthub/db'
+import { schema } from '@nuxthub/db'
 
 // Schemas for AI responses
 const labelSuggestionSchema = z.object({
@@ -51,7 +51,7 @@ export default defineEventHandler(async (event) => {
 
   // Find repository
   const fullName = `${owner}/${name}`
-  const repository = await db.query.repositories.findFirst({
+  const repository = await dbs.query.repositories.findFirst({
     where: eq(schema.repositories.fullName, fullName)
   })
 
@@ -63,7 +63,7 @@ export default defineEventHandler(async (event) => {
   await requireRepositoryAccess(user.id, repository.id)
 
   // Find issue with labels and comments
-  const issue = await db.query.issues.findFirst({
+  const issue = await dbs.query.issues.findFirst({
     where: and(
       eq(schema.issues.repositoryId, repository.id),
       eq(schema.issues.number, issueNumber)
@@ -162,7 +162,7 @@ async function suggestLabels(
   modelId: GatewayModelId
 ) {
   // Fetch all available labels for this repository
-  const availableLabels = await db.query.labels.findMany({
+  const availableLabels = await dbs.query.labels.findMany({
     where: eq(schema.labels.repositoryId, repository.id),
     orderBy: (labels, { asc }) => [asc(labels.name)]
   })
@@ -275,7 +275,7 @@ async function findDuplicates(
   modelId: GatewayModelId
 ) {
   // Fetch other open issues from the same repository
-  const otherIssues = await db.query.issues.findMany({
+  const otherIssues = await dbs.query.issues.findMany({
     where: and(
       eq(schema.issues.repositoryId, repository.id),
       eq(schema.issues.pullRequest, false),

@@ -1,5 +1,5 @@
 import { eq, and } from 'drizzle-orm'
-import { db, schema } from '@nuxthub/db'
+import { schema } from '@nuxthub/db'
 
 export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
@@ -14,7 +14,7 @@ export default defineEventHandler(async (event) => {
   const fullName = `${owner}/${name}`
 
   // Find the repository
-  const repository = await db.query.repositories.findFirst({
+  const repository = await dbs.query.repositories.findFirst({
     where: eq(schema.repositories.fullName, fullName)
   })
 
@@ -33,7 +33,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Check if subscription exists
-  const existing = await db.query.repositorySubscriptions.findFirst({
+  const existing = await dbs.query.repositorySubscriptions.findFirst({
     where: and(
       eq(schema.repositorySubscriptions.repositoryId, repository.id),
       eq(schema.repositorySubscriptions.userId, user.id)
@@ -86,7 +86,7 @@ export default defineEventHandler(async (event) => {
       activity: updates.activity ?? true
     }
 
-    await db.insert(schema.repositorySubscriptions).values(newSubscription)
+    await dbs.insert(schema.repositorySubscriptions).values(newSubscription)
 
     return {
       subscribed: true,

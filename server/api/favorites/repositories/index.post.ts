@@ -1,5 +1,5 @@
 import { eq, and } from 'drizzle-orm'
-import { db, schema } from '@nuxthub/db'
+import { schema } from '@nuxthub/db'
 
 export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
@@ -13,7 +13,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Check if repository exists
-  const repository = await db.query.repositories.findFirst({
+  const repository = await dbs.query.repositories.findFirst({
     where: eq(schema.repositories.id, repositoryId)
   })
 
@@ -28,7 +28,7 @@ export default defineEventHandler(async (event) => {
   await requireRepositoryAccess(user.id, repositoryId)
 
   // Check if already favorited
-  const existing = await db.query.favoriteRepositories.findFirst({
+  const existing = await dbs.query.favoriteRepositories.findFirst({
     where: and(
       eq(schema.favoriteRepositories.userId, user.id),
       eq(schema.favoriteRepositories.repositoryId, repositoryId)

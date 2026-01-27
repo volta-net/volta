@@ -1,5 +1,5 @@
 import { and, eq } from 'drizzle-orm'
-import { db, schema } from '@nuxthub/db'
+import { schema } from '@nuxthub/db'
 import { Octokit } from 'octokit'
 
 export default defineEventHandler(async (event) => {
@@ -22,7 +22,7 @@ export default defineEventHandler(async (event) => {
 
   // Find repository by owner/name
   const fullName = `${owner}/${name}`
-  const repository = await db.query.repositories.findFirst({
+  const repository = await dbs.query.repositories.findFirst({
     where: eq(schema.repositories.fullName, fullName)
   })
 
@@ -34,7 +34,7 @@ export default defineEventHandler(async (event) => {
   await requireRepositoryAccess(user.id, repository.id)
 
   // Find issue by repository + number
-  const issue = await db.query.issues.findFirst({
+  const issue = await dbs.query.issues.findFirst({
     where: and(
       eq(schema.issues.repositoryId, repository.id),
       eq(schema.issues.number, issueNumber)
@@ -46,7 +46,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Get label name from database
-  const label = await db.query.labels.findFirst({
+  const label = await dbs.query.labels.findFirst({
     where: eq(schema.labels.id, labelIdNum)
   })
 
@@ -75,7 +75,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Remove from database
-  await db.delete(schema.issueLabels).where(
+  await dbs.delete(schema.issueLabels).where(
     and(
       eq(schema.issueLabels.issueId, issue.id),
       eq(schema.issueLabels.labelId, labelIdNum)

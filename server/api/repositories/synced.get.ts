@@ -1,5 +1,5 @@
 import { eq, inArray, asc } from 'drizzle-orm'
-import { db, schema } from '@nuxthub/db'
+import { schema } from '@nuxthub/db'
 
 export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
@@ -12,7 +12,7 @@ export default defineEventHandler(async (event) => {
     .where(eq(schema.repositoryCollaborators.userId, userId))
 
   // Get all synced repositories where user is a collaborator
-  const repositories = await db.query.repositories.findMany({
+  const repositories = await dbs.query.repositories.findMany({
     where: inArray(schema.repositories.id, accessibleRepoIds),
     columns: {
       id: true,

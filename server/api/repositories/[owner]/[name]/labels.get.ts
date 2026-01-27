@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm'
-import { db, schema } from '@nuxthub/db'
+import { schema } from '@nuxthub/db'
 
 export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
@@ -12,7 +12,7 @@ export default defineEventHandler(async (event) => {
 
   const fullName = `${owner}/${name}`
 
-  const repository = await db.query.repositories.findFirst({
+  const repository = await dbs.query.repositories.findFirst({
     where: eq(schema.repositories.fullName, fullName)
   })
 
@@ -23,7 +23,7 @@ export default defineEventHandler(async (event) => {
   // Verify user has access to this repository
   await requireRepositoryAccess(user.id, repository.id)
 
-  const labels = await db.query.labels.findMany({
+  const labels = await dbs.query.labels.findMany({
     where: eq(schema.labels.repositoryId, repository.id),
     orderBy: (labels, { asc }) => [asc(labels.name)]
   })
