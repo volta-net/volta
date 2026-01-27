@@ -278,12 +278,11 @@ const reviewState = useReviewState(computed(() => props.issue))
       <UButton
         as="div"
         :icon="stateIcon"
+        :label="`${stateLabel} ${issue.pullRequest ? 'pull request' : 'issue'}`"
         variant="ghost"
         :ui="{ leadingIcon: `text-${stateColor}` }"
         class="text-sm/4 hover:bg-transparent active:bg-transparent pl-2 pr-0"
       >
-        {{ stateLabel }} {{ issue.pullRequest ? 'pull request' : 'issue' }}
-
         <template #trailing>
           <div class="flex items-center ms-auto -my-1.5">
             <UTooltip :text="`Copy URL`" :kbds="['meta', 'shift', ',']">
@@ -363,9 +362,11 @@ const reviewState = useReviewState(computed(() => props.issue))
         ]"
         @click="issue.resolutionAnswerCommentId && emit('scroll-to-answer', issue.resolutionAnswerCommentId)"
       >
-        {{ resolutionConfig.label }}
-        <span v-if="issue.resolutionConfidence" class="text-muted italic text-xs">
-          ({{ issue.resolutionConfidence }}% confidence)
+        <span class="truncate">
+          {{ resolutionConfig.label }}
+          <span v-if="issue.resolutionConfidence" class="text-muted italic text-xs">
+            ({{ issue.resolutionConfidence }}% confidence)
+          </span>
         </span>
       </UButton>
 
