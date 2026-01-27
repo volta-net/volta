@@ -1,0 +1,2 @@
+CREATE INDEX "issue_requested_reviewers_issue_id_idx" ON "issue_requested_reviewers" USING btree ("issue_id");--> statement-breakpoint
+CREATE INDEX "notifications_user_id_idx" ON "notifications" USING btree ("user_id");

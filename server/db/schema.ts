@@ -59,6 +59,8 @@ export const notifications = pgTable('notifications', {
   readAt: timestamp('read_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
 }, table => ([
+  // Simple index on user_id for basic user lookups
+  index('notifications_user_id_idx').on(table.userId),
   // Composite index for all notification queries (userId + read filter + createdAt sort)
   index('notifications_user_read_created_idx').on(table.userId, table.read, table.createdAt),
   // Index for notification deduplication (checking if notification exists for user+issue)
@@ -337,7 +339,8 @@ export const issueRequestedReviewers = pgTable('issue_requested_reviewers', {
   issueId: integer('issue_id').notNull().references(() => issues.id, { onDelete: 'cascade' }),
   userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' })
 }, table => ([
-  primaryKey({ columns: [table.issueId, table.userId] })
+  primaryKey({ columns: [table.issueId, table.userId] }),
+  index('issue_requested_reviewers_issue_id_idx').on(table.issueId)
 ]))
 
 // Issue Linked PRs (many-to-many: issues <-> PRs)
