@@ -1,7 +1,7 @@
 import { eq, desc, and } from 'drizzle-orm'
 import { db, schema } from '@nuxthub/db'
 
-export default defineEventHandler(async (event) => {
+export default defineTracedEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
 
   const query = getQuery(event)

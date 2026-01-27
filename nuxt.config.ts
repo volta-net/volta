@@ -7,7 +7,8 @@ export default defineNuxtConfig({
     '@nuxthub/core',
     '@vueuse/nuxt',
     'nuxt-auth-utils',
-    'workflow/nuxt'
+    'workflow/nuxt',
+    'nitro-opentelemetry'
   ],
 
   ssr: false,
