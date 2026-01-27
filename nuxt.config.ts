@@ -7,7 +7,8 @@ export default defineNuxtConfig({
     '@nuxthub/core',
     '@vueuse/nuxt',
     'nuxt-auth-utils',
-    'workflow/nuxt'
+    'workflow/nuxt',
+    '@hannoeru/nuxt-otel'
   ],
 
   ssr: false,
@@ -78,6 +79,9 @@ export default defineNuxtConfig({
 
   routeRules: {
     '/': { prerender: true, redirect: '/inbox' }
+  },
+  experimental: {
+    asyncContext: true
   },
 
   compatibilityDate: '2026-01-15',
