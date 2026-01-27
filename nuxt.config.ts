@@ -8,7 +8,7 @@ export default defineNuxtConfig({
     '@vueuse/nuxt',
     'nuxt-auth-utils',
     'workflow/nuxt',
-    'nitro-opentelemetry'
+    '@hannoeru/nuxt-otel'
   ],
 
   ssr: false,
@@ -85,15 +85,6 @@ export default defineNuxtConfig({
   },
 
   compatibilityDate: '2026-01-15',
-
-  nitro: {
-    otel: {
-      preset: {
-        name: 'custom',
-        filePath: './instrumentation.ts'
-      }
-    }
-  },
 
   hub: {
     db: 'postgresql'
