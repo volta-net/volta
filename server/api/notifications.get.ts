@@ -4,7 +4,7 @@ import { trace } from '@opentelemetry/api'
 
 export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
-  const tracer = trace.getTracer('volta')
+  const tracer = trace.getTracer('notifications-api')
 
   const query = getQuery(event)
   const unreadOnly = query.unread === 'true'

@@ -84,7 +84,8 @@ export default defineNuxtConfig({
     asyncContext: true
   },
 
-  compatibilityDate: '2026-01-15',
+  // compatibilityDate: '2026-01-15',
+  compatibilityDate: '2025-01-15',
 
   hub: {
     db: 'postgresql'
