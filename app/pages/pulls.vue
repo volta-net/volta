@@ -30,11 +30,11 @@ const {
 
 <template>
   <UDashboardPanel
-    id="pulls-1"
+    :id="`${config.panelId}-1`"
     :default-size="30"
     :min-size="25"
     :max-size="!selectedItem ? 100 : 50"
-    :resizable="!!selectedItem"
+    resizable
     :class="[!selectedItem && 'lg:w-full']"
     :ui="{ body: 'overflow-hidden p-0!' }"
   >
@@ -147,10 +147,12 @@ const {
         @touchstart="onTouchStart"
         @dblclick="onDoubleClick"
       />
+
+      &nbsp;
     </template>
   </UDashboardPanel>
 
-  <UDashboardPanel v-if="selectedItem" id="pulls-2">
+  <UDashboardPanel v-if="selectedItem" :id="`${config.panelId}-2`">
     <Issue
       :item="selectedItem"
       @close="selectedItem = null"

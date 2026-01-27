@@ -34,7 +34,7 @@ const {
     :default-size="30"
     :min-size="25"
     :max-size="!selectedItem ? 100 : 50"
-    :resizable="!!selectedItem"
+    resizable
     :class="[!selectedItem && 'lg:w-full']"
     :ui="{ body: 'overflow-hidden p-0!' }"
   >
@@ -147,6 +147,8 @@ const {
         @touchstart="onTouchStart"
         @dblclick="onDoubleClick"
       />
+
+      &nbsp;
     </template>
   </UDashboardPanel>
 
