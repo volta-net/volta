@@ -80,6 +80,9 @@ export default defineNuxtConfig({
   routeRules: {
     '/': { prerender: true, redirect: '/inbox' }
   },
+  experimental: {
+    asyncContext: true
+  },
 
   compatibilityDate: '2026-01-15',
 
