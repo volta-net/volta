@@ -1,4 +1,4 @@
-import { db } from '@nuxthub/db'
+import { db, schema } from '@nuxthub/db'
 import { withReplicas } from 'drizzle-orm/pg-core'
 import { drizzle } from 'drizzle-orm/postgres-js'
 
@@ -13,8 +13,6 @@ export const PRIVATE_USER_COLUMNS = {
 
 const dbReplicas = []
 if (process.env.DATABASE_URL_REPLICA) {
-  dbReplicas.push(drizzle(process.env.DATABASE_URL_REPLICA))
-} else {
-  dbReplicas.push(db)
+  dbReplicas.push(drizzle(process.env.DATABASE_URL_REPLICA, { schema }))
 }
-export const dbs = withReplicas(db, dbReplicas as any)
+export const dbs = dbReplicas.length > 0 ? withReplicas(db, dbReplicas as any) : db
