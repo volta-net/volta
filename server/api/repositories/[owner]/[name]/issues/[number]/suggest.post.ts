@@ -106,7 +106,7 @@ export default defineEventHandler(async (event) => {
     case 'labels':
       return await suggestLabels(issue, repository, issueContext, userGateway, userModel)
     case 'title':
-      return await suggestTitle(issue, issueContext, userGateway, userModel)
+      return await suggestTitle(issue, repository, issueContext, userGateway, userModel)
     case 'duplicates':
       return await findDuplicates(issue, repository, issueContext, userGateway, userModel)
     default:
@@ -240,18 +240,44 @@ Rules:
 }
 
 async function suggestTitle(
-  issue: { title: string },
+  issue: { title: string, pullRequest: boolean },
+  repository: { id: number },
   issueContext: string,
   userGateway: ReturnType<typeof createUserGateway>,
   modelId: GatewayModelId
 ) {
-  const systemPrompt = `You are an AI that improves GitHub issue titles to be clearer and more descriptive.
+  // Fetch recent closed items of the same type to learn naming patterns
+  const recentItems = await db.query.issues.findMany({
+    where: and(
+      eq(schema.issues.repositoryId, repository.id),
+      eq(schema.issues.pullRequest, issue.pullRequest),
+      eq(schema.issues.state, 'closed')
+    ),
+    orderBy: desc(schema.issues.updatedAt),
+    limit: 20,
+    columns: { title: true }
+  })
+
+  const type = issue.pullRequest ? 'Pull Request' : 'Issue'
+  const typeSpecificRules = issue.pullRequest
+    ? `- For PRs, follow the repository's commit/PR naming convention if one exists
+- Common formats include: Conventional Commits (feat:, fix:, docs:), scope-based ([Component]), or action-based`
+    : `- Make the problem or feature request clear from the title
+- Avoid starting with "I want" or "Please add"`
+
+  const exampleTitles = recentItems.length > 0
+    ? `\nRecent closed ${type} titles in this repository (learn the naming pattern from these):
+${recentItems.map(i => `- ${i.title}`).join('\n')}`
+    : ''
+
+  const systemPrompt = `You are an AI that improves GitHub ${type} titles.
+${exampleTitles}
 
 Rules:
 - Keep titles concise (ideally under 80 characters)
-- Make the problem or request clear from the title alone
+- Match the repository's existing title style/convention if a clear pattern exists
+${typeSpecificRules}
 - Use active voice when possible
-- Don't use vague words like "issue", "problem", "bug" without specifics
 - Preserve technical terms and component names
 - If the current title is already good, suggest a minor improvement or the same title
 
