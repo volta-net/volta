@@ -16,8 +16,24 @@ const newComment = ref('')
 const isSubmitting = ref(false)
 
 defineShortcuts({
-  meta_s: () => addComment(),
-  meta_enter: () => addComment()
+  meta_s: {
+    usingInput: true,
+    handler: (e) => {
+      e.preventDefault()
+      e.stopPropagation()
+
+      addComment()
+    }
+  },
+  meta_enter: {
+    usingInput: true,
+    handler: (e) => {
+      e.preventDefault()
+      e.stopPropagation()
+
+      addComment()
+    }
+  }
 })
 
 async function addComment() {
