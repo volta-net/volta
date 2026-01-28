@@ -11,14 +11,17 @@ const emit = defineEmits<{
   (e: 'read' | 'delete', id: number): void
 }>()
 
-// Mark notification as read when notification changes (immediate handles initial mount)
-watch(() => props.notification.id, async () => {
+// Mark notification as read when notification changes (optimistic update)
+watch(() => props.notification.id, () => {
   if (!props.notification.read) {
-    await $fetch(`/api/notifications/${props.notification.id}`, {
+    // Optimistically update UI immediately
+    emit('read', props.notification.id)
+
+    // Persist to server in background (no await needed)
+    $fetch(`/api/notifications/${props.notification.id}`, {
       method: 'PATCH',
       body: { read: true }
     })
-    emit('read', props.notification.id)
   }
 }, { immediate: true })
 </script>
