@@ -1,7 +1,6 @@
 import { breakpointsTailwind } from '@vueuse/core'
 import { useFilter } from 'reka-ui'
 import type { MaybeRefOrGetter } from 'vue'
-import type { Filter } from './useFilters'
 
 export interface IssuesListConfig {
   title: string
