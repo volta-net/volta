@@ -42,7 +42,7 @@ const {
     :ui="{ body: 'overflow-hidden p-0!' }"
   >
     <template #header>
-      <UDashboardNavbar>
+      <UDashboardNavbar :ui="{ left: 'shrink-0', right: 'shrink min-w-0' }">
         <template #title>
           <span class="text-highlighted font-semibold flex items-center gap-1.5">
             {{ config.title }}
