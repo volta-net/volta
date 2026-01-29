@@ -2,11 +2,6 @@
 import type { NavigationMenuItem } from '@nuxt/ui'
 import { refDebounced } from '@vueuse/core'
 
-interface BeforeInstallPromptEvent extends Event {
-  prompt: () => Promise<void>
-  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>
-}
-
 useSeoMeta({
   titleTemplate: '%s - Volta'
 })
@@ -14,38 +9,8 @@ useSeoMeta({
 // Initialize app badge for dock notification count
 useAppBadge()
 
-// PWA install prompt
-const deferredPrompt = ref<BeforeInstallPromptEvent | null>(null)
-const isInstalled = ref(false)
-
-onMounted(() => {
-  // Check if already installed
-  if (window.matchMedia('(display-mode: standalone)').matches) {
-    isInstalled.value = true
-  }
-
-  window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault()
-    deferredPrompt.value = e as BeforeInstallPromptEvent
-  })
-
-  window.addEventListener('appinstalled', () => {
-    isInstalled.value = true
-    deferredPrompt.value = null
-  })
-})
-
-async function installApp() {
-  if (!deferredPrompt.value) return
-
-  await deferredPrompt.value.prompt()
-  const { outcome } = await deferredPrompt.value.userChoice
-
-  if (outcome === 'accepted') {
-    isInstalled.value = true
-  }
-  deferredPrompt.value = null
-}
+// PWA install prompt via @vite-pwa/nuxt
+const { $pwa } = useNuxtApp()
 
 const router = useRouter()
 
@@ -121,11 +86,11 @@ const links = computed<NavigationMenuItem[][]>(() => {
     onSelect: () => { searchOpen.value = true }
   }]
 
-  if (deferredPrompt.value && !isInstalled.value) {
+  if ($pwa?.showInstallPrompt) {
     secondaryItems.unshift({
       label: 'Add to dock',
       icon: 'i-lucide-download',
-      onSelect: installApp
+      onSelect: () => $pwa.install()
     })
   }
 

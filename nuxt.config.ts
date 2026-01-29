@@ -7,7 +7,8 @@ export default defineNuxtConfig({
     '@nuxthub/core',
     '@vueuse/nuxt',
     'nuxt-auth-utils',
-    'workflow/nuxt'
+    'workflow/nuxt',
+    '@vite-pwa/nuxt'
   ],
 
   ssr: false,
@@ -120,5 +121,31 @@ export default defineNuxtConfig({
       }
     },
     provider: 'none'
+  },
+
+  pwa: {
+    manifest: {
+      name: 'Volta',
+      short_name: 'Volta',
+      description: 'GitHub Issue Management',
+      theme_color: '#0b0809',
+      background_color: '#0b0809',
+      display: 'standalone',
+      icons: [
+        {
+          src: '/logo.png',
+          sizes: '512x512',
+          type: 'image/png'
+        },
+        {
+          src: '/apple-touch-icon.png',
+          sizes: '180x180',
+          type: 'image/png'
+        }
+      ]
+    },
+    client: {
+      installPrompt: true
+    }
   }
 })
