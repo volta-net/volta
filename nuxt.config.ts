@@ -84,7 +84,12 @@ export default defineNuxtConfig({
   compatibilityDate: '2026-01-15',
 
   hub: {
-    db: 'postgresql'
+    db: {
+      dialect: 'postgresql',
+      replicas: [
+        process.env.DATABASE_URL_REPLICA as string
+      ].filter(Boolean)
+    }
   },
 
   vite: {
