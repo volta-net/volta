@@ -175,14 +175,14 @@ function toggleFavorite() {
       method: 'POST',
       body: { issueId: currentIssue.id }
     }).catch((error: any) => {
-        // Rollback on error
-        favoriteIssues.value = previousFavorites
-        toast.add({
-          title: 'Failed to update favorites',
-          description: error.data?.message || 'An error occurred',
-          color: 'error'
-        })
+      // Rollback on error
+      favoriteIssues.value = previousFavorites
+      toast.add({
+        title: 'Failed to update favorites',
+        description: error.data?.message || 'An error occurred',
+        color: 'error'
       })
+    })
   }
 }
 
