@@ -82,8 +82,8 @@ export function useNotificationHelpers() {
     return null
   }
 
-  function getActionLabel(action: Notification['action']) {
-    switch (action) {
+  function getActionLabel(notification: Notification) {
+    switch (notification.action) {
       case 'opened':
         return 'Opened'
       case 'reopened':
@@ -113,7 +113,42 @@ export function useNotificationHelpers() {
       case 'success':
         return 'Success'
       default:
-        return null
+        return ''
+    }
+  }
+
+  function getActionIcon(notification: Notification) {
+    switch (notification.action) {
+      case 'opened':
+        return notification.type === 'pull_request' ? 'i-lucide-git-pull-request' : 'i-lucide-circle-dot'
+      case 'reopened':
+        return 'i-lucide-rotate-ccw'
+      case 'closed':
+        return 'i-lucide-x'
+      case 'merged':
+        return 'i-lucide-git-merge'
+      case 'assigned':
+        return 'i-lucide-user-plus'
+      case 'mentioned':
+        return 'i-lucide-at-sign'
+      case 'comment':
+        return 'i-lucide-message-square'
+      case 'review_requested':
+        return 'i-lucide-eye'
+      case 'review_submitted':
+        return 'i-lucide-file-check'
+      case 'review_dismissed':
+        return 'i-lucide-file-x'
+      case 'ready_for_review':
+        return 'i-lucide-check'
+      case 'published':
+        return 'i-lucide-rocket'
+      case 'failed':
+        return 'i-lucide-x-circle'
+      case 'success':
+        return 'i-lucide-check-circle'
+      default:
+        return 'i-lucide-bell'
     }
   }
 
@@ -156,8 +191,8 @@ export function useNotificationHelpers() {
     }
   }
 
-  function getSubjectLabel(type: Notification['type']) {
-    switch (type) {
+  function getSubjectLabel(notification: Notification) {
+    switch (notification.type) {
       case 'pull_request':
         return 'pull request'
       case 'issue':
@@ -178,6 +213,7 @@ export function useNotificationHelpers() {
     getTitle,
     getPrefix,
     getActionLabel,
+    getActionIcon,
     getActionVerb,
     getSubjectLabel
   }

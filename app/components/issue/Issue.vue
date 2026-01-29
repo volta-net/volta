@@ -382,7 +382,7 @@ const agentItems = computed(() => {
       <template #right>
         <UDropdownMenu
           :items="agentItems"
-          :content="{ align: 'end' }"
+          :content="{ align: 'start' }"
         >
           <UButton
             icon="i-lucide-sparkles"

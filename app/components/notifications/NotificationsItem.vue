@@ -6,74 +6,62 @@ defineProps<{
   selected: boolean
 }>()
 
-const { getIcon, getColor, getTitle, getActionVerb, getSubjectLabel } = useNotificationHelpers()
-
-function stripMarkdown(text: string | null | undefined): string {
-  if (!text) return ''
-
-  return text
-    .replace(/```[\s\S]*?```/g, '')
-    .replace(/`[^`]+`/g, '')
-    .replace(/!\[([^\]]*)\]\([^)]+\)/g, '$1')
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-    .replace(/^#{1,6}\s+/gm, '')
-    .replace(/(\*\*|__)(.*?)\1/g, '$2')
-    .replace(/(\*|_)(.*?)\1/g, '$2')
-    .replace(/^>\s+/gm, '')
-    .replace(/^[\s]*[-*+]\s+/gm, '')
-    .replace(/^[\s]*\d+\.\s+/gm, '')
-    .replace(/<[^>]+>/g, '')
-    .replace(/\n+/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-}
+const { getIcon, getColor, getPrefix, getTitle, getActionLabel, getActionIcon } = useNotificationHelpers()
 </script>
 
 <template>
   <div
-    class="relative flex items-center gap-2 px-3 py-2.5 text-sm cursor-default before:absolute before:z-[-1] before:inset-px before:rounded-md before:transition-colors transition-colors"
+    class="relative px-3 py-2.5 text-sm cursor-default before:absolute before:z-[-1] before:inset-px before:rounded-md before:transition-colors transition-colors"
     :class="[
-      selected ? 'before:bg-elevated' : 'hover:before:bg-elevated/50',
-      notification.read && 'opacity-60'
+      selected ? 'before:bg-elevated' : 'hover:before:bg-elevated/50'
     ]"
   >
-    <!-- Avatar -->
-    <UAvatar
-      :src="notification.actor?.avatarUrl!"
-      :alt="notification.actor?.login"
-      size="lg"
-      class="shrink-0"
-      loading="lazy"
-    />
-
-    <!-- Content -->
-    <div class="flex-1 min-w-0">
-      <div class="flex items-center gap-1">
-        <p class="font-medium truncate flex-1">
+    <div class="flex-1 flex flex-col gap-1.5 min-w-0">
+      <div class="flex items-center gap-1.5" :class="{ 'opacity-70': notification.read }">
+        <UIcon :name="getIcon(notification)" :class="`text-${getColor(notification)}`" class="size-4 shrink-0" />
+        <p class="truncate flex-1 text-highlighted" :class="{ 'font-medium': !notification.read }">
+          {{ getPrefix(notification) }}
           {{ getTitle(notification) }}
         </p>
         <span v-if="!notification.read" class="size-2 rounded-full bg-primary shrink-0 m-1" />
-        <UIcon :name="getIcon(notification)" :class="`text-${getColor(notification)}`" class="size-4 shrink-0" />
       </div>
 
-      <div class="flex items-center gap-1 text-muted">
-        <span class="truncate" :title="notification.body ?? undefined">
-          <span v-if="notification.actor && notification.type !== 'workflow_run'" class="text-default">{{ notification.actor.login }}</span>
-          {{ getActionVerb(notification) }}
-          <template v-if="notification.action !== 'comment' && getSubjectLabel(notification.type)"> {{ getSubjectLabel(notification.type) }}</template>
-          <template v-if="notification.repository"> in <span class="text-highlighted font-medium text-xs/5 hover:bg-accented/50 transition-colors border border-dashed border-muted px-1 py-[2.5px] rounded-sm">
-            <UAvatar
-              size="3xs"
-              :src="`https://github.com/${notification.repository.fullName.split('/')[0]}.png`"
-              :alt="notification.repository.fullName"
-              loading="lazy"
-              class="-mt-[2px]"
-            />
-            {{ notification.repository.fullName }}</span>
-          </template>
-          <span v-if="notification.action === 'comment' && notification.body">: {{ stripMarkdown(notification.body) }}</span>
-        </span>
-        <span class="shrink-0 ms-auto flex items-center gap-1 text-sm text-dimmed">
+      <div class="flex items-start gap-1.5" :class="{ 'opacity-60': notification.read }">
+        <div class="flex flex-wrap items-center gap-1">
+          <UButton
+            v-if="notification.actor"
+            :label="notification.actor.login"
+            :avatar="{
+              src: notification.actor.avatarUrl!,
+              alt: notification.actor.login,
+              loading: 'lazy'
+            }"
+            variant="outline"
+            size="xs"
+            class="border border-dashed border-accented ring-0"
+          />
+          <UButton
+            :label="getActionLabel(notification)"
+            :icon="getActionIcon(notification)"
+            variant="outline"
+            size="xs"
+            class="border border-dashed border-accented ring-0"
+          />
+          <UButton
+            v-if="notification.repository"
+            :label="notification.repository.name"
+            :avatar="{
+              src: `https://github.com/${notification.repository.fullName.split('/')[0]}.png`,
+              alt: notification.repository.fullName,
+              loading: 'lazy'
+            }"
+            variant="outline"
+            size="xs"
+            class="border border-dashed border-accented ring-0"
+          />
+        </div>
+
+        <span class="shrink-0 ms-auto text-sm/6.5 text-dimmed">
           {{ useRelativeTime(new Date(notification.createdAt)) }}
         </span>
       </div>
