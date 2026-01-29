@@ -38,18 +38,24 @@ function selectNotification(notification: Notification) {
   selectedNotification.value = notification
 }
 
-// Toggle read/unread
-async function toggleRead() {
+// Toggle read/unread (optimistic update)
+function toggleRead() {
   if (!selectedNotification.value) return
 
   const notification = selectedNotification.value
   const newReadState = !notification.read
 
-  await $fetch(`/api/notifications/${notification.id}`, {
+  // Optimistically update UI immediately
+  emit('toggleRead', notification.id, newReadState)
+
+  // Persist to server in background
+  $fetch(`/api/notifications/${notification.id}`, {
     method: 'PATCH',
     body: { read: newReadState }
+  }).catch(() => {
+    // Rollback on error
+    emit('toggleRead', notification.id, !newReadState)
   })
-  emit('toggleRead', notification.id, newReadState)
 }
 
 defineShortcuts({

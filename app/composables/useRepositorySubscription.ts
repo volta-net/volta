@@ -22,34 +22,56 @@ export function useRepositorySubscription(installations: Ref<Installation[] | nu
   /**
    * Update subscription preferences for a repository.
    * Creates a new subscription if one doesn't exist.
+   * Uses optimistic updates for instant UI feedback.
    */
-  async function updateSubscription(repo: InstallationRepository, updates: Partial<RepositorySubscription>) {
+  function updateSubscription(repo: InstallationRepository, updates: Partial<RepositorySubscription>) {
     const [owner, name] = repo.fullName.split('/')
 
-    updatingSubscription.value = repo.fullName
+    // Store previous state for rollback
+    const previousSubscription = repo.subscription ? { ...repo.subscription } : null
 
-    try {
-      const result = await $fetch<RepositorySubscription>(`/api/repositories/${owner}/${name}/subscription`, {
-        method: 'PATCH',
-        body: updates
-      })
+    // Optimistically update local state immediately
+    if (repo.subscription) {
+      Object.assign(repo.subscription, updates)
+    } else {
+      // Create optimistic subscription with defaults + updates
+      repo.subscription = {
+        issues: false,
+        pullRequests: false,
+        releases: false,
+        ci: false,
+        mentions: false,
+        activity: false,
+        ...updates
+      } as RepositorySubscription
+    }
+    triggerRef(installations)
 
+    // Persist to server in background
+    $fetch<RepositorySubscription>(`/api/repositories/${owner}/${name}/subscription`, {
+      method: 'PATCH',
+      body: updates
+    }).then((result) => {
+      // Sync with server response (in case of computed fields like id)
       if (repo.subscription) {
         Object.assign(repo.subscription, result)
+        triggerRef(installations)
+      }
+    }).catch((error: any) => {
+      // Rollback on error
+      if (previousSubscription) {
+        Object.assign(repo.subscription!, previousSubscription)
       } else {
-        // New subscription created - assign it to the repo
-        repo.subscription = result
+        repo.subscription = undefined
       }
       triggerRef(installations)
-    } catch (error: any) {
+
       toast.add({
         title: 'Failed to update subscription',
         description: error.data?.message || 'An error occurred',
         color: 'error'
       })
-    } finally {
-      updatingSubscription.value = null
-    }
+    })
   }
 
   /**

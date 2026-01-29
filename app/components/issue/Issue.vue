@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { MentionUser } from '~/composables/useEditorMentions'
 import type { AgentMode, LabelSuggestion } from '~/composables/useAgentActions'
+import type { FavoriteIssue } from '~/composables/useFavoriteIssues'
 
 const props = defineProps<{
   item: Issue
@@ -95,54 +96,93 @@ watch(() => issue.value?.isSubscribed, (val) => {
   isSubscribed.value = !!val
 }, { immediate: true })
 
-async function toggleSubscription() {
+function toggleSubscription() {
   if (!issue.value || !issueUrl.value) return
-  try {
-    if (isSubscribed.value) {
-      await $fetch(`${issueUrl.value}/subscription`, { method: 'DELETE' })
-      isSubscribed.value = false
-      toast.add({ title: 'Unsubscribed from issue', icon: 'i-lucide-bell-off' })
-    } else {
-      await $fetch(`${issueUrl.value}/subscription`, { method: 'POST' })
-      isSubscribed.value = true
-      toast.add({ title: 'Subscribed to issue', icon: 'i-lucide-bell' })
-    }
-  } catch (err: any) {
+
+  const wasSubscribed = isSubscribed.value
+  const newState = !wasSubscribed
+
+  // Optimistic update
+  isSubscribed.value = newState
+  toast.add({
+    title: newState ? 'Subscribed to issue' : 'Unsubscribed from issue',
+    icon: newState ? 'i-lucide-bell' : 'i-lucide-bell-off'
+  })
+
+  // Persist in background
+  $fetch(`${issueUrl.value}/subscription`, {
+    method: newState ? 'POST' : 'DELETE'
+  }).catch((err: any) => {
+    // Rollback on error
+    isSubscribed.value = wasSubscribed
     toast.add({ title: 'Failed to update subscription', description: err.message, color: 'error', icon: 'i-lucide-x' })
-  }
+  })
 }
 
 // Favorite functionality - use shared composable
-const { favorites: favoriteIssues, refresh: refreshFavorites } = useFavoriteIssues()
+const { favorites: favoriteIssues } = useFavoriteIssues()
 
 const isFavorited = computed(() => favoriteIssues.value?.some(f => f.issueId === issue.value?.id) || false)
-const updatingFavorite = ref(false)
 
-async function toggleFavorite() {
+function toggleFavorite() {
   if (!issue.value) return
 
-  updatingFavorite.value = true
+  const currentIssue = issue.value
+  const wasFavorited = isFavorited.value
 
-  try {
-    if (isFavorited.value) {
-      await $fetch(`/api/favorites/issues/${issue.value.id}`, { method: 'DELETE' })
-      toast.add({ title: 'Removed from favorites', icon: 'i-lucide-star' })
-    } else {
-      await $fetch('/api/favorites/issues', {
-        method: 'POST',
-        body: { issueId: issue.value.id }
+  if (wasFavorited) {
+    // Optimistically remove from favorites
+    const previousFavorites = [...favoriteIssues.value]
+    favoriteIssues.value = favoriteIssues.value.filter(f => f.issueId !== currentIssue.id)
+    toast.add({ title: 'Removed from favorites', icon: 'i-lucide-star' })
+
+    // Persist in background
+    $fetch(`/api/favorites/issues/${currentIssue.id}`, { method: 'DELETE' })
+      .catch((error: any) => {
+        // Rollback on error
+        favoriteIssues.value = previousFavorites
+        toast.add({
+          title: 'Failed to update favorites',
+          description: error.data?.message || 'An error occurred',
+          color: 'error'
+        })
       })
-      toast.add({ title: 'Added to favorites', icon: 'i-lucide-star' })
+  } else {
+    // Optimistically add to favorites with temporary entry
+    const optimisticFavorite: FavoriteIssue = {
+      id: -Date.now(), // Temporary negative ID
+      issueId: currentIssue.id,
+      createdAt: new Date().toISOString(),
+      issue: {
+        id: currentIssue.id,
+        pullRequest: currentIssue.pullRequest,
+        number: currentIssue.number,
+        title: currentIssue.title,
+        state: currentIssue.state,
+        stateReason: currentIssue.stateReason,
+        draft: currentIssue.draft,
+        merged: currentIssue.merged,
+        htmlUrl: currentIssue.htmlUrl,
+        repository: currentIssue.repository
+      }
     }
-    await refreshFavorites()
-  } catch (error: any) {
-    toast.add({
-      title: 'Failed to update favorites',
-      description: error.data?.message || 'An error occurred',
-      color: 'error'
+    const previousFavorites = [...favoriteIssues.value]
+    favoriteIssues.value = [optimisticFavorite, ...favoriteIssues.value]
+    toast.add({ title: 'Added to favorites', icon: 'i-lucide-star' })
+
+    // Persist in background
+    $fetch('/api/favorites/issues', {
+      method: 'POST',
+      body: { issueId: currentIssue.id }
+    }).catch((error: any) => {
+      // Rollback on error
+      favoriteIssues.value = previousFavorites
+      toast.add({
+        title: 'Failed to update favorites',
+        description: error.data?.message || 'An error occurred',
+        color: 'error'
+      })
     })
-  } finally {
-    updatingFavorite.value = false
   }
 }
 
@@ -324,7 +364,6 @@ const agentItems = computed(() => {
             :icon="isFavorited ? 'i-lucide-star' : 'i-lucide-star'"
             active-color="warning"
             variant="ghost"
-            :loading="updatingFavorite"
             :active="isFavorited"
             @click="toggleFavorite"
           />
