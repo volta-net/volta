@@ -452,7 +452,7 @@ const agentItems = computed(() => {
     </div>
 
     <!-- Agent Action Modal -->
-    <AgentActionModal
+    <IssueActionModal
       v-model:open="agent.isOpen.value"
       :mode="agent.mode.value"
       :result="agent.result.value"

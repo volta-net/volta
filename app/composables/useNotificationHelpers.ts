@@ -5,39 +5,45 @@ import { getReleaseStateIcon, getReleaseStateColor } from './useReleaseState'
 
 export function useNotificationHelpers() {
   function getIcon(notification: Notification) {
-    const { type } = notification
+    const { type, issue } = notification
+
+    // Issue/PR present - always show issue/PR state icon
+    if (issue) {
+      return getIssueStateIcon(issue)
+    }
 
     // Release notifications
     if (type === 'release') {
       return getReleaseStateIcon(notification.release)
     }
 
-    // Workflow run notifications
+    // Workflow run on branch (no PR) - show CI state icon
     if (type === 'workflow_run' && notification.workflowRun) {
       return getCIStateIcon(notification.workflowRun.conclusion)
     }
 
-    // Issue/PR - reuse shared utility
-    if (!notification.issue) return 'i-lucide-bell'
-    return getIssueStateIcon(notification.issue)
+    return 'i-lucide-bell'
   }
 
   function getColor(notification: Notification) {
-    const { type } = notification
+    const { type, issue } = notification
+
+    // Issue/PR present - always show issue/PR state color
+    if (issue) {
+      return getIssueStateColor(issue)
+    }
 
     // Release notifications
     if (type === 'release') {
       return getReleaseStateColor(notification.release)
     }
 
-    // Workflow run notifications
+    // Workflow run on branch (no PR) - show CI state color
     if (type === 'workflow_run' && notification.workflowRun) {
       return getCIStateColor(notification.workflowRun.conclusion)
     }
 
-    // Issue/PR - reuse shared utility
-    if (!notification.issue) return 'neutral'
-    return getIssueStateColor(notification.issue)
+    return 'neutral'
   }
 
   function getTitle(notification: Notification) {

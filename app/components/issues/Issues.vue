@@ -1,6 +1,13 @@
 <script setup lang="ts">
+import type { Filter } from '~/composables/useFilters'
+
 const props = defineProps<{
   issues: Issue[]
+  activeFilters?: readonly Filter[]
+}>()
+
+const emit = defineEmits<{
+  filter: [filter: Filter]
 }>()
 
 const issuesRefs = ref<Record<number, Element>>({})
@@ -56,7 +63,9 @@ defineShortcuts({
       :ref="(el: any) => { issuesRefs[issue.id] = el?.$el as Element }"
       :item="issue"
       :selected="selectedIssue?.id === issue.id"
+      :active-filters="activeFilters"
       @select="selectedIssue = $event"
+      @filter="emit('filter', $event)"
     />
   </div>
 </template>

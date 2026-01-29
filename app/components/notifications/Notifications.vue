@@ -1,14 +1,17 @@
 <script setup lang="ts">
 import type { Notification } from '#shared/types'
+import type { Filter } from '~/composables/useFilters'
 
 const props = defineProps<{
   notifications: Notification[]
+  activeFilters?: readonly Filter[]
 }>()
 
 const emit = defineEmits<{
   delete: []
   undo: []
   toggleRead: [id: number, read: boolean]
+  filter: [filter: Filter]
 }>()
 
 const notificationsRefs = ref<Record<string, Element>>({})
@@ -91,7 +94,9 @@ defineShortcuts({
       :ref="(el: any) => { notificationsRefs[notification.id] = el?.$el as Element }"
       :notification="notification"
       :selected="selectedNotification?.id === notification.id"
+      :active-filters="activeFilters"
       @click="selectNotification(notification)"
+      @filter="emit('filter', $event)"
     />
   </div>
 </template>

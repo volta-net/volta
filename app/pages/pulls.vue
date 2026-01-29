@@ -12,6 +12,9 @@ const {
   refresh,
   q,
   searchInputRef,
+  filters,
+  toggleFilter,
+  clearFilters,
   selectedItem,
   isPanelOpen,
   favoriteRepositories,
@@ -52,6 +55,12 @@ const {
         </template>
 
         <template v-if="hasFavorites" #right>
+          <Filters
+            :filters="filters"
+            @toggle="toggleFilter"
+            @clear="clearFilters"
+          />
+
           <UInput
             ref="searchInputRef"
             v-model="q"
@@ -135,7 +144,9 @@ const {
         v-else
         v-model="selectedItem"
         :issues="filteredItems"
+        :active-filters="filters"
         class="flex-1"
+        @filter="toggleFilter"
       />
     </template>
 

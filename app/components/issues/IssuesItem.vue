@@ -1,12 +1,20 @@
 <script setup lang="ts">
+import type { Filter } from '~/composables/useFilters'
+
 const props = defineProps<{
   item: Issue
   selected?: boolean
+  activeFilters?: readonly Filter[]
 }>()
 
 const emit = defineEmits<{
   (e: 'select', item: Issue): void
+  (e: 'filter', filter: Filter): void
 }>()
+
+function isFilterActive(type: Filter['type'], value: string) {
+  return props.activeFilters?.some(f => f.type === type && f.value === value) ?? false
+}
 
 const issueState = computed(() => ({
   pullRequest: props.item.pullRequest ?? false,
@@ -51,7 +59,7 @@ const showBadgeTooltips = computed(() => containerWidth.value < 768)
       <UIcon :name="stateIcon" :class="`text-${stateColor}`" class="size-4 shrink-0" />
 
       <span class="text-sm/6 truncate @max-3xl:flex-1">
-        <span class="text-muted">{{ item.repository?.fullName }}#{{ item.number }}</span> <span class="text-highlighted font-medium">{{ item.title }}</span>
+        <span class="text-muted">#{{ item.number }}</span> <span class="text-highlighted font-medium">{{ item.title }}</span>
       </span>
 
       <!-- Review state (for PRs) -->
@@ -102,15 +110,20 @@ const showBadgeTooltips = computed(() => containerWidth.value < 768)
         :text="String(resolutionConfig.label)"
         :disabled="!showBadgeTooltips"
       >
-        <UBadge
-          :label="resolutionConfig.label"
-          :icon="resolutionConfig.icon"
-          variant="soft"
+        <FiltersButton
+          :filter="{
+            type: 'resolution',
+            value: item.resolutionStatus!,
+            label: String(resolutionConfig.label),
+            icon: resolutionConfig.icon
+          }"
+          :active="isFilterActive('resolution', item.resolutionStatus!)"
           :ui="{
             label: 'hidden @3xl:block',
             leadingIcon: `text-${resolutionConfig.color}`
           }"
           class="rounded-full px-1 @3xl:px-2"
+          @click.stop="emit('filter', { type: 'resolution', value: item.resolutionStatus!, label: String(resolutionConfig.label), icon: resolutionConfig.icon })"
         />
       </UTooltip>
     </div>
@@ -155,8 +168,40 @@ const showBadgeTooltips = computed(() => containerWidth.value < 768)
         />
 
         <IssueType v-if="item.type" :type="item.type" />
-        <IssueLabel v-for="label in item.labels" :key="label.id" :label="label" />
-        <IssueUser v-if="item.user" :user="item.user" />
+
+        <FiltersButton
+          v-for="label in item.labels"
+          :key="label.id"
+          :filter="{ type: 'label', value: label.name, label: label.name, color: label.color }"
+          :active="isFilterActive('label', label.name)"
+          class="rounded-full"
+          @click.stop="emit('filter', { type: 'label', value: label.name, label: label.name, color: label.color })"
+        />
+
+        <FiltersButton
+          v-if="item.user"
+          :filter="{
+            type: 'actor',
+            value: item.user.login,
+            label: item.user.login,
+            avatar: `https://github.com/${item.user.login}.png`
+          }"
+          :active="isFilterActive('actor', item.user.login)"
+          class="rounded-full"
+          @click.stop="emit('filter', { type: 'actor', value: item.user.login, label: item.user.login, avatar: `https://github.com/${item.user.login}.png` })"
+        />
+
+        <FiltersButton
+          :filter="{
+            type: 'repository',
+            value: item.repository?.name,
+            label: item.repository?.name,
+            avatar: `https://github.com/${item.repository?.fullName.split('/')[0]}.png`
+          }"
+          :active="isFilterActive('repository', item.repository?.name)"
+          class="rounded-full"
+          @click.stop="emit('filter', { type: 'repository', value: item.repository?.name, label: item.repository?.name, avatar: `https://github.com/${item.repository?.fullName.split('/')[0]}.png` })"
+        />
       </div>
 
       <!-- Time -->

@@ -3,10 +3,14 @@ import { breakpointsTailwind } from '@vueuse/core'
 import type { Notification } from '#shared/types'
 
 const toast = useToast()
+const confirm = useConfirmDialog()
 
 const { data: notifications, status, refresh } = await useLazyFetch<Notification[]>('/api/notifications', {
   default: () => []
 })
+
+// Filters
+const { filters, toggleFilter, clearFilters } = useFilters()
 
 const selectedNotification = ref<Notification | null>()
 
@@ -16,8 +20,11 @@ const pendingDeletes = ref<Notification[]>([])
 // Set of pending delete IDs for quick lookup
 const pendingDeleteIds = computed(() => new Set(pendingDeletes.value.map(n => n.id)))
 
-// Visible notifications (excluding pending deletes)
-const visibleNotifications = computed(() => notifications.value?.filter(n => !pendingDeleteIds.value.has(n.id)) ?? [])
+// Visible notifications (excluding pending deletes and applying filters)
+const visibleNotifications = computed(() => {
+  const nonPending = notifications.value?.filter(n => !pendingDeleteIds.value.has(n.id)) ?? []
+  return applyFilters(nonPending, filters.value, matchNotificationFilter)
+})
 
 const unreadNotifications = computed(() => notifications.value?.filter(notification => !notification.read) ?? [])
 
@@ -60,19 +67,79 @@ const isPanelOpen = computed({
 const breakpoints = useBreakpoints(breakpointsTailwind)
 const isMobile = breakpoints.smaller('lg')
 
+// Keyboard shortcuts for bulk actions
+defineShortcuts({
+  meta_u: markAllAsRead,
+  meta_d: deleteAll,
+  shift_d: deleteAllRead
+})
+
 async function markAllAsRead() {
-  await $fetch('/api/notifications/read-all', { method: 'POST' })
+  if (filters.value.length) {
+    // When filtered, only mark visible notifications as read
+    await Promise.all(
+      visibleNotifications.value
+        .filter(n => !n.read)
+        .map(n => $fetch(`/api/notifications/${n.id}`, { method: 'PATCH', body: { read: true } }))
+    )
+  } else {
+    // No filters, use bulk API
+    await $fetch('/api/notifications/read-all', { method: 'POST' })
+  }
   await refresh()
 }
 
 async function deleteAll() {
-  await $fetch('/api/notifications', { method: 'DELETE' })
+  const count = filters.value.length ? visibleNotifications.value.length : notifications.value?.length ?? 0
+  if (!count) return
+
+  const confirmed = await confirm({
+    title: filters.value.length ? 'Delete filtered notifications?' : 'Delete all notifications?',
+    description: `This will permanently delete ${count} notification${count > 1 ? 's' : ''}. This action cannot be undone.`,
+    icon: 'i-lucide-trash-2',
+    confirmLabel: 'Delete'
+  })
+
+  if (!confirmed) return
+
+  if (filters.value.length) {
+    // When filtered, only delete visible notifications
+    await Promise.all(
+      visibleNotifications.value.map(n => $fetch(`/api/notifications/${n.id}`, { method: 'DELETE' }))
+    )
+  } else {
+    // No filters, use bulk API
+    await $fetch('/api/notifications', { method: 'DELETE' })
+  }
   selectedNotification.value = null
   await refresh()
 }
 
 async function deleteAllRead() {
-  await $fetch('/api/notifications/read', { method: 'DELETE' })
+  const readNotifications = filters.value.length
+    ? visibleNotifications.value.filter(n => n.read)
+    : notifications.value?.filter(n => n.read) ?? []
+  const count = readNotifications.length
+  if (!count) return
+
+  const confirmed = await confirm({
+    title: filters.value.length ? 'Delete filtered read notifications?' : 'Delete all read notifications?',
+    description: `This will permanently delete ${count} read notification${count > 1 ? 's' : ''}. This action cannot be undone.`,
+    icon: 'i-lucide-trash-2',
+    confirmLabel: 'Delete'
+  })
+
+  if (!confirmed) return
+
+  if (filters.value.length) {
+    // When filtered, only delete visible read notifications
+    await Promise.all(
+      readNotifications.map(n => $fetch(`/api/notifications/${n.id}`, { method: 'DELETE' }))
+    )
+  } else {
+    // No filters, use bulk API
+    await $fetch('/api/notifications/read', { method: 'DELETE' })
+  }
   if (selectedNotification.value?.read) {
     selectedNotification.value = null
   }
@@ -187,7 +254,7 @@ useSeoMeta({
     :ui="{ body: 'overflow-hidden p-0!' }"
   >
     <template #header>
-      <UDashboardNavbar>
+      <UDashboardNavbar :ui="{ left: 'shrink-0', right: 'shrink min-w-0' }">
         <template #title>
           <span class="inline-flex">Inbox</span>
 
@@ -199,19 +266,28 @@ useSeoMeta({
         </template>
 
         <template #right>
+          <Filters
+            :filters="filters"
+            @toggle="toggleFilter"
+            @clear="clearFilters"
+          />
+
           <UDropdownMenu
             :content="{ align: 'start' }"
             :items="[[{
-              label: 'Mark all as read',
+              label: filters.length ? 'Mark filtered as read' : 'Mark all as read',
               icon: 'i-lucide-check-circle',
+              kbds: ['meta', 'u'],
               onSelect: markAllAsRead
             }], [{
-              label: 'Delete all',
+              label: filters.length ? 'Delete filtered' : 'Delete all',
               icon: 'i-lucide-trash-2',
+              kbds: ['meta', 'd'],
               onSelect: deleteAll
             }, {
-              label: 'Delete all read',
+              label: filters.length ? 'Delete filtered read' : 'Delete all read',
               icon: 'i-lucide-trash-2',
+              kbds: ['shift', 'd'],
               onSelect: deleteAllRead
             }]]"
           >
@@ -233,9 +309,11 @@ useSeoMeta({
         v-else
         v-model="selectedNotification"
         :notifications="visibleNotifications"
+        :active-filters="filters"
         @toggle-read="updateReadState"
         @delete="deleteNotification"
         @undo="undoDelete"
+        @filter="toggleFilter"
       />
     </template>
 

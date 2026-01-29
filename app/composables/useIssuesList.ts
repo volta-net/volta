@@ -1,6 +1,7 @@
 import { breakpointsTailwind } from '@vueuse/core'
 import { useFilter } from 'reka-ui'
 import type { MaybeRefOrGetter } from 'vue'
+import type { Filter } from './useFilters'
 
 export interface IssuesListConfig {
   title: string
@@ -71,17 +72,30 @@ export function useIssuesList(config: IssuesListConfig) {
     '/': () => searchInputRef.value?.inputRef?.focus()
   })
 
-  const filteredItems = computed(() => {
-    if (!q.value) return items.value ?? []
+  // Filters
+  const { filters, toggleFilter, clearFilters } = useFilters()
 
-    return (items.value ?? []).filter((item) => {
-      return (
-        contains(item.title, q.value)
-        || contains(String(item.number), q.value)
-        || contains(item.repository.fullName, q.value)
-        || contains(item.user?.login ?? '', q.value)
-      )
-    })
+  const filteredItems = computed(() => {
+    let result = items.value ?? []
+
+    // Apply text search
+    if (q.value) {
+      result = result.filter((item) => {
+        return (
+          contains(item.title, q.value)
+          || contains(String(item.number), q.value)
+          || contains(item.repository.fullName, q.value)
+          || contains(item.user?.login ?? '', q.value)
+        )
+      })
+    }
+
+    // Apply filters
+    if (filters.value.length) {
+      result = applyFilters(result, filters.value, matchIssueFilter)
+    }
+
+    return result
   })
 
   const isPanelOpen = computed({
@@ -110,6 +124,10 @@ export function useIssuesList(config: IssuesListConfig) {
     // Search
     q,
     searchInputRef,
+    // Filters
+    filters,
+    toggleFilter,
+    clearFilters,
     // Selection
     selectedItem,
     isPanelOpen,

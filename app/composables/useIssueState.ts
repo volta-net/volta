@@ -50,10 +50,13 @@ const issueStates: Record<string, IssueStateConfig> = {
 }
 
 // Derive state key from issue properties
-function getStateKey(issue: IssueStateLike | null | undefined): string {
-  if (!issue) return 'issue_open'
+// isPullRequest param allows overriding when notification type is known but issue.pullRequest might be undefined
+export function getIssueStateKey(issue: IssueStateLike | null | undefined, isPullRequest?: boolean): string | null {
+  if (!issue) return null
 
-  if (issue.pullRequest) {
+  const isPR = isPullRequest ?? issue.pullRequest
+
+  if (isPR) {
     if (issue.draft) return 'pr_draft'
     if (issue.merged) return 'pr_merged'
     if (issue.state === 'closed') return 'pr_closed'
@@ -65,19 +68,19 @@ function getStateKey(issue: IssueStateLike | null | undefined): string {
   return 'issue_closed'
 }
 
-// Get full state config
-export function getIssueState(issue: IssueStateLike | null | undefined): IssueStateConfig & { icon: string } {
-  const key = getStateKey(issue)
-  const state = issueStates[key]!
-  return state
+// Get full state config with key
+export function getIssueState(issue: IssueStateLike | null | undefined, isPullRequest?: boolean): (IssueStateConfig & { key: string }) | null {
+  const key = getIssueStateKey(issue, isPullRequest)
+  if (!key) return null
+  return { ...issueStates[key]!, key }
 }
 
 // Individual getters for convenience
-export const getIssueStateIcon = (issue: IssueStateLike | null | undefined) => getIssueState(issue).icon
-export const getIssueStateColor = (issue: IssueStateLike | null | undefined) => getIssueState(issue).color
+export const getIssueStateIcon = (issue: IssueStateLike | null | undefined) => getIssueState(issue)?.icon ?? 'i-lucide-circle-dot'
+export const getIssueStateColor = (issue: IssueStateLike | null | undefined) => getIssueState(issue)?.color ?? 'neutral'
 export const getIssueStateBadge = (issue: IssueStateLike | null | undefined) => {
   const state = getIssueState(issue)
-  return { label: state.label, color: state.color }
+  return state ? { label: state.label, color: state.color } : null
 }
 
 // Composable for reactive use
@@ -86,8 +89,9 @@ export function useIssueState(issue: Ref<IssueStateLike | null | undefined>) {
 
   return {
     state,
-    icon: computed(() => state.value.icon),
-    color: computed(() => state.value.color),
-    label: computed(() => state.value.label)
+    key: computed(() => state.value?.key ?? null),
+    icon: computed(() => state.value?.icon ?? 'i-lucide-circle-dot'),
+    color: computed(() => state.value?.color ?? 'neutral'),
+    label: computed(() => state.value?.label ?? '')
   }
 }
