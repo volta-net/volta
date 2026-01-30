@@ -1,6 +1,46 @@
 # Volta
 
-A better GitHub inbox for busy maintainers.
+The AI-powered GitHub inbox for open-source maintainers.
+
+## What is Volta?
+
+Volta helps open-source maintainers stay on top of their GitHub notifications. Instead of drowning in issues, PRs, and mentions across multiple repositories, Volta gives you a single inbox where you can triage, respond, and take action without context switching.
+
+> Volta is a full-stack [Nuxt](https://nuxt.com/) app built with [Nuxt UI](https://ui.nuxt.com/), [NuxtHub](https://hub.nuxt.com/), [AI SDK](https://ai-sdk.dev/), and [Workflow](https://useworkflow.dev/).
+
+### Features
+
+- **Unified Inbox** — All your GitHub notifications in one place. Filter by repository, type (issues, PRs, releases, CI), or read status. Bulk actions to mark as read or delete.
+
+- **Issue & PR Management** — View details, timelines, and comments without leaving the app. Edit titles, manage labels, assign reviewers, and reply inline.
+
+- **Rich Editor** — Write comments with `@mentions`, `#issue` references, image uploads, code blocks with syntax highlighting, tables, task lists, etc.
+
+- **AI-Powered Features** (optional) — Connect your Vercel AI Gateway token to unlock:
+  - Detect when issues have been answered or resolved
+  - Suggest labels, improve titles, find duplicates
+  - Draft context-aware replies that match your writing style
+  - Fix grammar, simplify, summarize, or translate text
+
+- **Favorites & Search** — Pin important issues and repositories. Search across everything with the command palette.
+
+- **Real-time Sync** — Webhooks keep everything up to date as it happens on GitHub.
+
+- **PWA** — Install to your dock and see unread counts at a glance.
+
+### Usage
+
+1. **Log in with GitHub** — Sign in with your GitHub account.
+
+2. **Install the GitHub App** — Install the [Volta GitHub App](https://github.com/apps/volta-net) on your account or organization and select which repositories to sync.
+
+3. **Wait for sync** — Volta fetches your existing issues, PRs, comments, reviews, labels, milestones, and CI status in the background. Large repositories may take a few minutes.
+
+4. **Pick your favorites** — Select the repositories you want to focus on. Issues and PRs from your favorites appear in their respective views.
+
+5. **Configure subscriptions** — Customize what notifications you receive per repository (issues, PRs, releases, CI, mentions).
+
+6. **Connect AI (optional)** — Add your [Vercel AI Gateway token](https://vercel.com/d?to=/%5Bteam%5D/~/ai-gateway/api-keys&title=AI+Gateway+API+Keys) in settings to enable AI-powered features.
 
 ## Setup
 

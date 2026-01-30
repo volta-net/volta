@@ -18,7 +18,7 @@ useHead({
 })
 
 const title = 'Volta'
-const description = 'A better GitHub inbox for busy maintainers.'
+const description = 'The AI-powered GitHub inbox for open-source maintainers.'
 
 useSeoMeta({
   title,
