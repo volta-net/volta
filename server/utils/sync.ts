@@ -1031,14 +1031,6 @@ export async function syncCollaborators(accessToken: string, owner: string, repo
       c.permissions?.admin || c.permissions?.maintain || c.permissions?.push
     )
 
-    // Get all existing subscriptions for this repo once
-    const existingSubscriptions = await db
-      .select()
-      .from(schema.repositorySubscriptions)
-      .where(eq(schema.repositorySubscriptions.repositoryId, repositoryId))
-
-    const subscribedUserIds = new Set(existingSubscriptions.map(s => s.userId))
-
     // Get existing collaborators
     const existingCollaborators = await db
       .select()
@@ -1072,7 +1064,7 @@ export async function syncCollaborators(accessToken: string, owner: string, repo
       }
     }
 
-    // Store each collaborator and subscribe them
+    // Store each collaborator
     for (const maintainer of maintainers) {
       try {
         const dbUserId = maintainerDbIds.get(maintainer.id)
@@ -1092,20 +1084,6 @@ export async function syncCollaborators(accessToken: string, owner: string, repo
             target: [schema.repositoryCollaborators.repositoryId, schema.repositoryCollaborators.userId],
             set: { permission, updatedAt: new Date() }
           })
-
-        // Subscribe if not already subscribed
-        if (!subscribedUserIds.has(dbUserId)) {
-          await db.insert(schema.repositorySubscriptions).values({
-            userId: dbUserId,
-            repositoryId,
-            issues: true,
-            pullRequests: true,
-            releases: true,
-            ci: true,
-            mentions: true,
-            activity: true
-          })
-        }
       } catch (error) {
         console.warn(`[sync] Failed to sync maintainer ${maintainer.login}:`, error)
       }

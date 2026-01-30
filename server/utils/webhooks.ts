@@ -793,27 +793,6 @@ export async function handleMemberEvent(action: string, member: GitHubUser, repo
         console.log(`[Webhook] Added collaborator ${member.login} to ${repository.full_name}`)
       }
 
-      // Also subscribe them to the repository
-      const [existingSub] = await db
-        .select()
-        .from(schema.repositorySubscriptions)
-        .where(and(
-          eq(schema.repositorySubscriptions.repositoryId, dbRepoId),
-          eq(schema.repositorySubscriptions.userId, dbUserId)
-        ))
-
-      if (!existingSub) {
-        await db.insert(schema.repositorySubscriptions).values({
-          repositoryId: dbRepoId,
-          userId: dbUserId,
-          issues: true,
-          pullRequests: true,
-          releases: true,
-          ci: true,
-          mentions: true,
-          activity: true
-        })
-      }
       break
     }
 

@@ -339,9 +339,22 @@ useSeoMeta({
   <UDashboardPanel v-else id="inbox-2" class="hidden lg:flex">
     <template #body>
       <UEmpty
+        v-if="notifications.length"
         icon="i-lucide-inbox"
-        :description="unreadNotifications.length > 0 ? `${unreadNotifications.length} unread notification(s)` : 'No notifications yet'"
+        :description="unreadNotifications.length > 0 ? `${unreadNotifications.length} unread notification(s)` : 'Select a notification to view details'"
         class="flex-1"
+      />
+      <UEmpty
+        v-else-if="status !== 'pending'"
+        icon="i-lucide-bell-off"
+        description="Subscribe to repositories you care about to start receiving notifications."
+        class="flex-1"
+        :actions="[{
+          label: 'Manage subscriptions',
+          to: '/settings',
+          icon: 'i-lucide-settings',
+          variant: 'soft'
+        }]"
       />
     </template>
   </UDashboardPanel>

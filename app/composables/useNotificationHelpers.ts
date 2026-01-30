@@ -126,7 +126,7 @@ export function useNotificationHelpers() {
   function getActionIcon(notification: Notification) {
     switch (notification.action) {
       case 'opened':
-        return notification.type === 'pull_request' ? 'i-lucide-git-pull-request' : 'i-lucide-circle-dot'
+        return 'i-lucide-plus'
       case 'reopened':
         return 'i-lucide-rotate-ccw'
       case 'closed':
