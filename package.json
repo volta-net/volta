@@ -19,7 +19,7 @@
     "@iconify-json/lucide": "^1.2.87",
     "@iconify-json/simple-icons": "^1.2.68",
     "@nuxt/ui": "^4.4.0",
-    "@nuxthub/core": "https://pkg.pr.new/@nuxthub/core@a1432ba",
+    "@nuxthub/core": "^0.10.6",
     "@nuxtjs/mdc": "^0.20.0",
     "@octokit/auth-app": "^8.1.2",
     "@tiptap/core": "^3.17.1",
