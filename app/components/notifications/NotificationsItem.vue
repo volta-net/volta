@@ -86,7 +86,7 @@ const stateConfig = computed(() => {
           />
         </div>
 
-        <span class="shrink-0 ms-auto leading-6 text-dimmed">
+        <span class="shrink-0 ms-auto text-sm/6 text-dimmed">
           {{ useRelativeTime(new Date(notification.createdAt)) }}
         </span>
       </div>
