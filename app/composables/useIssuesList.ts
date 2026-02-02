@@ -1,6 +1,8 @@
-import { breakpointsTailwind } from '@vueuse/core'
+import { breakpointsTailwind, useWindowFocus, useBreakpoints } from '@vueuse/core'
 import { useFilter } from 'reka-ui'
 import type { MaybeRefOrGetter } from 'vue'
+import type { Issue } from '#shared/types'
+import { ref, computed, watch, toValue, useLazyFetch, useFavoriteRepositories, useFavoriteIssues, defineShortcuts, useFilters, applyFilters, matchIssueFilter } from '#imports'
 
 export interface IssuesListConfig {
   title: string

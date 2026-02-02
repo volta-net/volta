@@ -18,7 +18,7 @@ import type {
   Serialized
 } from './db'
 
-export type { ResolutionStatus } from '@nuxthub/db/schema'
+export type { ResolutionStatus, WorkflowConclusion } from '@nuxthub/db/schema'
 
 // Base serialized types
 export type Label = Serialized<DBLabel>

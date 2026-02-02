@@ -1,3 +1,7 @@
+import type { Ref } from 'vue'
+import { computed } from '#imports'
+import type { Release } from '#shared/types'
+
 export type ReleaseStateLike = Pick<Release, 'draft' | 'prerelease'>
 
 type ReleaseColor = 'success' | 'warning' | 'neutral'

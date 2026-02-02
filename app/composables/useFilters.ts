@@ -1,4 +1,5 @@
 import type { Notification, Issue } from '#shared/types'
+import { ref, readonly } from '#imports'
 import { getIssueStateKey } from './useIssueState'
 
 export type FilterType = 'actor' | 'action' | 'repository' | 'label' | 'resolution' | 'state'

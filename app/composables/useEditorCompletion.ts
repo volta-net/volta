@@ -1,7 +1,9 @@
+import type { Ref } from 'vue'
 import { useCompletion } from '@ai-sdk/vue'
 import type { Editor } from '@tiptap/vue-3'
 import { Completion } from '~/components/editor/CompletionExtension'
 import type { CompletionStorage } from '~/components/editor/CompletionExtension'
+import { ref, computed, watch, useToast } from '#imports'
 
 type CompletionMode = 'continue' | 'fix' | 'extend' | 'reduce' | 'simplify' | 'summarize' | 'translate' | 'reply'
 

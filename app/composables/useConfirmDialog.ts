@@ -1,4 +1,5 @@
-import { ConfirmDialog } from '#components'
+import ConfirmDialog from '~/components/ConfirmDialog.vue'
+import { useOverlay } from '#imports'
 
 export interface ConfirmDialogOptions {
   title: string

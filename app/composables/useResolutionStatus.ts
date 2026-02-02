@@ -1,4 +1,5 @@
 import type { BadgeProps } from '@nuxt/ui'
+import type { ResolutionStatus } from '#shared/types'
 
 const resolutionStatusConfigs: Record<ResolutionStatus, BadgeProps> = {
   answered: {

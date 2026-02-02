@@ -1,3 +1,7 @@
+import type { Ref } from 'vue'
+import { computed } from '#imports'
+import type { WorkflowConclusion, CIStatus } from '#shared/types'
+
 type CIColor = 'success' | 'error' | 'neutral' | 'warning'
 
 interface CIStateConfig {

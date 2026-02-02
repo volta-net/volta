@@ -1,3 +1,7 @@
+import type { Ref } from 'vue'
+import { computed } from '#imports'
+import type { Issue } from '#shared/types'
+
 export type IssueStateLike = Pick<Issue, 'pullRequest' | 'state' | 'stateReason' | 'draft' | 'merged'>
 
 type IssueColor = 'success' | 'error' | 'info' | 'neutral' | 'important'
