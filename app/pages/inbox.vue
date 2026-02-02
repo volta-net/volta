@@ -90,7 +90,8 @@ async function markAllAsRead() {
 }
 
 async function deleteAll() {
-  const count = filters.value.length ? visibleNotifications.value.length : notifications.value?.length ?? 0
+  const notificationsToDelete = filters.value.length ? visibleNotifications.value : notifications.value ?? []
+  const count = notificationsToDelete.length
   if (!count) return
 
   const confirmed = await confirm({
@@ -102,17 +103,20 @@ async function deleteAll() {
 
   if (!confirmed) return
 
+  // Optimistic update - remove from local state immediately
+  const idsToDelete = new Set(notificationsToDelete.map(n => n.id))
+  notifications.value = notifications.value?.filter(n => !idsToDelete.has(n.id)) ?? []
+  selectedNotification.value = null
+
   if (filters.value.length) {
     // When filtered, only delete visible notifications
     await Promise.all(
-      visibleNotifications.value.map(n => $fetch(`/api/notifications/${n.id}`, { method: 'DELETE' }))
+      notificationsToDelete.map(n => $fetch(`/api/notifications/${n.id}`, { method: 'DELETE' }))
     )
   } else {
     // No filters, use bulk API
     await $fetch('/api/notifications', { method: 'DELETE' })
   }
-  selectedNotification.value = null
-  await refresh()
 }
 
 async function deleteAllRead() {
