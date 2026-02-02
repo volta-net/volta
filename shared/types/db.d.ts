@@ -21,8 +21,7 @@ import type {
   favoriteIssues,
   NotificationType,
   NotificationAction,
-  ReviewState,
-  WorkflowConclusion
+  ReviewState
 } from '@nuxthub/db/schema'
 
 /**
@@ -60,10 +59,9 @@ export type DBIssueSubscription = typeof issueSubscriptions.$inferSelect
 export type DBFavoriteRepository = typeof favoriteRepositories.$inferSelect
 export type DBFavoriteIssue = typeof favoriteIssues.$inferSelect
 
-// Re-export schema types
+// Re-export schema types (WorkflowConclusion exported from index.d.ts)
 export type {
   NotificationType,
   NotificationAction,
-  ReviewState,
-  WorkflowConclusion
+  ReviewState
 }

@@ -1,5 +1,7 @@
+import type { Ref } from 'vue'
 import type { EditorToolbarItem, EditorCustomHandlers } from '@nuxt/ui'
 import type { Editor } from '@tiptap/vue-3'
+import { computed } from '#imports'
 
 interface UseEditorToolbarOptions {
   aiLoading?: Ref<boolean | undefined>

@@ -1,3 +1,7 @@
+import type { Ref } from 'vue'
+import { ref, computed } from '#imports'
+import type { IssueDetail } from '#shared/types'
+
 export type AgentMode = 'labels' | 'title' | 'duplicates'
 
 export interface LabelSuggestion {

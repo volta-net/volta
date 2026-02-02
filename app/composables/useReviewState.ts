@@ -1,3 +1,6 @@
+import type { Ref } from 'vue'
+import { computed } from '#imports'
+
 type ReviewStateLike = {
   pullRequest?: boolean
   reviews?: Array<{ state: string, user?: { id: number, login: string, name: string | null, avatarUrl: string | null } | null }>

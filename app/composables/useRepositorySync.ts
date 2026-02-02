@@ -1,3 +1,7 @@
+import { useWindowFocus } from '@vueuse/core'
+import { ref, computed, watch, useLazyFetch, useToast } from '#imports'
+import type { Installation } from '#shared/types'
+
 /**
  * Composable for managing repository sync operations with polling.
  * Handles single and bulk sync operations with a shared polling loop.

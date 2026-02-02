@@ -1,8 +1,10 @@
+import type { Ref } from 'vue'
 import type { Editor as TiptapEditor } from '@tiptap/vue-3'
 import type { EditorMentionMenuItem } from '@nuxt/ui'
 import type { MentionOptions, MentionNodeAttrs } from '@tiptap/extension-mention'
 import { mergeAttributes } from '@tiptap/core'
 import { Mention } from '@tiptap/extension-mention'
+import { computed } from '#imports'
 
 export interface MentionUser {
   id: number

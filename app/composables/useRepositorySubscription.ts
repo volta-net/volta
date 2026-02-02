@@ -1,4 +1,7 @@
+import type { Ref } from 'vue'
 import type { DropdownMenuItem } from '@nuxt/ui'
+import { ref, triggerRef, useToast } from '#imports'
+import type { Installation, InstallationRepository, RepositorySubscription } from '#shared/types'
 
 /**
  * Subscription preset configurations

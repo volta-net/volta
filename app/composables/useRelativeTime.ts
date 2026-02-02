@@ -1,4 +1,5 @@
 import type { MaybeRefOrGetter } from 'vue'
+import { useTimeAgo } from '#imports'
 
 const messages = {
   justNow: 'now',

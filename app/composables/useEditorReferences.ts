@@ -1,5 +1,6 @@
 import type { EditorMentionMenuItem } from '@nuxt/ui'
 import { watchDebounced } from '@vueuse/core'
+import { ref, computed } from '#imports'
 
 interface IssueReference {
   id: number
