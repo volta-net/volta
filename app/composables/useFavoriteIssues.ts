@@ -1,3 +1,5 @@
+import { useState } from '#imports'
+
 export interface FavoriteIssue {
   id: number
   issueId: number
