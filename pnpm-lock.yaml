@@ -16,7 +16,7 @@ importers:
         version: 3.0.32(zod@4.3.6)
       '@ai-sdk/vue':
         specifier: ^3.0.67
-        version: 3.0.67(vue@3.5.27(typescript@5.9.3))(zod@4.3.6)
+        version: 3.0.68(vue@3.5.27(typescript@5.9.3))(zod@4.3.6)
       '@electric-sql/pglite':
         specifier: ^0.3.15
         version: 0.3.15
@@ -76,7 +76,7 @@ importers:
         version: 14.2.0(magicast@0.5.1)(nuxt@4.3.0(@electric-sql/pglite@0.3.15)(@parcel/watcher@2.5.1)(@types/node@25.2.0)(@vercel/functions@3.3.4(@aws-sdk/credential-provider-web-identity@3.609.0(@aws-sdk/client-sts@3.943.0)))(@vue/compiler-sfc@3.5.27)(cac@6.7.14)(db0@0.3.4(@electric-sql/pglite@0.3.15)(drizzle-orm@0.45.1(@cloudflare/workers-types@4.20251228.0)(@electric-sql/pglite@0.3.15)(@opentelemetry/api@1.9.0)(postgres@3.4.8)))(drizzle-orm@0.45.1(@cloudflare/workers-types@4.20251228.0)(@electric-sql/pglite@0.3.15)(@opentelemetry/api@1.9.0)(postgres@3.4.8))(eslint@9.39.2(jiti@2.6.1))(idb-keyval@6.2.2)(ioredis@5.9.2)(lightningcss@1.30.2)(magicast@0.5.1)(optionator@0.9.4)(rolldown@1.0.0-beta.55)(rollup@4.55.1)(terser@5.44.0)(typescript@5.9.3)(vite@7.3.1(@types/node@25.2.0)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(yaml@2.8.2))(vue-tsc@3.2.4(typescript@5.9.3))(yaml@2.8.2))(vue@3.5.27(typescript@5.9.3))
       ai:
         specifier: ^6.0.67
-        version: 6.0.67(zod@4.3.6)
+        version: 6.0.68(zod@4.3.6)
       drizzle-kit:
         specifier: ^0.31.8
         version: 0.31.8
@@ -160,8 +160,8 @@ packages:
     resolution: {integrity: sha512-VkPLrutM6VdA924/mG8OS+5frbVTcu6e046D2bgDo00tehBANR1QBJ/mPcZ9tXMFOsVcm6SQArOregxePzTFPw==}
     engines: {node: '>=18'}
 
-  '@ai-sdk/vue@3.0.67':
-    resolution: {integrity: sha512-Sy53Dc7Nj1vI2Q6HUpcfvvoH1KXtKjychiit7uZvVY0jrvSLq9kNTiVQCpEH4qg7trIZMyDumri0O3IULZbwAg==}
+  '@ai-sdk/vue@3.0.68':
+    resolution: {integrity: sha512-JwFWGgvN79/iX6dKqUz2Cwi7HPMpmCAplnInytrpxpa4BGcfD8J/pg76iTH4Qyj4v0AI3PCGsRAVDnYQRMAcyA==}
     engines: {node: '>=18'}
     peerDependencies:
       vue: ^3.3.4
@@ -4132,8 +4132,8 @@ packages:
     resolution: {integrity: sha512-MnA+YT8fwfJPgBx3m60MNqakm30XOkyIoH1y6huTQvC0PwZG7ki8NacLBcrPbNoo8vEZy7Jpuk7+jMO+CUovTQ==}
     engines: {node: '>= 14'}
 
-  ai@6.0.67:
-    resolution: {integrity: sha512-xBnTcByHCj3OcG6V8G1s6zvSEqK0Bdiu+IEXYcpGrve1iGFFRgcrKeZtr/WAW/7gupnSvBbDF24BEv1OOfqi1g==}
+  ai@6.0.68:
+    resolution: {integrity: sha512-nrTOAXm+XUhi/NvkUbb5yRebf6+PBkZT8zkR2P57ot1f4IMGWMmBzk9JOSSSGiVeVUaakhOkLq/IUEtb71yWTw==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
@@ -8716,10 +8716,10 @@ snapshots:
     dependencies:
       json-schema: 0.4.0
 
-  '@ai-sdk/vue@3.0.67(vue@3.5.27(typescript@5.9.3))(zod@4.3.6)':
+  '@ai-sdk/vue@3.0.68(vue@3.5.27(typescript@5.9.3))(zod@4.3.6)':
     dependencies:
       '@ai-sdk/provider-utils': 4.0.13(zod@4.3.6)
-      ai: 6.0.67(zod@4.3.6)
+      ai: 6.0.68(zod@4.3.6)
       swrv: 1.1.0(vue@3.5.27(typescript@5.9.3))
       vue: 3.5.27(typescript@5.9.3)
     transitivePeerDependencies:
@@ -13410,7 +13410,7 @@ snapshots:
 
   agent-base@7.1.4: {}
 
-  ai@6.0.67(zod@4.3.6):
+  ai@6.0.68(zod@4.3.6):
     dependencies:
       '@ai-sdk/gateway': 3.0.32(zod@4.3.6)
       '@ai-sdk/provider': 3.0.7
