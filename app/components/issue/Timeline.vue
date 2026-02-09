@@ -56,11 +56,11 @@ interface ActivityItem extends TimelineItem {
 
 // Review state configuration
 const reviewStateConfig: Record<string, { icon: string, action: string }> = {
-  APPROVED: { icon: 'i-octicon-check-16', action: 'approved these changes' },
-  CHANGES_REQUESTED: { icon: 'i-octicon-file-diff-16', action: 'requested changes' },
-  COMMENTED: { icon: 'i-octicon-eye-16', action: 'reviewed' },
-  DISMISSED: { icon: 'i-octicon-x-16', action: 'dismissed review' },
-  PENDING: { icon: 'i-octicon-clock-16', action: 'started a review' }
+  APPROVED: { icon: 'i-lucide-check', action: 'approved these changes' },
+  CHANGES_REQUESTED: { icon: 'i-lucide-file-diff', action: 'requested changes' },
+  COMMENTED: { icon: 'i-lucide-eye', action: 'reviewed' },
+  DISMISSED: { icon: 'i-lucide-x', action: 'dismissed review' },
+  PENDING: { icon: 'i-lucide-clock', action: 'started a review' }
 }
 
 // Helper to safely create a Date from any value
@@ -93,7 +93,7 @@ const timelineItems = computed(() => {
       action: 'commented',
       description: comment.body,
       avatar: comment.user?.avatarUrl ? { src: comment.user.avatarUrl } : undefined,
-      icon: 'i-octicon-comment-16',
+      icon: 'i-lucide-message-square',
       rawDate: toDate(comment.createdAt),
       commentId: comment.id
     })
@@ -122,7 +122,7 @@ const timelineItems = computed(() => {
       action: 'left a review comment',
       description: comment.body,
       avatar: comment.user?.avatarUrl ? { src: comment.user.avatarUrl } : undefined,
-      icon: 'i-octicon-code-16',
+      icon: 'i-lucide-code',
       rawDate: toDate(comment.createdAt),
       diffHunk: comment.diffHunk || undefined,
       filePath: comment.path || undefined
@@ -138,7 +138,7 @@ const timelineItems = computed(() => {
       username: actor?.login || 'Unknown',
       action: isMerged ? 'merged this pull request' : `closed this ${props.issue.pullRequest ? 'pull request' : 'issue'}`,
       avatar: actor?.avatarUrl ? { src: actor.avatarUrl } : undefined,
-      icon: isMerged ? 'i-octicon-git-merge-16' : 'i-octicon-issue-closed-16',
+      icon: isMerged ? 'i-lucide-git-merge' : 'i-lucide-x',
       rawDate: toDate(props.issue.mergedAt) || toDate(props.issue.closedAt)
     })
   }
@@ -152,7 +152,7 @@ const timelineItems = computed(() => {
       username: props.issue.user?.login || 'Unknown',
       action: `opened this ${props.issue.pullRequest ? 'pull request' : 'issue'}`,
       avatar: props.issue.user?.avatarUrl ? { src: props.issue.user.avatarUrl } : undefined,
-      icon: props.issue.pullRequest ? 'i-octicon-git-pull-request-16' : 'i-octicon-issue-opened-16',
+      icon: props.issue.pullRequest ? 'i-lucide-git-pull-request' : 'i-lucide-plus',
       rawDate: toDate(props.issue.createdAt)
     },
     ...items

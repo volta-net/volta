@@ -151,7 +151,7 @@ const showBadgeTooltips = computed(() => containerWidth.value < 768)
           <UBadge
             v-if="(item.commentCount ?? 0) > 0"
             :label="item.commentCount ?? 0"
-            icon="i-lucide-message-circle"
+            icon="i-lucide-message-square"
             :color="item.hasMaintainerComment ? 'primary' : 'neutral'"
             variant="subtle"
             class="rounded-full"
