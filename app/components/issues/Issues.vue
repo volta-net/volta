@@ -64,8 +64,8 @@ defineShortcuts({
     v-slot="{ item: issue }"
     :items="issues"
     :virtualize="{ estimateSize: 44 }"
-    class="focus:outline-none"
-    :ui="{ viewport: 'divide-y divide-default isolate' }"
+    class="isolate focus:outline-none"
+    :ui="{ viewport: 'divide-y divide-default' }"
   >
     <IssuesItem
       :item="issue"

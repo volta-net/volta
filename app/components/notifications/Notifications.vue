@@ -14,18 +14,21 @@ const emit = defineEmits<{
   filter: [filter: Filter]
 }>()
 
-const notificationsRefs = ref<Record<string, Element>>({})
+const scrollArea = useTemplateRef('scrollArea')
 const selectedNotification = defineModel<Notification | null>()
 
-watch(selectedNotification, () => {
-  if (!selectedNotification.value) {
-    return
+function scrollToSelected() {
+  if (!selectedNotification.value) return
+
+  const index = props.notifications.findIndex(n => n.id === selectedNotification.value!.id)
+  if (index !== -1) {
+    scrollArea.value?.virtualizer?.scrollToIndex(index)
   }
-  const ref = notificationsRefs.value[selectedNotification.value.id]
-  if (ref) {
-    ref.scrollIntoView({ block: 'nearest' })
-  }
-})
+}
+
+// Scroll when selection changes or when the list renders/updates with a selected item
+// flush: 'post' ensures the virtualizer is ready before scrolling
+watch([selectedNotification, () => props.notifications], scrollToSelected, { flush: 'post' })
 
 // Keep selectedNotification in sync with notifications array after refresh
 watch(() => props.notifications, (newNotifications) => {
@@ -36,10 +39,6 @@ watch(() => props.notifications, (newNotifications) => {
     }
   }
 }, { deep: true })
-
-function selectNotification(notification: Notification) {
-  selectedNotification.value = notification
-}
 
 // Toggle read/unread (optimistic update)
 function toggleRead() {
@@ -66,18 +65,18 @@ defineShortcuts({
     const index = props.notifications.findIndex(notification => notification.id === selectedNotification.value?.id)
 
     if (index === -1) {
-      selectNotification(props.notifications[0]!)
+      selectedNotification.value = props.notifications[0]!
     } else if (index < props.notifications.length - 1) {
-      selectNotification(props.notifications[index + 1]!)
+      selectedNotification.value = props.notifications[index + 1]!
     }
   },
   arrowup: () => {
     const index = props.notifications.findIndex(notification => notification.id === selectedNotification.value?.id)
 
     if (index === -1) {
-      selectNotification(props.notifications[props.notifications.length - 1]!)
+      selectedNotification.value = props.notifications[props.notifications.length - 1]!
     } else if (index > 0) {
-      selectNotification(props.notifications[index - 1]!)
+      selectedNotification.value = props.notifications[index - 1]!
     }
   },
   u: toggleRead,
@@ -87,16 +86,25 @@ defineShortcuts({
 </script>
 
 <template>
-  <div class="overflow-y-auto p-1 scroll-py-1 isolate focus:outline-none">
+  <UScrollArea
+    ref="scrollArea"
+    v-slot="{ item: notification }"
+    :items="notifications"
+    :virtualize="{
+      estimateSize: 72,
+      paddingStart: 4,
+      paddingEnd: 4,
+      scrollPaddingStart: 4,
+      scrollPaddingEnd: 4
+    }"
+    class="isolate px-1 focus:outline-none"
+  >
     <NotificationsItem
-      v-for="notification in notifications"
-      :key="notification.id"
-      :ref="(el: any) => { notificationsRefs[notification.id] = el?.$el as Element }"
       :notification="notification"
       :selected="selectedNotification?.id === notification.id"
       :active-filters="activeFilters"
-      @click="selectNotification(notification)"
+      @click="selectedNotification = notification"
       @filter="emit('filter', $event)"
     />
-  </div>
+  </UScrollArea>
 </template>
