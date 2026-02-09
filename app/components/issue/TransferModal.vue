@@ -12,9 +12,9 @@ const emit = defineEmits<{
 const open = defineModel<boolean>('open', { default: false })
 
 const toast = useToast()
+const { synced: repos } = useFavoriteRepositories()
 const transferring = ref(false)
 const selectedRepo = ref<string | null>(null)
-const repos = ref<{ id: number, fullName: string, name: string, description: string | null, private: boolean }[]>([])
 
 const groups = computed(() => [{
   id: 'repositories',
@@ -30,14 +30,9 @@ const groups = computed(() => [{
     }))
 }])
 
-watch(open, async (isOpen) => {
+watch(open, (isOpen) => {
   if (isOpen) {
     selectedRepo.value = null
-    try {
-      repos.value = await $fetch('/api/repositories/synced')
-    } catch {
-      repos.value = []
-    }
   }
 })
 
