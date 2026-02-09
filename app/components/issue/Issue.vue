@@ -227,7 +227,7 @@ async function handleSync() {
 defineShortcuts({
   meta_g: () => {
     if (props.item.htmlUrl) {
-      window.open(props.item.htmlUrl, '_blank')
+      openInBrowser(props.item.htmlUrl)
     }
   }
 })

@@ -27,7 +27,7 @@ const description = computed(() => {
 defineShortcuts({
   meta_g: () => {
     if (props.notification.workflowRun?.htmlUrl) {
-      window.open(props.notification.workflowRun.htmlUrl, '_blank')
+      openInBrowser(props.notification.workflowRun.htmlUrl)
     }
   }
 })

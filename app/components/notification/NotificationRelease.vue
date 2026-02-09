@@ -13,7 +13,7 @@ const emit = defineEmits<{
 defineShortcuts({
   meta_g: () => {
     if (props.notification.release?.htmlUrl) {
-      window.open(props.notification.release.htmlUrl, '_blank')
+      openInBrowser(props.notification.release.htmlUrl)
     }
   }
 })

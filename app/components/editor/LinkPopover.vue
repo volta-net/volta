@@ -77,7 +77,7 @@ function removeLink() {
 
 function openLink() {
   if (!url.value) return
-  window.open(url.value, '_blank', 'noopener,noreferrer')
+  openInBrowser(url.value)
 }
 
 function handleKeyDown(event: KeyboardEvent) {
