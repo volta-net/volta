@@ -236,6 +236,11 @@ defineShortcuts({
     if (props.item.htmlUrl) {
       openInBrowser(props.item.htmlUrl)
     }
+  },
+  escape: () => {
+    if (props.onClose) {
+      props.onClose()
+    }
   }
 })
 
@@ -439,12 +444,13 @@ const agentItems = computed(() => {
 
         <slot name="right" />
 
-        <UButton
-          v-if="onClose"
-          icon="i-lucide-x"
-          variant="soft"
-          @click="onClose"
-        />
+        <UTooltip v-if="onClose" :text="`Close ${item.pullRequest ? 'pull request' : 'issue'}`" :kbds="['esc']">
+          <UButton
+            icon="i-lucide-x"
+            variant="soft"
+            @click="onClose"
+          />
+        </UTooltip>
       </template>
     </UDashboardNavbar>
 
