@@ -35,14 +35,18 @@ const stateConfig = computed(() => {
   >
     <div class="flex-1 flex flex-col gap-1 min-w-0">
       <div class="flex items-center gap-1.5" :class="{ 'opacity-70': notification.read }">
-        <UIcon
-          :name="getIcon(notification)"
-          :class="[
-            `text-${getColor(notification)}`
-          ]"
-          class="size-4 shrink-0"
+        <span
+          class="size-4 shrink-0 inline-flex"
           @click.stop="stateConfig && emit('filter', { type: 'state', value: stateConfig.key, label: stateConfig.label, icon: getIcon(notification) })"
-        />
+        >
+          <UIcon
+            :name="getIcon(notification)"
+            :class="[
+              `text-${getColor(notification)}`
+            ]"
+            class="size-4"
+          />
+        </span>
         <p class="truncate flex-1 text-sm/6">
           <span class="text-muted">{{ getPrefix(notification) }}&nbsp;</span>
           <span class="text-highlighted" :class="{ 'font-medium': !notification.read }">{{ getTitle(notification) }}</span>
