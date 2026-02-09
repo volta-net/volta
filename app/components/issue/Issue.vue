@@ -193,7 +193,7 @@ async function handleRefresh() {
 }
 
 // Handle scrolling to answer comment from Meta
-const timelineRef = ref<{ scrollToComment: (commentId: number) => void } | null>(null)
+const timelineRef = ref<{ scrollToComment: (commentId: number) => void, setCommentContent: (text: string) => void } | null>(null)
 
 function scrollToAnswerComment(commentId: number) {
   timelineRef.value?.scrollToComment(commentId)
@@ -228,6 +228,30 @@ async function handleSync() {
     toast.add({ title: 'Failed to sync', description: err.message, color: 'error', icon: 'i-lucide-x' })
   } finally {
     syncing.value = false
+  }
+}
+
+// Ask Savoir (doc search)
+const savoirLoading = ref(false)
+
+async function askSavoir() {
+  if (!issue.value || !issueUrl.value || savoirLoading.value) return
+
+  savoirLoading.value = true
+  try {
+    const { response } = await $fetch<{ response: string }>(`${issueUrl.value}/savoir`, {
+      method: 'POST'
+    })
+    timelineRef.value?.setCommentContent(response)
+  } catch (err: any) {
+    toast.add({
+      title: 'Ask Savoir failed',
+      description: err.data?.message || err.message,
+      color: 'error',
+      icon: 'i-lucide-x'
+    })
+  } finally {
+    savoirLoading.value = false
   }
 }
 
@@ -343,6 +367,14 @@ const agentItems = computed(() => {
     }
   ]
 
+  const savoirItems = [
+    {
+      label: 'Ask Savoir',
+      icon: 'i-lucide-book-open',
+      onSelect: () => askSavoir()
+    }
+  ]
+
   // Add find duplicates only for issues (not PRs)
   if (!props.item.pullRequest) {
     return [
@@ -351,11 +383,12 @@ const agentItems = computed(() => {
         label: 'Find duplicates',
         icon: 'i-lucide-copy',
         onSelect: () => agent.suggest('duplicates')
-      }]
+      }],
+      savoirItems
     ]
   }
 
-  return [baseItems]
+  return [baseItems, savoirItems]
 })
 </script>
 
@@ -424,7 +457,7 @@ const agentItems = computed(() => {
             icon="i-lucide-sparkles"
             variant="soft"
             label="Ask AI"
-            :loading="agent.isLoading.value"
+            :loading="agent.isLoading.value || savoirLoading"
           />
         </UDropdownMenu>
 

@@ -2850,6 +2850,15 @@ packages:
     cpu: [x64]
     os: [win32]
 
+  '@savoir/sdk@0.1.0-alpha.1':
+    resolution: {integrity: sha512-114Lkkf6b4Ij38IrlClFAIlJWYBRIrP8HpwKgPFqzY3Fh9eal2hRliLl0CGHZ4wt4vcEYIkMkFkPKoHguI3YmQ==}
+    engines: {node: '>=20.0.0'}
+    peerDependencies:
+      ai: '>=6.0.68'
+    peerDependenciesMeta:
+      ai:
+        optional: true
+
   '@sec-ant/readable-stream@0.4.1':
     resolution: {integrity: sha512-831qok9r2t8AlxLko40y2ebgSDhenenCatLVeW/uBtnHPyhHOvG0C7TvfgecV+wHzIm5KUICgzmVpWS+IMEAeg==}
 
@@ -11871,6 +11880,12 @@ snapshots:
 
   '@rollup/rollup-win32-x64-msvc@4.55.1':
     optional: true
+
+  '@savoir/sdk@0.1.0-alpha.1(ai@6.0.67(zod@4.3.6))':
+    dependencies:
+      zod: 4.3.6
+    optionalDependencies:
+      ai: 6.0.67(zod@4.3.6)
 
   '@sec-ant/readable-stream@0.4.1': {}
 

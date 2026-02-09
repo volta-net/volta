@@ -15,6 +15,12 @@ const toast = useToast()
 const newComment = ref('')
 const isSubmitting = ref(false)
 
+defineExpose({
+  setContent(text: string) {
+    newComment.value = text
+  }
+})
+
 defineShortcuts({
   meta_s: {
     usingInput: true,
