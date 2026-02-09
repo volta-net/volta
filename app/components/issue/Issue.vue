@@ -199,6 +199,13 @@ function scrollToAnswerComment(commentId: number) {
   timelineRef.value?.scrollToComment(commentId)
 }
 
+// Transfer issue
+const transferOpen = ref(false)
+
+function handleTransferred() {
+  emit('refresh')
+}
+
 // Force sync with GitHub
 const syncing = ref(false)
 async function handleSync() {
@@ -296,6 +303,31 @@ async function handleAgentConfirm(data: { mode: AgentMode, payload: unknown }) {
   }
 }
 
+// More actions dropdown items
+const moreItems = computed(() => {
+  const items: any[][] = [
+    [
+      {
+        label: 'Sync with GitHub',
+        icon: 'i-lucide-refresh-cw',
+        onSelect: () => handleSync()
+      }
+    ]
+  ]
+
+  if (!props.item.pullRequest) {
+    items.push([
+      {
+        label: 'Transfer issue',
+        icon: 'i-lucide-arrow-right-left',
+        onSelect: () => { transferOpen.value = true }
+      }
+    ])
+  }
+
+  return items
+})
+
 // Agent dropdown items
 const agentItems = computed(() => {
   const baseItems = [
@@ -369,14 +401,18 @@ const agentItems = computed(() => {
           />
         </UTooltip>
 
-        <UTooltip text="Sync with GitHub">
-          <UButton
-            icon="i-lucide-refresh-cw"
-            variant="ghost"
-            :loading="syncing"
-            @click="handleSync"
-          />
-        </UTooltip>
+        <UDropdownMenu
+          :items="moreItems"
+          :content="{ align: 'start' }"
+        >
+          <UTooltip text="More actions">
+            <UButton
+              icon="i-lucide-ellipsis"
+              variant="ghost"
+              :loading="syncing"
+            />
+          </UTooltip>
+        </UDropdownMenu>
       </template>
 
       <template #right>
@@ -461,6 +497,15 @@ const agentItems = computed(() => {
       :error="agent.error.value"
       @confirm="handleAgentConfirm"
       @close="agent.close"
+    />
+
+    <!-- Transfer Issue Modal -->
+    <IssueTransferModal
+      v-model:open="transferOpen"
+      :issue-url="issueUrl"
+      :repo-full-name="repoFullName"
+      :on-close="onClose"
+      @transferred="handleTransferred"
     />
   </div>
 </template>
