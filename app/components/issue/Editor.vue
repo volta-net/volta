@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Editor as TiptapEditor } from '@tiptap/vue-3'
 import type { EditorCustomHandlers } from '@nuxt/ui'
-import { Emoji } from '@tiptap/extension-emoji'
+import { Emoji, shortcodeToEmoji, gitHubEmojis } from '@tiptap/extension-emoji'
 import { TableKit } from '@tiptap/extension-table'
 import { TaskList, TaskItem } from '@tiptap/extension-list'
 import CodeBlockShiki from 'tiptap-extension-code-block-shiki'
@@ -107,6 +107,16 @@ const { items: toolbarItems, getImageToolbarItems } = useEditorToolbar(customHan
   suggestReply: props.suggestReply
 })
 
+// Custom Emoji extension that outputs unicode emoji in markdown instead of shortcodes
+// (GitHub API doesn't always transform shortcodes like :rocket: to actual emojis)
+const CustomEmoji = Emoji.extend({
+  renderMarkdown(node: any) {
+    if (!node.attrs?.name) return ''
+    const emojiItem = shortcodeToEmoji(node.attrs.name, gitHubEmojis)
+    return emojiItem?.emoji || `:${node.attrs.name}:`
+  }
+})
+
 // Custom Mention extension (configured with repo context for proper link generation)
 const CustomMention = createCustomMentionExtension(repoFullName)
 
@@ -121,7 +131,7 @@ const extensions = computed(() => {
       }
     }),
     DetailsBlock,
-    Emoji,
+    CustomEmoji,
     ImageUpload,
     TableKit.configure({
       table: {
@@ -218,11 +228,13 @@ const appendToBody = import.meta.client ? () => document.body : undefined
     <UEditorEmojiMenu
       :editor="editor"
       :items="emojiItems"
+      :limit="10"
       :append-to="appendToBody"
     />
     <UEditorMentionMenu
       :editor="editor"
       :items="mentionItems"
+      :limit="10"
       plugin-key="mentionMenu"
       :append-to="appendToBody"
     />
