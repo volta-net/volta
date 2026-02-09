@@ -13,28 +13,28 @@
     "db:migrate": "nuxt db migrate"
   },
   "dependencies": {
-    "@ai-sdk/gateway": "^3.0.32",
-    "@ai-sdk/vue": "^3.0.67",
+    "@ai-sdk/gateway": "^3.0.39",
+    "@ai-sdk/vue": "^3.0.77",
     "@electric-sql/pglite": "^0.3.15",
-    "@iconify-json/lucide": "^1.2.87",
-    "@iconify-json/simple-icons": "^1.2.69",
+    "@iconify-json/lucide": "^1.2.89",
+    "@iconify-json/simple-icons": "^1.2.70",
     "@nuxt/ui": "^4.4.0",
     "@nuxthub/core": "^0.10.6",
-    "@nuxtjs/mdc": "^0.20.0",
-    "@octokit/auth-app": "^8.1.2",
-    "@tiptap/core": "^3.18.0",
-    "@tiptap/extension-details": "^3.18.0",
-    "@tiptap/extension-emoji": "^3.18.0",
-    "@tiptap/extension-list": "^3.18.0",
-    "@tiptap/extension-mention": "^3.18.0",
-    "@tiptap/extension-table": "^3.18.0",
-    "@tiptap/pm": "^3.18.0",
-    "@tiptap/vue-3": "^3.18.0",
+    "@nuxtjs/mdc": "^0.20.1",
+    "@octokit/auth-app": "^8.2.0",
+    "@tiptap/core": "^3.19.0",
+    "@tiptap/extension-details": "^3.19.0",
+    "@tiptap/extension-emoji": "^3.19.0",
+    "@tiptap/extension-list": "^3.19.0",
+    "@tiptap/extension-mention": "^3.19.0",
+    "@tiptap/extension-table": "^3.19.0",
+    "@tiptap/pm": "^3.19.0",
+    "@tiptap/vue-3": "^3.19.0",
     "@vercel/analytics": "^1.6.1",
-    "@vite-pwa/nuxt": "1.1.0",
+    "@vite-pwa/nuxt": "1.1.1",
     "@vueuse/core": "^14.2.0",
     "@vueuse/nuxt": "^14.2.0",
-    "ai": "^6.0.67",
+    "ai": "^6.0.77",
     "drizzle-kit": "^0.31.8",
     "drizzle-orm": "^0.45.1",
     "nuxt": "^4.3.0",
@@ -49,8 +49,8 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@nuxt/eslint": "^1.13.0",
-    "@types/node": "^25.2.0",
+    "@nuxt/eslint": "^1.14.0",
+    "@types/node": "^25.2.2",
     "eslint": "^9.39.2",
     "typescript": "^5.9.3",
     "vue-tsc": "^3.2.4"
@@ -58,5 +58,5 @@
   "resolutions": {
     "nitropack": "^2.13.0"
   },
-  "packageManager": "pnpm@10.28.2"
+  "packageManager": "pnpm@10.29.2"
 }
