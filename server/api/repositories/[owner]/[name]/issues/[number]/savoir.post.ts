@@ -78,7 +78,7 @@ export default defineEventHandler(async (event) => {
   // Init Savoir SDK
   const savoir = createSavoir({
     apiUrl: savoirConfig.apiUrl,
-    apiKey: savoirConfig.apiKey || undefined
+    source: 'volta'
   })
 
   // Optionally fetch agent config for custom instructions
@@ -124,11 +124,17 @@ ${issueContext}`,
     stopWhen: stepCountIs(12)
   })
 
+  const startTime = Date.now()
+
   const result = await agent.generate({
     prompt: `Search the documentation to find information relevant to this issue and write a helpful response that can be posted directly as a GitHub comment.
 
 Issue #${issue.number}: ${issue.title}
 ${issue.body ? `\n${issue.body}` : ''}`
+  })
+
+  savoir.reportUsage(result, {
+    durationMs: Date.now() - startTime
   })
 
   return { response: result.text }

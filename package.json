@@ -30,7 +30,7 @@
     "@tiptap/extension-table": "^3.19.0",
     "@tiptap/pm": "^3.19.0",
     "@tiptap/vue-3": "^3.19.0",
-    "@savoir/sdk": "0.1.0-alpha.1",
+    "@savoir/sdk": "0.1.0-alpha.2",
     "@vercel/analytics": "^1.6.1",
     "@vite-pwa/nuxt": "1.1.1",
     "@vueuse/core": "^14.2.0",
