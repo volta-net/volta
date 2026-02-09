@@ -10,18 +10,21 @@ const emit = defineEmits<{
   filter: [filter: Filter]
 }>()
 
-const issuesRefs = ref<Record<number, Element>>({})
+const scrollArea = useTemplateRef('scrollArea')
 const selectedIssue = defineModel<Issue | null>()
 
-watch(selectedIssue, () => {
-  if (!selectedIssue.value) {
-    return
+function scrollToSelected() {
+  if (!selectedIssue.value) return
+
+  const index = props.issues.findIndex(i => i.id === selectedIssue.value!.id)
+  if (index !== -1) {
+    scrollArea.value?.virtualizer?.scrollToIndex(index)
   }
-  const ref = issuesRefs.value[selectedIssue.value.id]
-  if (ref) {
-    ref.scrollIntoView({ block: 'nearest' })
-  }
-})
+}
+
+// Scroll when selection changes or when the list renders/updates with a selected item
+// flush: 'post' ensures the virtualizer is ready before scrolling
+watch([selectedIssue, () => props.issues], scrollToSelected, { flush: 'post' })
 
 // Keep selectedIssue in sync with issues array after refresh
 watch(() => props.issues, (newIssues) => {
@@ -56,16 +59,20 @@ defineShortcuts({
 </script>
 
 <template>
-  <div class="overflow-y-auto divide-y divide-default isolate focus:outline-none">
+  <UScrollArea
+    ref="scrollArea"
+    v-slot="{ item: issue }"
+    :items="issues"
+    :virtualize="{ estimateSize: 44 }"
+    class="focus:outline-none"
+    :ui="{ viewport: 'divide-y divide-default isolate' }"
+  >
     <IssuesItem
-      v-for="issue in issues"
-      :key="issue.id"
-      :ref="(el: any) => { issuesRefs[issue.id] = el?.$el as Element }"
       :item="issue"
       :selected="selectedIssue?.id === issue.id"
       :active-filters="activeFilters"
       @select="selectedIssue = $event"
       @filter="emit('filter', $event)"
     />
-  </div>
+  </UScrollArea>
 </template>

@@ -11,6 +11,7 @@ const emit = defineEmits<{
 
 const toast = useToast()
 const { copy } = useClipboard()
+const { selectIssue } = useFavoriteIssues()
 const { icon: stateIcon, color: stateColor, label: stateLabel } = useIssueState(computed(() => props.issue))
 
 function copyIssueNumber() {
@@ -28,6 +29,29 @@ function copyGitBranch() {
   if (!props.issue.headRef) return
   copy(props.issue.headRef)
   toast.add({ title: `Copied ${props.issue.headRef} to clipboard`, icon: 'i-lucide-copy' })
+}
+
+function navigateToLinkedItem(item: { id: number, number: number, title: string, state: string, htmlUrl: string | null }, isPullRequest: boolean) {
+  const repo = props.issue.repository
+  if (!repo) return
+
+  selectIssue({
+    id: item.id,
+    number: item.number,
+    title: item.title,
+    state: item.state,
+    stateReason: null,
+    pullRequest: isPullRequest,
+    draft: null,
+    merged: null,
+    htmlUrl: item.htmlUrl,
+    repository: {
+      id: repo.id,
+      name: repo.fullName.split('/')[1]!,
+      fullName: repo.fullName
+    }
+  })
+  navigateTo(isPullRequest ? '/pulls' : '/issues')
 }
 
 defineShortcuts({
@@ -559,12 +583,11 @@ const reviewState = useReviewState(computed(() => props.issue))
         <UButton
           v-for="pr in issue.linkedPrs"
           :key="pr.id"
-          :to="pr.htmlUrl!"
-          target="_blank"
           icon="i-lucide-git-pull-request"
           :ui="{ leadingIcon: 'text-success' }"
           variant="ghost"
           class="text-sm/4 px-2"
+          @click="navigateToLinkedItem(pr, true)"
         >
           <span class="text-muted font-normal">#{{ pr.number }}</span>
           <span class="truncate">{{ pr.title }}</span>
@@ -580,12 +603,11 @@ const reviewState = useReviewState(computed(() => props.issue))
         <UButton
           v-for="linkedIssue in issue.linkedIssues"
           :key="linkedIssue.id"
-          :to="linkedIssue.htmlUrl!"
-          target="_blank"
           :icon="linkedIssue.state === 'open' ? 'i-lucide-circle-dot' : 'i-lucide-circle-check'"
           :ui="{ leadingIcon: linkedIssue.state === 'open' ? 'text-success' : 'text-important' }"
           variant="ghost"
           class="text-sm/4 px-2"
+          @click="navigateToLinkedItem(linkedIssue, false)"
         >
           <span class="text-muted font-normal">#{{ linkedIssue.number }}</span>
           <span class="truncate">{{ linkedIssue.title }}</span>

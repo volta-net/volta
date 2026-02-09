@@ -1,25 +1,36 @@
 import { breakpointsTailwind, useWindowFocus, useBreakpoints } from '@vueuse/core'
 import { useFilter } from 'reka-ui'
-import type { MaybeRefOrGetter } from 'vue'
+import type { Ref } from 'vue'
 import type { Issue } from '#shared/types'
-import { ref, computed, watch, toValue, useLazyFetch, useFavoriteRepositories, useFavoriteIssues, defineShortcuts, useFilters, applyFilters, matchIssueFilter } from '#imports'
+import { ref, computed, watch, useFavoriteRepositories, useFavoriteIssues, defineShortcuts, useFilters, applyFilters, matchIssueFilter } from '#imports'
 
 export interface IssuesListConfig {
   title: string
   icon: string
-  api: MaybeRefOrGetter<string>
-  emptyText: MaybeRefOrGetter<string>
+  emptyText: string
   panelId: string
+  items: Ref<Issue[]>
+  status: Ref<string>
+  refresh: () => Promise<void>
 }
 
 export function useIssuesList(config: IssuesListConfig) {
-  const apiUrl = computed(() => toValue(config.api))
-  const emptyText = computed(() => toValue(config.emptyText))
+  const { status, refresh } = config
 
-  // Fetch items
-  const { data: items, status, refresh } = useLazyFetch<Issue[]>(apiUrl, {
-    default: () => [],
-    watch: [apiUrl]
+  // Cache items in useState so they persist across navigations
+  const cachedItems = useState<Issue[]>(`${config.panelId}-items`, () => [])
+
+  const items = computed(() => {
+    if (config.items.value?.length || status.value === 'success') {
+      return config.items.value ?? []
+    }
+    return cachedItems.value
+  })
+
+  watch(config.items, (val) => {
+    if (status.value === 'success' && val) {
+      cachedItems.value = val
+    }
   })
 
   // Favorite repositories - use shared composable
@@ -33,12 +44,13 @@ export function useIssuesList(config: IssuesListConfig) {
   // Favorite issues - use shared composable for cross-component communication
   const { selectedIssue, clearSelection } = useFavoriteIssues()
 
-  // Selected issue state
-  const selectedItem = ref<Issue | null>(null)
+  // Selected issue state - useState so it persists across navigations
+  const selectedItem = useState<Issue | null>(`${config.panelId}-selected`, () => null)
 
-  // Watch for favorite issue selection from sidebar
+  // Watch for issue selection from sidebar favorites or linked items
+  const isPullsPanel = config.panelId === 'pulls'
   watch(selectedIssue, (issue) => {
-    if (issue) {
+    if (issue && issue.pullRequest === isPullsPanel) {
       selectedItem.value = {
         ...issue,
         repositoryId: issue.repository.id,
@@ -116,7 +128,7 @@ export function useIssuesList(config: IssuesListConfig) {
   return {
     // Config
     config,
-    emptyText,
+    emptyText: config.emptyText,
     // Data
     items,
     filteredItems,

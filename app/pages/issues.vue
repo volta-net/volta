@@ -3,13 +3,15 @@ useSeoMeta({
   title: 'Issues'
 })
 
+const { data, status, refresh } = useLazyFetch<Issue[]>('/api/issues?pullRequest=false&state=open', {
+  default: () => []
+})
+
 const {
   config,
   emptyText,
   items,
   filteredItems,
-  status,
-  refresh,
   q,
   searchInputRef,
   filters,
@@ -22,12 +24,14 @@ const {
   hasFavorites,
   hasSynced,
   isMobile
-} = await useIssuesList({
+} = useIssuesList({
   title: 'Issues',
   icon: 'i-lucide-circle-dot',
-  api: '/api/issues?pullRequest=false&state=open',
   emptyText: 'All triaged!',
-  panelId: 'issues'
+  panelId: 'issues',
+  items: data,
+  status,
+  refresh
 })
 </script>
 

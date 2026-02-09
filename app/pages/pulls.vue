@@ -3,13 +3,15 @@ useSeoMeta({
   title: 'Pull Requests'
 })
 
+const { data, status, refresh } = useLazyFetch<Issue[]>('/api/issues?pullRequest=true&state=open', {
+  default: () => []
+})
+
 const {
   config,
   emptyText,
   items,
   filteredItems,
-  status,
-  refresh,
   q,
   searchInputRef,
   filters,
@@ -22,12 +24,14 @@ const {
   hasFavorites,
   hasSynced,
   isMobile
-} = await useIssuesList({
+} = useIssuesList({
   title: 'Pull Requests',
   icon: 'i-lucide-git-pull-request',
-  api: '/api/issues?pullRequest=true&state=open',
   emptyText: 'No open pull requests',
-  panelId: 'pulls'
+  panelId: 'pulls',
+  items: data,
+  status,
+  refresh
 })
 </script>
 
