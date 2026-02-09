@@ -36,14 +36,8 @@ function scrollToComment(commentId: number) {
   }
 }
 
-const commentFormRef = ref<{ setContent: (text: string) => void } | null>(null)
-
-function setCommentContent(text: string) {
-  commentFormRef.value?.setContent(text)
-}
-
-// Expose scroll function and comment setter for parent components
-defineExpose({ scrollToComment, setCommentContent })
+// Expose scroll function for parent components
+defineExpose({ scrollToComment })
 
 const { user } = useUserSession()
 
@@ -232,7 +226,6 @@ const timelineItems = computed(() => {
 
     <template #comment-form-wrapper>
       <IssueCommentForm
-        ref="commentFormRef"
         :issue="issue"
         :collaborators="collaborators"
         @refresh="emit('refresh')"
