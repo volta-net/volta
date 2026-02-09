@@ -5,8 +5,10 @@ import type { Notification } from '#shared/types'
 const toast = useToast()
 const confirm = useConfirmDialog()
 
-const { data: notifications, status, refresh } = await useLazyFetch<Notification[]>('/api/notifications', {
-  default: () => []
+const { data: cached } = useNuxtData<Notification[]>('inbox')
+const { data: notifications, status, refresh } = useLazyFetch<Notification[]>('/api/notifications', {
+  key: 'inbox',
+  default: () => cached.value || []
 })
 
 // Filters

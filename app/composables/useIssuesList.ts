@@ -17,21 +17,7 @@ export interface IssuesListConfig {
 export function useIssuesList(config: IssuesListConfig) {
   const { status, refresh } = config
 
-  // Cache items in useState so they persist across navigations
-  const cachedItems = useState<Issue[]>(`${config.panelId}-items`, () => [])
-
-  const items = computed(() => {
-    if (config.items.value?.length || status.value === 'success') {
-      return config.items.value ?? []
-    }
-    return cachedItems.value
-  })
-
-  watch(config.items, (val) => {
-    if (status.value === 'success' && val) {
-      cachedItems.value = val
-    }
-  })
+  const items = config.items
 
   // Favorite repositories - use shared composable
   const {
