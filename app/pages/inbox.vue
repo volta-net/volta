@@ -3,12 +3,13 @@ import { breakpointsTailwind } from '@vueuse/core'
 import type { Notification } from '#shared/types'
 
 const toast = useToast()
+const nuxtApp = useNuxtApp()
 const confirm = useConfirmDialog()
 
-const { data: cached } = useNuxtData<Notification[]>('inbox')
 const { data: notifications, status, refresh } = useLazyFetch<Notification[]>('/api/notifications', {
   key: 'inbox',
-  default: () => cached.value || []
+  default: () => nuxtApp.payload.data['inbox'] as Notification[] ?? [],
+  getCachedData: () => undefined
 })
 
 // Filters

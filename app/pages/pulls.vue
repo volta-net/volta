@@ -3,10 +3,12 @@ useSeoMeta({
   title: 'Pull Requests'
 })
 
-const { data: cached } = useNuxtData<Issue[]>('pulls')
+const nuxtApp = useNuxtApp()
+
 const { data, status, refresh } = useLazyFetch<Issue[]>('/api/issues?pullRequest=true&state=open', {
   key: 'pulls',
-  default: () => cached.value || []
+  default: () => nuxtApp.payload.data['pulls'] as Issue[] ?? [],
+  getCachedData: () => undefined
 })
 
 const {

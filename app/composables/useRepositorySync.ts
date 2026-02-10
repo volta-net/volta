@@ -1,15 +1,22 @@
 import { useWindowFocus } from '@vueuse/core'
-import { ref, computed, watch, useLazyFetch, useToast } from '#imports'
+import { ref, computed, watch, useToast } from '#imports'
+import type { Ref } from 'vue'
 import type { Installation } from '#shared/types'
+
+interface RepositorySyncConfig {
+  installations: Ref<Installation[]>
+  installationsStatus: Ref<string>
+  refresh: () => Promise<void>
+}
 
 /**
  * Composable for managing repository sync operations with polling.
  * Handles single and bulk sync operations with a shared polling loop.
  */
-export function useRepositorySync() {
+export function useRepositorySync(config: RepositorySyncConfig) {
   const toast = useToast()
 
-  const { data: installations, status: installationsStatus, refresh } = useLazyFetch<Installation[]>('/api/installations')
+  const { installations, installationsStatus, refresh } = config
 
   // Refresh data when window gains focus and check poll queue
   const focused = useWindowFocus()

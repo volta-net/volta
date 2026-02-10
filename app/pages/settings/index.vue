@@ -5,15 +5,23 @@ import type { DropdownMenuItem } from '@nuxt/ui'
 const toast = useToast()
 const config = useRuntimeConfig().public
 
+const nuxtApp = useNuxtApp()
+const { data: installations, status: installationsStatus, refresh } = useLazyFetch<Installation[]>('/api/installations', {
+  key: 'installations',
+  default: () => nuxtApp.payload.data['installations'] as Installation[] ?? [],
+  getCachedData: () => undefined
+})
+
 const {
-  installations,
-  installationsStatus,
-  refresh,
   isSyncing,
   isBeingPolled,
   syncRepository,
   syncMultiple
-} = useRepositorySync()
+} = useRepositorySync({
+  installations,
+  installationsStatus,
+  refresh
+})
 
 const {
   getDropdownItems: getSubscriptionDropdownItems,
