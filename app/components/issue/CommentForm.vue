@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { DropdownMenuItem } from '@nuxt/ui'
 import type { MentionUser } from '~/composables/useEditorMentions'
 
 const props = defineProps<{
@@ -7,13 +8,37 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'refresh'): void
+  (e: 'refresh' | 'reopen-issue' | 'close-as-duplicate'): void
+  (e: 'close-issue', stateReason: 'completed' | 'not_planned'): void
 }>()
 
 const toast = useToast()
 
 const newComment = ref('')
 const isSubmitting = ref(false)
+
+const isOpen = computed(() => props.issue.state === 'open')
+const isIssue = computed(() => !props.issue.pullRequest)
+
+// Close reason dropdown items
+const closeItems = computed<DropdownMenuItem[][]>(() => [[
+  {
+    label: 'Close as completed',
+    icon: 'i-lucide-circle-check',
+    ui: { itemLeadingIcon: 'text-important group-data-highlighted:text-important' },
+    onSelect: () => emit('close-issue', 'completed')
+  },
+  {
+    label: 'Close as not planned',
+    icon: 'i-lucide-circle-slash',
+    onSelect: () => emit('close-issue', 'not_planned')
+  },
+  {
+    label: 'Close as duplicate',
+    icon: 'i-lucide-copy',
+    onSelect: () => emit('close-as-duplicate')
+  }
+]])
 
 defineShortcuts({
   meta_s: {
@@ -80,7 +105,37 @@ async function addComment() {
       </template>
     </IssueEditor>
 
-    <div class="flex items-center justify-end">
+    <div class="flex items-center justify-end gap-1.5">
+      <!-- Close / Reopen button (issues only) -->
+      <template v-if="isIssue">
+        <UFieldGroup v-if="isOpen">
+          <UButton
+            label="Close issue"
+            icon="i-lucide-circle-check"
+            color="neutral"
+            variant="outline"
+            :ui="{ leadingIcon: 'text-important' }"
+            @click="emit('close-issue', 'completed')"
+          />
+          <UDropdownMenu :items="closeItems" :content="{ align: 'end' }">
+            <UButton
+              icon="i-lucide-chevron-down"
+              color="neutral"
+              variant="outline"
+            />
+          </UDropdownMenu>
+        </UFieldGroup>
+
+        <UButton
+          v-else
+          label="Reopen issue"
+          icon="i-lucide-circle-dot"
+          color="neutral"
+          variant="subtle"
+          @click="emit('reopen-issue')"
+        />
+      </template>
+
       <UTooltip text="Submit comment" :kbds="['meta', 's']">
         <UButton
           label="Comment"

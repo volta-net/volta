@@ -206,6 +206,48 @@ function handleTransferred() {
   emit('refresh')
 }
 
+// Close / Reopen issue
+const duplicateOpen = ref(false)
+
+async function handleCloseIssue(stateReason: 'completed' | 'not_planned') {
+  if (!issueUrl.value || !issue.value) return
+
+  try {
+    await $fetch(`${issueUrl.value}/state`, {
+      method: 'PATCH',
+      body: { state: 'closed', stateReason }
+    })
+
+    toast.add({
+      title: stateReason === 'completed' ? 'Issue closed as completed' : 'Issue closed as not planned',
+      icon: stateReason === 'completed' ? 'i-lucide-circle-check' : 'i-lucide-circle-slash'
+    })
+    await handleRefresh()
+  } catch (err: any) {
+    toast.add({ title: 'Failed to close issue', description: err.data?.message || err.message, color: 'error', icon: 'i-lucide-x' })
+  }
+}
+
+async function handleReopenIssue() {
+  if (!issueUrl.value || !issue.value) return
+
+  try {
+    await $fetch(`${issueUrl.value}/state`, {
+      method: 'PATCH',
+      body: { state: 'open', stateReason: 'reopened' }
+    })
+
+    toast.add({ title: 'Issue reopened', icon: 'i-lucide-circle-dot' })
+    await handleRefresh()
+  } catch (err: any) {
+    toast.add({ title: 'Failed to reopen issue', description: err.data?.message || err.message, color: 'error', icon: 'i-lucide-x' })
+  }
+}
+
+function handleDuplicateClosed() {
+  handleRefresh()
+}
+
 // Force sync with GitHub
 const syncing = ref(false)
 async function handleSync() {
@@ -465,6 +507,9 @@ const agentItems = computed(() => {
           :analyzing-resolution="analyzingResolution"
           @refresh="handleRefresh"
           @scroll-to-answer="scrollToAnswerComment"
+          @close-issue="handleCloseIssue"
+          @reopen-issue="handleReopenIssue"
+          @close-as-duplicate="duplicateOpen = true"
         />
       </div>
 
@@ -482,6 +527,9 @@ const agentItems = computed(() => {
           :issue="issue"
           :collaborators="collaborators"
           @refresh="handleRefresh"
+          @close-issue="handleCloseIssue"
+          @reopen-issue="handleReopenIssue"
+          @close-as-duplicate="duplicateOpen = true"
         />
       </div>
     </div>
@@ -512,6 +560,15 @@ const agentItems = computed(() => {
       :repo-full-name="repoFullName"
       :on-close="onClose"
       @transferred="handleTransferred"
+    />
+
+    <!-- Duplicate Issue Modal -->
+    <IssueDuplicateModal
+      v-model:open="duplicateOpen"
+      :issue-url="issueUrl"
+      :repo-full-name="repoFullName"
+      :issue-number="item.number"
+      @closed="handleDuplicateClosed"
     />
   </div>
 </template>

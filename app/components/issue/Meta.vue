@@ -1,11 +1,14 @@
 <script setup lang="ts">
+import type { DropdownMenuItem } from '@nuxt/ui'
+
 const props = defineProps<{
   issue: IssueDetail
   analyzingResolution?: boolean
 }>()
 
 const emit = defineEmits<{
-  (e: 'refresh'): void
+  (e: 'refresh' | 'reopen-issue' | 'close-as-duplicate'): void
+  (e: 'close-issue', stateReason: 'completed' | 'not_planned'): void
   (e: 'scroll-to-answer', commentId: number): void
 }>()
 
@@ -332,6 +335,40 @@ const ciStatusConfig = computed(() => getAggregatedCIStatus(props.issue.ciStatus
 
 // Review state (PRs only)
 const reviewState = useReviewState(computed(() => props.issue))
+
+// State change dropdown items (issues only)
+const stateItems = computed<DropdownMenuItem[][]>(() => {
+  if (props.issue.pullRequest) return []
+
+  if (props.issue.state === 'open') {
+    return [[
+      {
+        label: 'Close as completed',
+        icon: 'i-lucide-circle-check',
+        ui: { itemLeadingIcon: 'text-important group-data-highlighted:text-important' },
+        onSelect: () => emit('close-issue', 'completed')
+      },
+      {
+        label: 'Close as not planned',
+        icon: 'i-lucide-circle-slash',
+        onSelect: () => emit('close-issue', 'not_planned')
+      },
+      {
+        label: 'Close as duplicate',
+        icon: 'i-lucide-copy',
+        onSelect: () => emit('close-as-duplicate')
+      }
+    ]]
+  }
+
+  return [[
+    {
+      label: 'Reopen issue',
+      icon: 'i-lucide-circle-dot',
+      onSelect: () => emit('reopen-issue')
+    }
+  ]]
+})
 </script>
 
 <template>
@@ -341,42 +378,59 @@ const reviewState = useReviewState(computed(() => props.issue))
       <span class="text-xs/6 text-muted font-medium px-1.5">Properties</span>
 
       <!-- State -->
-      <UButton
-        as="div"
-        :icon="stateIcon"
-        :label="`${stateLabel} ${issue.pullRequest ? 'pull request' : 'issue'}`"
-        variant="ghost"
-        :ui="{ leadingIcon: `text-${stateColor}` }"
-        class="text-sm/4 hover:bg-transparent active:bg-transparent pl-2 pr-0"
-      >
-        <template #trailing>
-          <div class="flex items-center ms-auto -my-1.5">
-            <UTooltip text="Copy URL" :kbds="['meta', 'shift', ',']">
-              <UButton
-                icon="i-lucide-link"
-                variant="ghost"
-                @click="copyIssueUrl"
-              />
-            </UTooltip>
+      <div class="flex items-center gap-1 justify-between">
+        <UDropdownMenu
+          v-if="!issue.pullRequest"
+          v-slot="{ open }"
+          :items="stateItems"
+          :ui="{ content: 'w-[calc(var(--reka-dropdown-menu-trigger-width)+4px)]' }"
+        >
+          <UButton
+            :icon="stateIcon"
+            :label="`${stateLabel} issue`"
+            variant="ghost"
+            :ui="{ leadingIcon: `text-${stateColor}` }"
+            class="text-sm/4 pl-2 pr-0 flex-1"
+            :class="[open && 'bg-elevated']"
+          />
+        </UDropdownMenu>
 
-            <UTooltip text="Copy number" :kbds="['meta', '.']">
-              <UButton
-                icon="i-lucide-hash"
-                variant="ghost"
-                @click="copyIssueNumber"
-              />
-            </UTooltip>
+        <UButton
+          v-else
+          as="div"
+          :icon="stateIcon"
+          :label="`${stateLabel} pull request`"
+          variant="ghost"
+          :ui="{ leadingIcon: `text-${stateColor}` }"
+          class="text-sm/4 hover:bg-transparent active:bg-transparent pl-2 pr-0"
+        />
 
-            <UTooltip text="Copy branch" :kbds="['meta', 'shift', '.']">
-              <UButton
-                icon="i-lucide-git-branch"
-                variant="ghost"
-                @click="copyGitBranch"
-              />
-            </UTooltip>
-          </div>
-        </template>
-      </UButton>
+        <div class="flex items-center ms-auto -my-1.5">
+          <UTooltip text="Copy URL" :kbds="['meta', 'shift', ',']">
+            <UButton
+              icon="i-lucide-link"
+              variant="ghost"
+              @click.stop="copyIssueUrl"
+            />
+          </UTooltip>
+
+          <UTooltip text="Copy number" :kbds="['meta', '.']">
+            <UButton
+              icon="i-lucide-hash"
+              variant="ghost"
+              @click.stop="copyIssueNumber"
+            />
+          </UTooltip>
+
+          <UTooltip text="Copy branch" :kbds="['meta', 'shift', '.']">
+            <UButton
+              icon="i-lucide-git-branch"
+              variant="ghost"
+              @click.stop="copyGitBranch"
+            />
+          </UTooltip>
+        </div>
+      </div>
 
       <UButton
         v-if="issue.user"

@@ -10,7 +10,8 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'refresh'): void
+  (e: 'refresh' | 'reopen-issue' | 'close-as-duplicate'): void
+  (e: 'close-issue', stateReason: 'completed' | 'not_planned'): void
 }>()
 
 // eslint-disable-next-line vue/no-dupe-keys
@@ -229,6 +230,9 @@ const timelineItems = computed(() => {
         :issue="issue"
         :collaborators="collaborators"
         @refresh="emit('refresh')"
+        @close-issue="(reason) => emit('close-issue', reason)"
+        @reopen-issue="emit('reopen-issue')"
+        @close-as-duplicate="emit('close-as-duplicate')"
       />
     </template>
   </UTimeline>
