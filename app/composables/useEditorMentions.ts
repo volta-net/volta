@@ -229,14 +229,14 @@ export function useEditorMentions(options: UseEditorMentionsOptions) {
   const items = computed<UserMentionMenuItem[]>(() => {
     const usersMap = new Map<number, MentionUser>()
 
+    // Add author first so they appear at the top of the list
+    if (options.author) {
+      usersMap.set(options.author.id, options.author)
+    }
+
     // Add collaborators
     for (const user of options.collaborators?.value ?? []) {
       usersMap.set(user.id, user)
-    }
-
-    // Add author
-    if (options.author) {
-      usersMap.set(options.author.id, options.author)
     }
 
     // Add commenters
