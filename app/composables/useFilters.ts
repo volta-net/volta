@@ -1,8 +1,9 @@
 import type { Notification, Issue } from '#shared/types'
 import { ref, readonly } from '#imports'
 import { getIssueStateKey } from './useIssueState'
+import { getAggregatedCIStatus } from './useCIState'
 
-export type FilterType = 'actor' | 'action' | 'repository' | 'label' | 'resolution' | 'state'
+export type FilterType = 'actor' | 'action' | 'repository' | 'label' | 'resolution' | 'review' | 'ci' | 'state'
 
 export interface Filter {
   type: FilterType
@@ -72,6 +73,29 @@ export function matchNotificationFilter(notification: Notification, filter: Filt
   }
 }
 
+// Get the aggregated CI category for an issue (stable values for filtering)
+export function getIssueCICategory(issue: Issue): string | null {
+  const status = getAggregatedCIStatus(issue.ciStatuses)
+  if (!status) return null
+
+  if (status.color === 'success') return 'Passed'
+  if (status.color === 'error') return 'Failed'
+  return 'Running'
+}
+
+// Get the review state label for a PR issue
+export function getIssueReviewStateLabel(issue: Issue): string | null {
+  if (!issue.pullRequest) return null
+
+  const reviews = issue.reviews ?? []
+  const hasRequestedReviewers = (issue.requestedReviewers?.length ?? 0) > 0
+
+  if (reviews.some(r => r.state === 'CHANGES_REQUESTED')) return 'Changes requested'
+  if (reviews.some(r => r.state === 'APPROVED')) return 'Approved'
+  if (hasRequestedReviewers) return 'Review required'
+  return null
+}
+
 // Filter matcher for issues
 export function matchIssueFilter(issue: Issue, filter: Filter): boolean {
   switch (filter.type) {
@@ -83,6 +107,10 @@ export function matchIssueFilter(issue: Issue, filter: Filter): boolean {
       return issue.labels?.some(l => l.name === filter.value) ?? false
     case 'resolution':
       return issue.resolutionStatus === filter.value
+    case 'review':
+      return getIssueReviewStateLabel(issue) === filter.value
+    case 'ci':
+      return getIssueCICategory(issue) === filter.value
     default:
       return true
   }

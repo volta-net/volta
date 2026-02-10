@@ -445,6 +445,17 @@ const stateItems = computed<DropdownMenuItem[][]>(() => {
         }"
       />
 
+      <!-- Review state (PRs only) -->
+      <UButton
+        v-if="reviewState"
+        as="div"
+        :label="reviewState.label"
+        :icon="reviewState.icon"
+        :ui="{ leadingIcon: `text-${reviewState.color}` }"
+        variant="ghost"
+        class="text-sm/4 px-2 hover:bg-transparent active:bg-transparent"
+      />
+
       <!-- CI Status (PRs only) -->
       <UButton
         v-if="ciStatusConfig"
@@ -455,17 +466,6 @@ const stateItems = computed<DropdownMenuItem[][]>(() => {
         target="_blank"
         variant="ghost"
         class="text-sm/4 px-2"
-      />
-
-      <!-- Review state (PRs only) -->
-      <UButton
-        v-if="reviewState"
-        as="div"
-        :label="reviewState.label"
-        :icon="reviewState.icon"
-        :ui="{ leadingIcon: `text-${reviewState.color}` }"
-        variant="ghost"
-        class="text-sm/4 px-2 hover:bg-transparent active:bg-transparent"
       />
 
       <!-- Resolution status (issues only) -->

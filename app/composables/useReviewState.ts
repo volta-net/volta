@@ -53,13 +53,13 @@ export function useReviewState(issue: Ref<ReviewStateLike | null | undefined>) {
     const hasRequestedReviewers = (value.requestedReviewers?.length ?? 0) > 0
 
     if (reviews.some(r => r.state === 'CHANGES_REQUESTED')) {
-      return { icon: 'i-lucide-file-diff', color: 'error', label: 'Changes requested' }
+      return { icon: 'i-lucide-message-circle-warning', color: 'error', label: 'Changes requested' }
     }
     if (reviews.some(r => r.state === 'APPROVED')) {
-      return { icon: 'i-lucide-check', color: 'success', label: 'Approved' }
+      return { icon: 'i-lucide-message-circle-heart', color: 'success', label: 'Approved' }
     }
     if (hasRequestedReviewers) {
-      return { icon: 'i-lucide-eye', color: 'warning', label: 'Review required' }
+      return { icon: 'i-lucide-message-circle-dashed', color: 'warning', label: 'Review required' }
     }
     return null
   })
