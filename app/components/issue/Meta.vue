@@ -25,10 +25,52 @@ function copyIssueUrl() {
   toast.add({ title: 'Copied URL to clipboard', icon: 'i-lucide-copy' })
 }
 
+const labelToType: Record<string, string> = {
+  'bug': 'fix',
+  'fix': 'fix',
+  'bugfix': 'fix',
+  'enhancement': 'feat',
+  'feature': 'feat',
+  'feat': 'feat',
+  'documentation': 'docs',
+  'docs': 'docs',
+  'refactor': 'refactor',
+  'refactoring': 'refactor',
+  'tech-debt': 'refactor',
+  'performance': 'perf',
+  'perf': 'perf',
+  'test': 'test',
+  'testing': 'test',
+  'ci': 'ci',
+  'build': 'build',
+  'chore': 'chore',
+  'maintenance': 'chore',
+  'style': 'style'
+}
+
+const branchName = computed(() => {
+  if (props.issue.headRef) return props.issue.headRef
+
+  const slug = props.issue.title
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 60)
+    .replace(/-$/, '')
+
+  const type = props.issue.labels
+    ?.map(l => labelToType[l.name.toLowerCase()])
+    .find(Boolean)
+    ?? 'feat'
+
+  return `${type}/${props.issue.number}-${slug}`
+})
+
 function copyGitBranch() {
-  if (!props.issue.headRef) return
-  copy(props.issue.headRef)
-  toast.add({ title: `Copied ${props.issue.headRef} to clipboard`, icon: 'i-lucide-copy' })
+  copy(branchName.value)
+  toast.add({ title: `Copied ${branchName.value} to clipboard`, icon: 'i-lucide-copy' })
 }
 
 function navigateToLinkedItem(item: { id: number, number: number, title: string, state: string, htmlUrl: string | null }, isPullRequest: boolean) {
@@ -309,7 +351,7 @@ const reviewState = useReviewState(computed(() => props.issue))
       >
         <template #trailing>
           <div class="flex items-center ms-auto -my-1.5">
-            <UTooltip :text="`Copy URL`" :kbds="['meta', 'shift', ',']">
+            <UTooltip text="Copy URL" :kbds="['meta', 'shift', ',']">
               <UButton
                 icon="i-lucide-link"
                 variant="ghost"
@@ -317,7 +359,7 @@ const reviewState = useReviewState(computed(() => props.issue))
               />
             </UTooltip>
 
-            <UTooltip :text="`Copy number`" :kbds="['meta', '.']">
+            <UTooltip text="Copy number" :kbds="['meta', '.']">
               <UButton
                 icon="i-lucide-hash"
                 variant="ghost"
@@ -325,7 +367,7 @@ const reviewState = useReviewState(computed(() => props.issue))
               />
             </UTooltip>
 
-            <UTooltip v-if="issue.pullRequest" :text="`Copy branch`" :kbds="['meta', 'shift', '.']">
+            <UTooltip text="Copy branch" :kbds="['meta', 'shift', '.']">
               <UButton
                 icon="i-lucide-git-branch"
                 variant="ghost"
