@@ -90,6 +90,10 @@ const { data: collaborators } = await useLazyFetch<MentionUser[]>(collaboratorsU
   immediate: !!repoFullName.value
 })
 
+// Check if user has write access to the repository
+const hasWriteAccess = computed(() => issue.value?.hasWriteAccess ?? false)
+const readonly = computed(() => !hasWriteAccess.value)
+
 // Local subscription state (initialized from issue, updated on toggle)
 const isSubscribed = ref(false)
 watch(() => issue.value?.isSubscribed, (val) => {
@@ -403,7 +407,7 @@ const moreItems = computed(() => {
     ]
   ]
 
-  if (!props.item.pullRequest) {
+  if (!props.item.pullRequest && hasWriteAccess.value) {
     items.push([
       {
         label: 'Transfer issue',
@@ -505,6 +509,7 @@ const agentItems = computed(() => {
 
       <template #right>
         <UDropdownMenu
+          v-if="hasWriteAccess"
           :items="agentItems"
           :content="{ align: 'start' }"
         >
@@ -545,6 +550,7 @@ const agentItems = computed(() => {
       <div class="border-b lg:border-b-0 lg:border-l border-default lg:order-last lg:overflow-y-auto p-4 sm:px-6">
         <IssueMeta
           :issue="issue"
+          :readonly="readonly"
           :analyzing-resolution="analyzingResolution"
           @refresh="handleRefresh"
           @scroll-to-answer="scrollToAnswerComment"
@@ -555,10 +561,11 @@ const agentItems = computed(() => {
       </div>
 
       <div :key="issue.id" class="flex-1 lg:overflow-y-auto p-4 sm:px-6 flex flex-col gap-4 lg:col-span-2 pb-22">
-        <IssueTitle :issue="issue" @update:title="handleRefresh" />
+        <IssueTitle :issue="issue" :readonly="readonly" @update:title="handleRefresh" />
 
         <IssueBody
           :issue="issue"
+          :readonly="readonly"
           :collaborators="collaborators"
           @refresh="handleRefresh"
         />
@@ -566,6 +573,7 @@ const agentItems = computed(() => {
         <IssueTimeline
           ref="timelineRef"
           :issue="issue"
+          :readonly="readonly"
           :collaborators="collaborators"
           @refresh="handleRefresh"
           @comment-add="handleCommentAdd"

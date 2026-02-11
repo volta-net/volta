@@ -28,7 +28,10 @@ export default defineEventHandler(async (event) => {
   }
 
   // Check user has access to this repository
-  await requireRepositoryAccess(user.id, repository.id)
+  // Public repos are viewable by any authenticated user (e.g. via inbox notifications)
+  if (repository.private) {
+    await requireRepositoryAccess(user.id, repository.id)
+  }
 
   // Fetch issue with relations
   const issue = await db.query.issues.findFirst({
@@ -83,6 +86,9 @@ export default defineEventHandler(async (event) => {
   if (!issue) {
     throw createError({ statusCode: 404, message: 'Issue not found' })
   }
+
+  // Check if user has write access (collaborator)
+  const hasWriteAccess = await isRepositoryCollaborator(user.id, repository.id)
 
   // Get valid access token (refreshes if expired)
   const accessToken = await getValidAccessToken(event)
@@ -167,7 +173,8 @@ export default defineEventHandler(async (event) => {
         linkedPrs: freshLinkedPrs,
         linkedIssues: freshLinkedIssues,
         ciStatuses: freshCiStatuses,
-        isSubscribed
+        isSubscribed,
+        hasWriteAccess
       }
     } catch (err) {
       console.warn('[issues] Failed to sync issue from GitHub:', err)
@@ -203,7 +210,8 @@ export default defineEventHandler(async (event) => {
     linkedPrs,
     linkedIssues,
     ciStatuses,
-    isSubscribed
+    isSubscribed,
+    hasWriteAccess
   }
 })
 

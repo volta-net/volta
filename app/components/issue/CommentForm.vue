@@ -4,6 +4,7 @@ import type { MentionUser } from '~/composables/useEditorMentions'
 
 const props = defineProps<{
   issue: IssueDetail
+  readonly?: boolean
   collaborators?: MentionUser[]
 }>()
 
@@ -118,8 +119,8 @@ async function addComment() {
     </IssueEditor>
 
     <div class="flex items-center justify-end gap-1.5">
-      <!-- Close / Reopen button (issues only) -->
-      <template v-if="isIssue">
+      <!-- Close / Reopen button (issues only, requires write access) -->
+      <template v-if="isIssue && !readonly">
         <UFieldGroup v-if="isOpen">
           <UButton
             label="Close issue"

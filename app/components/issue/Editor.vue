@@ -17,6 +17,7 @@ const props = withDefaults(defineProps<{
   placeholder?: string
   ui?: Record<string, string>
   // Features
+  editable?: boolean
   completion?: boolean
   parseMentions?: boolean
   bubbleToolbar?: boolean
@@ -25,6 +26,7 @@ const props = withDefaults(defineProps<{
 }>(), {
   placeholder: 'Write something...',
   collaborators: () => [],
+  editable: true,
   completion: true,
   parseMentions: true,
   bubbleToolbar: true,
@@ -176,6 +178,7 @@ const appendToBody = import.meta.client ? () => document.body : undefined
     v-slot="{ editor }"
     ref="editorRef"
     v-model="content"
+    :editable="editable"
     :handlers="customHandlers"
     :extensions="extensions"
     :starter-kit="{

@@ -5,6 +5,7 @@ import type { IssueReviewComment, LinkedPR } from '#shared/types'
 
 const props = defineProps<{
   issue: IssueDetail
+  readonly?: boolean
   collaborators?: MentionUser[]
   highlightedCommentId?: number | null
 }>()
@@ -332,6 +333,7 @@ const timelineItems = computed(() => {
     <template #comment-form-wrapper>
       <IssueCommentForm
         :issue="issue"
+        :readonly="readonly"
         :collaborators="collaborators"
         @refresh="emit('refresh')"
         @comment-add="(payload) => emit('comment-add', payload)"

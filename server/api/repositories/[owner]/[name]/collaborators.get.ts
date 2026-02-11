@@ -20,8 +20,10 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, message: 'Repository not found' })
   }
 
-  // Check user has access to this repository
-  await requireRepositoryAccess(user.id, repository.id)
+  // Check user has access (public repos are accessible to any authenticated user)
+  if (repository.private) {
+    await requireRepositoryAccess(user.id, repository.id)
+  }
 
   // Get collaborators with user details
   const collaborators = await db.query.repositoryCollaborators.findMany({

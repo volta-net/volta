@@ -3,6 +3,7 @@ import type { DropdownMenuItem } from '@nuxt/ui'
 
 const props = defineProps<{
   issue: IssueDetail
+  readonly?: boolean
   analyzingResolution?: boolean
 }>()
 
@@ -380,7 +381,7 @@ const stateItems = computed<DropdownMenuItem[][]>(() => {
       <!-- State -->
       <div class="flex items-center gap-1 justify-between">
         <UDropdownMenu
-          v-if="!issue.pullRequest"
+          v-if="!issue.pullRequest && !readonly"
           v-slot="{ open }"
           :items="stateItems"
           :ui="{ content: 'w-[calc(var(--reka-dropdown-menu-trigger-width)+4px)]' }"
@@ -399,7 +400,7 @@ const stateItems = computed<DropdownMenuItem[][]>(() => {
           v-else
           as="div"
           :icon="stateIcon"
-          :label="`${stateLabel} pull request`"
+          :label="`${stateLabel} ${issue.pullRequest ? 'pull request' : 'issue'}`"
           variant="ghost"
           :ui="{ leadingIcon: `text-${stateColor}` }"
           class="text-sm/4 hover:bg-transparent active:bg-transparent pl-2 pr-0"
@@ -538,6 +539,7 @@ const stateItems = computed<DropdownMenuItem[][]>(() => {
         />
 
         <USelectMenu
+          v-if="!readonly"
           :model-value="selectedLabels"
           :items="availableLabels"
           multiple
@@ -576,6 +578,7 @@ const stateItems = computed<DropdownMenuItem[][]>(() => {
         />
 
         <USelectMenu
+          v-if="!readonly"
           :model-value="selectedAssignees"
           :items="availableAssignees"
           icon="i-lucide-plus"
@@ -638,6 +641,7 @@ const stateItems = computed<DropdownMenuItem[][]>(() => {
         </UBadge>
 
         <USelectMenu
+          v-if="!readonly"
           :model-value="selectedReviewers"
           :items="availableReviewers"
           icon="i-lucide-plus"

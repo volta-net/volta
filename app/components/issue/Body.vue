@@ -3,6 +3,7 @@ import type { MentionUser } from '~/composables/useEditorMentions'
 
 const props = defineProps<{
   issue: IssueDetail
+  readonly?: boolean
   collaborators?: MentionUser[]
 }>()
 
@@ -78,6 +79,7 @@ async function saveBody() {
   <IssueEditor
     v-model="body"
     :issue="issue"
+    :editable="!readonly"
     :collaborators="collaborators"
     placeholder="Add a description..."
     @parsing="isParsing = $event"
