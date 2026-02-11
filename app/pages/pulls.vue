@@ -21,6 +21,7 @@ const {
   filters,
   toggleFilter,
   clearFilters,
+  availableFilters,
   selectedItem,
   isPanelOpen,
   favoriteRepositories,
@@ -65,6 +66,7 @@ const {
         <template v-if="hasFavorites" #right>
           <Filters
             :filters="filters"
+            :available-filters="availableFilters"
             @toggle="toggleFilter"
             @clear="clearFilters"
           />

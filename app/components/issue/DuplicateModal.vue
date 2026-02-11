@@ -39,10 +39,12 @@ const groups = computed(() => [{
       label: `#${issue.number} ${issue.title}`,
       value: String(issue.number),
       icon: issue.state === 'open' ? 'i-lucide-circle-dot' : 'i-lucide-circle-check',
-      avatar: issue.user ? {
-        src: issue.user.avatarUrl!,
-        alt: issue.user.login
-      } : undefined
+      avatar: issue.user
+        ? {
+            src: issue.user.avatarUrl!,
+            alt: issue.user.login
+          }
+        : undefined
     }))
 }])
 

@@ -177,10 +177,10 @@ const showBadgeTooltips = computed(() => containerWidth.value < 768)
         <FiltersButton
           v-for="label in item.labels"
           :key="label.id"
-          :filter="{ type: 'label', value: label.name, label: label.name, color: label.color }"
+          :filter="{ type: 'label', value: label.name, label: label.name, chip: { color: label.color } }"
           :active="isFilterActive('label', label.name)"
           class="rounded-full"
-          @click.stop="emit('filter', { type: 'label', value: label.name, label: label.name, color: label.color })"
+          @click.stop="emit('filter', { type: 'label', value: label.name, label: label.name, chip: { color: label.color } })"
         />
 
         <FiltersButton

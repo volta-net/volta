@@ -30,12 +30,12 @@ const slots = defineSlots<ButtonSlots>()
     :active-variant="activeVariant"
     :active="active"
     size="xs"
-    class="border border-dashed ring-0 py-[3px]"
+    class="border border-dashed ring-0 py-[3px] group"
     :class="[active ? 'border-primary/50' : 'border-accented']"
-    :ui="{ trailingIcon: 'size-3.5' }"
+    :ui="{ trailingIcon: 'size-3.5 text-muted group-hover:text-highlighted transition-colors' }"
   >
-    <template v-if="filter.color" #leading>
-      <IssueLabelChip :color="filter.color" />
+    <template v-if="filter.chip" #leading>
+      <IssueLabelChip :color="filter.chip.color" />
     </template>
 
     <template v-for="(_, name) in slots" #[name]="slotData">

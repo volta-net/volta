@@ -14,6 +14,8 @@ const { data: notifications, status, refresh } = useLazyFetch<Notification[]>('/
 
 // Filters
 const { filters, toggleFilter, clearFilters } = useFilters()
+const { getActionLabel, getActionIcon } = useNotificationHelpers()
+const availableFilters = computed(() => extractNotificationFilters(notifications.value ?? [], { getActionLabel, getActionIcon }))
 
 const selectedNotification = ref<Notification | null>()
 
@@ -275,6 +277,7 @@ useSeoMeta({
         <template #right>
           <Filters
             :filters="filters"
+            :available-filters="availableFilters"
             @toggle="toggleFilter"
             @clear="clearFilters"
           />
