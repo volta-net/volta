@@ -27,7 +27,7 @@ const issueUrl = computed(() => {
   if (!repoFullName.value || !props.item.number) return ''
   return `/api/repositories/${owner.value}/${name.value}/issues/${props.item.number}`
 })
-const { data: issue, status, refresh: refreshIssue } = await useLazyFetch<IssueDetail & { isSubscribed: boolean }>(issueUrl, {
+const { data: issue, status, refresh: refreshIssue } = await useLazyFetch<IssueDetail & { isSubscribed: boolean, hasWriteAccess: boolean }>(issueUrl, {
   immediate: !!issueUrl.value
 })
 

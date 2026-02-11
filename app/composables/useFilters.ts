@@ -227,7 +227,7 @@ export function extractIssueFilters(items: Issue[]): Filter[] {
         result.push({
           type: 'resolution',
           value: item.resolutionStatus,
-          label: resConfig?.label ?? item.resolutionStatus,
+          label: String(resConfig?.label ?? item.resolutionStatus),
           icon: resConfig?.icon
         })
       }
