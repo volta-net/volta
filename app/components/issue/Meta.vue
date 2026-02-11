@@ -123,6 +123,7 @@ interface LabelItem {
 
 const isLabelsOpen = ref(false)
 const availableLabels = ref<LabelItem[]>([])
+const pendingLabels = ref<LabelItem[]>([])
 
 const selectedLabels = computed<LabelItem[]>(() => {
   return (props.issue.labels ?? []).map(l => ({
@@ -151,27 +152,29 @@ async function fetchLabels() {
 function handleLabelsOpen(open: boolean) {
   isLabelsOpen.value = open
   if (open) {
+    pendingLabels.value = [...selectedLabels.value]
     fetchLabels()
+  } else {
+    persistLabels()
   }
 }
 
-async function onUpdateLabels(newLabels: LabelItem[]) {
+async function persistLabels() {
   const currentIds = new Set(props.issue.labels?.map(l => l.id) ?? [])
-  const newIds = new Set(newLabels.map(l => l.id))
+  const newIds = new Set(pendingLabels.value.map(l => l.id))
 
-  // Find added and removed labels
-  const added = newLabels.filter(l => !currentIds.has(l.id))
+  const added = pendingLabels.value.filter(l => !currentIds.has(l.id))
   const removed = (props.issue.labels ?? []).filter(l => !newIds.has(l.id))
 
+  if (!added.length && !removed.length) return
+
   try {
-    // Add new labels
     for (const label of added) {
       await $fetch(`/api/repositories/${repoPath.value.owner}/${repoPath.value.name}/issues/${props.issue.number}/labels`, {
         method: 'POST',
         body: { labelId: label.id }
       })
     }
-    // Remove old labels
     for (const label of removed) {
       await $fetch(`/api/repositories/${repoPath.value.owner}/${repoPath.value.name}/issues/${props.issue.number}/labels/${label.id}`, {
         method: 'DELETE'
@@ -203,6 +206,7 @@ const selectedAssignees = computed<UserItem[]>(() => {
 })
 const availableAssignees = ref<UserItem[]>([])
 const isAssigneesOpen = ref(false)
+const pendingAssignees = ref<UserItem[]>([])
 
 async function fetchAssignees() {
   if (!repoPath.value.owner) return
@@ -223,27 +227,29 @@ async function fetchAssignees() {
 function handleAssigneesOpen(open: boolean) {
   isAssigneesOpen.value = open
   if (open) {
+    pendingAssignees.value = [...selectedAssignees.value]
     fetchAssignees()
+  } else {
+    persistAssignees()
   }
 }
 
-async function onUpdateAssignees(newAssignees: UserItem[]) {
+async function persistAssignees() {
   const currentIds = new Set(props.issue.assignees?.map(u => u.id) ?? [])
-  const newIds = new Set(newAssignees.map(u => u.id))
+  const newIds = new Set(pendingAssignees.value.map(u => u.id))
 
-  // Find added and removed assignees
-  const added = newAssignees.filter(u => !currentIds.has(u.id))
+  const added = pendingAssignees.value.filter(u => !currentIds.has(u.id))
   const removed = (props.issue.assignees ?? []).filter(u => !newIds.has(u.id))
 
+  if (!added.length && !removed.length) return
+
   try {
-    // Add new assignees
     for (const user of added) {
       await $fetch(`/api/repositories/${repoPath.value.owner}/${repoPath.value.name}/issues/${props.issue.number}/assignees`, {
         method: 'POST',
         body: { userId: user.id, login: user.login }
       })
     }
-    // Remove old assignees
     for (const user of removed) {
       await $fetch(`/api/repositories/${repoPath.value.owner}/${repoPath.value.name}/issues/${props.issue.number}/assignees/${user.id}`, {
         method: 'DELETE',
@@ -270,6 +276,7 @@ const selectedReviewers = computed<UserItem[]>(() => {
 const reviewersWithState = useReviewersWithState(computed(() => props.issue))
 const availableReviewers = ref<UserItem[]>([])
 const isReviewersOpen = ref(false)
+const pendingReviewers = ref<UserItem[]>([])
 
 async function fetchReviewers() {
   if (!repoPath.value.owner) return
@@ -290,27 +297,29 @@ async function fetchReviewers() {
 function handleReviewersOpen(open: boolean) {
   isReviewersOpen.value = open
   if (open) {
+    pendingReviewers.value = [...selectedReviewers.value]
     fetchReviewers()
+  } else {
+    persistReviewers()
   }
 }
 
-async function onUpdateReviewers(newReviewers: UserItem[]) {
+async function persistReviewers() {
   const currentIds = new Set(props.issue.requestedReviewers?.map(u => u.id) ?? [])
-  const newIds = new Set(newReviewers.map(u => u.id))
+  const newIds = new Set(pendingReviewers.value.map(u => u.id))
 
-  // Find added and removed reviewers
-  const added = newReviewers.filter(u => !currentIds.has(u.id))
+  const added = pendingReviewers.value.filter(u => !currentIds.has(u.id))
   const removed = (props.issue.requestedReviewers ?? []).filter(u => !newIds.has(u.id))
 
+  if (!added.length && !removed.length) return
+
   try {
-    // Add new reviewers
     for (const user of added) {
       await $fetch(`/api/repositories/${repoPath.value.owner}/${repoPath.value.name}/issues/${props.issue.number}/reviewers`, {
         method: 'POST',
         body: { userId: user.id, login: user.login }
       })
     }
-    // Remove old reviewers
     for (const user of removed) {
       await $fetch(`/api/repositories/${repoPath.value.owner}/${repoPath.value.name}/issues/${props.issue.number}/reviewers/${user.id}`, {
         method: 'DELETE',
@@ -540,7 +549,7 @@ const stateItems = computed<DropdownMenuItem[][]>(() => {
 
         <USelectMenu
           v-if="!readonly"
-          :model-value="selectedLabels"
+          :model-value="pendingLabels"
           :items="availableLabels"
           multiple
           icon="i-lucide-plus"
@@ -553,7 +562,7 @@ const stateItems = computed<DropdownMenuItem[][]>(() => {
           variant="ghost"
           class="rounded-full data-[state=open]:bg-elevated hover:ring-accented"
           @update:open="handleLabelsOpen"
-          @update:model-value="onUpdateLabels"
+          @update:model-value="pendingLabels = $event"
         >
           <template #default>
             Add
@@ -579,7 +588,7 @@ const stateItems = computed<DropdownMenuItem[][]>(() => {
 
         <USelectMenu
           v-if="!readonly"
-          :model-value="selectedAssignees"
+          :model-value="pendingAssignees"
           :items="availableAssignees"
           icon="i-lucide-plus"
           trailing-icon=""
@@ -591,7 +600,7 @@ const stateItems = computed<DropdownMenuItem[][]>(() => {
           multiple
           :search-input="{ placeholder: 'Search users...' }"
           :open="isAssigneesOpen"
-          @update:model-value="onUpdateAssignees"
+          @update:model-value="pendingAssignees = $event"
           @update:open="handleAssigneesOpen"
         >
           <template #default>
@@ -642,7 +651,7 @@ const stateItems = computed<DropdownMenuItem[][]>(() => {
 
         <USelectMenu
           v-if="!readonly"
-          :model-value="selectedReviewers"
+          :model-value="pendingReviewers"
           :items="availableReviewers"
           icon="i-lucide-plus"
           trailing-icon=""
@@ -654,7 +663,7 @@ const stateItems = computed<DropdownMenuItem[][]>(() => {
           multiple
           :search-input="{ placeholder: 'Search users...' }"
           :open="isReviewersOpen"
-          @update:model-value="onUpdateReviewers"
+          @update:model-value="pendingReviewers = $event"
           @update:open="handleReviewersOpen"
         >
           <template #default>
