@@ -12,6 +12,9 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'refresh' | 'reopen-issue' | 'close-as-duplicate'): void
   (e: 'close-issue', stateReason: 'completed' | 'not_planned'): void
+  (e: 'comment-add', payload: { tempId: number, body: string, createdAt: string }): void
+  (e: 'comment-added', payload: { tempId: number, commentId: number }): void
+  (e: 'comment-failed', tempId: number): void
 }>()
 
 // eslint-disable-next-line vue/no-dupe-keys
@@ -135,11 +138,15 @@ const timelineItems = computed(() => {
 
   // Comments
   props.issue.comments?.forEach((comment) => {
+    const isPending = comment.id < 0
+
     items.push({
-      username: comment.user?.login || 'Unknown',
+      username: comment.user?.login || (isPending ? user.value?.username : null) || 'Unknown',
       action: 'commented',
       description: comment.body,
-      avatar: comment.user?.avatarUrl ? { src: comment.user.avatarUrl } : undefined,
+      avatar: comment.user?.avatarUrl
+        ? { src: comment.user.avatarUrl }
+        : (isPending && user.value?.avatar ? { src: user.value.avatar } : undefined),
       icon: 'i-lucide-message-square',
       rawDate: toDate(comment.createdAt),
       commentId: comment.id
@@ -327,6 +334,9 @@ const timelineItems = computed(() => {
         :issue="issue"
         :collaborators="collaborators"
         @refresh="emit('refresh')"
+        @comment-add="(payload) => emit('comment-add', payload)"
+        @comment-added="(payload) => emit('comment-added', payload)"
+        @comment-failed="(tempId) => emit('comment-failed', tempId)"
         @close-issue="(reason) => emit('close-issue', reason)"
         @reopen-issue="emit('reopen-issue')"
         @close-as-duplicate="emit('close-as-duplicate')"

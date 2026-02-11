@@ -10,6 +10,9 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'refresh' | 'reopen-issue' | 'close-as-duplicate'): void
   (e: 'close-issue', stateReason: 'completed' | 'not_planned'): void
+  (e: 'comment-add', payload: { tempId: number, body: string, createdAt: string }): void
+  (e: 'comment-added', payload: { tempId: number, commentId: number }): void
+  (e: 'comment-failed', tempId: number): void
 }>()
 
 const toast = useToast()
@@ -64,17 +67,26 @@ defineShortcuts({
 async function addComment() {
   if (!newComment.value.trim() || isSubmitting.value) return
 
+  const body = newComment.value.trim()
+  const tempId = -Date.now()
+  const createdAt = new Date().toISOString()
+
   isSubmitting.value = true
+  emit('comment-add', { tempId, body, createdAt })
+  newComment.value = ''
+
   try {
     const [owner, name] = props.issue.repository.fullName.split('/')
-    await $fetch(`/api/repositories/${owner}/${name}/issues/${props.issue.number}/comments`, {
+    const response = await $fetch<{ success: boolean, commentId: number }>(`/api/repositories/${owner}/${name}/issues/${props.issue.number}/comments`, {
       method: 'POST',
-      body: { body: newComment.value }
+      body: { body }
     })
-    newComment.value = ''
+    emit('comment-added', { tempId, commentId: response.commentId })
     emit('refresh')
     toast.add({ title: 'Comment added', icon: 'i-lucide-check' })
   } catch (err: any) {
+    emit('comment-failed', tempId)
+    newComment.value = body
     toast.add({ title: 'Failed to add comment', description: err.message, color: 'error', icon: 'i-lucide-x' })
   } finally {
     isSubmitting.value = false

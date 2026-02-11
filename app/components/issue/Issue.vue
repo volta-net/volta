@@ -186,6 +186,47 @@ function toggleFavorite() {
   }
 }
 
+function handleCommentAdd(payload: { tempId: number, body: string, createdAt: string }) {
+  if (!issue.value) return
+
+  issue.value = {
+    ...issue.value,
+    comments: [...issue.value.comments, {
+      id: payload.tempId,
+      githubId: payload.tempId,
+      issueId: issue.value.id,
+      userId: null,
+      body: payload.body,
+      htmlUrl: null,
+      createdAt: payload.createdAt,
+      updatedAt: payload.createdAt,
+      user: null
+    }]
+  }
+}
+
+function handleCommentAdded(payload: { tempId: number, commentId: number }) {
+  if (!issue.value) return
+
+  issue.value = {
+    ...issue.value,
+    comments: issue.value.comments.map(comment =>
+      comment.id === payload.tempId
+        ? { ...comment, id: payload.commentId, githubId: payload.commentId }
+        : comment
+    )
+  }
+}
+
+function handleCommentFailed(tempId: number) {
+  if (!issue.value) return
+
+  issue.value = {
+    ...issue.value,
+    comments: issue.value.comments.filter(comment => comment.id !== tempId)
+  }
+}
+
 // Handle refresh from child components
 async function handleRefresh() {
   await refreshIssue()
@@ -527,6 +568,9 @@ const agentItems = computed(() => {
           :issue="issue"
           :collaborators="collaborators"
           @refresh="handleRefresh"
+          @comment-add="handleCommentAdd"
+          @comment-added="handleCommentAdded"
+          @comment-failed="handleCommentFailed"
           @close-issue="handleCloseIssue"
           @reopen-issue="handleReopenIssue"
           @close-as-duplicate="duplicateOpen = true"
