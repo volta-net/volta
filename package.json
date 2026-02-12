@@ -13,10 +13,10 @@
     "db:migrate": "nuxt db migrate"
   },
   "dependencies": {
-    "@ai-sdk/gateway": "^3.0.39",
-    "@ai-sdk/vue": "^3.0.77",
+    "@ai-sdk/gateway": "^3.0.42",
+    "@ai-sdk/vue": "^3.0.82",
     "@electric-sql/pglite": "^0.3.15",
-    "@iconify-json/lucide": "^1.2.89",
+    "@iconify-json/lucide": "^1.2.90",
     "@iconify-json/simple-icons": "^1.2.70",
     "@nuxt/ui": "^4.4.0",
     "@nuxthub/core": "^0.10.6",
@@ -32,10 +32,10 @@
     "@tiptap/vue-3": "^3.19.0",
     "@vercel/analytics": "^1.6.1",
     "@vite-pwa/nuxt": "1.1.1",
-    "@vueuse/core": "^14.2.0",
-    "@vueuse/nuxt": "^14.2.0",
-    "ai": "^6.0.77",
-    "drizzle-kit": "^0.31.8",
+    "@vueuse/core": "^14.2.1",
+    "@vueuse/nuxt": "^14.2.1",
+    "ai": "^6.0.82",
+    "drizzle-kit": "^0.31.9",
     "drizzle-orm": "^0.45.1",
     "nuxt": "^4.3.1",
     "nuxt-auth-utils": "^0.5.28",
@@ -49,8 +49,8 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@nuxt/eslint": "^1.14.0",
-    "@types/node": "^25.2.2",
+    "@nuxt/eslint": "^1.15.1",
+    "@types/node": "^25.2.3",
     "eslint": "^10.0.0",
     "typescript": "^5.9.3",
     "vue-tsc": "^3.2.4"
@@ -58,5 +58,5 @@
   "resolutions": {
     "nitropack": "^2.13.0"
   },
-  "packageManager": "pnpm@10.29.2"
+  "packageManager": "pnpm@10.29.3"
 }
