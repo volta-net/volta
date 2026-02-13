@@ -29,6 +29,7 @@ const stateColor = computed(() => getIssueStateColor(issueState.value))
 
 // Aggregate CI statuses from all workflow runs
 const ciStatusConfig = computed(() => getAggregatedCIStatus(props.item.ciStatuses))
+const ciCategory = computed(() => getIssueCICategory(props.item))
 
 // Resolution status config (issues only)
 const { getConfig: getResolutionConfig } = useResolutionStatus()
@@ -68,39 +69,43 @@ const showBadgeTooltips = computed(() => containerWidth.value < 768)
         :text="reviewState.label"
         :disabled="!showBadgeTooltips"
       >
-        <UBadge
-          :label="reviewState.label"
-          variant="soft"
-          :ui="{ label: 'hidden @3xl:block' }"
+        <FiltersButton
+          :filter="{
+            type: 'review',
+            value: reviewState.label,
+            label: reviewState.label,
+            icon: reviewState.icon
+          }"
+          :active="isFilterActive('review', reviewState.label)"
+          :ui="{
+            label: 'hidden @3xl:block',
+            leadingIcon: `text-${reviewState.color}`
+          }"
           class="rounded-full px-1 @3xl:px-2"
-        >
-          <template #leading>
-            <UChip
-              :color="reviewState.color"
-              standalone
-              inset
-              size="md"
-              class="p-1"
-            />
-          </template>
-        </UBadge>
+          @click.stop="emit('filter', { type: 'review', value: reviewState.label, label: reviewState.label, icon: reviewState.icon })"
+        />
       </UTooltip>
 
       <!-- CI Status -->
       <UTooltip
-        v-if="ciStatusConfig"
+        v-if="ciStatusConfig && ciCategory"
         :text="ciStatusConfig.label"
         :disabled="!showBadgeTooltips"
       >
-        <UBadge
-          :label="ciStatusConfig.label"
-          :icon="ciStatusConfig.icon"
-          variant="soft"
+        <FiltersButton
+          :filter="{
+            type: 'ci',
+            value: ciCategory,
+            label: ciStatusConfig.label,
+            icon: ciStatusConfig.icon
+          }"
+          :active="isFilterActive('ci', ciCategory)"
           :ui="{
             label: 'hidden @3xl:block',
             leadingIcon: [`text-${ciStatusConfig.color}`, ciStatusConfig.animate && 'animate-pulse']
           }"
           class="rounded-full px-1 @3xl:px-2"
+          @click.stop="emit('filter', { type: 'ci', value: ciCategory, label: ciCategory, icon: ciStatusConfig.icon })"
         />
       </UTooltip>
 
@@ -151,7 +156,7 @@ const showBadgeTooltips = computed(() => containerWidth.value < 768)
           <UBadge
             v-if="(item.commentCount ?? 0) > 0"
             :label="item.commentCount ?? 0"
-            icon="i-lucide-message-circle"
+            icon="i-lucide-message-square"
             :color="item.hasMaintainerComment ? 'primary' : 'neutral'"
             variant="subtle"
             class="rounded-full"
@@ -172,10 +177,10 @@ const showBadgeTooltips = computed(() => containerWidth.value < 768)
         <FiltersButton
           v-for="label in item.labels"
           :key="label.id"
-          :filter="{ type: 'label', value: label.name, label: label.name, color: label.color }"
+          :filter="{ type: 'label', value: label.name, label: label.name, chip: { color: label.color } }"
           :active="isFilterActive('label', label.name)"
           class="rounded-full"
-          @click.stop="emit('filter', { type: 'label', value: label.name, label: label.name, color: label.color })"
+          @click.stop="emit('filter', { type: 'label', value: label.name, label: label.name, chip: { color: label.color } })"
         />
 
         <FiltersButton

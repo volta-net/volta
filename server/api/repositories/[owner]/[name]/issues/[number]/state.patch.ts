@@ -27,10 +27,8 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, message: 'Repository not found' })
   }
 
-  // Check user has access (public repos are accessible to any authenticated user)
-  if (repository.private) {
-    await requireRepositoryAccess(user.id, repository.id)
-  }
+  // Check user has access to this repository
+  await requireRepositoryAccess(user.id, repository.id)
 
   // Find issue by repository + number
   const issue = await db.query.issues.findFirst({
@@ -44,47 +42,49 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, message: 'Issue not found' })
   }
 
-  const body = await readBody<{ body: string }>(event)
-
-  if (!body.body?.trim()) {
-    throw createError({ statusCode: 400, message: 'Comment body is required' })
+  // PRs cannot be closed/reopened via this endpoint
+  if (issue.pullRequest) {
+    throw createError({ statusCode: 400, message: 'Pull requests cannot be closed/reopened via this endpoint' })
   }
 
-  let commentId: number
-  let commentHtmlUrl: string
+  const body = await readBody<{ state: 'open' | 'closed', stateReason?: 'completed' | 'not_planned' | 'reopened' | null, duplicateOf?: number }>(event)
 
-  // Create comment on GitHub (skip in development)
+  if (!body.state || !['open', 'closed'].includes(body.state)) {
+    throw createError({ statusCode: 400, message: 'Valid state (open or closed) is required' })
+  }
+
+  // Update on GitHub (skip in development)
   if (import.meta.dev) {
-    // Mock comment in development
-    console.log(`[DEV] Mocking GitHub API: issues.createComment for ${owner}/${name}#${issueNumber}`)
-    commentId = Date.now()
-    commentHtmlUrl = `https://github.com/${owner}/${name}/issues/${issueNumber}#issuecomment-${commentId}`
+    console.log(`[DEV] Mocking GitHub API: issues.update (state) for ${owner}/${name}#${issueNumber}`)
   } else {
     const accessToken = await getValidAccessToken(event)
     const octokit = new Octokit({ auth: accessToken })
 
-    const { data: comment } = await octokit.rest.issues.createComment({
+    await octokit.rest.issues.update({
       owner,
       repo: name,
       issue_number: issueNumber,
-      body: body.body.trim()
+      state: body.state,
+      state_reason: body.stateReason ?? undefined
     })
 
-    commentId = comment.id
-    commentHtmlUrl = comment.html_url
+    // If closing as duplicate, add a comment referencing the duplicate issue
+    if (body.state === 'closed' && body.stateReason === 'not_planned' && body.duplicateOf) {
+      await octokit.rest.issues.createComment({
+        owner,
+        repo: name,
+        issue_number: issueNumber,
+        body: `Duplicate of #${body.duplicateOf}`
+      })
+    }
   }
 
-  // Store comment in database
-  const now = new Date()
-  await db.insert(schema.issueComments).values({
-    githubId: commentId,
-    issueId: issue.id,
-    userId: user.id,
-    body: body.body.trim(),
-    htmlUrl: commentHtmlUrl,
-    createdAt: now,
-    updatedAt: now
-  })
+  // Update in database
+  await db.update(schema.issues).set({
+    state: body.state,
+    stateReason: body.stateReason ?? null,
+    updatedAt: new Date()
+  }).where(eq(schema.issues.id, issue.id))
 
-  return { success: true, commentId }
+  return { success: true }
 })

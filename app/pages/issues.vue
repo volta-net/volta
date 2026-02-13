@@ -3,18 +3,25 @@ useSeoMeta({
   title: 'Issues'
 })
 
+const nuxtApp = useNuxtApp()
+
+const { data, status, refresh } = useLazyFetch<Issue[]>('/api/issues?pullRequest=false&state=open', {
+  key: 'issues',
+  default: () => nuxtApp.payload.data['issues'] as Issue[] ?? [],
+  getCachedData: () => undefined
+})
+
 const {
   config,
   emptyText,
   items,
   filteredItems,
-  status,
-  refresh,
   q,
   searchInputRef,
   filters,
   toggleFilter,
   clearFilters,
+  availableFilters,
   selectedItem,
   isPanelOpen,
   favoriteRepositories,
@@ -22,12 +29,14 @@ const {
   hasFavorites,
   hasSynced,
   isMobile
-} = await useIssuesList({
+} = useIssuesList({
   title: 'Issues',
   icon: 'i-lucide-circle-dot',
-  api: '/api/issues?pullRequest=false&state=open',
   emptyText: 'All triaged!',
-  panelId: 'issues'
+  panelId: 'issues',
+  items: data,
+  status,
+  refresh
 })
 </script>
 
@@ -57,6 +66,7 @@ const {
         <template v-if="hasFavorites" #right>
           <Filters
             :filters="filters"
+            :available-filters="availableFilters"
             @toggle="toggleFilter"
             @clear="clearFilters"
           />

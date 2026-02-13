@@ -128,18 +128,29 @@ async function upsertIssue(item: GitHubIssueOrPR, repositoryId: number, _reposit
   // Ensure closed_by user exists and get internal ID
   // Note: GitHub webhook payloads for 'closed' events do NOT include closed_by on the issue/PR object.
   // The closed_by field is only available via REST API. For webhooks, we use the sender (who performed the action).
-  let closedById: number | null = null
-  const closedByUser = item.closed_by || (action === 'closed' ? sender : null)
-  if (closedByUser) {
-    closedById = await ensureUser({
-      id: closedByUser.id,
-      login: closedByUser.login,
-      avatar_url: closedByUser.avatar_url
-    })
+  // IMPORTANT: Only resolve closedById when the action is 'closed' (to set it) or 'reopened' (to clear it).
+  // Other actions (labeled, edited, assigned, etc.) don't include closed_by in the payload,
+  // so we must skip updating this field to avoid overwriting the stored value with null.
+  let closedById: number | null | undefined
+  if (action === 'closed') {
+    const closedByUser = item.closed_by || sender
+    if (closedByUser) {
+      closedById = await ensureUser({
+        id: closedByUser.id,
+        login: closedByUser.login,
+        avatar_url: closedByUser.avatar_url
+      })
+    } else {
+      closedById = null
+    }
+  } else if (action === 'reopened') {
+    closedById = null
   }
+  // For all other actions, closedById remains undefined and won't be included in the update
 
   // Ensure merged_by user exists (PRs only) and get internal ID
-  let mergedById: number | null = null
+  // Same logic: only set when we have explicit merge data to avoid overwriting with null
+  let mergedById: number | null | undefined
   if (item.merged_by) {
     mergedById = await ensureUser({
       id: item.merged_by.id,
@@ -179,13 +190,18 @@ async function upsertIssue(item: GitHubIssueOrPR, repositoryId: number, _reposit
     htmlUrl: item.html_url,
     locked: item.locked,
     closedAt: item.closed_at ? new Date(item.closed_at) : null,
-    closedById,
     // Engagement metrics from GitHub webhook payload
     reactionCount: item.reactions?.total_count ?? 0,
     commentCount: item.comments ?? 0,
     // Use GitHub timestamps
     createdAt: new Date(item.created_at),
     updatedAt: new Date(item.updated_at)
+  }
+
+  // Only include closedById when explicitly resolved (closed/reopened actions)
+  // to avoid overwriting stored value with null on unrelated webhook events
+  if (closedById !== undefined) {
+    itemData.closedById = closedById
   }
 
   // Issue-specific fields
@@ -200,16 +216,25 @@ async function upsertIssue(item: GitHubIssueOrPR, repositoryId: number, _reposit
     // merged_at being a truthy string means PR is merged
     // merged being explicitly true also means PR is merged
     itemData.merged = !!item.merged_at || item.merged === true
-    itemData.commits = item.commits
-    itemData.additions = item.additions
-    itemData.deletions = item.deletions
-    itemData.changedFiles = item.changed_files
-    itemData.headRef = item.head?.ref
-    itemData.headSha = item.head?.sha
-    itemData.baseRef = item.base?.ref
-    itemData.baseSha = item.base?.sha
+    // PR stats may be missing in simplified payloads (e.g., pull_request object in review events).
+    // Only include when explicitly provided to avoid overwriting real values with null.
+    if (item.commits !== undefined) itemData.commits = item.commits
+    if (item.additions !== undefined) itemData.additions = item.additions
+    if (item.deletions !== undefined) itemData.deletions = item.deletions
+    if (item.changed_files !== undefined) itemData.changedFiles = item.changed_files
+    if (item.head) {
+      itemData.headRef = item.head.ref
+      itemData.headSha = item.head.sha
+    }
+    if (item.base) {
+      itemData.baseRef = item.base.ref
+      itemData.baseSha = item.base.sha
+    }
     itemData.mergedAt = item.merged_at ? new Date(item.merged_at) : null
-    itemData.mergedById = mergedById
+    // Only include mergedById when we have explicit data
+    if (mergedById !== undefined) {
+      itemData.mergedById = mergedById
+    }
   }
 
   // NEW issue/PR - determine if we can mark it as synced

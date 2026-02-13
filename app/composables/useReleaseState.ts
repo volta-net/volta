@@ -4,7 +4,7 @@ import type { Release } from '#shared/types'
 
 export type ReleaseStateLike = Pick<Release, 'draft' | 'prerelease'>
 
-type ReleaseColor = 'success' | 'warning' | 'neutral'
+type ReleaseColor = 'info' | 'warning' | 'neutral'
 
 interface ReleaseStateConfig {
   icon: string
@@ -25,7 +25,7 @@ const releaseStates: Record<string, ReleaseStateConfig> = {
   },
   published: {
     icon: 'i-lucide-tag',
-    color: 'success',
+    color: 'info',
     label: 'Published'
   }
 }

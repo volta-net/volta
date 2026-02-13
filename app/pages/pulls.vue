@@ -3,18 +3,25 @@ useSeoMeta({
   title: 'Pull Requests'
 })
 
+const nuxtApp = useNuxtApp()
+
+const { data, status, refresh } = useLazyFetch<Issue[]>('/api/issues?pullRequest=true&state=open', {
+  key: 'pulls',
+  default: () => nuxtApp.payload.data['pulls'] as Issue[] ?? [],
+  getCachedData: () => undefined
+})
+
 const {
   config,
   emptyText,
   items,
   filteredItems,
-  status,
-  refresh,
   q,
   searchInputRef,
   filters,
   toggleFilter,
   clearFilters,
+  availableFilters,
   selectedItem,
   isPanelOpen,
   favoriteRepositories,
@@ -22,12 +29,14 @@ const {
   hasFavorites,
   hasSynced,
   isMobile
-} = await useIssuesList({
+} = useIssuesList({
   title: 'Pull Requests',
   icon: 'i-lucide-git-pull-request',
-  api: '/api/issues?pullRequest=true&state=open',
   emptyText: 'No open pull requests',
-  panelId: 'pulls'
+  panelId: 'pulls',
+  items: data,
+  status,
+  refresh
 })
 </script>
 
@@ -57,6 +66,7 @@ const {
         <template v-if="hasFavorites" #right>
           <Filters
             :filters="filters"
+            :available-filters="availableFilters"
             @toggle="toggleFilter"
             @clear="clearFilters"
           />

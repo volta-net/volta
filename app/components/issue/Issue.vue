@@ -27,7 +27,7 @@ const issueUrl = computed(() => {
   if (!repoFullName.value || !props.item.number) return ''
   return `/api/repositories/${owner.value}/${name.value}/issues/${props.item.number}`
 })
-const { data: issue, status, refresh: refreshIssue } = await useLazyFetch<IssueDetail & { isSubscribed: boolean }>(issueUrl, {
+const { data: issue, status, refresh: refreshIssue } = await useLazyFetch<IssueDetail & { isSubscribed: boolean, hasWriteAccess: boolean }>(issueUrl, {
   immediate: !!issueUrl.value
 })
 
@@ -89,6 +89,10 @@ const { data: collaborators } = await useLazyFetch<MentionUser[]>(collaboratorsU
   default: () => [],
   immediate: !!repoFullName.value
 })
+
+// Check if user has write access to the repository
+const hasWriteAccess = computed(() => issue.value?.hasWriteAccess ?? false)
+const readonly = computed(() => !hasWriteAccess.value)
 
 // Local subscription state (initialized from issue, updated on toggle)
 const isSubscribed = ref(false)
@@ -186,6 +190,47 @@ function toggleFavorite() {
   }
 }
 
+function handleCommentAdd(payload: { tempId: number, body: string, createdAt: string }) {
+  if (!issue.value) return
+
+  issue.value = {
+    ...issue.value,
+    comments: [...issue.value.comments, {
+      id: payload.tempId,
+      githubId: payload.tempId,
+      issueId: issue.value.id,
+      userId: null,
+      body: payload.body,
+      htmlUrl: null,
+      createdAt: payload.createdAt,
+      updatedAt: payload.createdAt,
+      user: null
+    }]
+  }
+}
+
+function handleCommentAdded(payload: { tempId: number, commentId: number }) {
+  if (!issue.value) return
+
+  issue.value = {
+    ...issue.value,
+    comments: issue.value.comments.map(comment =>
+      comment.id === payload.tempId
+        ? { ...comment, id: payload.commentId, githubId: payload.commentId }
+        : comment
+    )
+  }
+}
+
+function handleCommentFailed(tempId: number) {
+  if (!issue.value) return
+
+  issue.value = {
+    ...issue.value,
+    comments: issue.value.comments.filter(comment => comment.id !== tempId)
+  }
+}
+
 // Handle refresh from child components
 async function handleRefresh() {
   await refreshIssue()
@@ -204,6 +249,48 @@ const transferOpen = ref(false)
 
 function handleTransferred() {
   emit('refresh')
+}
+
+// Close / Reopen issue
+const duplicateOpen = ref(false)
+
+async function handleCloseIssue(stateReason: 'completed' | 'not_planned') {
+  if (!issueUrl.value || !issue.value) return
+
+  try {
+    await $fetch(`${issueUrl.value}/state`, {
+      method: 'PATCH',
+      body: { state: 'closed', stateReason }
+    })
+
+    toast.add({
+      title: stateReason === 'completed' ? 'Issue closed as completed' : 'Issue closed as not planned',
+      icon: stateReason === 'completed' ? 'i-lucide-circle-check' : 'i-lucide-circle-slash'
+    })
+    await handleRefresh()
+  } catch (err: any) {
+    toast.add({ title: 'Failed to close issue', description: err.data?.message || err.message, color: 'error', icon: 'i-lucide-x' })
+  }
+}
+
+async function handleReopenIssue() {
+  if (!issueUrl.value || !issue.value) return
+
+  try {
+    await $fetch(`${issueUrl.value}/state`, {
+      method: 'PATCH',
+      body: { state: 'open', stateReason: 'reopened' }
+    })
+
+    toast.add({ title: 'Issue reopened', icon: 'i-lucide-circle-dot' })
+    await handleRefresh()
+  } catch (err: any) {
+    toast.add({ title: 'Failed to reopen issue', description: err.data?.message || err.message, color: 'error', icon: 'i-lucide-x' })
+  }
+}
+
+function handleDuplicateClosed() {
+  handleRefresh()
 }
 
 // Force sync with GitHub
@@ -235,6 +322,11 @@ defineShortcuts({
   meta_g: () => {
     if (props.item.htmlUrl) {
       openInBrowser(props.item.htmlUrl)
+    }
+  },
+  escape: () => {
+    if (props.onClose) {
+      props.onClose()
     }
   }
 })
@@ -315,7 +407,7 @@ const moreItems = computed(() => {
     ]
   ]
 
-  if (!props.item.pullRequest) {
+  if (!props.item.pullRequest && hasWriteAccess.value) {
     items.push([
       {
         label: 'Transfer issue',
@@ -417,6 +509,7 @@ const agentItems = computed(() => {
 
       <template #right>
         <UDropdownMenu
+          v-if="hasWriteAccess"
           :items="agentItems"
           :content="{ align: 'start' }"
         >
@@ -439,12 +532,13 @@ const agentItems = computed(() => {
 
         <slot name="right" />
 
-        <UButton
-          v-if="onClose"
-          icon="i-lucide-x"
-          variant="soft"
-          @click="onClose"
-        />
+        <UTooltip v-if="onClose" :text="`Close ${item.pullRequest ? 'pull request' : 'issue'}`" :kbds="['esc']">
+          <UButton
+            icon="i-lucide-x"
+            variant="soft"
+            @click="onClose"
+          />
+        </UTooltip>
       </template>
     </UDashboardNavbar>
 
@@ -456,17 +550,22 @@ const agentItems = computed(() => {
       <div class="border-b lg:border-b-0 lg:border-l border-default lg:order-last lg:overflow-y-auto p-4 sm:px-6">
         <IssueMeta
           :issue="issue"
+          :readonly="readonly"
           :analyzing-resolution="analyzingResolution"
           @refresh="handleRefresh"
           @scroll-to-answer="scrollToAnswerComment"
+          @close-issue="handleCloseIssue"
+          @reopen-issue="handleReopenIssue"
+          @close-as-duplicate="duplicateOpen = true"
         />
       </div>
 
       <div :key="issue.id" class="flex-1 lg:overflow-y-auto p-4 sm:px-6 flex flex-col gap-4 lg:col-span-2 pb-22">
-        <IssueTitle :issue="issue" @update:title="handleRefresh" />
+        <IssueTitle :issue="issue" :readonly="readonly" @update:title="handleRefresh" />
 
         <IssueBody
           :issue="issue"
+          :readonly="readonly"
           :collaborators="collaborators"
           @refresh="handleRefresh"
         />
@@ -474,8 +573,15 @@ const agentItems = computed(() => {
         <IssueTimeline
           ref="timelineRef"
           :issue="issue"
+          :readonly="readonly"
           :collaborators="collaborators"
           @refresh="handleRefresh"
+          @comment-add="handleCommentAdd"
+          @comment-added="handleCommentAdded"
+          @comment-failed="handleCommentFailed"
+          @close-issue="handleCloseIssue"
+          @reopen-issue="handleReopenIssue"
+          @close-as-duplicate="duplicateOpen = true"
         />
       </div>
     </div>
@@ -506,6 +612,15 @@ const agentItems = computed(() => {
       :repo-full-name="repoFullName"
       :on-close="onClose"
       @transferred="handleTransferred"
+    />
+
+    <!-- Duplicate Issue Modal -->
+    <IssueDuplicateModal
+      v-model:open="duplicateOpen"
+      :issue-url="issueUrl"
+      :repo-full-name="repoFullName"
+      :issue-number="item.number"
+      @closed="handleDuplicateClosed"
     />
   </div>
 </template>

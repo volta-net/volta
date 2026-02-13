@@ -1,16 +1,21 @@
 <script setup lang="ts">
 import type { TimelineItem } from '@nuxt/ui'
 import type { MentionUser } from '~/composables/useEditorMentions'
-import type { IssueReviewComment } from '#shared/types'
+import type { IssueReviewComment, LinkedPR } from '#shared/types'
 
 const props = defineProps<{
   issue: IssueDetail
+  readonly?: boolean
   collaborators?: MentionUser[]
   highlightedCommentId?: number | null
 }>()
 
 const emit = defineEmits<{
-  (e: 'refresh'): void
+  (e: 'refresh' | 'reopen-issue' | 'close-as-duplicate'): void
+  (e: 'close-issue', stateReason: 'completed' | 'not_planned'): void
+  (e: 'comment-add', payload: { tempId: number, body: string, createdAt: string }): void
+  (e: 'comment-added', payload: { tempId: number, commentId: number }): void
+  (e: 'comment-failed', tempId: number): void
 }>()
 
 // eslint-disable-next-line vue/no-dupe-keys
@@ -40,6 +45,48 @@ function scrollToComment(commentId: number) {
 defineExpose({ scrollToComment })
 
 const { user } = useUserSession()
+const { selectIssue } = useFavoriteIssues()
+
+function navigateToLinkedItem(item: { id: number, number: number, title: string, state: string, htmlUrl: string | null }, isPullRequest: boolean) {
+  const repo = props.issue.repository
+  if (!repo) return
+
+  selectIssue({
+    id: item.id,
+    number: item.number,
+    title: item.title,
+    state: item.state,
+    stateReason: null,
+    pullRequest: isPullRequest,
+    draft: null,
+    merged: null,
+    htmlUrl: item.htmlUrl,
+    repository: {
+      id: repo.id,
+      name: repo.fullName.split('/')[1]!,
+      fullName: repo.fullName
+    }
+  })
+  navigateTo(isPullRequest ? '/pulls' : '/issues')
+}
+
+async function navigateToDuplicateIssue(issueNumber: number) {
+  const repo = props.issue.repository
+  if (!repo) return
+
+  const [owner, name] = repo.fullName.split('/')
+  try {
+    const results = await $fetch<Array<{ id: number, number: number, title: string, state: string, pullRequest: boolean, htmlUrl: string | null }>>('/api/issues/search', {
+      query: { q: String(issueNumber), repo: repo.fullName, limit: 50 }
+    })
+    const duplicateIssue = results.find(i => i.number === issueNumber)
+    if (duplicateIssue) {
+      navigateToLinkedItem(duplicateIssue, false)
+    }
+  } catch {
+    window.open(`https://github.com/${owner}/${name}/issues/${issueNumber}`, '_blank')
+  }
+}
 
 interface ActivityItem extends TimelineItem {
   rawDate?: Date
@@ -52,15 +99,19 @@ interface ActivityItem extends TimelineItem {
   filePath?: string
   // For reviews with nested comments
   reviewComments?: IssueReviewComment[]
+  // For closed events: the PR that closed the issue
+  closingPr?: LinkedPR
+  // For duplicate closures: the issue number it's a duplicate of
+  duplicateOfNumber?: number
 }
 
 // Review state configuration
 const reviewStateConfig: Record<string, { icon: string, action: string }> = {
-  APPROVED: { icon: 'i-octicon-check-16', action: 'approved these changes' },
-  CHANGES_REQUESTED: { icon: 'i-octicon-file-diff-16', action: 'requested changes' },
-  COMMENTED: { icon: 'i-octicon-eye-16', action: 'reviewed' },
-  DISMISSED: { icon: 'i-octicon-x-16', action: 'dismissed review' },
-  PENDING: { icon: 'i-octicon-clock-16', action: 'started a review' }
+  APPROVED: { icon: 'i-lucide-check', action: 'approved these changes' },
+  CHANGES_REQUESTED: { icon: 'i-lucide-file-diff', action: 'requested changes' },
+  COMMENTED: { icon: 'i-lucide-eye', action: 'reviewed' },
+  DISMISSED: { icon: 'i-lucide-x', action: 'dismissed review' },
+  PENDING: { icon: 'i-lucide-clock', action: 'started a review' }
 }
 
 // Helper to safely create a Date from any value
@@ -88,12 +139,16 @@ const timelineItems = computed(() => {
 
   // Comments
   props.issue.comments?.forEach((comment) => {
+    const isPending = comment.id < 0
+
     items.push({
-      username: comment.user?.login || 'Unknown',
+      username: comment.user?.login || (isPending ? user.value?.username : null) || 'Unknown',
       action: 'commented',
       description: comment.body,
-      avatar: comment.user?.avatarUrl ? { src: comment.user.avatarUrl } : undefined,
-      icon: 'i-octicon-comment-16',
+      avatar: comment.user?.avatarUrl
+        ? { src: comment.user.avatarUrl }
+        : (isPending && user.value?.avatar ? { src: user.value.avatar } : undefined),
+      icon: 'i-lucide-message-square',
       rawDate: toDate(comment.createdAt),
       commentId: comment.id
     })
@@ -122,7 +177,7 @@ const timelineItems = computed(() => {
       action: 'left a review comment',
       description: comment.body,
       avatar: comment.user?.avatarUrl ? { src: comment.user.avatarUrl } : undefined,
-      icon: 'i-octicon-code-16',
+      icon: 'i-lucide-code',
       rawDate: toDate(comment.createdAt),
       diffHunk: comment.diffHunk || undefined,
       filePath: comment.path || undefined
@@ -134,12 +189,51 @@ const timelineItems = computed(() => {
     const isMerged = props.issue.pullRequest && props.issue.merged
     const actor = isMerged ? props.issue.mergedBy : props.issue.closedBy
 
+    let action: string
+    let icon: string
+
+    // Detect duplicate closure by parsing comments for "Duplicate of #X"
+    const duplicateComment = !props.issue.pullRequest
+      ? props.issue.comments?.find(c => /^Duplicate of #\d+$/i.test(c.body?.trim() || ''))
+      : undefined
+    const duplicateOfNumber = duplicateComment
+      ? parseInt(duplicateComment.body!.match(/#(\d+)/)![1]!)
+      : undefined
+    const isDuplicate = props.issue.stateReason === 'duplicate' || (duplicateOfNumber !== undefined)
+
+    if (isMerged) {
+      action = 'merged this pull request'
+      icon = 'i-lucide-git-merge'
+    } else if (props.issue.pullRequest) {
+      action = 'closed this pull request'
+      icon = 'i-lucide-git-pull-request-closed'
+    } else if (isDuplicate) {
+      action = 'closed this as duplicate'
+      icon = 'i-lucide-copy'
+    } else if (props.issue.stateReason === 'completed') {
+      action = 'closed this as completed'
+      icon = 'i-lucide-circle-check'
+    } else if (props.issue.stateReason === 'not_planned') {
+      action = 'closed this as not planned'
+      icon = 'i-lucide-circle-slash'
+    } else {
+      action = 'closed this issue'
+      icon = 'i-lucide-circle-x'
+    }
+
+    // Find the closing PR (first closed linked PR, likely the one that closed the issue)
+    const closingPr = !props.issue.pullRequest
+      ? props.issue.linkedPrs?.find(pr => pr.state === 'closed')
+      : undefined
+
     items.push({
       username: actor?.login || 'Unknown',
-      action: isMerged ? 'merged this pull request' : `closed this ${props.issue.pullRequest ? 'pull request' : 'issue'}`,
+      action,
       avatar: actor?.avatarUrl ? { src: actor.avatarUrl } : undefined,
-      icon: isMerged ? 'i-octicon-git-merge-16' : 'i-octicon-issue-closed-16',
-      rawDate: toDate(props.issue.mergedAt) || toDate(props.issue.closedAt)
+      icon,
+      rawDate: toDate(props.issue.mergedAt) || toDate(props.issue.closedAt),
+      closingPr,
+      duplicateOfNumber
     })
   }
 
@@ -152,7 +246,7 @@ const timelineItems = computed(() => {
       username: props.issue.user?.login || 'Unknown',
       action: `opened this ${props.issue.pullRequest ? 'pull request' : 'issue'}`,
       avatar: props.issue.user?.avatarUrl ? { src: props.issue.user.avatarUrl } : undefined,
-      icon: props.issue.pullRequest ? 'i-octicon-git-pull-request-16' : 'i-octicon-issue-opened-16',
+      icon: props.issue.pullRequest ? 'i-lucide-git-pull-request' : 'i-lucide-plus',
       rawDate: toDate(props.issue.createdAt)
     },
     ...items
@@ -190,6 +284,18 @@ const timelineItems = computed(() => {
     <template #title="{ item }">
       <span class="font-medium">{{ item.username }}</span>
       <span class="font-normal text-muted">{{ item.action }}</span>
+      <template v-if="item.duplicateOfNumber">
+        <span class="font-normal text-muted">of</span>
+        <button class="font-normal text-primary hover:underline cursor-pointer" @click="navigateToDuplicateIssue(item.duplicateOfNumber)">
+          #{{ item.duplicateOfNumber }}
+        </button>
+      </template>
+      <template v-else-if="item.closingPr">
+        <span class="font-normal text-muted">in</span>
+        <button class="font-normal text-primary hover:underline cursor-pointer" @click="navigateToLinkedItem(item.closingPr, true)">
+          #{{ item.closingPr.number }}
+        </button>
+      </template>
     </template>
 
     <template #description="{ item }">
@@ -227,8 +333,15 @@ const timelineItems = computed(() => {
     <template #comment-form-wrapper>
       <IssueCommentForm
         :issue="issue"
+        :readonly="readonly"
         :collaborators="collaborators"
         @refresh="emit('refresh')"
+        @comment-add="(payload) => emit('comment-add', payload)"
+        @comment-added="(payload) => emit('comment-added', payload)"
+        @comment-failed="(tempId) => emit('comment-failed', tempId)"
+        @close-issue="(reason) => emit('close-issue', reason)"
+        @reopen-issue="emit('reopen-issue')"
+        @close-as-duplicate="emit('close-as-duplicate')"
       />
     </template>
   </UTimeline>

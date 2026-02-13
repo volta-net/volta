@@ -1,6 +1,7 @@
 <script setup lang="ts">
 const props = defineProps<{
   issue: IssueDetail
+  readonly?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -43,6 +44,7 @@ async function saveTitle() {
   <UInput
     v-model="editedTitle"
     :loading="isSaving"
+    :readonly="readonly"
     trailing
     variant="none"
     :ui="{ base: 'p-0 text-xl font-semibold' }"

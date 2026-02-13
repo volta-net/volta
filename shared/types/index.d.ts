@@ -54,6 +54,7 @@ export interface LinkedPR {
   title: string
   state: string
   htmlUrl: string | null
+  headRef: string | null
 }
 
 // Issue for list views

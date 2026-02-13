@@ -219,7 +219,8 @@ export async function getLinkedPRsForIssues(issueIds: number[]): Promise<Map<num
       number: schema.issues.number,
       title: schema.issues.title,
       state: schema.issues.state,
-      htmlUrl: schema.issues.htmlUrl
+      htmlUrl: schema.issues.htmlUrl,
+      headRef: schema.issues.headRef
     })
     .from(schema.issueLinkedPrs)
     .innerJoin(schema.issues, eq(schema.issueLinkedPrs.prId, schema.issues.id))
@@ -239,7 +240,8 @@ export async function getLinkedPRsForIssues(issueIds: number[]): Promise<Map<num
       number: pr.number,
       title: pr.title,
       state: pr.state,
-      htmlUrl: pr.htmlUrl
+      htmlUrl: pr.htmlUrl,
+      headRef: pr.headRef
     })
   }
 

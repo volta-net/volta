@@ -1,16 +1,21 @@
 <script setup lang="ts">
+import type { DropdownMenuItem } from '@nuxt/ui'
+
 const props = defineProps<{
   issue: IssueDetail
+  readonly?: boolean
   analyzingResolution?: boolean
 }>()
 
 const emit = defineEmits<{
-  (e: 'refresh'): void
+  (e: 'refresh' | 'reopen-issue' | 'close-as-duplicate'): void
+  (e: 'close-issue', stateReason: 'completed' | 'not_planned'): void
   (e: 'scroll-to-answer', commentId: number): void
 }>()
 
 const toast = useToast()
 const { copy } = useClipboard()
+const { selectIssue } = useFavoriteIssues()
 const { icon: stateIcon, color: stateColor, label: stateLabel } = useIssueState(computed(() => props.issue))
 
 function copyIssueNumber() {
@@ -24,10 +29,75 @@ function copyIssueUrl() {
   toast.add({ title: 'Copied URL to clipboard', icon: 'i-lucide-copy' })
 }
 
+const labelToType: Record<string, string> = {
+  'bug': 'fix',
+  'fix': 'fix',
+  'bugfix': 'fix',
+  'enhancement': 'feat',
+  'feature': 'feat',
+  'feat': 'feat',
+  'documentation': 'docs',
+  'docs': 'docs',
+  'refactor': 'refactor',
+  'refactoring': 'refactor',
+  'tech-debt': 'refactor',
+  'performance': 'perf',
+  'perf': 'perf',
+  'test': 'test',
+  'testing': 'test',
+  'ci': 'ci',
+  'build': 'build',
+  'chore': 'chore',
+  'maintenance': 'chore',
+  'style': 'style'
+}
+
+const branchName = computed(() => {
+  if (props.issue.headRef) return props.issue.headRef
+
+  const slug = props.issue.title
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 60)
+    .replace(/-$/, '')
+
+  const type = props.issue.labels
+    ?.map(l => labelToType[l.name.toLowerCase()])
+    .find(Boolean)
+    ?? 'feat'
+
+  return `${type}/${props.issue.number}-${slug}`
+})
+
 function copyGitBranch() {
-  if (!props.issue.headRef) return
-  copy(props.issue.headRef)
-  toast.add({ title: `Copied ${props.issue.headRef} to clipboard`, icon: 'i-lucide-copy' })
+  copy(branchName.value)
+  toast.add({ title: `Copied ${branchName.value} to clipboard`, icon: 'i-lucide-copy' })
+}
+
+function navigateToLinkedItem(item: { id: number, number: number, title: string, state: string, htmlUrl: string | null }, isPullRequest: boolean) {
+  const repo = props.issue.repository
+  if (!repo) return
+
+  selectIssue({
+    id: item.id,
+    number: item.number,
+    title: item.title,
+    state: item.state,
+    stateReason: null,
+    pullRequest: isPullRequest,
+    draft: null,
+    merged: null,
+    htmlUrl: item.htmlUrl,
+    repository: {
+      id: repo.id,
+      name: repo.fullName.split('/')[1]!,
+      fullName: repo.fullName
+    }
+  })
+  navigateTo(isPullRequest ? '/pulls' : '/issues')
 }
 
 defineShortcuts({
@@ -53,6 +123,7 @@ interface LabelItem {
 
 const isLabelsOpen = ref(false)
 const availableLabels = ref<LabelItem[]>([])
+const pendingLabels = ref<LabelItem[]>([])
 
 const selectedLabels = computed<LabelItem[]>(() => {
   return (props.issue.labels ?? []).map(l => ({
@@ -81,27 +152,29 @@ async function fetchLabels() {
 function handleLabelsOpen(open: boolean) {
   isLabelsOpen.value = open
   if (open) {
+    pendingLabels.value = [...selectedLabels.value]
     fetchLabels()
+  } else {
+    persistLabels()
   }
 }
 
-async function onUpdateLabels(newLabels: LabelItem[]) {
+async function persistLabels() {
   const currentIds = new Set(props.issue.labels?.map(l => l.id) ?? [])
-  const newIds = new Set(newLabels.map(l => l.id))
+  const newIds = new Set(pendingLabels.value.map(l => l.id))
 
-  // Find added and removed labels
-  const added = newLabels.filter(l => !currentIds.has(l.id))
+  const added = pendingLabels.value.filter(l => !currentIds.has(l.id))
   const removed = (props.issue.labels ?? []).filter(l => !newIds.has(l.id))
 
+  if (!added.length && !removed.length) return
+
   try {
-    // Add new labels
     for (const label of added) {
       await $fetch(`/api/repositories/${repoPath.value.owner}/${repoPath.value.name}/issues/${props.issue.number}/labels`, {
         method: 'POST',
         body: { labelId: label.id }
       })
     }
-    // Remove old labels
     for (const label of removed) {
       await $fetch(`/api/repositories/${repoPath.value.owner}/${repoPath.value.name}/issues/${props.issue.number}/labels/${label.id}`, {
         method: 'DELETE'
@@ -133,6 +206,7 @@ const selectedAssignees = computed<UserItem[]>(() => {
 })
 const availableAssignees = ref<UserItem[]>([])
 const isAssigneesOpen = ref(false)
+const pendingAssignees = ref<UserItem[]>([])
 
 async function fetchAssignees() {
   if (!repoPath.value.owner) return
@@ -153,27 +227,29 @@ async function fetchAssignees() {
 function handleAssigneesOpen(open: boolean) {
   isAssigneesOpen.value = open
   if (open) {
+    pendingAssignees.value = [...selectedAssignees.value]
     fetchAssignees()
+  } else {
+    persistAssignees()
   }
 }
 
-async function onUpdateAssignees(newAssignees: UserItem[]) {
+async function persistAssignees() {
   const currentIds = new Set(props.issue.assignees?.map(u => u.id) ?? [])
-  const newIds = new Set(newAssignees.map(u => u.id))
+  const newIds = new Set(pendingAssignees.value.map(u => u.id))
 
-  // Find added and removed assignees
-  const added = newAssignees.filter(u => !currentIds.has(u.id))
+  const added = pendingAssignees.value.filter(u => !currentIds.has(u.id))
   const removed = (props.issue.assignees ?? []).filter(u => !newIds.has(u.id))
 
+  if (!added.length && !removed.length) return
+
   try {
-    // Add new assignees
     for (const user of added) {
       await $fetch(`/api/repositories/${repoPath.value.owner}/${repoPath.value.name}/issues/${props.issue.number}/assignees`, {
         method: 'POST',
         body: { userId: user.id, login: user.login }
       })
     }
-    // Remove old assignees
     for (const user of removed) {
       await $fetch(`/api/repositories/${repoPath.value.owner}/${repoPath.value.name}/issues/${props.issue.number}/assignees/${user.id}`, {
         method: 'DELETE',
@@ -200,6 +276,7 @@ const selectedReviewers = computed<UserItem[]>(() => {
 const reviewersWithState = useReviewersWithState(computed(() => props.issue))
 const availableReviewers = ref<UserItem[]>([])
 const isReviewersOpen = ref(false)
+const pendingReviewers = ref<UserItem[]>([])
 
 async function fetchReviewers() {
   if (!repoPath.value.owner) return
@@ -220,27 +297,29 @@ async function fetchReviewers() {
 function handleReviewersOpen(open: boolean) {
   isReviewersOpen.value = open
   if (open) {
+    pendingReviewers.value = [...selectedReviewers.value]
     fetchReviewers()
+  } else {
+    persistReviewers()
   }
 }
 
-async function onUpdateReviewers(newReviewers: UserItem[]) {
+async function persistReviewers() {
   const currentIds = new Set(props.issue.requestedReviewers?.map(u => u.id) ?? [])
-  const newIds = new Set(newReviewers.map(u => u.id))
+  const newIds = new Set(pendingReviewers.value.map(u => u.id))
 
-  // Find added and removed reviewers
-  const added = newReviewers.filter(u => !currentIds.has(u.id))
+  const added = pendingReviewers.value.filter(u => !currentIds.has(u.id))
   const removed = (props.issue.requestedReviewers ?? []).filter(u => !newIds.has(u.id))
 
+  if (!added.length && !removed.length) return
+
   try {
-    // Add new reviewers
     for (const user of added) {
       await $fetch(`/api/repositories/${repoPath.value.owner}/${repoPath.value.name}/issues/${props.issue.number}/reviewers`, {
         method: 'POST',
         body: { userId: user.id, login: user.login }
       })
     }
-    // Remove old reviewers
     for (const user of removed) {
       await $fetch(`/api/repositories/${repoPath.value.owner}/${repoPath.value.name}/issues/${props.issue.number}/reviewers/${user.id}`, {
         method: 'DELETE',
@@ -266,6 +345,40 @@ const ciStatusConfig = computed(() => getAggregatedCIStatus(props.issue.ciStatus
 
 // Review state (PRs only)
 const reviewState = useReviewState(computed(() => props.issue))
+
+// State change dropdown items (issues only)
+const stateItems = computed<DropdownMenuItem[][]>(() => {
+  if (props.issue.pullRequest) return []
+
+  if (props.issue.state === 'open') {
+    return [[
+      {
+        label: 'Close as completed',
+        icon: 'i-lucide-circle-check',
+        ui: { itemLeadingIcon: 'text-important group-data-highlighted:text-important' },
+        onSelect: () => emit('close-issue', 'completed')
+      },
+      {
+        label: 'Close as not planned',
+        icon: 'i-lucide-circle-slash',
+        onSelect: () => emit('close-issue', 'not_planned')
+      },
+      {
+        label: 'Close as duplicate',
+        icon: 'i-lucide-copy',
+        onSelect: () => emit('close-as-duplicate')
+      }
+    ]]
+  }
+
+  return [[
+    {
+      label: 'Reopen issue',
+      icon: 'i-lucide-circle-dot',
+      onSelect: () => emit('reopen-issue')
+    }
+  ]]
+})
 </script>
 
 <template>
@@ -275,42 +388,59 @@ const reviewState = useReviewState(computed(() => props.issue))
       <span class="text-xs/6 text-muted font-medium px-1.5">Properties</span>
 
       <!-- State -->
-      <UButton
-        as="div"
-        :icon="stateIcon"
-        :label="`${stateLabel} ${issue.pullRequest ? 'pull request' : 'issue'}`"
-        variant="ghost"
-        :ui="{ leadingIcon: `text-${stateColor}` }"
-        class="text-sm/4 hover:bg-transparent active:bg-transparent pl-2 pr-0"
-      >
-        <template #trailing>
-          <div class="flex items-center ms-auto -my-1.5">
-            <UTooltip :text="`Copy URL`" :kbds="['meta', 'shift', ',']">
-              <UButton
-                icon="i-lucide-link"
-                variant="ghost"
-                @click="copyIssueUrl"
-              />
-            </UTooltip>
+      <div class="flex items-center gap-1 justify-between">
+        <UDropdownMenu
+          v-if="!issue.pullRequest && !readonly"
+          v-slot="{ open }"
+          :items="stateItems"
+          :ui="{ content: 'w-[calc(var(--reka-dropdown-menu-trigger-width)+4px)]' }"
+        >
+          <UButton
+            :icon="stateIcon"
+            :label="`${stateLabel} issue`"
+            variant="ghost"
+            :ui="{ leadingIcon: `text-${stateColor}` }"
+            class="text-sm/4 pl-2 pr-0 flex-1"
+            :class="[open && 'bg-elevated']"
+          />
+        </UDropdownMenu>
 
-            <UTooltip :text="`Copy number`" :kbds="['meta', '.']">
-              <UButton
-                icon="i-lucide-hash"
-                variant="ghost"
-                @click="copyIssueNumber"
-              />
-            </UTooltip>
+        <UButton
+          v-else
+          as="div"
+          :icon="stateIcon"
+          :label="`${stateLabel} ${issue.pullRequest ? 'pull request' : 'issue'}`"
+          variant="ghost"
+          :ui="{ leadingIcon: `text-${stateColor}` }"
+          class="text-sm/4 hover:bg-transparent active:bg-transparent pl-2 pr-0"
+        />
 
-            <UTooltip v-if="issue.pullRequest" :text="`Copy branch`" :kbds="['meta', 'shift', '.']">
-              <UButton
-                icon="i-lucide-git-branch"
-                variant="ghost"
-                @click="copyGitBranch"
-              />
-            </UTooltip>
-          </div>
-        </template>
-      </UButton>
+        <div class="flex items-center ms-auto -my-1.5">
+          <UTooltip text="Copy URL" :kbds="['meta', 'shift', ',']">
+            <UButton
+              icon="i-lucide-link"
+              variant="ghost"
+              @click.stop="copyIssueUrl"
+            />
+          </UTooltip>
+
+          <UTooltip text="Copy number" :kbds="['meta', '.']">
+            <UButton
+              icon="i-lucide-hash"
+              variant="ghost"
+              @click.stop="copyIssueNumber"
+            />
+          </UTooltip>
+
+          <UTooltip text="Copy branch" :kbds="['meta', 'shift', '.']">
+            <UButton
+              icon="i-lucide-git-branch"
+              variant="ghost"
+              @click.stop="copyGitBranch"
+            />
+          </UTooltip>
+        </div>
+      </div>
 
       <UButton
         v-if="issue.user"
@@ -325,6 +455,17 @@ const reviewState = useReviewState(computed(() => props.issue))
         }"
       />
 
+      <!-- Review state (PRs only) -->
+      <UButton
+        v-if="reviewState"
+        as="div"
+        :label="reviewState.label"
+        :icon="reviewState.icon"
+        :ui="{ leadingIcon: `text-${reviewState.color}` }"
+        variant="ghost"
+        class="text-sm/4 px-2 hover:bg-transparent active:bg-transparent"
+      />
+
       <!-- CI Status (PRs only) -->
       <UButton
         v-if="ciStatusConfig"
@@ -335,17 +476,6 @@ const reviewState = useReviewState(computed(() => props.issue))
         target="_blank"
         variant="ghost"
         class="text-sm/4 px-2"
-      />
-
-      <!-- Review state (PRs only) -->
-      <UButton
-        v-if="reviewState"
-        as="div"
-        :label="reviewState.label"
-        :icon="reviewState.icon"
-        :ui="{ leadingIcon: `text-${reviewState.color}` }"
-        variant="ghost"
-        class="text-sm/4 px-2 hover:bg-transparent active:bg-transparent"
       />
 
       <!-- Resolution status (issues only) -->
@@ -418,7 +548,8 @@ const reviewState = useReviewState(computed(() => props.issue))
         />
 
         <USelectMenu
-          :model-value="selectedLabels"
+          v-if="!readonly"
+          :model-value="pendingLabels"
           :items="availableLabels"
           multiple
           icon="i-lucide-plus"
@@ -431,7 +562,7 @@ const reviewState = useReviewState(computed(() => props.issue))
           variant="ghost"
           class="rounded-full data-[state=open]:bg-elevated hover:ring-accented"
           @update:open="handleLabelsOpen"
-          @update:model-value="onUpdateLabels"
+          @update:model-value="pendingLabels = $event"
         >
           <template #default>
             Add
@@ -456,7 +587,8 @@ const reviewState = useReviewState(computed(() => props.issue))
         />
 
         <USelectMenu
-          :model-value="selectedAssignees"
+          v-if="!readonly"
+          :model-value="pendingAssignees"
           :items="availableAssignees"
           icon="i-lucide-plus"
           trailing-icon=""
@@ -468,7 +600,7 @@ const reviewState = useReviewState(computed(() => props.issue))
           multiple
           :search-input="{ placeholder: 'Search users...' }"
           :open="isAssigneesOpen"
-          @update:model-value="onUpdateAssignees"
+          @update:model-value="pendingAssignees = $event"
           @update:open="handleAssigneesOpen"
         >
           <template #default>
@@ -518,7 +650,8 @@ const reviewState = useReviewState(computed(() => props.issue))
         </UBadge>
 
         <USelectMenu
-          :model-value="selectedReviewers"
+          v-if="!readonly"
+          :model-value="pendingReviewers"
           :items="availableReviewers"
           icon="i-lucide-plus"
           trailing-icon=""
@@ -530,7 +663,7 @@ const reviewState = useReviewState(computed(() => props.issue))
           multiple
           :search-input="{ placeholder: 'Search users...' }"
           :open="isReviewersOpen"
-          @update:model-value="onUpdateReviewers"
+          @update:model-value="pendingReviewers = $event"
           @update:open="handleReviewersOpen"
         >
           <template #default>
@@ -559,12 +692,11 @@ const reviewState = useReviewState(computed(() => props.issue))
         <UButton
           v-for="pr in issue.linkedPrs"
           :key="pr.id"
-          :to="pr.htmlUrl!"
-          target="_blank"
           icon="i-lucide-git-pull-request"
           :ui="{ leadingIcon: 'text-success' }"
           variant="ghost"
           class="text-sm/4 px-2"
+          @click="navigateToLinkedItem(pr, true)"
         >
           <span class="text-muted font-normal">#{{ pr.number }}</span>
           <span class="truncate">{{ pr.title }}</span>
@@ -580,12 +712,11 @@ const reviewState = useReviewState(computed(() => props.issue))
         <UButton
           v-for="linkedIssue in issue.linkedIssues"
           :key="linkedIssue.id"
-          :to="linkedIssue.htmlUrl!"
-          target="_blank"
           :icon="linkedIssue.state === 'open' ? 'i-lucide-circle-dot' : 'i-lucide-circle-check'"
           :ui="{ leadingIcon: linkedIssue.state === 'open' ? 'text-success' : 'text-important' }"
           variant="ghost"
           class="text-sm/4 px-2"
+          @click="navigateToLinkedItem(linkedIssue, false)"
         >
           <span class="text-muted font-normal">#{{ linkedIssue.number }}</span>
           <span class="truncate">{{ linkedIssue.title }}</span>
