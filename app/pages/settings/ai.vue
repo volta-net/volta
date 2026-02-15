@@ -177,7 +177,7 @@ async function saveModel() {
 
           <!-- Credits display -->
           <UBadge v-if="hasToken && credits" variant="soft" icon="i-lucide-coins">
-            {{ Number(credits.balance).toFixed(2) }} Credit{{ Number(credits.balance) !== 1 ? 's' : '' }}
+            {{ Number(credits.balance).toLocaleString('en-US', { style: 'currency', currency: 'USD' }) }} in credits
           </UBadge>
           <UBadge
             v-else-if="hasToken && creditsStatus === 'pending'"
