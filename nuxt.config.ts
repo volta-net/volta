@@ -70,6 +70,10 @@ export default defineNuxtConfig({
       privateKey: '',
       webhookSecret: ''
     },
+    savoir: {
+      apiUrl: '',
+      apiKey: ''
+    },
     public: {
       github: {
         appSlug: ''

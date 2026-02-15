@@ -70,9 +70,13 @@ export function useEditorToolbar<T extends EditorCustomHandlers>(_customHandlers
       }]
     }]
 
-    // Add "Suggest reply" option if enabled
+    // Add "Suggest reply" options if enabled
     if (suggestReply) {
       aiItems.unshift({
+        kind: 'aiSavoirReply',
+        icon: 'i-lucide-book-open',
+        label: 'Suggest reply (with Savoir)'
+      }, {
         kind: 'aiReply',
         icon: 'i-lucide-reply',
         label: 'Suggest reply'
