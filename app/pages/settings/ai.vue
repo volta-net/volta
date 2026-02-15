@@ -173,17 +173,15 @@ async function saveModel() {
           </div>
 
           <!-- Credits display -->
-          <UBadge v-if="hasToken && credits" variant="soft" icon="i-lucide-coins">
-            {{ Number(credits.balance).toLocaleString('en-US', { style: 'currency', currency: 'USD' }) }} in credits
-          </UBadge>
-          <UBadge
-            v-else-if="hasToken && creditsStatus === 'pending'"
+          <UButton
+            v-if="hasToken"
+            href="https://vercel.com/d?to=/%5Bteam%5D/~/ai-gateway"
+            target="_blank"
             variant="soft"
             icon="i-lucide-coins"
-            class="animate-pulse"
-          >
-            Loading...
-          </UBadge>
+            :loading="creditsStatus === 'pending'"
+            :label="creditsStatus === 'pending' ? 'Loading...' : Number(credits?.balance).toLocaleString('en-US', { style: 'currency', currency: 'USD' }) + ' in credits'"
+          />
         </div>
       </template>
 
