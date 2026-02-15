@@ -13,19 +13,16 @@ const { data: credits, execute: fetchCredits, status: creditsStatus } = useLazyF
 // AI model options (from https://vercel.com/ai-gateway/models)
 const modelOptions = [
   // Anthropic
-  { label: 'Claude Sonnet 4.5', value: 'anthropic/claude-sonnet-4.5', icon: 'i-simple-icons-anthropic', description: 'Best for reasoning and analysis. Recommended.' },
-  { label: 'Claude Opus 4.5', value: 'anthropic/claude-opus-4.5', icon: 'i-simple-icons-anthropic', description: 'Most capable Anthropic model. Premium pricing.' },
-  { label: 'Claude Haiku 4.5', value: 'anthropic/claude-haiku-4.5', icon: 'i-simple-icons-anthropic', description: 'Fastest Anthropic model. Good for simple tasks.' },
+  { label: 'Claude Sonnet 4.5', value: 'anthropic/claude-sonnet-4.5', icon: 'i-simple-icons-anthropic', description: 'Best balance of speed and quality. Recommended.' },
+  { label: 'Claude Opus 4.6', value: 'anthropic/claude-opus-4.6', icon: 'i-simple-icons-anthropic', description: 'Most capable model. Best for analysis. Premium pricing.' },
+  { label: 'Claude Haiku 4.5', value: 'anthropic/claude-haiku-4.5', icon: 'i-simple-icons-anthropic', description: 'Fastest Anthropic model. Great for completions.' },
   // OpenAI
-  { label: 'GPT-5.2', value: 'openai/gpt-5.2', icon: 'i-simple-icons-openai', description: 'Latest OpenAI flagship. Excellent all-around.' },
-  { label: 'GPT-5 Mini', value: 'openai/gpt-5-mini', icon: 'i-simple-icons-openai', description: 'Compact and affordable. Good for completions.' },
-  { label: 'GPT-4.1 Mini', value: 'openai/gpt-4.1-mini', icon: 'i-simple-icons-openai', description: 'Budget-friendly. Suitable for basic tasks.' },
+  { label: 'GPT-5.2', value: 'openai/gpt-5.2', icon: 'i-simple-icons-openai', description: 'OpenAI flagship. Strong structured output.' },
+  { label: 'GPT-5 Mini', value: 'openai/gpt-5-mini', icon: 'i-simple-icons-openai', description: 'Fast and affordable. Good for completions.' },
   // Google
-  { label: 'Gemini 3 Pro', value: 'google/gemini-3-pro-preview', icon: 'i-simple-icons-google', description: 'Google\'s latest pro model. Strong reasoning.' },
-  { label: 'Gemini 3 Flash', value: 'google/gemini-3-flash', icon: 'i-simple-icons-google', description: 'Very fast responses. Great for completions.' },
-  { label: 'Gemini 2.5 Flash', value: 'google/gemini-2.5-flash', icon: 'i-simple-icons-google', description: 'Fast and cost-effective. Good for simple tasks.' },
-  // xAI
-  { label: 'Grok Code Fast', value: 'xai/grok-code-fast-1', icon: 'i-simple-icons-x', description: 'Optimized for code. Fast responses.' }
+  { label: 'Gemini 3 Flash', value: 'google/gemini-3-flash', icon: 'i-simple-icons-google', description: 'Very fast with 1M context. Best value.' },
+  { label: 'Gemini 3 Pro', value: 'google/gemini-3-pro-preview', icon: 'i-simple-icons-google', description: 'Strongest Google model. Good for analysis.' },
+  { label: 'Gemini 2.5 Flash', value: 'google/gemini-2.5-flash', icon: 'i-simple-icons-google', description: 'Ultra fast responses. Most cost-effective.' }
 ]
 
 const defaultModel = 'anthropic/claude-sonnet-4.5'
