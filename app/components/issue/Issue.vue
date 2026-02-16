@@ -220,6 +220,11 @@ function handleCommentAdded(payload: { tempId: number, commentId: number }) {
         : comment
     )
   }
+
+  // Re-analyze resolution after a new comment (for issues only)
+  if (resolutionUrl.value) {
+    fetchResolution()
+  }
 }
 
 function handleCommentFailed(tempId: number) {

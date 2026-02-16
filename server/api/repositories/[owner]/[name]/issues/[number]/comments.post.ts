@@ -86,5 +86,12 @@ export default defineEventHandler(async (event) => {
     updatedAt: now
   })
 
+  // Invalidate resolution cache so the next fetch triggers fresh analysis
+  if (!issue.pullRequest && issue.state === 'open') {
+    await db.update(schema.issues).set({
+      resolutionAnalyzedAt: null
+    }).where(eq(schema.issues.id, issue.id))
+  }
+
   return { success: true, commentId }
 })
