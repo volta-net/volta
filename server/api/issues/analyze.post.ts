@@ -75,13 +75,14 @@ export default defineEventHandler(async (event) => {
             issueNumber: issue.number,
             analyzed,
             total: toAnalyze.length,
-            result: result ? {
-              status: result.status,
-              confidence: result.confidence
-            } : null
+            result: result
+              ? {
+                  status: result.status,
+                  confidence: result.confidence
+                }
+              : null
           })}\n\n`))
-        }
-        catch (err) {
+        } catch (err) {
           analyzed++
           console.error(`[bulk-analyze] Failed to analyze issue ${issue.id}:`, err)
 
