@@ -3,6 +3,7 @@ useSeoMeta({
   title: 'Issues'
 })
 
+const toast = useToast()
 const nuxtApp = useNuxtApp()
 
 const { data, status, refresh } = useLazyFetch<Issue[]>('/api/issues?pullRequest=false&state=open', {
@@ -38,6 +39,103 @@ const {
   status,
   refresh
 })
+
+// Bulk analysis
+const analyzing = ref(false)
+const analyzeProgress = ref({ analyzed: 0, total: 0 })
+
+const unanalyzedItems = computed(() =>
+  (filteredItems.value ?? []).filter(item => !item.resolutionStatus && !item.pullRequest)
+)
+
+const moreItems = computed(() => {
+  const label = analyzing.value
+    ? `Analyzing ${analyzeProgress.value.analyzed}/${analyzeProgress.value.total}...`
+    : `Analyze ${unanalyzedItems.value.length} issue${unanalyzedItems.value.length !== 1 ? 's' : ''}`
+
+  return [[
+    {
+      label,
+      icon: 'i-lucide-sparkles',
+      loading: analyzing.value,
+      disabled: !unanalyzedItems.value.length || analyzing.value,
+      onSelect: (e: MouseEvent) => {
+        e.preventDefault()
+        analyzeAll()
+      }
+    }
+  ], [
+    {
+      label: `${favoriteRepositories.value.length} repos`,
+      icon: 'i-lucide-book',
+      onSelect: () => {
+        setTimeout(() => {
+          favoriteRepositoriesOpen.value = true
+        }, 250)
+      }
+    }
+  ]]
+})
+
+async function analyzeAll() {
+  const issueIds = unanalyzedItems.value.map(item => item.id)
+  if (!issueIds.length) return
+
+  analyzing.value = true
+  analyzeProgress.value = { analyzed: 0, total: issueIds.length }
+
+  try {
+    const response = await $fetch.raw('/api/issues/analyze', {
+      method: 'POST',
+      body: { issueIds },
+      responseType: 'stream'
+    })
+
+    const reader = (response._data as unknown as ReadableStream).getReader()
+    const decoder = new TextDecoder()
+    let buffer = ''
+
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+
+      buffer += decoder.decode(value, { stream: true })
+
+      const lines = buffer.split('\n')
+      buffer = lines.pop() ?? ''
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue
+        try {
+          const event = JSON.parse(line.slice(6))
+
+          if (event.type === 'progress') {
+            analyzeProgress.value = { analyzed: event.analyzed, total: event.total }
+          }
+
+          if (event.type === 'done') {
+            toast.add({
+              title: `Analyzed ${event.analyzed} issue${event.analyzed !== 1 ? 's' : ''}`,
+              icon: 'i-lucide-sparkles'
+            })
+          }
+        } catch { /* empty */ }
+      }
+    }
+
+    await refresh()
+  } catch (err: any) {
+    toast.add({
+      title: 'Analysis failed',
+      description: err?.data?.message || err.message,
+      color: 'error',
+      icon: 'i-lucide-x'
+    })
+  } finally {
+    analyzing.value = false
+    analyzeProgress.value = { analyzed: 0, total: 0 }
+  }
+}
 </script>
 
 <template>
@@ -100,13 +198,16 @@ const {
             </template>
           </UInput>
 
-          <UButton
-            variant="soft"
-            icon="i-lucide-book"
-            square
-            :label="`${favoriteRepositories.length} repos`"
-            @click="favoriteRepositoriesOpen = !favoriteRepositoriesOpen"
-          />
+          <UDropdownMenu
+            :items="moreItems"
+            :content="{ align: 'end' }"
+          >
+            <UButton
+              icon="i-lucide-ellipsis"
+              variant="soft"
+              square
+            />
+          </UDropdownMenu>
         </template>
       </UDashboardNavbar>
     </template>

@@ -38,6 +38,18 @@ const {
   status,
   refresh
 })
+
+const moreItems = computed(() => [[
+  {
+    label: `${favoriteRepositories.value.length} repos`,
+    icon: 'i-lucide-book',
+    onSelect: () => {
+      setTimeout(() => {
+        favoriteRepositoriesOpen.value = true
+      }, 250)
+    }
+  }
+]])
 </script>
 
 <template>
@@ -100,13 +112,16 @@ const {
             </template>
           </UInput>
 
-          <UButton
-            variant="soft"
-            icon="i-lucide-book"
-            square
-            :label="`${favoriteRepositories.length} repos`"
-            @click="favoriteRepositoriesOpen = !favoriteRepositoriesOpen"
-          />
+          <UDropdownMenu
+            :items="moreItems"
+            :content="{ align: 'end' }"
+          >
+            <UButton
+              icon="i-lucide-ellipsis"
+              variant="soft"
+              square
+            />
+          </UDropdownMenu>
         </template>
       </UDashboardNavbar>
     </template>
