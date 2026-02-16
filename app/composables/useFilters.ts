@@ -126,6 +126,20 @@ export function matchIssueFilter(issue: Issue, filter: Filter): boolean {
   }
 }
 
+// Remove active filters that no longer match any item in the list
+export function pruneStaleFilters<T>(
+  items: T[],
+  activeFilters: readonly Filter[],
+  matcher: (item: T, filter: Filter) => boolean,
+  removeFilter: (type: FilterType, value: string) => void
+) {
+  for (const filter of [...activeFilters]) {
+    if (!items.some(item => matcher(item, filter))) {
+      removeFilter(filter.type, filter.value)
+    }
+  }
+}
+
 // Apply filters to a list of items
 export function applyFilters<T>(
   items: T[],

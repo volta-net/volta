@@ -13,7 +13,7 @@ const { data: notifications, status, refresh } = useLazyFetch<Notification[]>('/
 })
 
 // Filters
-const { filters, toggleFilter, clearFilters } = useFilters()
+const { filters, toggleFilter, removeFilter, clearFilters } = useFilters()
 const { getActionLabel, getActionIcon } = useNotificationHelpers()
 const availableFilters = computed(() => extractNotificationFilters(notifications.value ?? [], { getActionLabel, getActionIcon }))
 
@@ -25,10 +25,19 @@ const pendingDeletes = ref<Notification[]>([])
 // Set of pending delete IDs for quick lookup
 const pendingDeleteIds = computed(() => new Set(pendingDeletes.value.map(n => n.id)))
 
-// Visible notifications (excluding pending deletes and applying filters)
-const visibleNotifications = computed(() => {
-  const nonPending = notifications.value?.filter(n => !pendingDeleteIds.value.has(n.id)) ?? []
-  return applyFilters(nonPending, filters.value, matchNotificationFilter)
+// Non-pending notifications (excluding pending deletes)
+const nonPendingNotifications = computed(() =>
+  notifications.value?.filter(n => !pendingDeleteIds.value.has(n.id)) ?? []
+)
+
+// Visible notifications (non-pending with filters applied)
+const visibleNotifications = computed(() =>
+  applyFilters(nonPendingNotifications.value, filters.value, matchNotificationFilter)
+)
+
+// Auto-remove filters that no longer match any notification
+watch(nonPendingNotifications, (items) => {
+  pruneStaleFilters(items, filters.value, matchNotificationFilter, removeFilter)
 })
 
 const unreadNotifications = computed(() => notifications.value?.filter(notification => !notification.read) ?? [])

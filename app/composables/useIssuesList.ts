@@ -2,7 +2,7 @@ import { breakpointsTailwind, useWindowFocus, useBreakpoints } from '@vueuse/cor
 import { useFilter } from 'reka-ui'
 import type { Ref } from 'vue'
 import type { Issue } from '#shared/types'
-import { ref, computed, watch, useFavoriteRepositories, useFavoriteIssues, defineShortcuts, useFilters, applyFilters, matchIssueFilter, extractIssueFilters } from '#imports'
+import { ref, computed, watch, useFavoriteRepositories, useFavoriteIssues, defineShortcuts, useFilters, applyFilters, matchIssueFilter, extractIssueFilters, pruneStaleFilters } from '#imports'
 
 export interface IssuesListConfig {
   title: string
@@ -72,8 +72,13 @@ export function useIssuesList(config: IssuesListConfig) {
   })
 
   // Filters
-  const { filters, toggleFilter, clearFilters } = useFilters()
+  const { filters, toggleFilter, removeFilter, clearFilters } = useFilters()
   const availableFilters = computed(() => extractIssueFilters(items.value ?? []))
+
+  // Auto-remove filters that no longer match any item
+  watch(items, (current) => {
+    pruneStaleFilters(current ?? [], filters.value, matchIssueFilter, removeFilter)
+  })
 
   const filteredItems = computed(() => {
     let result = items.value ?? []
