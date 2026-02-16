@@ -79,10 +79,21 @@ const links = computed<NavigationMenuItem[][]>(() => {
   const secondaryItems: NavigationMenuItem[] = [{
     label: 'Favorites',
     icon: 'i-lucide-star',
-    onSelect: () => { favoriteIssuesOpen.value = !favoriteIssuesOpen.value }
+    children: [{
+      label: 'Issues',
+      icon: 'i-lucide-circle-dot',
+      onSelect: () => { favoriteIssuesOpen.value = !favoriteIssuesOpen.value }
+    }, {
+      label: 'Repositories',
+      icon: 'i-lucide-book',
+      onSelect: () => { favoriteRepositoriesOpen.value = !favoriteRepositoriesOpen.value }
+    }]
   }, {
     label: 'Search',
     icon: 'i-lucide-search',
+    tooltip: {
+      kbds: ['meta', 'k']
+    },
     onSelect: () => { searchOpen.value = true }
   }]
 
