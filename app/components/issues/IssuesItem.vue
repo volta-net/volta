@@ -189,11 +189,11 @@ const showBadgeTooltips = computed(() => containerWidth.value < 768)
             type: 'actor',
             value: item.user.login,
             label: item.user.login,
-            avatar: `https://github.com/${item.user.login}.png`
+            avatar: item.user.avatarUrl || `https://github.com/${item.user.login}.png`
           }"
           :active="isFilterActive('actor', item.user.login)"
           class="rounded-full"
-          @click.stop="emit('filter', { type: 'actor', value: item.user.login, label: item.user.login, avatar: `https://github.com/${item.user.login}.png` })"
+          @click.stop="emit('filter', { type: 'actor', value: item.user.login, label: item.user.login, avatar: item.user.avatarUrl || `https://github.com/${item.user.login}.png` })"
         />
 
         <FiltersButton

@@ -195,7 +195,7 @@ export function extractIssueFilters(items: Issue[]): Filter[] {
           type: 'actor',
           value: item.user.login,
           label: item.user.login,
-          avatar: `https://github.com/${item.user.login}.png`
+          avatar: item.user.avatarUrl || `https://github.com/${item.user.login}.png`
         })
       }
     }

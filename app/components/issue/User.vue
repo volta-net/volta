@@ -1,6 +1,6 @@
 <script setup lang="ts">
 defineProps<{
-  user: Pick<User, 'login'>
+  user: Pick<User, 'login' | 'avatarUrl'>
 }>()
 </script>
 
@@ -8,7 +8,7 @@ defineProps<{
   <UBadge
     :label="user.login"
     :avatar="{
-      src: `https://github.com/${user.login}.png`,
+      src: user.avatarUrl || `https://github.com/${user.login}.png`,
       alt: user.login
     }"
     class="rounded-full"

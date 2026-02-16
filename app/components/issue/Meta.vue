@@ -633,7 +633,7 @@ const stateItems = computed<DropdownMenuItem[][]>(() => {
           :key="reviewer.id"
           :label="reviewer.login"
           :avatar="{
-            src: `https://github.com/${reviewer.login}.png`,
+            src: reviewer.avatarUrl || `https://github.com/${reviewer.login}.png`,
             alt: reviewer.login
           }"
           class="rounded-full"
