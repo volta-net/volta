@@ -116,6 +116,7 @@ export function matchIssueFilter(issue: Issue, filter: Filter): boolean {
     case 'label':
       return issue.labels?.some(l => l.name === filter.value) ?? false
     case 'resolution':
+      if (filter.value === 'not_analyzed') return !issue.resolutionStatus
       return issue.resolutionStatus === filter.value
     case 'review':
       return getIssueReviewStateLabel(issue) === filter.value
@@ -243,6 +244,17 @@ export function extractIssueFilters(items: Issue[]): Filter[] {
           value: item.resolutionStatus,
           label: String(resConfig?.label ?? item.resolutionStatus),
           icon: resConfig?.icon
+        })
+      }
+    } else if (!item.pullRequest) {
+      const key = 'resolution:not_analyzed'
+      if (!seen.has(key)) {
+        seen.add(key)
+        result.push({
+          type: 'resolution',
+          value: 'not_analyzed',
+          label: 'Not analyzed',
+          icon: 'i-lucide-sparkles'
         })
       }
     }
