@@ -67,6 +67,7 @@ const {
           <Filters
             :filters="filters"
             :available-filters="availableFilters"
+            :count="filteredItems?.length"
             @toggle="toggleFilter"
             @clear="clearFilters"
           />

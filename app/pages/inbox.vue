@@ -287,6 +287,7 @@ useSeoMeta({
           <Filters
             :filters="filters"
             :available-filters="availableFilters"
+            :count="visibleNotifications?.length"
             @toggle="toggleFilter"
             @clear="clearFilters"
           />

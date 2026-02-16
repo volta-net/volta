@@ -5,6 +5,7 @@ import type { Filter, FilterType } from '~/composables/useFilters'
 const props = defineProps<{
   filters: readonly Filter[]
   availableFilters?: Filter[]
+  count?: number
 }>()
 
 const emit = defineEmits<{
@@ -124,10 +125,10 @@ const items = computed<DropdownMenuItem[] | DropdownMenuItem[][]>(() => {
     >
       <UButton
         icon="i-lucide-filter"
-        label="Filter"
+        :label="filters.length && count !== undefined ? `Filter (${count})` : 'Filter'"
         variant="subtle"
         size="xs"
-        class="border  border-accented ring-0"
+        class="border border-accented ring-0"
         :class="[filters.length ? 'border-dashed' : '']"
       />
 
