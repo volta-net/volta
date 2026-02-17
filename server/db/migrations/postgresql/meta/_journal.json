@@ -57,6 +57,13 @@
       "when": 1769512091953,
       "tag": "0007_low_stingray",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1771333895035,
+      "tag": "0008_fuzzy_santa_claus",
+      "breakpoints": true
     }
   ]
 }

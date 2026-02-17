@@ -7,6 +7,7 @@ export default defineEventHandler(async (event) => {
   const body = await readBody<{
     aiGatewayToken?: string | null
     aiModel?: string | null
+    excludedBots?: string[] | null
   }>(event)
 
   // Update user settings
@@ -25,6 +26,13 @@ export default defineEventHandler(async (event) => {
   // Allow setting or clearing the AI model
   if ('aiModel' in body) {
     updateData.aiModel = body.aiModel || null
+  }
+
+  // Allow setting or clearing excluded bots
+  if ('excludedBots' in body) {
+    updateData.excludedBots = body.excludedBots?.length
+      ? JSON.stringify(body.excludedBots)
+      : null
   }
 
   await db.update(schema.users)

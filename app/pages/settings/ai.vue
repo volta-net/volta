@@ -257,8 +257,12 @@ async function saveModel() {
             size="md"
             value-key="value"
             variant="soft"
-            class="w-full data-[state=open]:bg-elevated"
-            :ui="{ content: 'max-h-92', empty: 'py-6' }"
+            class="w-full group data-[state=open]:bg-elevated"
+            :ui="{
+              content: 'max-h-92',
+              empty: 'py-6',
+              trailingIcon: 'group-data-[state=open]:rotate-180 transition-transform duration-200'
+            }"
           />
         </UFormField>
 

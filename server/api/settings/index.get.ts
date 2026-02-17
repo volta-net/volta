@@ -16,6 +16,8 @@ export default defineEventHandler(async (event) => {
     // Return whether token is set, not the actual token for security
     hasAiGatewayToken: !!dbUser.aiGatewayToken,
     // Return the user's selected AI model
-    aiModel: dbUser.aiModel
+    aiModel: dbUser.aiModel,
+    // Return excluded bots list (parsed from JSON)
+    excludedBots: dbUser.excludedBots ? JSON.parse(dbUser.excludedBots) as string[] : []
   }
 })

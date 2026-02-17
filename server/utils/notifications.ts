@@ -36,12 +36,26 @@ export async function createNotification(data: NotificationData) {
   try {
     // Only notify users who have actually logged in (not shadow users)
     const [user] = await db
-      .select({ registered: schema.users.registered })
+      .select({ registered: schema.users.registered, excludedBots: schema.users.excludedBots })
       .from(schema.users)
       .where(eq(schema.users.id, data.userId))
 
     if (!user || !user.registered) {
       return
+    }
+
+    // Skip notification if the actor is in the user's excluded bots list
+    if (data.actorId && user.excludedBots) {
+      const excluded: string[] = JSON.parse(user.excludedBots)
+      if (excluded.length) {
+        const [actor] = await db
+          .select({ login: schema.users.login })
+          .from(schema.users)
+          .where(eq(schema.users.id, data.actorId))
+        if (actor && excluded.includes(actor.login)) {
+          return
+        }
+      }
     }
 
     // Check if notification already exists for this user + issue

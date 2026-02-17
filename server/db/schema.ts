@@ -15,6 +15,8 @@ export const users = pgTable('users', {
   aiGatewayToken: text('ai_gateway_token'),
   // User's preferred AI model (e.g., 'anthropic/claude-sonnet-4.5', 'openai/gpt-4o')
   aiModel: text('ai_model'),
+  // JSON array of bot logins to exclude from notifications (e.g., '["vercel[bot]","dependabot[bot]"]')
+  excludedBots: text('excluded_bots'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
 }, table => ([

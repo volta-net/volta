@@ -4,5 +4,6 @@
  */
 export const PRIVATE_USER_COLUMNS = {
   aiGatewayToken: false,
-  aiModel: false
+  aiModel: false,
+  excludedBots: false
 } as const
