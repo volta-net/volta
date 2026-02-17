@@ -38,6 +38,9 @@ importers:
       '@octokit/auth-app':
         specifier: ^8.2.0
         version: 8.2.0
+      '@savoir/sdk':
+        specifier: 0.1.0-alpha.2
+        version: 0.1.0-alpha.2(ai@6.0.77(zod@4.3.6))
       '@tiptap/core':
         specifier: ^3.19.0
         version: 3.19.0(@tiptap/pm@3.19.0)
@@ -2918,6 +2921,15 @@ packages:
     resolution: {integrity: sha512-mxRFDdHIWRxg3UfIIAwCm6NzvxG0jDX/wBN6KsQFTvKFqqg9vTrWUE68qEjHt19A5wwx5X5aUi2zuZT7YR0jrA==}
     cpu: [x64]
     os: [win32]
+
+  '@savoir/sdk@0.1.0-alpha.2':
+    resolution: {integrity: sha512-0MhOHPBwrAoFDupH9MVGPlrrQAxHI9TS20qkNdjd6X6FvgmKQdvy+VMTw15OiY1GhU/jitTvKA7Ocp871xEORA==}
+    engines: {node: '>=20.0.0'}
+    peerDependencies:
+      ai: '>=6.0.77'
+    peerDependenciesMeta:
+      ai:
+        optional: true
 
   '@sec-ant/readable-stream@0.4.1':
     resolution: {integrity: sha512-831qok9r2t8AlxLko40y2ebgSDhenenCatLVeW/uBtnHPyhHOvG0C7TvfgecV+wHzIm5KUICgzmVpWS+IMEAeg==}
@@ -11972,6 +11984,12 @@ snapshots:
 
   '@rollup/rollup-win32-x64-msvc@4.57.1':
     optional: true
+
+  '@savoir/sdk@0.1.0-alpha.2(ai@6.0.77(zod@4.3.6))':
+    dependencies:
+      zod: 4.3.6
+    optionalDependencies:
+      ai: 6.0.77(zod@4.3.6)
 
   '@sec-ant/readable-stream@0.4.1': {}
 

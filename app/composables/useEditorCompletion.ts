@@ -5,7 +5,7 @@ import { Completion } from '~/components/editor/CompletionExtension'
 import type { CompletionStorage } from '~/components/editor/CompletionExtension'
 import { ref, computed, watch, useToast } from '#imports'
 
-type CompletionMode = 'continue' | 'fix' | 'extend' | 'reduce' | 'simplify' | 'summarize' | 'translate' | 'reply'
+type CompletionMode = 'continue' | 'fix' | 'extend' | 'reduce' | 'simplify' | 'summarize' | 'translate' | 'reply' | 'savoir-reply'
 
 export interface UseEditorCompletionOptions {
   api?: string
@@ -226,6 +226,45 @@ export function useEditorCompletion(editorRef: Ref<{ editor: Editor | undefined 
     complete('Generate a helpful reply to this issue/PR')
   }
 
+  async function triggerSavoirReply(editor: Editor) {
+    if (isLoading.value) return
+    if (!options.api) return
+
+    mode.value = 'savoir-reply'
+    isLoading.value = true
+    getCompletionStorage()?.clearSuggestion()
+
+    // Clear editor content
+    editor.commands.clearContent()
+
+    try {
+      // Derive savoir endpoint from completion API (same base path)
+      const savoirApi = options.api.replace(/\/completion$/, '/savoir')
+      const { response } = await $fetch<{ response: string }>(savoirApi, { method: 'POST' })
+
+      // Insert with markdown parsing
+      editor.chain()
+        .focus()
+        .insertContentAt(0, response, { contentType: 'markdown' })
+        .run()
+    } catch (error: any) {
+      let description = 'An error occurred while generating Savoir reply.'
+      try {
+        const parsed = JSON.parse(error.message)
+        description = parsed.message || parsed.statusMessage || description
+      } catch {
+        description = error.data?.message || error.message || description
+      }
+      toast.add({
+        title: 'Savoir reply failed',
+        description,
+        color: 'error'
+      })
+    } finally {
+      isLoading.value = false
+    }
+  }
+
   // Configure Completion extension
   const extension = Completion.configure({
     onTrigger: (editor) => {
@@ -315,6 +354,15 @@ export function useEditorCompletion(editorRef: Ref<{ editor: Editor | undefined 
         return editor.chain()
       },
       isActive: () => !!(isLoading.value && mode.value === 'reply'),
+      isDisabled: () => !!isLoading.value
+    },
+    aiSavoirReply: {
+      canExecute: () => !isLoading.value,
+      execute: (editor: Editor) => {
+        triggerSavoirReply(editor)
+        return editor.chain()
+      },
+      isActive: () => !!(isLoading.value && mode.value === 'savoir-reply'),
       isDisabled: () => !!isLoading.value
     }
   }
