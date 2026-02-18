@@ -20,6 +20,7 @@ const toast = useToast()
 
 const newComment = ref('')
 const isSubmitting = ref(false)
+const editorRef = useTemplateRef('editorRef')
 
 const isOpen = computed(() => props.issue.state === 'open')
 const isIssue = computed(() => !props.issue.pullRequest)
@@ -75,6 +76,7 @@ async function addComment() {
   isSubmitting.value = true
   emit('comment-add', { tempId, body, createdAt })
   newComment.value = ''
+  editorRef.value?.editor?.commands.blur()
 
   try {
     const [owner, name] = props.issue.repository.fullName.split('/')
@@ -98,6 +100,7 @@ async function addComment() {
 <template>
   <div class="flex flex-col gap-4">
     <IssueEditor
+      ref="editorRef"
       v-model="newComment"
       :issue="issue"
       :collaborators="collaborators"
