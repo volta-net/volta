@@ -9,6 +9,8 @@ useSeoMeta({
 // Initialize app badge for dock notification count
 useAppBadge()
 
+const unreadCount = useUnreadCount()
+
 // PWA install prompt via @vite-pwa/nuxt
 const { $pwa } = useNuxtApp()
 
@@ -108,7 +110,8 @@ const links = computed<NavigationMenuItem[][]>(() => {
   return [[{
     label: 'Inbox',
     icon: 'i-lucide-inbox',
-    to: '/inbox'
+    to: '/inbox',
+    chip: unreadCount.value > 0
   }, {
     label: 'Issues',
     icon: 'i-lucide-circle-dot',
