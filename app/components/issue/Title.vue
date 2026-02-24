@@ -47,7 +47,8 @@ async function saveTitle() {
     :readonly="readonly"
     trailing
     variant="none"
-    :ui="{ base: 'p-0 text-xl font-semibold' }"
+    size="xl"
+    :ui="{ base: 'p-0 md:text-xl font-semibold' }"
     @blur="saveTitle"
   />
 </template>
