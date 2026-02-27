@@ -1,5 +1,5 @@
 import { useWindowFocus } from '@vueuse/core'
-import { ref, computed, watch, useToast } from '#imports'
+import { ref, computed, watch, useToast, onScopeDispose } from '#imports'
 import type { Ref } from 'vue'
 import type { Installation } from '#shared/types'
 
@@ -7,6 +7,17 @@ interface RepositorySyncConfig {
   installations: Ref<Installation[]>
   installationsStatus: Ref<string>
   refresh: () => Promise<void>
+}
+
+function abortableDelay(ms: number, signal: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (signal.aborted) return reject(signal.reason)
+    const timer = setTimeout(resolve, ms)
+    signal.addEventListener('abort', () => {
+      clearTimeout(timer)
+      reject(signal.reason)
+    }, { once: true })
+  })
 }
 
 /**
@@ -17,6 +28,11 @@ export function useRepositorySync(config: RepositorySyncConfig) {
   const toast = useToast()
 
   const { installations, installationsStatus, refresh } = config
+
+  const abortController = new AbortController()
+  onScopeDispose(() => {
+    abortController.abort()
+  })
 
   // Refresh data when window gains focus and check poll queue
   const focused = useWindowFocus()
@@ -121,7 +137,7 @@ export function useRepositorySync(config: RepositorySyncConfig) {
 
     try {
       for (let i = 0; i < maxAttempts && pollQueue.value.size > 0; i++) {
-        await new Promise(resolve => setTimeout(resolve, pollInterval))
+        await abortableDelay(pollInterval, abortController.signal)
 
         // Only refresh when window is focused to avoid rate limiting
         if (!focused.value) continue
@@ -142,6 +158,8 @@ export function useRepositorySync(config: RepositorySyncConfig) {
         }
       }
       pollQueue.value.clear()
+    } catch {
+      // Aborted on scope dispose
     } finally {
       isPollingActive.value = false
     }
@@ -200,13 +218,18 @@ export function useRepositorySync(config: RepositorySyncConfig) {
     const checkInterval = 1000
     const start = Date.now()
 
-    while (Date.now() - start < maxWaitMs) {
-      await new Promise(resolve => setTimeout(resolve, checkInterval))
+    try {
+      while (Date.now() - start < maxWaitMs) {
+        await abortableDelay(checkInterval, abortController.signal)
 
-      // Check if all our repos are done (removed from queue by the loop)
-      if (repoFullNames.every(name => !pollQueue.value.has(name))) {
-        return true
+        // Check if all our repos are done (removed from queue by the loop)
+        if (repoFullNames.every(name => !pollQueue.value.has(name))) {
+          return true
+        }
       }
+    } catch {
+      // Aborted on scope dispose
+      return false
     }
 
     // Timeout - clean up any remaining
