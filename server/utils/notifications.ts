@@ -58,32 +58,36 @@ export async function createNotification(data: NotificationData) {
       }
     }
 
-    // Check if notification already exists for this user + issue
-    // If so, update it instead of creating a new one
+    // Atomic upsert: insert or update if a notification already exists for this user + issue.
+    // The unique index on (userId, issueId) prevents race conditions where concurrent
+    // webhook events could both insert, creating duplicates.
     if (data.issueId) {
-      const [existing] = await db
-        .select()
-        .from(schema.notifications)
-        .where(and(
-          eq(schema.notifications.userId, data.userId),
-          eq(schema.notifications.issueId, data.issueId)
-        ))
-
-      if (existing) {
-        await db.update(schema.notifications).set({
+      await db.insert(schema.notifications).values({
+        userId: data.userId,
+        type: data.type,
+        action: data.action,
+        body: data.body,
+        repositoryId: data.repositoryId,
+        issueId: data.issueId,
+        releaseId: data.releaseId,
+        workflowRunId: data.workflowRunId,
+        actorId: data.actorId
+      }).onConflictDoUpdate({
+        target: [schema.notifications.userId, schema.notifications.issueId],
+        set: {
           type: data.type,
           action: data.action,
           body: data.body,
           actorId: data.actorId,
-          read: false, // Mark as unread
+          workflowRunId: data.workflowRunId,
+          read: false,
           readAt: null,
-          createdAt: new Date() // Update timestamp to show as new
-        }).where(eq(schema.notifications.id, existing.id))
-        return
-      }
+          createdAt: new Date()
+        }
+      })
+      return
     }
 
-    // Create new notification
     await db.insert(schema.notifications).values({
       userId: data.userId,
       type: data.type,

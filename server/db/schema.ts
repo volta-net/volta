@@ -65,8 +65,8 @@ export const notifications = pgTable('notifications', {
   index('notifications_user_id_idx').on(table.userId),
   // Composite index for all notification queries (userId + read filter + createdAt sort)
   index('notifications_user_read_created_idx').on(table.userId, table.read, table.createdAt),
-  // Index for notification deduplication (checking if notification exists for user+issue)
-  index('notifications_user_issue_idx').on(table.userId, table.issueId)
+  // Unique index for notification deduplication (one notification per user+issue, NULLs are treated as distinct by PostgreSQL)
+  uniqueIndex('notifications_user_issue_unique_idx').on(table.userId, table.issueId)
 ]))
 
 // GitHub App Installations

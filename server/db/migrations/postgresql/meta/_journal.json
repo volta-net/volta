@@ -64,6 +64,13 @@
       "when": 1771333895035,
       "tag": "0008_fuzzy_santa_claus",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1772444207604,
+      "tag": "0009_blue_spirit",
+      "breakpoints": true
     }
   ]
 }
