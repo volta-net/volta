@@ -42,7 +42,7 @@
     "octokit": "^5.0.5",
     "postgres": "^3.4.8",
     "reka-ui": "2.8.2",
-    "shiki": "^3.23.0",
+    "shiki": "^4.0.1",
     "tailwindcss": "^4.2.1",
     "tiptap-extension-code-block-shiki": "^1.0.0",
     "workflow": "4.0.1-beta.50",
