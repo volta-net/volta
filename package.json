@@ -15,21 +15,21 @@
   "dependencies": {
     "@ai-sdk/gateway": "^3.0.66",
     "@ai-sdk/vue": "^3.0.116",
-    "@electric-sql/pglite": "^0.3.15",
-    "@iconify-json/lucide": "^1.2.96",
-    "@iconify-json/simple-icons": "^1.2.72",
+    "@electric-sql/pglite": "^0.3.16",
+    "@iconify-json/lucide": "^1.2.98",
+    "@iconify-json/simple-icons": "^1.2.74",
     "@nuxt/ui": "^4.5.1",
     "@nuxthub/core": "^0.10.7",
     "@nuxtjs/mdc": "^0.20.2",
     "@octokit/auth-app": "^8.2.0",
-    "@tiptap/core": "^3.20.1",
-    "@tiptap/extension-details": "^3.20.1",
-    "@tiptap/extension-emoji": "^3.20.1",
-    "@tiptap/extension-list": "^3.20.1",
-    "@tiptap/extension-mention": "^3.20.1",
-    "@tiptap/extension-table": "^3.20.1",
-    "@tiptap/pm": "^3.20.1",
-    "@tiptap/vue-3": "^3.20.1",
+    "@tiptap/core": "^3.20.2",
+    "@tiptap/extension-details": "^3.20.2",
+    "@tiptap/extension-emoji": "^3.20.2",
+    "@tiptap/extension-list": "^3.20.2",
+    "@tiptap/extension-mention": "^3.20.2",
+    "@tiptap/extension-table": "^3.20.2",
+    "@tiptap/pm": "^3.20.2",
+    "@tiptap/vue-3": "^3.20.2",
     "@vercel/analytics": "^1.6.1",
     "@vite-pwa/nuxt": "1.1.1",
     "@vueuse/core": "^14.2.1",
@@ -41,7 +41,7 @@
     "nuxt-auth-utils": "^0.5.29",
     "octokit": "^5.0.5",
     "postgres": "^3.4.8",
-    "reka-ui": "2.9.0",
+    "reka-ui": "2.9.2",
     "shiki": "^4.0.2",
     "tailwindcss": "^4.2.1",
     "tiptap-extension-code-block-shiki": "^1.0.0",
@@ -50,7 +50,7 @@
   },
   "devDependencies": {
     "@nuxt/eslint": "^1.15.2",
-    "@types/node": "^25.3.5",
+    "@types/node": "^25.5.0",
     "eslint": "^10.0.3",
     "typescript": "^5.9.3",
     "vue-tsc": "^3.2.5"
@@ -58,5 +58,5 @@
   "resolutions": {
     "nitropack": "^2.13.0"
   },
-  "packageManager": "pnpm@10.31.0"
+  "packageManager": "pnpm@10.32.1"
 }
