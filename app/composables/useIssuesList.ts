@@ -2,7 +2,7 @@ import { breakpointsTailwind, useWindowFocus, useBreakpoints } from '@vueuse/cor
 import { useFilter } from 'reka-ui'
 import type { Ref } from 'vue'
 import type { Issue } from '#shared/types'
-import { ref, computed, watch, useFavoriteRepositories, useFavoriteIssues, defineShortcuts, useFilters, applyFilters, matchIssueFilter, extractIssueFilters, pruneStaleFilters } from '#imports'
+import { ref, computed, watch, useFavoriteRepositories, useFavoriteIssues, defineShortcuts, useFilters, applyFilters, matchIssueFilter, extractIssueFilters, pruneStaleFilters, useConfirmDialog } from '#imports'
 
 export interface IssuesListConfig {
   title: string
@@ -103,6 +103,35 @@ export function useIssuesList(config: IssuesListConfig) {
     return result
   })
 
+  // Open all filtered issues/PRs in browser
+  const confirm = useConfirmDialog()
+
+  async function openAll() {
+    const issues = filteredItems.value
+    if (!issues.length) return
+
+    const singular = config.panelId === 'pulls' ? 'pull request' : 'issue'
+    const label = issues.length === 1 ? singular : `${singular}s`
+    const confirmed = await confirm({
+      title: `Open ${issues.length === 1 ? '' : 'all '}${label} in browser?`,
+      description: `This will open ${issues.length} ${label} in new ${issues.length === 1 ? 'tab' : 'tabs'}.`,
+      icon: 'i-lucide-external-link',
+      confirmLabel: 'Open all'
+    })
+
+    if (!confirmed) return
+
+    for (const issue of issues) {
+      if (issue.htmlUrl) {
+        openInBrowser(issue.htmlUrl)
+      }
+    }
+  }
+
+  defineShortcuts({
+    meta_shift_g: openAll
+  })
+
   const isPanelOpen = computed({
     get() {
       return !!selectedItem.value
@@ -134,6 +163,8 @@ export function useIssuesList(config: IssuesListConfig) {
     toggleFilter,
     clearFilters,
     availableFilters,
+    // Actions
+    openAll,
     // Selection
     selectedItem,
     isPanelOpen,

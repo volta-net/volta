@@ -23,6 +23,7 @@ const {
   toggleFilter,
   clearFilters,
   availableFilters,
+  openAll,
   selectedItem,
   isPanelOpen,
   favoriteRepositories,
@@ -63,6 +64,14 @@ const moreItems = computed(() => {
         e.preventDefault()
         analyzeAll()
       }
+    }
+  ], [
+    {
+      label: 'Open all',
+      icon: 'i-lucide-external-link',
+      kbds: ['meta', 'shift', 'g'] as string[],
+      disabled: !filteredItems.value?.length,
+      onSelect: openAll
     }
   ], [
     {

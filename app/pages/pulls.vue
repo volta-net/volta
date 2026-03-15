@@ -22,6 +22,7 @@ const {
   toggleFilter,
   clearFilters,
   availableFilters,
+  openAll,
   selectedItem,
   isPanelOpen,
   favoriteRepositories,
@@ -40,6 +41,14 @@ const {
 })
 
 const moreItems = computed(() => [[
+  {
+    label: 'Open all',
+    icon: 'i-lucide-external-link',
+    kbds: ['meta', 'shift', 'g'] as string[],
+    disabled: !filteredItems.value?.length,
+    onSelect: openAll
+  }
+], [
   {
     label: `${favoriteRepositories.value.length} repos`,
     icon: 'i-lucide-book',
