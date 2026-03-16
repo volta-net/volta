@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { Analytics } from '@vercel/analytics/nuxt'
-
 const { user } = useUserSession()
 const colorMode = useColorMode()
 const colorScheme = usePreferredColorScheme()
@@ -77,7 +75,5 @@ watch(() => $pwa?.needRefresh, (needRefresh) => {
         />
       </div>
     </div>
-
-    <Analytics />
   </UApp>
 </template>

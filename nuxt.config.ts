@@ -8,6 +8,7 @@ export default defineNuxtConfig({
     '@vueuse/nuxt',
     'nuxt-auth-utils',
     'workflow/nuxt',
+    '@vercel/analytics',
     '@vite-pwa/nuxt'
   ],
 
