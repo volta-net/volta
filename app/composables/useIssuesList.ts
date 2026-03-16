@@ -1,6 +1,6 @@
-import { breakpointsTailwind, useWindowFocus, useBreakpoints } from '@vueuse/core'
-import { useFilter } from 'reka-ui'
 import type { Ref } from 'vue'
+import { useFilter } from '@nuxt/ui/composables/internal/useFilter'
+import { breakpointsTailwind, useWindowFocus, useBreakpoints } from '@vueuse/core'
 import type { Issue } from '#shared/types'
 import { ref, computed, watch, useFavoriteRepositories, useFavoriteIssues, defineShortcuts, useFilters, applyFilters, matchIssueFilter, extractIssueFilters, pruneStaleFilters, useConfirmDialog } from '#imports'
 
@@ -65,7 +65,7 @@ export function useIssuesList(config: IssuesListConfig) {
   // Search
   const q = ref('')
   const searchInputRef = ref<{ inputRef: HTMLInputElement } | null>(null)
-  const { contains } = useFilter({ sensitivity: 'base' })
+  const { filter: filterItems } = useFilter()
 
   defineShortcuts({
     '/': () => searchInputRef.value?.inputRef?.focus()
@@ -85,14 +85,7 @@ export function useIssuesList(config: IssuesListConfig) {
 
     // Apply text search
     if (q.value) {
-      result = result.filter((item) => {
-        return (
-          contains(item.title, q.value)
-          || contains(String(item.number), q.value)
-          || contains(item.repository.fullName, q.value)
-          || contains(item.user?.login ?? '', q.value)
-        )
-      })
+      result = filterItems(result, q.value, ['title', 'number', 'repository.fullName', 'user.login'])
     }
 
     // Apply filters
