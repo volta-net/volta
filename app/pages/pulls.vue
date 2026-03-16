@@ -97,6 +97,7 @@ const moreItems = computed(() => [[
             ref="searchInputRef"
             v-model="q"
             placeholder="Search..."
+            autocorrect="off"
             variant="soft"
             icon="i-lucide-search"
             class="hidden sm:inline-flex"
