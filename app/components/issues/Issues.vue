@@ -54,6 +54,24 @@ defineShortcuts({
     } else if (index > 0) {
       selectedIssue.value = props.issues[index - 1]
     }
+  },
+  j: () => {
+    const index = props.issues.findIndex(issue => issue.id === selectedIssue.value?.id)
+
+    if (index === -1) {
+      selectedIssue.value = props.issues[0]
+    } else if (index < props.issues.length - 1) {
+      selectedIssue.value = props.issues[index + 1]
+    }
+  },
+  k: () => {
+    const index = props.issues.findIndex(issue => issue.id === selectedIssue.value?.id)
+
+    if (index === -1) {
+      selectedIssue.value = props.issues[props.issues.length - 1]
+    } else if (index > 0) {
+      selectedIssue.value = props.issues[index - 1]
+    }
   }
 })
 </script>
