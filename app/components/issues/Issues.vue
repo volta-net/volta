@@ -36,25 +36,24 @@ watch(() => props.issues, (newIssues) => {
   }
 }, { deep: true })
 
-defineShortcuts({
-  arrowdown: () => {
-    const index = props.issues.findIndex(issue => issue.id === selectedIssue.value?.id)
+function selectNextIssue(delta: number) {
+  const index = props.issues.findIndex(issue => issue.id === selectedIssue.value?.id)
 
-    if (index === -1) {
-      selectedIssue.value = props.issues[0]
-    } else if (index < props.issues.length - 1) {
-      selectedIssue.value = props.issues[index + 1]
-    }
-  },
-  arrowup: () => {
-    const index = props.issues.findIndex(issue => issue.id === selectedIssue.value?.id)
-
-    if (index === -1) {
-      selectedIssue.value = props.issues[props.issues.length - 1]
-    } else if (index > 0) {
-      selectedIssue.value = props.issues[index - 1]
+  if (index === -1) {
+    selectedIssue.value = props.issues[0]
+  } else {
+    const newIndex = index + delta
+    if (newIndex >= 0 && newIndex < props.issues.length) {
+      selectedIssue.value = props.issues[newIndex]
     }
   }
+}
+
+defineShortcuts({
+  arrowdown: () => selectNextIssue(1),
+  arrowup: () => selectNextIssue(-1),
+  j: () => selectNextIssue(1),
+  k: () => selectNextIssue(-1)
 })
 </script>
 
