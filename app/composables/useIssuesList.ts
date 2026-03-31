@@ -1,5 +1,5 @@
 import type { Ref } from 'vue'
-import { useFilter } from '@nuxt/ui/composables/internal/useFilter'
+import { useFilter } from '@nuxt/ui/composables'
 import { breakpointsTailwind, useWindowFocus, useBreakpoints } from '@vueuse/core'
 import type { Issue } from '#shared/types'
 import { ref, computed, watch, useFavoriteRepositories, useFavoriteIssues, defineShortcuts, useFilters, applyFilters, matchIssueFilter, extractIssueFilters, pruneStaleFilters, useConfirmDialog } from '#imports'
