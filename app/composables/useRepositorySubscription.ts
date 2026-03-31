@@ -151,7 +151,7 @@ export function useRepositorySubscription(installations: Ref<Installation[] | nu
             type: 'checkbox',
             label: 'Issues',
             icon: 'i-lucide-circle-dot',
-            checked: sub.issues,
+            checked: sub.issues ?? undefined,
             onUpdateChecked: (checked: boolean) => updateSubscription(repo, { issues: checked }),
             onSelect: (e: Event) => e.preventDefault()
           },
@@ -159,7 +159,7 @@ export function useRepositorySubscription(installations: Ref<Installation[] | nu
             type: 'checkbox',
             label: 'Pull requests',
             icon: 'i-lucide-git-pull-request',
-            checked: sub.pullRequests,
+            checked: sub.pullRequests ?? undefined,
             onUpdateChecked: (checked: boolean) => updateSubscription(repo, { pullRequests: checked }),
             onSelect: (e: Event) => e.preventDefault()
           },
@@ -167,7 +167,7 @@ export function useRepositorySubscription(installations: Ref<Installation[] | nu
             type: 'checkbox',
             label: 'Releases',
             icon: 'i-lucide-tag',
-            checked: sub.releases,
+            checked: sub.releases ?? undefined,
             onUpdateChecked: (checked: boolean) => updateSubscription(repo, { releases: checked }),
             onSelect: (e: Event) => e.preventDefault()
           },
@@ -175,7 +175,7 @@ export function useRepositorySubscription(installations: Ref<Installation[] | nu
             type: 'checkbox',
             label: 'CI failures',
             icon: 'i-lucide-circle-x',
-            checked: sub.ci,
+            checked: sub.ci ?? undefined,
             onUpdateChecked: (checked: boolean) => updateSubscription(repo, { ci: checked }),
             onSelect: (e: Event) => e.preventDefault()
           },
@@ -183,7 +183,7 @@ export function useRepositorySubscription(installations: Ref<Installation[] | nu
             type: 'checkbox',
             label: 'Mentions',
             icon: 'i-lucide-at-sign',
-            checked: sub.mentions,
+            checked: sub.mentions ?? undefined,
             onUpdateChecked: (checked: boolean) => updateSubscription(repo, { mentions: checked }),
             onSelect: (e: Event) => e.preventDefault()
           },
@@ -191,7 +191,7 @@ export function useRepositorySubscription(installations: Ref<Installation[] | nu
             type: 'checkbox',
             label: 'Activities',
             icon: 'i-lucide-bell',
-            checked: sub.activity,
+            checked: sub.activity ?? undefined,
             onUpdateChecked: (checked: boolean) => updateSubscription(repo, { activity: checked }),
             onSelect: (e: Event) => e.preventDefault()
           }

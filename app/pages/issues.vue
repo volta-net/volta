@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { DropdownMenuItem } from '@nuxt/ui'
+
 useSeoMeta({
   title: 'Issues'
 })
@@ -49,7 +51,7 @@ const unanalyzedItems = computed(() =>
   (filteredItems.value ?? []).filter(item => !item.resolutionStatus && !item.pullRequest)
 )
 
-const moreItems = computed(() => {
+const moreItems = computed<DropdownMenuItem[][]>(() => {
   const label = analyzing.value
     ? `Analyzing ${analyzeProgress.value.analyzed}/${analyzeProgress.value.total}...`
     : `Analyze ${unanalyzedItems.value.length} issue${unanalyzedItems.value.length !== 1 ? 's' : ''}`
@@ -60,7 +62,7 @@ const moreItems = computed(() => {
       icon: 'i-lucide-sparkles',
       loading: analyzing.value,
       disabled: !unanalyzedItems.value.length || analyzing.value,
-      onSelect: (e: MouseEvent) => {
+      onSelect: (e: Event) => {
         e.preventDefault()
         analyzeAll()
       }
