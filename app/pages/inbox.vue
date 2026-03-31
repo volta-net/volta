@@ -17,6 +17,7 @@ const { filters, toggleFilter, removeFilter, clearFilters } = useFilters()
 const { getActionLabel, getActionIcon } = useNotificationHelpers()
 const availableFilters = computed(() => extractNotificationFilters(notifications.value ?? [], { getActionLabel, getActionIcon }))
 
+const filtersRef = useTemplateRef('filters')
 const selectedNotification = ref<Notification | null>()
 
 // Stack of pending deletions (notifications to delete when their toast closes)
@@ -285,6 +286,7 @@ useSeoMeta({
 
         <template #right>
           <Filters
+            ref="filters"
             :filters="filters"
             :available-filters="availableFilters"
             :count="visibleNotifications?.length"
@@ -330,6 +332,7 @@ useSeoMeta({
         v-model="selectedNotification"
         :notifications="visibleNotifications"
         :active-filters="filters"
+        :filters-open="filtersRef?.open"
         @toggle-read="updateReadState"
         @delete="deleteNotification"
         @undo="undoDelete"

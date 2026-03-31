@@ -40,6 +40,8 @@ const {
   refresh
 })
 
+const filtersRef = useTemplateRef('filters')
+
 const moreItems = computed(() => [[
   {
     label: 'Open all',
@@ -86,6 +88,7 @@ const moreItems = computed(() => [[
 
         <template v-if="hasFavorites" #right>
           <Filters
+            ref="filters"
             :filters="filters"
             :available-filters="availableFilters"
             :count="filteredItems?.length"
@@ -181,6 +184,7 @@ const moreItems = computed(() => [[
         v-model="selectedItem"
         :issues="filteredItems"
         :active-filters="filters"
+        :filters-open="filtersRef?.open"
         class="flex-1"
         @filter="toggleFilter"
       />

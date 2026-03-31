@@ -4,6 +4,7 @@ import type { Filter } from '~/composables/useFilters'
 const props = defineProps<{
   issues: Issue[]
   activeFilters?: readonly Filter[]
+  filtersOpen?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -49,12 +50,18 @@ function selectNextIssue(delta: number) {
   }
 }
 
-defineShortcuts({
-  arrowdown: () => selectNextIssue(1),
-  arrowup: () => selectNextIssue(-1),
-  j: () => selectNextIssue(1),
-  k: () => selectNextIssue(-1)
+const shortcuts = computed(() => {
+  if (props.filtersOpen) return {}
+
+  return {
+    arrowdown: () => selectNextIssue(1),
+    arrowup: () => selectNextIssue(-1),
+    j: () => selectNextIssue(1),
+    k: () => selectNextIssue(-1)
+  }
 })
+
+defineShortcuts(shortcuts)
 </script>
 
 <template>

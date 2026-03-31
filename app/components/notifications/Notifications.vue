@@ -5,6 +5,7 @@ import type { Filter } from '~/composables/useFilters'
 const props = defineProps<{
   notifications: Notification[]
   activeFilters?: readonly Filter[]
+  filtersOpen?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -60,29 +61,35 @@ function toggleRead() {
   })
 }
 
-defineShortcuts({
-  arrowdown: () => {
-    const index = props.notifications.findIndex(notification => notification.id === selectedNotification.value?.id)
+const shortcuts = computed(() => {
+  if (props.filtersOpen) return {}
 
-    if (index === -1) {
-      selectedNotification.value = props.notifications[0]!
-    } else if (index < props.notifications.length - 1) {
-      selectedNotification.value = props.notifications[index + 1]!
-    }
-  },
-  arrowup: () => {
-    const index = props.notifications.findIndex(notification => notification.id === selectedNotification.value?.id)
+  return {
+    arrowdown: () => {
+      const index = props.notifications.findIndex(notification => notification.id === selectedNotification.value?.id)
 
-    if (index === -1) {
-      selectedNotification.value = props.notifications[props.notifications.length - 1]!
-    } else if (index > 0) {
-      selectedNotification.value = props.notifications[index - 1]!
-    }
-  },
-  u: toggleRead,
-  d: () => emit('delete'),
-  z: () => emit('undo')
+      if (index === -1) {
+        selectedNotification.value = props.notifications[0]!
+      } else if (index < props.notifications.length - 1) {
+        selectedNotification.value = props.notifications[index + 1]!
+      }
+    },
+    arrowup: () => {
+      const index = props.notifications.findIndex(notification => notification.id === selectedNotification.value?.id)
+
+      if (index === -1) {
+        selectedNotification.value = props.notifications[props.notifications.length - 1]!
+      } else if (index > 0) {
+        selectedNotification.value = props.notifications[index - 1]!
+      }
+    },
+    u: toggleRead,
+    d: () => emit('delete'),
+    z: () => emit('undo')
+  }
 })
+
+defineShortcuts(shortcuts)
 </script>
 
 <template>

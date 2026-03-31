@@ -43,6 +43,8 @@ const {
   refresh
 })
 
+const filtersRef = useTemplateRef('filters')
+
 // Bulk analysis
 const analyzing = ref(false)
 const analyzeProgress = ref({ analyzed: 0, total: 0 })
@@ -174,6 +176,7 @@ async function analyzeAll() {
 
         <template v-if="hasFavorites" #right>
           <Filters
+            ref="filters"
             :filters="filters"
             :available-filters="availableFilters"
             :count="filteredItems?.length"
@@ -269,6 +272,7 @@ async function analyzeAll() {
         v-model="selectedItem"
         :issues="filteredItems"
         :active-filters="filters"
+        :filters-open="filtersRef?.open"
         class="flex-1"
         @filter="toggleFilter"
       />

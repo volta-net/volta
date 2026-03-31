@@ -26,6 +26,8 @@ defineShortcuts({
   f: () => open.value = true
 })
 
+defineExpose({ open })
+
 const filterTypeConfig: Record<FilterType, { label: string, icon: string }> = {
   repository: { label: 'Repository', icon: 'i-lucide-book' },
   label: { label: 'Label', icon: 'i-lucide-tag' },
@@ -119,7 +121,10 @@ const items = computed<DropdownMenuItem[] | DropdownMenuItem[][]>(() => {
     <UDropdownMenu
       v-if="availableFilters?.length"
       v-model:open="open"
+      v-model:search-term="searchTerm"
       :items="items"
+      :filter="{ placeholder: 'Search filters...' }"
+      ignore-filter
       :content="{ align: 'start' }"
       :ui="{ content: 'max-h-80 overflow-y-auto', item: 'items-center' }"
     >
@@ -134,20 +139,6 @@ const items = computed<DropdownMenuItem[] | DropdownMenuItem[][]>(() => {
 
       <template #chip-leading="{ item }">
         <IssueLabelChip :color="(item as any).chip.color" />
-      </template>
-
-      <template #content-top="{ sub }">
-        <UInput
-          v-if="!sub"
-          v-model="searchTerm"
-          placeholder="Search filters..."
-          icon="i-lucide-search"
-          variant="soft"
-          autofocus
-          size="sm"
-          :ui="{ root: 'w-full border-b border-default', base: 'rounded-none hover:bg-elevated/50 focus:bg-elevated/50' }"
-          @keydown.stop
-        />
       </template>
     </UDropdownMenu>
   </UFieldGroup>
