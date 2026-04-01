@@ -1,9 +1,9 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   modules: [
+    '@comark/nuxt',
     '@nuxt/eslint',
     '@nuxt/ui',
-    '@nuxtjs/mdc',
     '@nuxthub/core',
     '@vueuse/nuxt',
     'nuxt-auth-utils',
@@ -38,12 +38,6 @@ export default defineNuxtConfig({
   },
 
   css: ['~/assets/css/main.css'],
-
-  mdc: {
-    highlight: {
-      langs: ['bash', 'html', 'ts', 'typescript', 'diff', 'vue', 'json', 'yml', 'css', 'mdc', 'blade', 'edge']
-    }
-  },
 
   ui: {
     theme: {

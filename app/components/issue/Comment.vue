@@ -25,9 +25,9 @@ function getDiffHunkWithoutHeader(diffHunk: string): string {
     </div>
 
     <!-- Code diff for review comments -->
-    <MDC
+    <IssueComark
       v-if="diffHunk"
-      :value="`\`\`\`diff\n${getDiffHunkWithoutHeader(diffHunk)}\n\`\`\``"
+      :markdown="`\`\`\`diff\n${getDiffHunkWithoutHeader(diffHunk)}\n\`\`\``"
       class="[&>div]:my-0! [&_pre]:rounded-none! [&_pre]:border-0!"
     />
 
