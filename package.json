@@ -23,6 +23,7 @@
     "@nuxthub/core": "^0.10.7",
     "@octokit/auth-app": "^8.2.0",
     "@shikijs/langs": "^4.0.2",
+    "@shikijs/themes": "^4.0.2",
     "@tiptap/core": "^3.21.0",
     "@tiptap/extension-details": "^3.21.0",
     "@tiptap/extension-emoji": "^3.21.0",
