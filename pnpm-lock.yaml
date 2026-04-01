@@ -38,6 +38,9 @@ importers:
       '@octokit/auth-app':
         specifier: ^8.2.0
         version: 8.2.0
+      '@shikijs/langs':
+        specifier: ^4.0.2
+        version: 4.0.2
       '@tiptap/core':
         specifier: ^3.21.0
         version: 3.21.0(@tiptap/pm@3.21.0)
