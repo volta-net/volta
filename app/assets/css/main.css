@@ -20,10 +20,6 @@
   --ui-neutral: var(--ui-color-neutral-400);
 }
 
-.shiki span.line:empty {
-  height: 1lh;
-}
-
 html.dark .shiki span {
   color: var(--shiki-dark) !important;
   background-color: var(--shiki-dark-bg) !important;

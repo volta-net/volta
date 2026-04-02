@@ -3,5 +3,9 @@ import diff from '@shikijs/langs/diff'
 
 export default defineComarkComponent({
   name: 'IssueComark',
-  plugins: [highlight({ languages: [diff] })]
+  plugins: [
+    highlight({
+      languages: [diff]
+    })
+  ]
 })
