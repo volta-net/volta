@@ -77,7 +77,7 @@ const items = computed<DropdownMenuItem[][]>(() => ([[{
       :label="user?.username"
       variant="ghost"
       size="md"
-      class="data-[state=open]:bg-elevated px-2.5 lg:px-1.5"
+      class="data-[state=open]:bg-elevated px-2.5 lg:px-1.5 w-full"
       :ui="{ label: 'lg:hidden' }"
     />
   </UDropdownMenu>

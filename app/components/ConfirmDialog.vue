@@ -21,13 +21,15 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <UModal
-    :title="title"
-    :description="description"
-    :ui="{ header: 'items-start', footer: 'justify-end', close: '-mt-0.5' }"
-  >
+  <UModal :title="title">
     <template v-if="icon" #leading>
       <UIcon :name="icon" class="size-6" :class="`text-${color}`" />
+    </template>
+
+    <template #body>
+      <p class="text-sm text-muted">
+        {{ description }}
+      </p>
     </template>
 
     <template #footer>

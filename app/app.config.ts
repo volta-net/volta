@@ -21,17 +21,17 @@ export default defineAppConfig({
     },
     slideover: {
       slots: {
-        header: 'sm:px-4',
+        header: 'px-4 sm:px-4 py-2 justify-between',
         body: 'sm:p-4',
-        footer: 'sm:px-4',
-        close: '-me-1.5'
+        footer: 'px-4 sm:px-4 py-2 justify-end min-h-(--ui-header-height)',
+        close: 'static'
       }
     },
     modal: {
       slots: {
-        header: 'sm:px-4 flex items-center justify-between',
+        header: 'px-4 sm:px-4 py-2 justify-between',
         body: 'sm:p-4',
-        footer: 'sm:px-4',
+        footer: 'px-4 sm:px-4 py-2 justify-end min-h-(--ui-header-height)',
         close: 'static'
       }
     },
@@ -43,7 +43,17 @@ export default defineAppConfig({
     },
     prose: {
       pre: {
-        base: 'text-xs/5 max-h-[30.5rem] overflow-y-auto'
+        base: 'text-xs/5 max-h-122 overflow-y-auto'
+      }
+    },
+    inputMenu: {
+      slots: {
+        trailingIcon: 'group-data-[state=open]:rotate-180 transition-transform duration-200'
+      }
+    },
+    selectMenu: {
+      slots: {
+        trailingIcon: 'group-data-[state=open]:rotate-180 transition-transform duration-200'
       }
     },
     editor: {
@@ -100,7 +110,6 @@ export default defineAppConfig({
     },
     dashboardSidebar: {
       slots: {
-        header: 'h-12',
         toggle: '-ms-1.5'
       },
       variants: {
@@ -115,7 +124,7 @@ export default defineAppConfig({
     },
     dashboardNavbar: {
       slots: {
-        root: 'sm:px-4 h-12',
+        root: 'sm:px-4',
         toggle: '-ms-1.5'
       }
     },

@@ -123,9 +123,7 @@ async function save() {
             variant="soft"
             class="w-full data-[state=open]:bg-elevated"
             :ui="{
-              content: 'max-h-92',
-              trailing: 'group',
-              trailingIcon: 'group-data-[state=open]:rotate-180 transition-transform duration-200'
+              content: 'max-h-92'
             }"
             open-on-click
             @create="onCreate"

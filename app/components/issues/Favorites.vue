@@ -64,8 +64,6 @@ async function removeFavorite(issueId: number) {
     :modal="false"
     :ui="{
       content: 'lg:rounded-l-none sm:shadow-none',
-      header: 'min-h-0 h-12 flex items-center justify-between',
-      close: 'static',
       body: 'flex flex-col p-0!'
     }"
   >

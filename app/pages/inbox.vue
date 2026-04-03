@@ -316,7 +316,7 @@ useSeoMeta({
             <UButton
               variant="ghost"
               trailing-icon="i-lucide-ellipsis"
-              class="data-[state=open]:bg-elevated -mr-1.5"
+              class="data-[state=open]:bg-elevated"
             />
           </UDropdownMenu>
         </template>
