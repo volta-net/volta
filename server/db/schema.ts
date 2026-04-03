@@ -13,7 +13,7 @@ export const users = pgTable('users', {
   registered: boolean().default(false).notNull(),
   // User's AI Gateway token for AI features (resolution analysis, completions)
   aiGatewayToken: text('ai_gateway_token'),
-  // User's preferred AI model (e.g., 'anthropic/claude-sonnet-4.5', 'openai/gpt-4o')
+  // User's preferred AI model (e.g., 'anthropic/claude-sonnet-4.6', 'openai/gpt-4o')
   aiModel: text('ai_model'),
   // JSON array of bot logins to exclude from notifications (e.g., '["vercel[bot]","dependabot[bot]"]')
   excludedBots: text('excluded_bots'),

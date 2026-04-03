@@ -10,22 +10,8 @@ const { data: credits, execute: fetchCredits, status: creditsStatus } = useLazyF
   immediate: Boolean(settings.value?.hasAiGatewayToken)
 })
 
-// AI model options (from https://vercel.com/ai-gateway/models)
-const modelOptions = [
-  // Anthropic
-  { label: 'Claude Sonnet 4.5', value: 'anthropic/claude-sonnet-4.5', icon: 'i-simple-icons-anthropic', description: 'Best balance of speed and quality. Recommended.' },
-  { label: 'Claude Opus 4.6', value: 'anthropic/claude-opus-4.6', icon: 'i-simple-icons-anthropic', description: 'Most capable model. Best for analysis. Premium pricing.' },
-  { label: 'Claude Haiku 4.5', value: 'anthropic/claude-haiku-4.5', icon: 'i-simple-icons-anthropic', description: 'Fastest Anthropic model. Great for completions.' },
-  // OpenAI
-  { label: 'GPT-5.2', value: 'openai/gpt-5.2', icon: 'i-simple-icons-openai', description: 'OpenAI flagship. Strong structured output.' },
-  { label: 'GPT-5 Mini', value: 'openai/gpt-5-mini', icon: 'i-simple-icons-openai', description: 'Fast and affordable. Good for completions.' },
-  // Google
-  { label: 'Gemini 3 Flash', value: 'google/gemini-3-flash', icon: 'i-simple-icons-google', description: 'Very fast with 1M context. Best value.' },
-  { label: 'Gemini 3 Pro', value: 'google/gemini-3-pro-preview', icon: 'i-simple-icons-google', description: 'Strongest Google model. Good for analysis.' },
-  { label: 'Gemini 2.5 Flash', value: 'google/gemini-2.5-flash', icon: 'i-simple-icons-google', description: 'Ultra fast responses. Most cost-effective.' }
-]
-
-const defaultModel = 'anthropic/claude-sonnet-4.5'
+const modelOptions = aiModelOptions
+const defaultModel = aiDefaultModel
 
 // Form state
 const token = ref('')
@@ -283,7 +269,7 @@ async function saveModel() {
           icon="i-lucide-info"
           color="primary"
           variant="soft"
-          description="AI features include automatic issue resolution analysis (detecting if issues have been answered) and smart comment suggestions. Your Vercel AI Gateway token is stored securely and only used for AI requests on your behalf."
+          description="AI features include the Volta assistant for exploring issues and PRs, automatic resolution analysis, and chart generation. Your token is stored securely and only used for AI requests on your behalf."
           :ui="{ icon: 'size-4 mt-0.5' }"
           class="rounded-none"
         />

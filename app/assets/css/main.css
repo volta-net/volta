@@ -17,6 +17,130 @@
   --ui-header-height: --spacing(12);
 }
 
+:root {
+  /* Series Colors */
+  --vis-color0: var(--ui-color-primary-500) !important;
+  --vis-color1: var(--ui-color-success-500) !important;
+  --vis-color2: var(--ui-color-info-500) !important;
+  --vis-color3: var(--ui-color-warning-500) !important;
+  --vis-color4: var(--ui-color-error-500) !important;
+
+  /* Axis */
+  --vis-axis-tick-color: var(--ui-border) !important;
+  --vis-axis-grid-color: var(--ui-border) !important;
+  --vis-axis-label-color: var(--ui-text-muted) !important;
+  --vis-axis-tick-label-color: var(--ui-text-muted) !important;
+  --vis-axis-tick-label-weight: 500 !important;
+  --vis-axis-domain-line-dasharray: none !important;
+  --vis-dark-axis-tick-color: var(--ui-border) !important;
+  --vis-dark-axis-grid-color: var(--ui-border) !important;
+  --vis-dark-axis-label-color: var(--ui-text-muted) !important;
+  --vis-dark-axis-tick-label-color: var(--ui-text-muted) !important;
+
+  /* Legend */
+  --vis-legend-label-color: var(--ui-text-muted) !important;
+  --vis-legend-item-spacing: 0px !important;
+  --vis-legend-spacing: 16px !important;
+  --vis-dark-legend-label-color: var(--ui-text-muted) !important;
+  --vis-rolling-pin-legend-label-color: var(--ui-text-muted) !important;
+  --vis-dark-rolling-pin-legend-label-color: var(--ui-text-muted) !important;
+
+  /* Tooltip */
+  --vis-tooltip-background-color: var(--ui-bg-elevated) !important;
+  --vis-tooltip-text-color: var(--ui-text) !important;
+  --vis-tooltip-border-color: var(--ui-border) !important;
+
+  /* Crosshair */
+  --vis-crosshair-line-stroke-color: var(--ui-border) !important;
+  --vis-crosshair-circle-stroke-color: var(--ui-bg) !important;
+
+  /* Donut */
+  --vis-donut-background-color: var(--ui-bg-muted) !important;
+  --vis-donut-central-label-text-color: var(--ui-text) !important;
+  --vis-donut-central-sub-label-text-color: var(--ui-text-muted) !important;
+  --vis-dark-donut-background-color: var(--ui-bg-muted) !important;
+  --vis-dark-donut-central-label-text-color: var(--ui-text) !important;
+  --vis-dark-donut-central-sub-label-text-color: var(--ui-text-muted) !important;
+
+  /* Nested Donut */
+  --vis-nested-donut-background-color: var(--ui-bg-muted) !important;
+  --vis-nested-donut-central-label-text-color: var(--ui-text) !important;
+  --vis-nested-donut-central-sublabel-text-color: var(--ui-text-muted) !important;
+  --vis-nested-donut-segment-stroke-color: var(--ui-bg-muted) !important;
+  --vis-dark-nested-donut-background-color: var(--ui-bg-muted) !important;
+  --vis-dark-nested-donut-central-label-text-color: var(--ui-text) !important;
+  --vis-dark-nested-donut-central-sublabel-text-color: var(--ui-text-muted) !important;
+
+  /* Timeline */
+  --vis-timeline-row-even-fill-color: var(--ui-bg) !important;
+  --vis-timeline-row-odd-fill-color: var(--ui-bg-muted) !important;
+  --vis-timeline-scrollbar-background-color: var(--ui-bg-muted) !important;
+  --vis-timeline-scrollbar-color: var(--ui-text-dimmed) !important;
+  --vis-timeline-label-color: var(--ui-text-muted) !important;
+  --vis-timeline-arrow-color: var(--ui-text-muted) !important;
+  --vis-timeline-line-hover-stroke-color: var(--ui-text-muted) !important;
+  --vis-dark-timeline-row-even-fill-color: var(--ui-bg) !important;
+  --vis-dark-timeline-row-odd-fill-color: var(--ui-bg-muted) !important;
+  --vis-dark-timeline-scrollbar-background-color: var(--ui-bg-muted) !important;
+  --vis-dark-timeline-scrollbar-color: var(--ui-text-dimmed) !important;
+  --vis-dark-timeline-label-color: var(--ui-text-muted) !important;
+  --vis-dark-timeline-arrow-color: var(--ui-text-muted) !important;
+  --vis-dark-timeline-line-hover-stroke-color: var(--ui-text-muted) !important;
+
+  /* Annotations */
+  --vis-annotations-text-color: var(--ui-text) !important;
+  --vis-annotations-connector-stroke-color: var(--ui-text-dimmed) !important;
+  --vis-annotations-subject-stroke-color: var(--ui-text-dimmed) !important;
+  --vis-dark-annotations-text-color: var(--ui-text) !important;
+  --vis-dark-annotations-connector-stroke-color: var(--ui-text-dimmed) !important;
+  --vis-dark-annotations-subject-stroke-color: var(--ui-text-dimmed) !important;
+
+  /* Plotline & Plotband */
+  --vis-plotline-label-color: var(--ui-text) !important;
+  --vis-dark-plotline-label-color: var(--ui-text) !important;
+  --vis-plotband-label-color: var(--ui-text) !important;
+  --vis-dark-plotband-label-color: var(--ui-text) !important;
+
+  /* Brush */
+  --vis-brush-handle-fill-color: var(--ui-text-dimmed) !important;
+  --vis-brush-handle-stroke-color: var(--ui-bg) !important;
+  --vis-dark-brush-handle-fill-color: var(--ui-text-dimmed) !important;
+  --vis-dark-brush-handle-stroke-color: var(--ui-bg) !important;
+
+  /* Controls */
+  --vis-controls-buttons-border-color: var(--ui-border) !important;
+  --vis-controls-buttons-background-color: var(--ui-bg) !important;
+  --vis-controls-button-color: var(--ui-text-muted) !important;
+  --vis-dark-controls-buttons-border-color: var(--ui-border) !important;
+  --vis-dark-controls-buttons-background-color: var(--ui-bg-elevated) !important;
+  --vis-dark-controls-button-color: var(--ui-text) !important;
+
+  /* Flow Legend */
+  --vis-flow-legend-label-background: var(--ui-bg) !important;
+  --vis-flow-legend-label-color: var(--ui-text-muted) !important;
+  --vis-flow-legend-link-color: var(--ui-border) !important;
+  --vis-flow-legend-arrow-color: var(--ui-border) !important;
+  --vis-dark-flow-legend-label-background: var(--ui-bg-elevated) !important;
+  --vis-dark-flow-legend-label-color: var(--ui-text-muted) !important;
+  --vis-dark-flow-legend-link-color: var(--ui-border) !important;
+  --vis-dark-flow-legend-arrow-color: var(--ui-border) !important;
+
+  /* Sankey */
+  --vis-sankey-node-label-color: var(--ui-text-muted) !important;
+  --vis-sankey-node-label-background-fill-color: var(--ui-bg) !important;
+  --vis-sankey-node-label-background-stroke-color: var(--ui-border) !important;
+  --vis-dark-sankey-node-label-color: var(--ui-text-muted) !important;
+  --vis-dark-sankey-node-label-background-fill-color: var(--ui-bg-elevated) !important;
+  --vis-dark-sankey-node-label-background-stroke-color: var(--ui-border) !important;
+
+  /* Chord Diagram */
+  --vis-chord-diagram-label-text-fill-color-dark: var(--ui-text-muted) !important;
+
+  /* Treemap */
+  --vis-treemap-tile-stroke-color: var(--ui-bg) !important;
+  --vis-treemap-tile-hover-stroke-color: var(--ui-bg) !important;
+}
+
 :root, .light {
   --ui-neutral: var(--ui-color-neutral-500);
 }

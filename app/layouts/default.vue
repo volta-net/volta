@@ -108,6 +108,10 @@ const links = computed<NavigationMenuItem[][]>(() => {
   }
 
   return [[{
+    label: 'Home',
+    icon: 'i-lucide-house',
+    to: '/'
+  }, {
     label: 'Inbox',
     icon: 'i-lucide-inbox',
     to: '/inbox',
@@ -130,6 +134,10 @@ const links = computed<NavigationMenuItem[][]>(() => {
 const groups = computed(() => [{
   id: 'links',
   items: [{
+    label: 'Home',
+    icon: 'i-lucide-house',
+    to: '/'
+  }, {
     label: 'Inbox',
     icon: 'i-lucide-inbox',
     to: '/inbox'

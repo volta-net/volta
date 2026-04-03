@@ -5,7 +5,7 @@ import { db, schema } from '@nuxthub/db'
 import { decrypt, isEncrypted } from './encryption'
 
 // Default AI model to use when none is configured
-export const DEFAULT_AI_MODEL = 'anthropic/claude-sonnet-4.5' as GatewayModelId
+export const DEFAULT_AI_MODEL = 'anthropic/claude-sonnet-4.6' as GatewayModelId
 
 /**
  * Get the user's AI settings from the database

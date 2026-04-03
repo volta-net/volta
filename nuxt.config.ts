@@ -7,6 +7,7 @@ export default defineNuxtConfig({
     '@nuxthub/core',
     '@vueuse/nuxt',
     'nuxt-auth-utils',
+    'nuxt-charts',
     'workflow/nuxt',
     '@vercel/analytics',
     '@vite-pwa/nuxt'
@@ -72,8 +73,8 @@ export default defineNuxtConfig({
     }
   },
 
-  routeRules: {
-    '/': { prerender: true, redirect: '/inbox' }
+  experimental: {
+    viewTransition: true
   },
 
   compatibilityDate: '2026-01-15',
