@@ -2,7 +2,7 @@
 import type { UIMessage } from 'ai'
 import { DefaultChatTransport, isToolUIPart, isReasoningUIPart, isTextUIPart, getToolName } from 'ai'
 import { Chat } from '@ai-sdk/vue'
-import { isToolStreaming } from '@nuxt/ui/utils/ai'
+import { isPartStreaming, isToolStreaming } from '@nuxt/ui/utils/ai'
 
 useSeoMeta({
   title: 'Home'
@@ -237,12 +237,12 @@ function getToolIcon(part: { state: string, toolName?: string, toolCallId?: stri
                   <UChatReasoning
                     v-if="isReasoningUIPart(part)"
                     :text="part.text"
-                    :streaming="part.state === 'streaming'"
+                    :streaming="isPartStreaming(part)"
                     icon="i-lucide-brain"
                   >
                     <ChatComark
                       :markdown="part.text"
-                      :streaming="part.state === 'streaming'"
+                      :streaming="isPartStreaming(part)"
                     />
                   </UChatReasoning>
 
@@ -250,7 +250,7 @@ function getToolIcon(part: { state: string, toolName?: string, toolCallId?: stri
                     <ChatComark
                       v-if="message.role === 'assistant'"
                       :markdown="part.text"
-                      :streaming="part.state === 'streaming'"
+                      :streaming="isPartStreaming(part)"
                     />
                     <p v-else-if="message.role === 'user'" class="whitespace-pre-wrap text-sm/6">
                       {{ part.text }}
