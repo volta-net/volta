@@ -40,6 +40,7 @@ async function onModelChange(value: string) {
 
 const input = ref('')
 const storedMessages = useLocalStorage<UIMessage[]>('volta-chat-messages', [])
+const wasStreaming = useLocalStorage('volta-chat-streaming', false)
 
 const chat = new Chat({
   messages: storedMessages.value,
@@ -62,6 +63,17 @@ const chat = new Chat({
       color: 'error',
       duration: 0
     })
+  }
+})
+
+watch(() => chat.status, (status) => {
+  wasStreaming.value = status === 'streaming'
+})
+
+onMounted(() => {
+  if (wasStreaming.value && chat.messages.length) {
+    wasStreaming.value = false
+    chat.regenerate()
   }
 })
 
