@@ -296,6 +296,10 @@ export function invalidateResolutionCache(
     if (!dbIssueId) return
 
     await db.update(schema.issues).set({
+      resolutionStatus: null,
+      resolutionAnsweredById: null,
+      resolutionAnswerCommentId: null,
+      resolutionConfidence: null,
       resolutionAnalyzedAt: null
     }).where(eq(schema.issues.id, dbIssueId))
   })().catch((err) => {
