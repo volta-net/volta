@@ -137,7 +137,7 @@ function getToolIcon(part: { state: string, toolName?: string, toolCallId?: stri
     :ui="{ body: 'p-0 sm:p-0 overscroll-none' }"
   >
     <template #header>
-      <UDashboardNavbar class="border-b-0 bg-transparent absolute inset-x-0">
+      <UDashboardNavbar class="border-b-0 backdrop-blur lg:backdrop-blur-none absolute inset-x-0 z-5">
         <template v-if="chat.messages.length" #right>
           <UTooltip text="Clear conversation">
             <UButton

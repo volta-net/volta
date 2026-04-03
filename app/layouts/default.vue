@@ -188,7 +188,7 @@ const groups = computed(() => [{
       id="default"
       collapsed
       class="border-r-0 py-4"
-      :menu="{ inset: true, overlay: false }"
+      :menu="{ inset: true }"
     >
       <template #header>
         <NuxtLink to="/" class="mx-auto">
@@ -220,7 +220,7 @@ const groups = computed(() => [{
       </template>
     </UDashboardSidebar>
 
-    <div class="flex-1 flex m-4 lg:ml-0 rounded-lg ring ring-default bg-default/75 shadow min-w-0">
+    <div class="flex-1 flex m-4 lg:ml-0 rounded-lg ring ring-default bg-default/75 shadow min-w-0 overflow-hidden">
       <slot />
     </div>
 

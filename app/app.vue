@@ -59,10 +59,10 @@ watch(() => $pwa?.needRefresh, (needRefresh) => {
     </NuxtLayout>
 
     <div v-else class="flex flex-col h-screen">
-      <div class="flex-1 flex flex-col items-center justify-center gap-8 rounded-lg ring ring-default bg-default/75 shadow m-4">
+      <div class="flex-1 flex flex-col items-center justify-center gap-8 rounded-lg ring ring-default bg-default/75 shadow m-4 overflow-hidden p-4">
         <AppLogo class="mx-auto h-12 text-highlighted" />
 
-        <h1 class="text-lg text-center font-medium text-toned">
+        <h1 class="text-lg text-center font-medium text-toned text-balance">
           {{ description }}
         </h1>
 
