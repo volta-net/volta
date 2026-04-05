@@ -88,7 +88,7 @@ function openIssue() {
         <UIcon name="i-lucide-arrow-right" class="size-4 text-dimmed shrink-0 group-hover:translate-x-1 transition-transform duration-200" />
       </div>
 
-      <div class="flex items-center gap-1.5 justify-between">
+      <div v-if="labelList.length || author || reactionCount > 0 || commentCount > 0" class="flex items-center gap-1.5 justify-between">
         <div v-if="labelList.length || author" class="flex items-center gap-1.5 flex-wrap">
           <IssueLabel
             v-for="label in labelList"
