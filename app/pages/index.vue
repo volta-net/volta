@@ -12,7 +12,6 @@ const toast = useToast()
 const { refresh: refreshFavoriteRepositories } = useFavoriteRepositories()
 
 const { data: settings, refresh } = useLazyFetch('/api/settings')
-const hasToken = computed(() => settings.value?.hasAiGatewayToken ?? false)
 
 const selectedModel = ref(aiDefaultModel)
 
@@ -57,11 +56,16 @@ const chat = new Chat({
       }
     }
 
-    toast.add({
+    const t = toast.add({
       description: message,
       icon: 'i-lucide-alert-circle',
       color: 'error',
-      duration: 0
+      duration: 0,
+      onClick: () => {
+        navigateTo('/settings/ai')
+
+        toast.remove(t.id)
+      }
     })
   }
 })
@@ -164,146 +168,128 @@ function getToolIcon(part: { state: string, toolName?: string, toolCallId?: stri
     </template>
 
     <template #body>
-      <div v-if="!hasToken" class="flex-1 flex flex-col items-center justify-center p-8">
-        <UEmpty
-          icon="i-lucide-sparkles"
-          title="AI Gateway not configured"
-          description="Add your Vercel AI Gateway token in settings to enable the AI assistant."
-          variant="naked"
-          size="xl"
-          :actions="[{
-            label: 'Configure AI',
-            to: '/settings/ai',
-            icon: 'i-lucide-settings',
-            variant: 'subtle' as const
-          }]"
-        />
-      </div>
+      <!-- Empty state: welcome screen -->
+      <div v-if="!chat.messages.length" class="flex-1 flex flex-col items-center justify-center gap-8 p-8">
+        <div class="flex flex-col items-center gap-4">
+          <AppIconAnimated :size="340" class="absolute -translate-y-1/2 top-1/2 opacity-15 text-highlighted -z-1 -mt-18" />
 
-      <template v-else>
-        <!-- Empty state: welcome screen -->
-        <div v-if="!chat.messages.length" class="flex-1 flex flex-col items-center justify-center gap-8 p-8">
-          <div class="flex flex-col items-center gap-4">
-            <AppIconAnimated :size="340" class="absolute -translate-y-1/2 top-1/2 opacity-15 text-highlighted -z-1 -mt-18" />
-
-            <div class="text-center">
-              <h1 class="text-2xl font-semibold text-highlighted">
-                Welcome to Volta
-              </h1>
-              <p class="text-base text-muted mt-1">
-                Ask anything or tell Volta what you need
-              </p>
-            </div>
-          </div>
-
-          <div class="w-full max-w-xl flex flex-col gap-6">
-            <ChatPrompt
-              v-model="input"
-              :status="chat.status"
-              :selected-model="selectedModel"
-              :disabled="!input.trim()"
-              class="[view-transition-name:chat-prompt] p-2"
-              @submit="onSubmit"
-              @stop="chat.stop()"
-              @reload="chat.regenerate()"
-              @update:selected-model="onModelChange"
-            />
-
-            <ChatSuggestions @ask="askQuestion" />
+          <div class="text-center">
+            <h1 class="text-2xl font-semibold text-highlighted">
+              Welcome to Volta
+            </h1>
+            <p class="text-base text-muted mt-1">
+              Ask anything or tell Volta what you need
+            </p>
           </div>
         </div>
 
-        <!-- Active chat -->
-        <UContainer v-else class="max-w-3xl flex-1 flex flex-col gap-4 sm:gap-6">
-          <UTheme
-            :ui="{
-              prose: {
-                p: { base: 'my-4 leading-6' },
-                ul: { base: 'my-4' },
-                ol: { base: 'my-4' },
-                li: { base: 'leading-6' },
-                h1: { base: 'text-xl mb-4' },
-                h2: { base: 'text-lg mt-6 mb-3' },
-                h3: { base: 'text-base mt-4 mb-2' },
-                h4: { base: 'text-sm mt-3 mb-1.5' },
-                code: { base: 'text-xs' },
-                pre: { base: 'text-xs/5' },
-                table: { root: 'my-4' },
-                hr: { base: 'my-4' }
-              }
-            }"
+        <div class="w-full max-w-xl flex flex-col gap-6">
+          <ChatPrompt
+            v-model="input"
+            :status="chat.status"
+            :selected-model="selectedModel"
+            :disabled="!input.trim()"
+            class="[view-transition-name:chat-prompt] p-2"
+            @submit="onSubmit"
+            @stop="chat.stop()"
+            @reload="chat.regenerate()"
+            @update:selected-model="onModelChange"
+          />
+
+          <ChatSuggestions @ask="askQuestion" />
+        </div>
+      </div>
+
+      <!-- Active chat -->
+      <UContainer v-else class="max-w-3xl flex-1 flex flex-col gap-4 sm:gap-6">
+        <UTheme
+          :ui="{
+            prose: {
+              p: { base: 'my-4 leading-6' },
+              ul: { base: 'my-4' },
+              ol: { base: 'my-4' },
+              li: { base: 'leading-6' },
+              h1: { base: 'text-xl mb-4' },
+              h2: { base: 'text-lg mt-6 mb-3' },
+              h3: { base: 'text-base mt-4 mb-2' },
+              h4: { base: 'text-sm mt-3 mb-1.5' },
+              code: { base: 'text-xs' },
+              pre: { base: 'text-xs/5' },
+              table: { root: 'my-4' },
+              hr: { base: 'my-4' }
+            }
+          }"
+        >
+          <UChatMessages
+            :messages="chat.messages"
+            :status="chat.status"
+            should-auto-scroll
+            :spacing-offset="160"
+            class="pt-(--ui-header-height) pb-4 sm:pb-6 px-2"
           >
-            <UChatMessages
-              :messages="chat.messages"
-              :status="chat.status"
-              should-auto-scroll
-              :spacing-offset="160"
-              class="pt-(--ui-header-height) pb-4 sm:pb-6 px-2"
-            >
-              <template #indicator>
-                <UChatTool icon="i-lucide-brain" text="Thinking..." streaming />
-              </template>
+            <template #indicator>
+              <UChatTool icon="i-lucide-brain" text="Thinking..." streaming />
+            </template>
 
-              <template #content="{ message }">
-                <template v-for="(part, index) in message.parts" :key="`${message.id}-${part.type}-${index}`">
-                  <UChatReasoning
-                    v-if="isReasoningUIPart(part)"
-                    :text="part.text"
+            <template #content="{ message }">
+              <template v-for="(part, index) in message.parts" :key="`${message.id}-${part.type}-${index}`">
+                <UChatReasoning
+                  v-if="isReasoningUIPart(part)"
+                  :text="part.text"
+                  :streaming="isPartStreaming(part)"
+                  icon="i-lucide-brain"
+                >
+                  <ChatComark
+                    :markdown="part.text"
                     :streaming="isPartStreaming(part)"
-                    icon="i-lucide-brain"
-                  >
-                    <ChatComark
-                      :markdown="part.text"
-                      :streaming="isPartStreaming(part)"
-                    />
-                  </UChatReasoning>
+                  />
+                </UChatReasoning>
 
-                  <template v-else-if="isTextUIPart(part)">
-                    <ChatComark
-                      v-if="message.role === 'assistant'"
-                      :markdown="part.text"
-                      :streaming="isPartStreaming(part)"
-                    />
-                    <p v-else-if="message.role === 'user'" class="whitespace-pre-wrap text-sm/6">
-                      {{ part.text }}
-                    </p>
-                  </template>
+                <template v-else-if="isTextUIPart(part)">
+                  <ChatComark
+                    v-if="message.role === 'assistant'"
+                    :markdown="part.text"
+                    :streaming="isPartStreaming(part)"
+                  />
+                  <p v-else-if="message.role === 'user'" class="whitespace-pre-wrap text-sm/6">
+                    {{ part.text }}
+                  </p>
+                </template>
 
-                  <template v-else-if="isToolUIPart(part) && getToolName(part as any) === 'generateChart'">
-                    <UChatTool
-                      v-if="isToolStreaming(part)"
-                      :text="getToolText(part)"
-                      :icon="getToolIcon(part)"
-                      :streaming="isToolStreaming(part)"
-                    />
-                    <ChatChart v-else-if="(part as any).output" :result="(part as any).output" />
-                  </template>
-
+                <template v-else-if="isToolUIPart(part) && getToolName(part as any) === 'generateChart'">
                   <UChatTool
-                    v-else-if="isToolUIPart(part)"
+                    v-if="isToolStreaming(part)"
                     :text="getToolText(part)"
                     :icon="getToolIcon(part)"
                     :streaming="isToolStreaming(part)"
                   />
+                  <ChatChart v-else-if="(part as any).output" :result="(part as any).output" />
                 </template>
-              </template>
-            </UChatMessages>
 
-            <ChatPrompt
-              v-model="input"
-              :status="chat.status"
-              :error="chat.error"
-              :selected-model="selectedModel"
-              :disabled="!input.trim()"
-              class="sticky bottom-0 [view-transition-name:chat-prompt] rounded-b-none z-10 p-2"
-              @submit="onSubmit"
-              @stop="chat.stop()"
-              @reload="chat.regenerate()"
-              @update:selected-model="onModelChange"
-            />
-          </UTheme>
-        </UContainer>
-      </template>
+                <UChatTool
+                  v-else-if="isToolUIPart(part)"
+                  :text="getToolText(part)"
+                  :icon="getToolIcon(part)"
+                  :streaming="isToolStreaming(part)"
+                />
+              </template>
+            </template>
+          </UChatMessages>
+
+          <ChatPrompt
+            v-model="input"
+            :status="chat.status"
+            :error="chat.error"
+            :selected-model="selectedModel"
+            :disabled="!input.trim()"
+            class="sticky bottom-0 [view-transition-name:chat-prompt] rounded-b-none z-10 p-2"
+            @submit="onSubmit"
+            @stop="chat.stop()"
+            @reload="chat.regenerate()"
+            @update:selected-model="onModelChange"
+          />
+        </UTheme>
+      </UContainer>
     </template>
   </UDashboardPanel>
 </template>
