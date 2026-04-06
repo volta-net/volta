@@ -18,7 +18,6 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'Invalid issue number' })
   }
 
-  // Find repository by owner/name
   const fullName = `${owner}/${name}`
   const repository = await db.query.repositories.findFirst({
     where: eq(schema.repositories.fullName, fullName)
@@ -28,12 +27,10 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, message: 'Repository not found' })
   }
 
-  // Check user has access (public repos are accessible to any authenticated user)
   if (repository.private) {
     await requireRepositoryAccess(user.id, repository.id)
   }
 
-  // Find issue by repository + number
   const issue = await db.query.issues.findFirst({
     where: and(
       eq(schema.issues.repositoryId, repository.id),
@@ -48,39 +45,31 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, message: 'Issue not found' })
   }
 
-  // Skip PRs - resolution analysis is only for issues
+  const skippedResponse = {
+    status: null,
+    answeredBy: null,
+    answerCommentId: null,
+    confidence: null,
+    analyzedAt: null,
+    suggestedAction: null,
+    draftReply: null,
+    duplicateOfNumber: null,
+    reasoning: null,
+    skipped: true
+  }
+
   if (issue.pullRequest) {
-    return {
-      status: null,
-      answeredBy: null,
-      answerCommentId: null,
-      confidence: null,
-      analyzedAt: null,
-      skipped: true,
-      reason: 'Resolution analysis is only available for issues, not pull requests'
-    }
+    return { ...skippedResponse, reason: 'Resolution analysis is only available for issues, not pull requests' }
   }
 
-  // Skip closed issues - no need to analyze
   if (issue.state === 'closed') {
-    return {
-      status: null,
-      answeredBy: null,
-      answerCommentId: null,
-      confidence: null,
-      analyzedAt: null,
-      skipped: true,
-      reason: 'Resolution analysis is only available for open issues'
-    }
+    return { ...skippedResponse, reason: 'Resolution analysis is only available for open issues' }
   }
 
-  // If never analyzed, stale, or force re-analyze requested, await fresh analysis
-  if (forceReanalyze || isResolutionStale(issue.resolutionAnalyzedAt)) {
-    // Get user's AI settings (token and model)
+  if (forceReanalyze || isResolutionStale(issue.resolutionAnalyzedAt, issue.resolutionSuggestedAction)) {
     const { token: userToken, model: userModel } = await getUserAiSettings(user.id)
     const userGateway = createUserGateway(userToken)
 
-    // Throw 403 if user has no AI token configured
     if (!userGateway) {
       throw createError({
         statusCode: 403,
@@ -91,7 +80,6 @@ export default defineEventHandler(async (event) => {
     try {
       const result = await analyzeAndStoreResolution(issue.id, userGateway, userModel)
       if (result) {
-        // Re-fetch to get the answeredBy user relation
         const freshIssue = await db.query.issues.findFirst({
           where: eq(schema.issues.id, issue.id),
           with: {
@@ -105,6 +93,10 @@ export default defineEventHandler(async (event) => {
           answerCommentId: freshIssue?.resolutionAnswerCommentId ?? null,
           confidence: freshIssue?.resolutionConfidence ?? null,
           analyzedAt: freshIssue?.resolutionAnalyzedAt ?? null,
+          suggestedAction: freshIssue?.resolutionSuggestedAction ?? null,
+          draftReply: freshIssue?.resolutionDraftReply ?? null,
+          duplicateOfNumber: freshIssue?.resolutionDuplicateOf ?? null,
+          reasoning: freshIssue?.resolutionReasoning ?? null,
           skipped: false
         }
       }
@@ -113,13 +105,16 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  // Return current resolution status (fresh or fallback to cached)
   return {
     status: issue.resolutionStatus,
     answeredBy: issue.resolutionAnsweredBy,
     answerCommentId: issue.resolutionAnswerCommentId,
     confidence: issue.resolutionConfidence,
     analyzedAt: issue.resolutionAnalyzedAt,
+    suggestedAction: issue.resolutionSuggestedAction,
+    draftReply: issue.resolutionDraftReply,
+    duplicateOfNumber: issue.resolutionDuplicateOf,
+    reasoning: issue.resolutionReasoning,
     skipped: false
   }
 })

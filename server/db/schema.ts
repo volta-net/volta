@@ -31,6 +31,9 @@ export type NotificationType = 'issue' | 'pull_request' | 'release' | 'workflow_
 // AI Resolution status for issues (not PRs)
 export type ResolutionStatus = 'answered' | 'likely_resolved' | 'waiting_on_author' | 'needs_attention'
 
+// AI-suggested next action for the maintainer
+export type SuggestedAction = 'close_resolved' | 'close_not_planned' | 'close_duplicate' | 'ask_reproduction' | 'respond' | 'none'
+
 // Notification actions (what happened)
 export type NotificationAction
   = | 'opened' | 'reopened' | 'closed' | 'merged'
@@ -305,7 +308,11 @@ export const issues = pgTable('issues', {
   resolutionAnsweredById: integer('resolution_answered_by_id').references(() => users.id, { onDelete: 'set null' }),
   resolutionAnswerCommentId: integer('resolution_answer_comment_id'),
   resolutionConfidence: integer('resolution_confidence'), // 0-100 percentage
-  resolutionAnalyzedAt: timestamp('resolution_analyzed_at', { withTimezone: true })
+  resolutionAnalyzedAt: timestamp('resolution_analyzed_at', { withTimezone: true }),
+  resolutionSuggestedAction: text('resolution_suggested_action').$type<'close_resolved' | 'close_not_planned' | 'close_duplicate' | 'ask_reproduction' | 'respond' | 'none'>(),
+  resolutionDraftReply: text('resolution_draft_reply'),
+  resolutionDuplicateOf: bigint('resolution_duplicate_of', { mode: 'number' }),
+  resolutionReasoning: text('resolution_reasoning')
 }, table => ([
   // The true unique identifier is (repositoryId, number), not GitHub's ID
   uniqueIndex('issues_repo_number_idx').on(table.repositoryId, table.number),

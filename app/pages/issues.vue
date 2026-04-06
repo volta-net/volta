@@ -50,7 +50,12 @@ const analyzing = ref(false)
 const analyzeProgress = ref({ analyzed: 0, total: 0 })
 
 const unanalyzedItems = computed(() =>
-  (filteredItems.value ?? []).filter(item => !item.resolutionStatus && !item.pullRequest)
+  (filteredItems.value ?? []).filter((item) => {
+    if (item.pullRequest) return false
+    if (!item.resolutionAnalyzedAt) return true
+    if (!item.resolutionSuggestedAction) return true
+    return false
+  })
 )
 
 const moreItems = computed<DropdownMenuItem[][]>(() => {

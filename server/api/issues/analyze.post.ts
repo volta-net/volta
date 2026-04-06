@@ -40,12 +40,12 @@ export default defineEventHandler(async (event) => {
       id: true,
       number: true,
       resolutionStatus: true,
-      resolutionAnalyzedAt: true
+      resolutionAnalyzedAt: true,
+      resolutionSuggestedAction: true
     }
   })
 
-  // Filter to only unanalyzed or stale issues
-  const toAnalyze = issues.filter(issue => isResolutionStale(issue.resolutionAnalyzedAt))
+  const toAnalyze = issues.filter(issue => isResolutionStale(issue.resolutionAnalyzedAt, issue.resolutionSuggestedAction))
 
   if (!toAnalyze.length) {
     return { total: 0, analyzed: 0, results: [] }

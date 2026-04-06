@@ -71,6 +71,13 @@
       "when": 1772444207604,
       "tag": "0009_blue_spirit",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1775475291191,
+      "tag": "0010_high_guardsmen",
+      "breakpoints": true
     }
   ]
 }

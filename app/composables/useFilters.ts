@@ -118,6 +118,8 @@ export function matchIssueFilter(issue: Issue, filter: Filter): boolean {
     case 'resolution':
       if (filter.value === 'not_analyzed') return !issue.resolutionStatus
       return issue.resolutionStatus === filter.value
+    case 'action':
+      return issue.resolutionSuggestedAction === filter.value
     case 'review':
       return getIssueReviewStateLabel(issue) === filter.value
     case 'ci':
@@ -255,6 +257,22 @@ export function extractIssueFilters(items: Issue[]): Filter[] {
           value: 'not_analyzed',
           label: 'Not analyzed',
           icon: 'i-lucide-sparkles'
+        })
+      }
+    }
+
+    // Suggested action
+    if (item.resolutionSuggestedAction) {
+      const key = `action:${item.resolutionSuggestedAction}`
+      if (!seen.has(key)) {
+        seen.add(key)
+        const { getActionConfig } = useResolutionStatus()
+        const actionConfig = getActionConfig(item.resolutionSuggestedAction)
+        result.push({
+          type: 'action',
+          value: item.resolutionSuggestedAction,
+          label: actionConfig?.label ?? item.resolutionSuggestedAction,
+          icon: actionConfig?.icon
         })
       }
     }

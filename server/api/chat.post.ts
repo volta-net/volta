@@ -82,6 +82,7 @@ Examples: find open issues with label "bug", find PRs by a specific author, find
         author: { type: 'string', description: 'Filter by author username' },
         assignee: { type: 'string', description: 'Filter by assignee username. Use "none" for unassigned.' },
         resolutionStatus: { type: 'string', enum: ['answered', 'likely_resolved', 'waiting_on_author', 'needs_attention'], description: 'Filter by AI resolution status (issues only)' },
+        suggestedAction: { type: 'string', enum: ['close_resolved', 'close_not_planned', 'close_duplicate', 'ask_reproduction', 'respond', 'none'], description: 'Filter by AI suggested action (issues only)' },
         hasLinkedPrs: { type: 'boolean', description: 'If true, only issues that have linked PRs. If false, only issues without linked PRs.' },
         hasComments: { type: 'boolean', description: 'If true, only items with comments. If false, only items with zero comments.' },
         draft: { type: 'boolean', description: 'Filter PRs by draft status' },
@@ -99,6 +100,7 @@ Examples: find open issues with label "bug", find PRs by a specific author, find
       author?: string
       assignee?: string
       resolutionStatus?: string
+      suggestedAction?: string
       hasLinkedPrs?: boolean
       hasComments?: boolean
       draft?: boolean
@@ -162,6 +164,9 @@ Examples: find open issues with label "bug", find PRs by a specific author, find
       if (params.resolutionStatus) {
         conditions.push(eq(schema.issues.resolutionStatus, params.resolutionStatus as any))
       }
+      if (params.suggestedAction) {
+        conditions.push(eq(schema.issues.resolutionSuggestedAction, params.suggestedAction as any))
+      }
 
       // PR-specific filters
       if (params.draft !== undefined) {
@@ -214,6 +219,11 @@ Examples: find open issues with label "bug", find PRs by a specific author, find
           commentCount: true,
           reactionCount: true,
           resolutionStatus: true,
+          resolutionSuggestedAction: true,
+          resolutionDraftReply: true,
+          resolutionDuplicateOf: true,
+          resolutionReasoning: true,
+          resolutionConfidence: true,
           createdAt: true,
           updatedAt: true
         }
@@ -258,6 +268,11 @@ Examples: find open issues with label "bug", find PRs by a specific author, find
         comments: issue.commentCount,
         reactions: issue.reactionCount,
         resolutionStatus: issue.resolutionStatus,
+        suggestedAction: issue.resolutionSuggestedAction,
+        draftReply: issue.resolutionDraftReply ? issue.resolutionDraftReply.slice(0, 500) : null,
+        duplicateOf: issue.resolutionDuplicateOf,
+        reasoning: issue.resolutionReasoning,
+        confidence: issue.resolutionConfidence,
         url: issue.htmlUrl,
         createdAt: issue.createdAt,
         updatedAt: issue.updatedAt
@@ -361,6 +376,7 @@ Examples: find open issues with label "bug", find PRs by a specific author, find
 
       // Resolution breakdown (only for issues, not PRs)
       let resolution: Record<string, number> | undefined
+      let actionBreakdown: Record<string, number> | undefined
       if (filterType !== 'pr') {
         const resolutionStats = await db
           .select({
@@ -388,6 +404,37 @@ Examples: find open issues with label "bug", find PRs by a specific author, find
             resolution[stat.status] = stat.count
           } else {
             resolution.unanalyzed = (resolution.unanalyzed || 0) + stat.count
+          }
+        }
+
+        const actionStats = await db
+          .select({
+            action: schema.issues.resolutionSuggestedAction,
+            count: sql<number>`count(*)`
+          })
+          .from(schema.issues)
+          .where(and(
+            repoScope,
+            eq(schema.issues.pullRequest, false),
+            eq(schema.issues.state, 'open')
+          ))
+          .groupBy(schema.issues.resolutionSuggestedAction)
+
+        actionBreakdown = {
+          close_resolved: 0,
+          close_not_planned: 0,
+          close_duplicate: 0,
+          ask_reproduction: 0,
+          respond: 0,
+          none: 0,
+          unanalyzed: 0
+        }
+
+        for (const stat of actionStats) {
+          if (stat.action && stat.action in actionBreakdown) {
+            actionBreakdown[stat.action] = stat.count
+          } else {
+            actionBreakdown.unanalyzed = (actionBreakdown.unanalyzed || 0) + stat.count
           }
         }
       }
@@ -419,6 +466,7 @@ Examples: find open issues with label "bug", find PRs by a specific author, find
         repository: repository || 'all favorites',
         totals: { open: totalOpen, closed: totalClosed },
         ...(resolution ? { resolution } : {}),
+        ...(actionBreakdown ? { suggestedActions: actionBreakdown } : {}),
         recentActivity: {
           weeks: numWeeks,
           opened: openedCount?.count ?? 0,
@@ -478,6 +526,11 @@ Examples: find open issues with label "bug", find PRs by a specific author, find
         assignees: issue.assignees.map(a => a.user?.login).filter(Boolean),
         labels: issue.labels.map(l => l.label.name),
         resolutionStatus: issue.resolutionStatus,
+        suggestedAction: issue.resolutionSuggestedAction,
+        draftReply: issue.resolutionDraftReply,
+        duplicateOf: issue.resolutionDuplicateOf,
+        reasoning: issue.resolutionReasoning,
+        confidence: issue.resolutionConfidence,
         commentCount: issue.commentCount,
         reactionCount: issue.reactionCount,
         createdAt: issue.createdAt,
@@ -584,7 +637,10 @@ Examples: find open issues with label "bug", find PRs by a specific author, find
       const conditions = [
         eq(schema.issues.pullRequest, false),
         eq(schema.issues.state, 'open'),
-        isNull(schema.issues.resolutionAnalyzedAt)
+        or(
+          isNull(schema.issues.resolutionAnalyzedAt),
+          isNull(schema.issues.resolutionSuggestedAction)
+        )
       ]
 
       if (repository) {
@@ -626,7 +682,10 @@ Examples: find open issues with label "bug", find PRs by a specific author, find
             title: issue.title,
             repository: issue.repository.fullName,
             status: result?.status ?? 'failed',
-            confidence: result?.confidence ?? 0
+            confidence: result?.confidence ?? 0,
+            suggestedAction: result?.suggestedAction ?? null,
+            draftReply: result?.draftReply?.slice(0, 500) ?? null,
+            reasoning: result?.reasoning ?? null
           })
         } catch {
           results.push({
@@ -634,7 +693,10 @@ Examples: find open issues with label "bug", find PRs by a specific author, find
             title: issue.title,
             repository: issue.repository.fullName,
             status: 'error',
-            confidence: 0
+            confidence: 0,
+            suggestedAction: null,
+            draftReply: null,
+            reasoning: null
           })
         }
       }
@@ -751,12 +813,24 @@ Both are related to the Tooltip component and could be fixed together.
 - Use manageFavorites to add or remove repos from favorites when the user asks.
 - If the user asks about a repo that isn't favorited, you can still search it by name, or suggest adding it to favorites so its issues and PRs appear in the app.
 
+**RESOLUTION ANALYSIS:**
+Issues have AI-powered resolution analysis with two layers:
+- **resolutionStatus**: overall classification — "answered", "likely_resolved", "waiting_on_author", "needs_attention"
+- **suggestedAction**: concrete next step — "close_resolved", "close_not_planned", "close_duplicate", "ask_reproduction", "respond", "none"
+- **draftReply**: a pre-written reply the user can review and post
+- **duplicateOf**: issue number this is a duplicate of (when suggestedAction is "close_duplicate")
+- **reasoning**: explanation of why the AI chose this action
+- **confidence**: 0-100 confidence score
+
+When discussing analyzed issues, mention the suggestedAction and reasoning — they are more actionable than resolutionStatus alone. You can filter issues by suggestedAction to find, for example, all issues ready to close or all that need a response.
+
 **BEHAVIOR:**
 - Use your tools to look up real data before answering questions about issues, PRs, or notifications.
 - When a question is ambiguous about which repository, list the user's repositories first or ask for clarification.
 - Provide actionable insights: highlight issues needing attention, stale issues, or patterns in the data.
 - When summarizing notifications, group them by type or repository for clarity.
 - When issue stats show unanalyzed issues, proactively suggest using the analyzeIssues tool to process them.
+- When analysis results include suggestedAction and draftReply, present them clearly so the user can quickly act.
 - If you cannot find relevant data, say so clearly.
 
 **CHARTS:**
