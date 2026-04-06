@@ -637,7 +637,10 @@ Examples: find open issues with label "bug", find PRs by a specific author, find
       const conditions = [
         eq(schema.issues.pullRequest, false),
         eq(schema.issues.state, 'open'),
-        isNull(schema.issues.resolutionAnalyzedAt)
+        or(
+          isNull(schema.issues.resolutionAnalyzedAt),
+          isNull(schema.issues.resolutionSuggestedAction)
+        )
       ]
 
       if (repository) {
