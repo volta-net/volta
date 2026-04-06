@@ -5,12 +5,14 @@ const props = defineProps<{
   issue: IssueDetail
   readonly?: boolean
   analyzingResolution?: boolean
+  reanalyzing?: boolean
 }>()
 
 const emit = defineEmits<{
   (e: 'refresh' | 'reopen-issue' | 'close-as-duplicate'): void
   (e: 'close-issue', stateReason: 'completed' | 'not_planned'): void
-  (e: 'scroll-to-answer', commentId: number): void
+  (e: 'scroll-to-answer' | 'navigate-to-issue', id: number): void
+  (e: 'use-draft-reply', reply: string): void
 }>()
 
 const toast = useToast()
@@ -335,9 +337,16 @@ async function persistReviewers() {
 // AI Resolution Analysis (issues only)
 const { getConfig: getResolutionConfig } = useResolutionStatus()
 const resolutionConfig = computed(() => {
-  // Only show for issues, not PRs
   if (props.issue.pullRequest) return null
   return getResolutionConfig(props.issue.resolutionStatus)
+})
+
+const hasResolutionActions = computed(() => {
+  const { resolutionDraftReply, resolutionDuplicateOf, resolutionAnswerCommentId, resolutionSuggestedAction } = props.issue
+  if (resolutionDraftReply && !props.readonly) return true
+  if (resolutionDuplicateOf) return true
+  if (resolutionAnswerCommentId) return true
+  return resolutionSuggestedAction === 'close_resolved' || resolutionSuggestedAction === 'close_not_planned' || resolutionSuggestedAction === 'close_duplicate'
 })
 
 // CI Status (PRs only)
@@ -478,34 +487,100 @@ const stateItems = computed<DropdownMenuItem[][]>(() => {
         class="text-sm/4 px-2"
       />
 
-      <!-- Resolution status (issues only) -->
-      <UButton
-        v-if="!issue.pullRequest && resolutionConfig"
-        :as="issue.resolutionAnswerCommentId ? 'button' : 'div'"
-        :icon="resolutionConfig.icon"
-        :trailing-icon="issue.resolutionAnswerCommentId ? 'i-lucide-arrow-right' : ''"
-        :ui="{ leadingIcon: `text-${resolutionConfig.color}`, trailingIcon: 'ms-auto' }"
-        variant="ghost"
-        :class="[
-          'text-sm/4 px-2',
-          !issue.resolutionAnswerCommentId && 'hover:bg-transparent active:bg-transparent'
-        ]"
-        @click="issue.resolutionAnswerCommentId && emit('scroll-to-answer', issue.resolutionAnswerCommentId)"
+      <!-- Resolution analysis (issues only) -->
+      <UCollapsible
+        v-if="!issue.pullRequest && resolutionConfig && !analyzingResolution"
+        default-open
+        class="group flex flex-col gap-1"
+        :ui="{ content: 'flex flex-col gap-1' }"
       >
-        <span class="truncate">
-          {{ resolutionConfig.label }}
-          <span v-if="issue.resolutionConfidence" class="text-muted italic text-xs">
-            ({{ issue.resolutionConfidence }}% confidence)
+        <UButton
+          :icon="resolutionConfig.icon"
+          trailing-icon="i-lucide-chevron-down"
+          :ui="{
+            leadingIcon: `text-${resolutionConfig.color}`,
+            trailingIcon: 'group-data-[state=open]:rotate-180 transition-transform duration-200 ms-auto text-muted'
+          }"
+          variant="ghost"
+          class="text-sm/4 px-2 w-full"
+        >
+          <span class="truncate">{{ resolutionConfig.label }}</span>
+          <span v-if="issue.resolutionConfidence" class="text-xs text-dimmed italic">
+            ({{ issue.resolutionConfidence }}%)
           </span>
-        </span>
-      </UButton>
+        </UButton>
+
+        <template #content>
+          <div class="rounded-md border border-default p-2.5 flex flex-col gap-2">
+            <p
+              v-if="issue.resolutionReasoning"
+              class="text-sm text-muted"
+            >
+              {{ issue.resolutionReasoning }}
+            </p>
+
+            <p
+              v-if="issue.resolutionDraftReply && !readonly"
+              class="text-xs/4.5 text-dimmed line-clamp-3 italic"
+            >
+              "{{ issue.resolutionDraftReply }}"
+            </p>
+
+            <div v-if="hasResolutionActions" class="flex items-center gap-1 flex-wrap">
+              <UButton
+                v-if="issue.resolutionDraftReply && !readonly"
+                label="Use as reply"
+                icon="i-lucide-pen-line"
+                variant="soft"
+                @click="emit('use-draft-reply', issue.resolutionDraftReply!)"
+              />
+              <UButton
+                v-if="issue.resolutionDuplicateOf"
+                icon="i-lucide-copy"
+                :label="`Duplicate of #${issue.resolutionDuplicateOf}`"
+                variant="soft"
+                @click="emit('navigate-to-issue', issue.resolutionDuplicateOf!)"
+              />
+              <UButton
+                v-if="issue.resolutionAnswerCommentId"
+                icon="i-lucide-arrow-down"
+                label="Jump to answer"
+                variant="soft"
+                @click="emit('scroll-to-answer', issue.resolutionAnswerCommentId)"
+              />
+              <UButton
+                v-if="issue.resolutionSuggestedAction === 'close_resolved'"
+                label="Close as completed"
+                icon="i-lucide-circle-check"
+                variant="soft"
+                color="success"
+                @click="emit('close-issue', 'completed')"
+              />
+              <UButton
+                v-else-if="issue.resolutionSuggestedAction === 'close_not_planned'"
+                label="Close as not planned"
+                icon="i-lucide-circle-slash"
+                variant="soft"
+                @click="emit('close-issue', 'not_planned')"
+              />
+              <UButton
+                v-else-if="issue.resolutionSuggestedAction === 'close_duplicate'"
+                label="Close as duplicate"
+                icon="i-lucide-copy"
+                variant="soft"
+                @click="emit('close-as-duplicate')"
+              />
+            </div>
+          </div>
+        </template>
+      </UCollapsible>
 
       <!-- Analyzing state (issues only) -->
       <UButton
         v-else-if="!issue.pullRequest && analyzingResolution"
         as="div"
         icon="i-lucide-loader-circle"
-        label="Analyzing..."
+        :label="reanalyzing ? 'Re-analyzing...' : 'Analyzing...'"
         :ui="{ leadingIcon: 'animate-spin' }"
         variant="ghost"
         class="text-sm/4 px-2 hover:bg-transparent active:bg-transparent"

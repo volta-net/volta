@@ -50,19 +50,34 @@ interface ResolutionData {
   answerCommentId: number | null
   confidence: number | null
   analyzedAt: string | null
+  suggestedAction: string | null
+  draftReply: string | null
+  duplicateOfNumber: number | null
+  reasoning: string | null
   skipped: boolean
 }
-const { data: resolution, status: resolutionStatus, execute: fetchResolution, clear: clearResolution } = useLazyFetch<ResolutionData>(resolutionUrl, {
+const { data: resolution, execute: fetchResolution, clear: clearResolution } = useLazyFetch<ResolutionData>(resolutionUrl, {
   immediate: false,
   watch: false
 })
 
-// Track if resolution is being analyzed
-const analyzingResolution = computed(() => resolutionStatus.value === 'pending')
+// Track resolution loading per issue to avoid showing stale data from previous issue
+const resolutionLoading = ref(false)
+
+const analyzingResolution = computed(() => resolutionLoading.value)
+const reanalyzingResolution = computed(() => resolutionLoading.value && !!props.item.resolutionAnalyzedAt)
+
+function willReanalyze(): boolean {
+  const { resolutionAnalyzedAt, resolutionSuggestedAction } = props.item
+  if (!resolutionAnalyzedAt) return true
+  if (!resolutionSuggestedAction) return true
+  return false
+}
 
 // Reset resolution and fetch when issue changes (not a PR)
 watch(() => props.item.id, () => {
   clearResolution()
+  resolutionLoading.value = !!resolutionUrl.value && willReanalyze()
   if (resolutionUrl.value) {
     fetchResolution()
   }
@@ -70,15 +85,20 @@ watch(() => props.item.id, () => {
 
 // Merge resolution data into issue when it arrives
 watch(resolution, (res) => {
-  if (res && issue.value && !res.skipped) {
-    // Create new object to trigger reactivity for child components
+  if (!res) return
+  resolutionLoading.value = false
+  if (issue.value && !res.skipped) {
     issue.value = {
       ...issue.value,
       resolutionStatus: res.status as IssueDetail['resolutionStatus'],
       resolutionAnsweredBy: res.answeredBy as IssueDetail['resolutionAnsweredBy'],
       resolutionAnswerCommentId: res.answerCommentId,
       resolutionConfidence: res.confidence,
-      resolutionAnalyzedAt: res.analyzedAt
+      resolutionAnalyzedAt: res.analyzedAt,
+      resolutionSuggestedAction: res.suggestedAction as IssueDetail['resolutionSuggestedAction'],
+      resolutionDraftReply: res.draftReply,
+      resolutionDuplicateOf: res.duplicateOfNumber,
+      resolutionReasoning: res.reasoning
     }
   }
 })
@@ -247,6 +267,44 @@ const timelineRef = ref<{ scrollToComment: (commentId: number) => void } | null>
 
 function scrollToAnswerComment(commentId: number) {
   timelineRef.value?.scrollToComment(commentId)
+}
+
+// Draft reply injection for CommentForm
+const pendingDraftReply = ref<string | null>(null)
+provide('pendingDraftReply', pendingDraftReply)
+
+function handleUseDraftReply(reply: string) {
+  pendingDraftReply.value = reply
+}
+
+const { selectIssue } = useFavoriteIssues()
+
+async function handleNavigateToIssue(issueNumber: number) {
+  if (!owner.value || !name.value) return
+
+  try {
+    const target = await $fetch(`/api/repositories/${owner.value}/${name.value}/issues/${issueNumber}`)
+    if (!target?.id || !target.repository) return
+
+    selectIssue({
+      id: target.id,
+      number: target.number!,
+      title: target.title!,
+      state: target.state!,
+      stateReason: null,
+      pullRequest: target.pullRequest!,
+      draft: null,
+      merged: null,
+      htmlUrl: target.htmlUrl ?? null,
+      repository: {
+        id: target.repository.id,
+        name: target.repository.fullName.split('/')[1]!,
+        fullName: target.repository.fullName
+      }
+    })
+  } catch {
+    toast.add({ title: `Issue #${issueNumber} not found`, color: 'error' })
+  }
 }
 
 // Transfer issue
@@ -557,11 +615,14 @@ const agentItems = computed(() => {
           :issue="issue"
           :readonly="readonly"
           :analyzing-resolution="analyzingResolution"
+          :reanalyzing="reanalyzingResolution"
           @refresh="handleRefresh"
           @scroll-to-answer="scrollToAnswerComment"
           @close-issue="handleCloseIssue"
           @reopen-issue="handleReopenIssue"
           @close-as-duplicate="duplicateOpen = true"
+          @use-draft-reply="handleUseDraftReply"
+          @navigate-to-issue="handleNavigateToIssue"
         />
       </div>
 

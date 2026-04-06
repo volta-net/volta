@@ -22,6 +22,18 @@ const newComment = ref('')
 const isSubmitting = ref(false)
 const editorRef = useTemplateRef('editorRef')
 
+// Accept draft reply from Meta via provide/inject
+const pendingDraftReply = inject<Ref<string | null>>('pendingDraftReply', ref(null))
+watch(pendingDraftReply, (reply) => {
+  if (reply) {
+    newComment.value = reply
+    pendingDraftReply.value = null
+    nextTick(() => {
+      editorRef.value?.editor?.commands.focus('end')
+    })
+  }
+})
+
 const isOpen = computed(() => props.issue.state === 'open')
 const isIssue = computed(() => !props.issue.pullRequest)
 
