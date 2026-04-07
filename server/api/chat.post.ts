@@ -780,6 +780,7 @@ The user's GitHub username is "${user.username}".
 **FORMATTING RULES:**
 - Never use markdown headings (#, ##, ###). Use **bold text** for section labels instead.
 - Never use horizontal rules (---). Use **bold text** or spacing to separate sections.
+- When referencing issue or PR numbers in text (e.g., #123), ALWAYS use a markdown link: [#123](https://github.com/owner/repo/issues/123). Never write a bare #number without a link.
 - Be concise and direct.
 - Use bullet points and short paragraphs for readability.
 - NEVER list issues or PRs as plain text bullets (e.g., "- #123 title"). Instead, use the ::issue Comark block component.
