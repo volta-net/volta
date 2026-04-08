@@ -3,6 +3,7 @@ const props = defineProps<{
   issueUrl: string
   repoFullName?: string
   issueNumber?: number
+  duplicateOfNumber?: number | null
 }>()
 
 const emit = defineEmits<{
@@ -51,7 +52,7 @@ const groups = computed(() => [{
 watch(open, (isOpen) => {
   if (isOpen) {
     selectedIssue.value = null
-    searchTerm.value = ''
+    searchTerm.value = props.duplicateOfNumber ? `#${props.duplicateOfNumber}` : ''
   }
 })
 
