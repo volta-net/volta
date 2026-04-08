@@ -316,10 +316,12 @@ function handleTransferred() {
 
 // Close / Reopen issue
 const duplicateOpen = ref(false)
+const closingIssue = ref(false)
 
 async function handleCloseIssue(stateReason: 'completed' | 'not_planned') {
   if (!issueUrl.value || !issue.value) return
 
+  closingIssue.value = true
   try {
     await $fetch(`${issueUrl.value}/state`, {
       method: 'PATCH',
@@ -333,6 +335,8 @@ async function handleCloseIssue(stateReason: 'completed' | 'not_planned') {
     await handleRefresh()
   } catch (err: any) {
     toast.add({ title: 'Failed to close issue', description: err.data?.message || err.message, color: 'error', icon: 'i-lucide-x' })
+  } finally {
+    closingIssue.value = false
   }
 }
 
@@ -616,6 +620,7 @@ const agentItems = computed(() => {
           :readonly="readonly"
           :analyzing-resolution="analyzingResolution"
           :reanalyzing="reanalyzingResolution"
+          :closing-issue="closingIssue"
           @refresh="handleRefresh"
           @scroll-to-answer="scrollToAnswerComment"
           @close-issue="handleCloseIssue"
@@ -686,6 +691,7 @@ const agentItems = computed(() => {
       :issue-url="issueUrl"
       :repo-full-name="repoFullName"
       :issue-number="item.number"
+      :duplicate-of-number="issue?.resolutionDuplicateOf"
       @closed="handleDuplicateClosed"
     />
   </div>

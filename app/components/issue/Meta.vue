@@ -6,6 +6,7 @@ const props = defineProps<{
   readonly?: boolean
   analyzingResolution?: boolean
   reanalyzing?: boolean
+  closingIssue?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -556,6 +557,7 @@ const stateItems = computed<DropdownMenuItem[][]>(() => {
                 icon="i-lucide-circle-check"
                 variant="soft"
                 color="success"
+                :loading="closingIssue"
                 @click="emit('close-issue', 'completed')"
               />
               <UButton
@@ -563,6 +565,7 @@ const stateItems = computed<DropdownMenuItem[][]>(() => {
                 label="Close as not planned"
                 icon="i-lucide-circle-slash"
                 variant="soft"
+                :loading="closingIssue"
                 @click="emit('close-issue', 'not_planned')"
               />
               <UButton
@@ -570,6 +573,7 @@ const stateItems = computed<DropdownMenuItem[][]>(() => {
                 label="Close as duplicate"
                 icon="i-lucide-copy"
                 variant="soft"
+                :loading="closingIssue"
                 @click="emit('close-as-duplicate')"
               />
             </div>
