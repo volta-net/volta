@@ -425,6 +425,8 @@ const stateItems = computed<DropdownMenuItem[][]>(() => {
         />
 
         <div class="flex items-center ms-auto -my-1.5">
+          <IssueCodingToolsMenu :issue="issue" />
+
           <UTooltip text="Copy URL" :kbds="['meta', 'shift', ',']">
             <UButton
               icon="i-lucide-link"
