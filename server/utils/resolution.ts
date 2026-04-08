@@ -269,7 +269,8 @@ IMPORTANT RULES:
 - When drafting a reply, write as the maintainer (casual, direct, 1-3 sentences). NEVER say "I'm an AI" or sound robotic.
 - For "ask_reproduction" replies, be friendly but specific about what you need (reproduction link, version, steps).
 - For "close_resolved" replies, briefly summarize the solution or reference the release/comment/PR that fixed it.
-- Set draftReply to null only when suggestedAction is "none".
+- Set draftReply to null when suggestedAction is "none".
+- If the LAST comment in the conversation is from a [maintainer], set draftReply to null — the maintainer already has the last word and doesn't need a drafted reply. You can still suggest close actions (close_resolved, close_not_planned, close_duplicate) but without a draftReply. Only suggest "respond" if someone else commented AFTER the maintainer's last message.
 
 Time context: ${daysSinceLastComment} days since last comment. If a good answer exists and no follow-up for 7+ days, use "likely_resolved" with "close_resolved".${styleGuidance}`
 
@@ -297,13 +298,24 @@ Time context: ${daysSinceLastComment} days since last comment. If a good answer 
       status = 'likely_resolved'
     }
 
+    let suggestedAction = output.suggestedAction as SuggestedAction
+    let draftReply = output.draftReply ?? null
+
+    const lastCommentIsMaintainer = lastComment?.userId ? maintainerIds.has(lastComment.userId) : false
+    if (lastCommentIsMaintainer) {
+      draftReply = null
+      if (suggestedAction === 'respond') {
+        suggestedAction = 'none'
+      }
+    }
+
     return {
       status,
       answeredByUserId,
       answerCommentId,
       confidence: output.confidence,
-      suggestedAction: output.suggestedAction as SuggestedAction,
-      draftReply: output.draftReply ?? null,
+      suggestedAction,
+      draftReply,
       duplicateOfNumber: output.duplicateOfNumber ?? null,
       reasoning: output.reasoning
     }
