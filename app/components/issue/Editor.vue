@@ -122,16 +122,38 @@ const CustomEmoji = Emoji.extend({
 // Custom Mention extension (configured with repo context for proper link generation)
 const CustomMention = createCustomMentionExtension(repoFullName)
 
+// CodeBlockShiki with markdown support (the base package doesn't define parseMarkdown/renderMarkdown)
+const CodeBlockShikiMarkdown = CodeBlockShiki.configure({
+  defaultTheme: 'material-theme',
+  themes: {
+    light: 'material-theme-lighter',
+    dark: 'material-theme-palenight'
+  }
+}).extend({
+  markdownTokenName: 'code',
+  parseMarkdown(token: any, helpers: any) {
+    if (!token.raw?.startsWith('```') && !token.raw?.startsWith('~~~') && token.codeBlockStyle !== 'indented') {
+      return []
+    }
+    return helpers.createNode(
+      'codeBlock',
+      { language: token.lang || null },
+      token.text ? [helpers.createTextNode(token.text)] : []
+    )
+  },
+  renderMarkdown(node: any, h: any) {
+    const language = node.attrs?.language || ''
+    if (!node.content) {
+      return `\`\`\`${language}\n\n\`\`\``
+    }
+    return [`\`\`\`${language}`, h.renderChildren(node.content), '```'].join('\n')
+  }
+})
+
 // Extensions
 const extensions = computed(() => {
   const ext = [
-    CodeBlockShiki.configure({
-      defaultTheme: 'material-theme',
-      themes: {
-        light: 'material-theme-lighter',
-        dark: 'material-theme-palenight'
-      }
-    }),
+    CodeBlockShikiMarkdown,
     DetailsBlock,
     CustomEmoji,
     ImageUpload,
@@ -182,6 +204,7 @@ const appendToBody = import.meta.client ? () => document.body : undefined
     :handlers="customHandlers"
     :extensions="extensions"
     :starter-kit="{
+      codeBlock: false,
       link: {
         openOnClick: true
       }

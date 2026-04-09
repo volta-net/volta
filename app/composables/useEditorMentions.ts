@@ -75,11 +75,14 @@ export function parseExistingMentions(editor: TiptapEditor, currentRepo: string)
     }
   ]
 
-  doc.descendants((node, pos) => {
+  doc.descendants((node, pos, parent) => {
     if (!node.isText || !node.text) return
 
-    // Skip text nodes that are inside links (have link mark)
-    if (node.marks.some(mark => mark.type.name === 'link')) return
+    // Skip text nodes inside code blocks
+    if (parent?.type.name === 'codeBlock') return
+
+    // Skip text nodes that are inside inline code or links
+    if (node.marks.some(mark => mark.type.name === 'link' || mark.type.name === 'code')) return
 
     const text = node.text
 
