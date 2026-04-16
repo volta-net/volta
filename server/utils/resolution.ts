@@ -69,10 +69,10 @@ interface ProjectContext {
   recentReleases: { tagName: string, body: string | null, publishedAt: Date | string | null }[]
   recentClosedIssues: { number: number, title: string, body: string | null, stateReason: string | null }[]
   linkedPRs: LinkedPRForAnalysis[]
-  maintainerStyleExamples: string[]
+  userStyleExamples: string[]
 }
 
-async function fetchProjectContext(repositoryId: number, issueId: number, maintainerUserIds: number[]): Promise<ProjectContext> {
+async function fetchProjectContext(repositoryId: number, issueId: number, userId: number): Promise<ProjectContext> {
   const [repo, labels, releases, closedIssues, linkedPRRows, styleExamples] = await Promise.all([
     db.query.repositories.findFirst({
       where: eq(schema.repositories.id, repositoryId),
@@ -115,7 +115,7 @@ async function fetchProjectContext(repositoryId: number, issueId: number, mainta
       .innerJoin(schema.issues, eq(schema.issueLinkedPrs.prId, schema.issues.id))
       .where(eq(schema.issueLinkedPrs.issueId, issueId)),
 
-    fetchMaintainerStyleExamples(maintainerUserIds, issueId)
+    fetchUserStyleExamples(userId, issueId)
   ])
 
   return {
@@ -124,17 +124,14 @@ async function fetchProjectContext(repositoryId: number, issueId: number, mainta
     recentReleases: releases,
     recentClosedIssues: closedIssues,
     linkedPRs: linkedPRRows,
-    maintainerStyleExamples: styleExamples
+    userStyleExamples: styleExamples
   }
 }
 
-async function fetchMaintainerStyleExamples(maintainerUserIds: number[], excludeIssueId: number): Promise<string[]> {
-  if (!maintainerUserIds.length) return []
-
-  const primaryMaintainerId = maintainerUserIds[0]!
+async function fetchUserStyleExamples(userId: number, excludeIssueId: number): Promise<string[]> {
   const recentComments = await db.query.issueComments.findMany({
     where: and(
-      eq(schema.issueComments.userId, primaryMaintainerId),
+      eq(schema.issueComments.userId, userId),
       ne(schema.issueComments.issueId, excludeIssueId),
       isNotNull(schema.issueComments.body)
     ),
@@ -235,9 +232,9 @@ export async function analyzeIssueResolution(
   const lastComment = comments[comments.length - 1]
   const daysSinceLastComment = lastComment ? daysSince(lastComment.createdAt) : 0
 
-  const styleGuidance = context.maintainerStyleExamples.length > 0
-    ? `\n\nMAINTAINER WRITING STYLE (match this tone and style for draftReply):
-${context.maintainerStyleExamples.slice(0, 5).map((ex, i) => `Example ${i + 1}: "${ex.slice(0, 300)}${ex.length > 300 ? '...' : ''}"`).join('\n')}`
+  const styleGuidance = context.userStyleExamples.length > 0
+    ? `\n\nUSER'S WRITING STYLE — You MUST closely mimic this tone, vocabulary, punctuation, and sentence structure in draftReply. Do NOT polish or formalize their style:
+${context.userStyleExamples.slice(0, 5).map((ex, i) => `Example ${i + 1}: "${ex.slice(0, 300)}${ex.length > 300 ? '...' : ''}"`).join('\n')}`
     : ''
 
   const systemPrompt = `You are an AI that analyzes GitHub issue conversations for an open-source maintainer.
@@ -266,9 +263,11 @@ IMPORTANT RULES:
 - Cross-reference LINKED PULL REQUESTS — if a merged PR fixes this issue, suggest closing as resolved and reference the PR number.
 - Cross-reference RECENT RELEASES — if a fix was shipped in a release, suggest closing as resolved and mention the version.
 - Cross-reference RECENTLY CLOSED ISSUES — if this is a duplicate, suggest closing as duplicate with the issue number.
-- When drafting a reply, write as the maintainer (casual, direct, 1-3 sentences). NEVER say "I'm an AI" or sound robotic.
-- For "ask_reproduction" replies, be friendly but specific about what you need (reproduction link, version, steps).
-- For "close_resolved" replies, briefly summarize the solution or reference the release/comment/PR that fixed it.
+- When drafting a reply, write EXACTLY like the user would. Study the USER'S WRITING STYLE examples closely and replicate their vocabulary, punctuation habits, sentence length, and tone. If no style examples are available, default to very short, casual GitHub comments (think quick replies, not essays).
+- NEVER use em-dashes (—), semicolons for joining clauses, or phrases like "I'll look into", "keeping this open", "this is still a valid issue", "I understand", "thank you for reporting". These sound like AI. Real maintainers use short sentences, hyphens (-) or commas, and get straight to the point.
+- Keep it to 1-2 sentences max. Shorter is always better. A reply like "Fixed in v3.2, can you try upgrading?" is better than a paragraph.
+- For "ask_reproduction" replies, be direct about what you need (reproduction link, version, steps).
+- For "close_resolved" replies, just reference the fix (PR/release/comment) briefly.
 - Set draftReply to null when suggestedAction is "none".
 - If the LAST comment in the conversation is from a [maintainer], set draftReply to null — the maintainer already has the last word and doesn't need a drafted reply. You can still suggest close actions (close_resolved, close_not_planned, close_duplicate) but without a draftReply. Only suggest "respond" if someone else commented AFTER the maintainer's last message.
 
@@ -334,7 +333,7 @@ Time context: ${daysSinceLastComment} days since last comment. If a good answer 
   }
 }
 
-export async function analyzeAndStoreResolution(issueId: number, userGateway: GatewayFn, modelId: GatewayModelId = DEFAULT_AI_MODEL): Promise<AnalysisResult | null> {
+export async function analyzeAndStoreResolution(issueId: number, userId: number, userGateway: GatewayFn, modelId: GatewayModelId = DEFAULT_AI_MODEL): Promise<AnalysisResult | null> {
   const issue = await db.query.issues.findFirst({
     where: eq(schema.issues.id, issueId),
     with: {
@@ -369,7 +368,7 @@ export async function analyzeAndStoreResolution(issueId: number, userGateway: Ga
   const context = await fetchProjectContext(
     issue.repositoryId,
     issue.id,
-    collaborators.map(c => c.userId)
+    userId
   )
 
   const result = await analyzeIssueResolution(

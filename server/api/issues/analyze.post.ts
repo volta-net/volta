@@ -66,7 +66,7 @@ export default defineEventHandler(async (event) => {
 
       for (const issue of toAnalyze) {
         try {
-          const result = await analyzeAndStoreResolution(issue.id, userGateway, userModel)
+          const result = await analyzeAndStoreResolution(issue.id, user.id, userGateway, userModel)
           analyzed++
 
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({

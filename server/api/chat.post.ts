@@ -676,7 +676,7 @@ Examples: find open issues with label "bug", find PRs by a specific author, find
       const results = []
       for (const issue of issues) {
         try {
-          const result = await analyzeAndStoreResolution(issue.id, gateway, model)
+          const result = await analyzeAndStoreResolution(issue.id, user.id, gateway, model)
           results.push({
             number: issue.number,
             title: issue.title,

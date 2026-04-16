@@ -78,7 +78,7 @@ export default defineEventHandler(async (event) => {
     }
 
     try {
-      const result = await analyzeAndStoreResolution(issue.id, userGateway, userModel)
+      const result = await analyzeAndStoreResolution(issue.id, user.id, userGateway, userModel)
       if (result) {
         const freshIssue = await db.query.issues.findFirst({
           where: eq(schema.issues.id, issue.id),
