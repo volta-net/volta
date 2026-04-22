@@ -13,29 +13,29 @@
     "db:migrate": "nuxt db migrate"
   },
   "dependencies": {
-    "@ai-sdk/gateway": "^3.0.95",
-    "@ai-sdk/vue": "^3.0.158",
+    "@ai-sdk/gateway": "^3.0.104",
+    "@ai-sdk/vue": "^3.0.168",
     "@comark/nuxt": "^0.2.1",
     "@electric-sql/pglite": "^0.4.4",
     "@iconify-json/lucide": "^1.2.102",
-    "@iconify-json/simple-icons": "^1.2.78",
+    "@iconify-json/simple-icons": "^1.2.79",
     "@nuxt/ui": "^4.6.1",
     "@nuxthub/core": "^0.10.7",
     "@octokit/auth-app": "^8.2.0",
     "@shikijs/langs": "^4.0.2",
-    "@tiptap/core": "^3.22.3",
-    "@tiptap/extension-details": "^3.22.3",
-    "@tiptap/extension-emoji": "^3.22.3",
-    "@tiptap/extension-list": "^3.22.3",
-    "@tiptap/extension-mention": "^3.22.3",
-    "@tiptap/extension-table": "^3.22.3",
-    "@tiptap/pm": "^3.22.3",
-    "@tiptap/vue-3": "^3.22.3",
+    "@tiptap/core": "^3.22.4",
+    "@tiptap/extension-details": "^3.22.4",
+    "@tiptap/extension-emoji": "^3.22.4",
+    "@tiptap/extension-list": "^3.22.4",
+    "@tiptap/extension-mention": "^3.22.4",
+    "@tiptap/extension-table": "^3.22.4",
+    "@tiptap/pm": "^3.22.4",
+    "@tiptap/vue-3": "^3.22.4",
     "@vercel/analytics": "^2.0.1",
     "@vite-pwa/nuxt": "1.1.1",
     "@vueuse/core": "^14.2.1",
     "@vueuse/nuxt": "^14.2.1",
-    "ai": "^6.0.158",
+    "ai": "^6.0.168",
     "drizzle-kit": "^0.31.10",
     "drizzle-orm": "^0.45.2",
     "nuxt": "^4.4.2",
@@ -44,20 +44,20 @@
     "octokit": "^5.0.5",
     "postgres": "^3.4.9",
     "shiki": "^4.0.2",
-    "tailwindcss": "^4.2.2",
+    "tailwindcss": "^4.2.4",
     "tiptap-extension-code-block-shiki": "^1.1.0",
-    "workflow": "4.2.1",
+    "workflow": "4.2.4",
     "zod": "^4.3.6"
   },
   "devDependencies": {
     "@nuxt/eslint": "^1.15.2",
     "@types/node": "^25.6.0",
-    "eslint": "^10.2.0",
-    "typescript": "^6.0.2",
-    "vue-tsc": "^3.2.6"
+    "eslint": "^10.2.1",
+    "typescript": "^6.0.3",
+    "vue-tsc": "^3.2.7"
   },
   "resolutions": {
     "nitropack": "^2.13.0"
   },
-  "packageManager": "pnpm@10.33.0"
+  "packageManager": "pnpm@10.33.1"
 }
