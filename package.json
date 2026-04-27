@@ -15,11 +15,11 @@
   "dependencies": {
     "@ai-sdk/gateway": "^3.0.104",
     "@ai-sdk/vue": "^3.0.168",
-    "@comark/nuxt": "^0.2.1",
+    "@comark/nuxt": "^0.3.1",
     "@electric-sql/pglite": "^0.4.4",
-    "@iconify-json/lucide": "^1.2.102",
-    "@iconify-json/simple-icons": "^1.2.79",
-    "@nuxt/ui": "^4.6.1",
+    "@iconify-json/lucide": "^1.2.104",
+    "@iconify-json/simple-icons": "^1.2.80",
+    "@nuxt/ui": "^4.7.0",
     "@nuxthub/core": "^0.10.7",
     "@octokit/auth-app": "^8.2.0",
     "@shikijs/langs": "^4.0.2",
@@ -59,5 +59,5 @@
   "resolutions": {
     "nitropack": "^2.13.0"
   },
-  "packageManager": "pnpm@10.33.1"
+  "packageManager": "pnpm@10.33.2"
 }
