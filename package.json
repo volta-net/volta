@@ -38,7 +38,7 @@
     "ai": "^6.0.174",
     "drizzle-kit": "^0.31.10",
     "drizzle-orm": "^0.45.2",
-    "nuxt": "^4.4.2",
+    "nuxt": "^4.4.4",
     "nuxt-auth-utils": "^0.5.29",
     "nuxt-charts": "^2.1.4",
     "octokit": "^5.0.5",
