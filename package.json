@@ -47,14 +47,14 @@
     "tailwindcss": "^4.2.4",
     "tiptap-extension-code-block-shiki": "^1.1.0",
     "workflow": "4.2.4",
-    "zod": "^4.4.2"
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@nuxt/eslint": "^1.15.2",
     "@types/node": "^25.6.0",
     "eslint": "^10.3.0",
     "typescript": "^6.0.3",
-    "vue-tsc": "^3.2.7"
+    "vue-tsc": "^3.2.8"
   },
   "resolutions": {
     "nitropack": "^2.13.0"
