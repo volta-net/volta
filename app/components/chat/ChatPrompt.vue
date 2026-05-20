@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import type { ChatStatus } from 'ai'
-import type { ChatPromptProps } from '@nuxt/ui'
 
-const props = defineProps<ChatPromptProps & {
+const props = defineProps<{
   status: ChatStatus
   error?: Error | null
   selectedModel?: string
+  variant?: string
+  disabled?: boolean
+  class?: any
 }>()
 
 const emit = defineEmits<{
