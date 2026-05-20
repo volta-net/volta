@@ -56,8 +56,5 @@
     "typescript": "^6.0.3",
     "vue-tsc": "^3.2.8"
   },
-  "resolutions": {
-    "nitropack": "^2.13.0"
-  },
   "packageManager": "pnpm@11.1.3"
 }
