@@ -1,11 +1,53 @@
 import { Node } from '@tiptap/core'
 
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+function decodeBasicEntities(s: string): string {
+  return s
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, '\'')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&')
+}
+
+function isSafeUrl(url: string): boolean {
+  // Reject control characters (including tab/newline/CR) — browsers strip these
+  // from href values, so `java<TAB>script:` would normalize to `javascript:`.
+  // eslint-disable-next-line no-control-regex
+  if (/[\x00-\x1F\x7F]/.test(url)) {
+    return false
+  }
+  const trimmed = url.trim()
+  // Disallow if it begins with a scheme that isn't http(s)/mailto
+  const schemeMatch = /^([a-z][a-z0-9+.-]*):/i.exec(trimmed)
+  if (schemeMatch) {
+    return /^(https?|mailto)$/i.test(schemeMatch[1]!)
+  }
+  // Relative URLs and fragments are safe
+  return true
+}
+
 /**
- * Helper for inline markdown parsing
+ * Helper for inline markdown parsing.
+ * Escapes HTML first, then applies markdown patterns so that raw HTML in the
+ * source (e.g. <img onerror=...>) can't reach innerHTML as live markup.
  */
 function parseInline(text: string): string {
-  return text
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+  return escapeHtml(text)
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, label, url) => {
+      if (!isSafeUrl(decodeBasicEntities(url))) {
+        return match
+      }
+      return `<a href="${url}" target="_blank" rel="noopener">${label}</a>`
+    })
     .replace(/`([^`]+)`/g, '<code>$1</code>')
     .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
     .replace(/\*([^*]+)\*/g, '<em>$1</em>')
@@ -205,7 +247,7 @@ export const DetailsBlock = Node.create({
           details.appendChild(contentDiv)
           dom.appendChild(details)
         } else {
-          dom.innerHTML = rawHtml
+          dom.textContent = '[Invalid details block]'
         }
 
         dom.contentEditable = 'false'
