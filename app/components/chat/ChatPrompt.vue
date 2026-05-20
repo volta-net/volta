@@ -3,9 +3,9 @@ import type { ChatStatus } from 'ai'
 
 const props = defineProps<{
   status: ChatStatus
-  error?: Error | null
+  error?: Error
   selectedModel?: string
-  variant?: string
+  variant?: 'outline' | 'soft' | 'subtle' | 'naked'
   disabled?: boolean
   class?: any
 }>()
