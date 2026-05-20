@@ -1,8 +1,11 @@
-ignoredBuiltDependencies:
-  - '@parcel/watcher'
-  - '@swc/core'
-  - '@tailwindcss/oxide'
-  - esbuild
-  - sharp
-  - unrs-resolver
-  - vue-demi
+allowBuilds:
+  '@nestjs/core': false
+  '@parcel/watcher': false
+  '@swc/core': false
+  cbor-extract: false
+  esbuild: false
+  maplibre-gl: false
+  unrs-resolver: false
+  vue-demi: false
+  '@tailwindcss/oxide': false
+  sharp: false
