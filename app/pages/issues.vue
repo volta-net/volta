@@ -48,6 +48,11 @@ const filtersRef = useTemplateRef('filters')
 // Bulk analysis
 const analyzing = ref(false)
 const analyzeProgress = ref({ analyzed: 0, total: 0 })
+const analyzeAbort = ref<AbortController | null>(null)
+
+onBeforeUnmount(() => {
+  analyzeAbort.value?.abort()
+})
 
 const unanalyzedItems = computed(() =>
   (filteredItems.value ?? []).filter((item) => {
@@ -102,11 +107,15 @@ async function analyzeAll() {
   analyzing.value = true
   analyzeProgress.value = { analyzed: 0, total: issueIds.length }
 
+  const controller = new AbortController()
+  analyzeAbort.value = controller
+
   try {
     const response = await $fetch.raw('/api/issues/analyze', {
       method: 'POST',
       body: { issueIds },
-      responseType: 'stream'
+      responseType: 'stream',
+      signal: controller.signal
     })
 
     const reader = (response._data as unknown as ReadableStream).getReader()
@@ -152,6 +161,7 @@ async function analyzeAll() {
   } finally {
     analyzing.value = false
     analyzeProgress.value = { analyzed: 0, total: 0 }
+    analyzeAbort.value = null
   }
 }
 </script>

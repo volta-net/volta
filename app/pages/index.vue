@@ -74,6 +74,12 @@ watch(() => chat.status, (status) => {
   wasStreaming.value = status === 'streaming'
 })
 
+onBeforeUnmount(() => {
+  if (chat.status === 'streaming') {
+    chat.stop()
+  }
+})
+
 onMounted(() => {
   if (wasStreaming.value && chat.messages.length) {
     wasStreaming.value = false
