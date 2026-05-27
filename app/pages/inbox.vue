@@ -66,7 +66,7 @@ watch(notifications, (newNotifications) => {
   if (!newNotifications) return
   const notificationIds = new Set(newNotifications.map(n => n.id))
   pendingDeletes.value = pendingDeletes.value.filter(n => notificationIds.has(n.id))
-}, { deep: true })
+})
 
 const isPanelOpen = computed({
   get() {

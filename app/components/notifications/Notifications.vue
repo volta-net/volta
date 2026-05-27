@@ -39,7 +39,7 @@ watch(() => props.notifications, (newNotifications) => {
       selectedNotification.value = updated
     }
   }
-}, { deep: true })
+})
 
 // Toggle read/unread (optimistic update)
 function toggleRead() {
