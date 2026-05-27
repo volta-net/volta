@@ -2,6 +2,9 @@
 import type { TimelineItem } from '@nuxt/ui'
 import type { MentionUser } from '~/composables/useEditorMentions'
 import type { IssueReviewComment, LinkedPR } from '#shared/types'
+import { formatRelativeTime } from '~/composables/useRelativeTime'
+
+const { now } = useNow({ interval: 30000, controls: true })
 
 const props = defineProps<{
   issue: IssueDetail
@@ -327,7 +330,7 @@ const timelineItems = computed(() => {
     </template>
 
     <template #date="{ item }">
-      <span v-if="item.rawDate" class="text-xs text-dimmed">{{ useRelativeTime(item.rawDate) }}</span>
+      <span v-if="item.rawDate" class="text-xs text-dimmed">{{ formatRelativeTime(item.rawDate, now) }}</span>
     </template>
 
     <template #comment-form-wrapper>

@@ -18,6 +18,8 @@ function isFilterActive(type: Filter['type'], value: string) {
   return props.activeFilters?.some(f => f.type === type && f.value === value) ?? false
 }
 
+const relativeTime = useRelativeTime(computed(() => new Date(props.notification.createdAt)))
+
 // Get state config for filtering (only for issue/PR notifications)
 const stateConfig = computed(() => {
   const { type, issue } = props.notification
@@ -91,7 +93,7 @@ const stateConfig = computed(() => {
         </div>
 
         <span class="shrink-0 ms-auto text-sm/6 text-dimmed">
-          {{ useRelativeTime(new Date(notification.createdAt)) }}
+          {{ relativeTime }}
         </span>
       </div>
     </div>

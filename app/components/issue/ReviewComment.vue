@@ -94,6 +94,8 @@ const suggestedLines = computed(() => {
 // Check if this is a suggestion comment
 const hasSuggestion = computed(() => suggestion.value !== null)
 
+const relativeTime = useRelativeTime(computed(() => new Date(props.comment.createdAt)))
+
 // Generate diff markdown for MDC rendering
 const suggestionDiff = computed(() => {
   if (!hasSuggestion.value) return null
@@ -145,7 +147,7 @@ const diffHunkWithoutHeader = computed(() => {
           {{ comment.user?.login || 'Unknown' }}
           <span class="font-normal text-muted">{{ hasSuggestion ? 'suggested change' : 'commented' }}</span>
         </span>
-        <span class="text-xs text-dimmed ms-auto">{{ useRelativeTime(new Date(comment.createdAt)) }}</span>
+        <span class="text-xs text-dimmed ms-auto">{{ relativeTime }}</span>
       </div>
 
       <!-- Suggested change block (inside body) -->

@@ -42,6 +42,8 @@ const resolutionConfig = computed(() => {
 // Review state (PRs only)
 const reviewState = useReviewState(computed(() => props.item))
 
+const relativeTime = useRelativeTime(computed(() => new Date(props.item.updatedAt)))
+
 // Track container width to show tooltips only when labels are hidden (below @3xl: 896px)
 const containerRef = ref<HTMLElement | null>(null)
 const { width: containerWidth } = useElementSize(containerRef)
@@ -211,7 +213,7 @@ const showBadgeTooltips = computed(() => containerWidth.value < 768)
 
       <!-- Time -->
       <span class="text-xs text-muted shrink-0 text-end w-6">
-        {{ useRelativeTime(new Date(item.updatedAt)) }}
+        {{ relativeTime }}
       </span>
     </div>
   </button>
