@@ -104,7 +104,17 @@ export default defineNuxtConfig({
         '@nuxt/ui > prosemirror-gapcursor',
         '@nuxt/ui > prosemirror-state',
         '@nuxt/ui > prosemirror-tables',
-        'ai'
+        '@shikijs/langs/diff',
+        '@tiptap/core',
+        '@tiptap/extension-emoji',
+        '@tiptap/extension-list',
+        '@tiptap/extension-mention',
+        '@tiptap/extension-table',
+        '@tiptap/pm/state',
+        '@tiptap/pm/view',
+        '@tiptap/vue-3',
+        'ai',
+        'tiptap-extension-code-block-shiki'
       ]
     }
   },
