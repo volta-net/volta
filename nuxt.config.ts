@@ -13,6 +13,20 @@ export default defineNuxtConfig({
     '@vite-pwa/nuxt'
   ],
 
+  $development: {
+    vite: {
+      environments: {
+        ssr: {
+          build: {
+            rollupOptions: {
+              input: { server: 'index.html' }
+            }
+          }
+        }
+      }
+    }
+  },
+
   ssr: false,
 
   devtools: {
@@ -89,15 +103,6 @@ export default defineNuxtConfig({
   },
 
   vite: {
-    environments: {
-      ssr: {
-        build: {
-          rollupOptions: {
-            input: { server: 'index.html' }
-          }
-        }
-      }
-    },
     optimizeDeps: {
       include: [
         '@ai-sdk/vue',
