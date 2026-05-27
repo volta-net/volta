@@ -89,11 +89,22 @@ export default defineNuxtConfig({
   },
 
   vite: {
+    environments: {
+      ssr: {
+        build: {
+          rollupOptions: {
+            input: { server: 'index.html' }
+          }
+        }
+      }
+    },
     optimizeDeps: {
       include: [
+        '@ai-sdk/vue',
         '@nuxt/ui > prosemirror-gapcursor',
         '@nuxt/ui > prosemirror-state',
-        '@nuxt/ui > prosemirror-tables'
+        '@nuxt/ui > prosemirror-tables',
+        'ai'
       ]
     }
   },
