@@ -215,6 +215,7 @@ export interface GitHubWorkflowRun {
   }
   head_branch?: string | null
   head_sha: string
+  head_repository?: { id: number, full_name: string }
   event: string
   status: string
   conclusion: GitHubWorkflowConclusion

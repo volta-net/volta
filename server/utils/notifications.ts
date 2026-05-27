@@ -1315,6 +1315,10 @@ export async function notifyWorkflowFailed(
     avatar_url: actor.avatar_url
   })
 
+  // Detect fork: head_repository differs from the base repository
+  const isFromFork = workflowRun.head_repository
+    && workflowRun.head_repository.id !== repository.id
+
   // Find the related PR if this workflow was triggered by a pull_request event
   let issueId: number | undefined
 
@@ -1356,20 +1360,40 @@ export async function notifyWorkflowFailed(
     .where(eq(schema.workflowRuns.githubId, workflowRun.id))
   const dbWorkflowRunId = dbWorkflowRun?.id
 
-  // Notify subscribers who want CI failure notifications
+  const notificationData = {
+    type: 'workflow_run' as const,
+    action: 'failed' as const,
+    body: workflowRun.name || workflowRun.display_title || workflowRun.workflow?.name,
+    repositoryId: dbRepoId,
+    issueId,
+    workflowRunId: dbWorkflowRunId,
+    actorId: actorDbId ?? undefined
+  }
+
+  // For fork PRs, only notify users who are directly subscribed to the PR
+  // (assigned, requested reviewer, or manually subscribed) instead of all CI subscribers.
+  // Fork CI failures are usually the contributor's responsibility, not the maintainer's.
+  if (isFromFork && issueId) {
+    const subscribers = await getSubscribers(dbRepoId, 'ci')
+    const ciSubscriberIds = new Set(subscribers.map(s => s.userId))
+
+    const issueSubscribers = await db
+      .select({ userId: schema.issueSubscriptions.userId })
+      .from(schema.issueSubscriptions)
+      .where(eq(schema.issueSubscriptions.issueId, issueId))
+
+    for (const sub of issueSubscribers) {
+      if (!ciSubscriberIds.has(sub.userId)) continue
+
+      await createNotification({ userId: sub.userId, ...notificationData })
+    }
+    return
+  }
+
+  // For same-repo workflows, notify all CI subscribers
   const subscribers = await getSubscribers(dbRepoId, 'ci')
   for (const subscriber of subscribers) {
-    // Don't skip self-notification for CI - you want to know if your own build failed
-    await createNotification({
-      userId: subscriber.userId,
-      type: 'workflow_run',
-      action: 'failed',
-      body: workflowRun.name || workflowRun.display_title || workflowRun.workflow?.name,
-      repositoryId: dbRepoId,
-      issueId,
-      workflowRunId: dbWorkflowRunId,
-      actorId: actorDbId ?? undefined
-    })
+    await createNotification({ userId: subscriber.userId, ...notificationData })
   }
 }
 
