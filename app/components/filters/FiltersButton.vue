@@ -2,8 +2,13 @@
 import type { ButtonProps, ButtonSlots } from '@nuxt/ui'
 import type { Filter } from '~/composables/useFilters'
 
-withDefaults(defineProps<Pick<ButtonProps, 'color' | 'variant' | 'activeColor' | 'activeVariant' | 'active'> & {
+withDefaults(defineProps<{
   filter: Filter
+  color?: ButtonProps['color']
+  variant?: ButtonProps['variant']
+  activeColor?: ButtonProps['activeColor']
+  activeVariant?: ButtonProps['activeVariant']
+  active?: boolean
 }>(), {
   color: 'neutral',
   variant: 'outline',
