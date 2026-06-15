@@ -126,7 +126,7 @@ export function getAggregatedCIStatus(statuses: CIStatus[] | undefined): Aggrega
   }
 
   // Determine aggregate conclusion for styling
-  let aggregateConclusion: WorkflowConclusion | null = null
+  let aggregateConclusion: WorkflowConclusion | null
   if (inProgress > 0) {
     aggregateConclusion = null // Running
   } else if (failed > 0) {
