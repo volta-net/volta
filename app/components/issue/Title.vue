@@ -41,14 +41,17 @@ async function saveTitle() {
 </script>
 
 <template>
-  <UInput
+  <UTextarea
     v-model="editedTitle"
     :loading="isSaving"
     :readonly="readonly"
+    :rows="1"
+    autoresize
     trailing
     variant="none"
     size="xl"
-    :ui="{ base: 'p-0 md:text-xl font-semibold' }"
+    :ui="{ base: 'p-0 md:text-xl font-semibold resize-none' }"
     @blur="saveTitle"
+    @keydown.enter.prevent="($event.target as HTMLTextAreaElement).blur()"
   />
 </template>
