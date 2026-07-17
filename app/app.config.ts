@@ -43,7 +43,9 @@ export default defineAppConfig({
     },
     prose: {
       pre: {
-        base: 'text-xs/5 max-h-122 overflow-y-auto'
+        slots: {
+          base: 'text-xs/5 max-h-122 overflow-y-auto'
+        }
       }
     },
     inputMenu: {
