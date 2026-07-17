@@ -38,17 +38,29 @@ async function saveTitle() {
     isSaving.value = false
   }
 }
+
+function handleTitleKeydown(event: KeyboardEvent) {
+  if (event.key !== 'Enter' || event.isComposing) {
+    return
+  }
+
+  event.preventDefault()
+  ;(event.currentTarget as HTMLTextAreaElement).blur()
+}
 </script>
 
 <template>
-  <UInput
+  <UTextarea
     v-model="editedTitle"
     :loading="isSaving"
     :readonly="readonly"
+    :rows="1"
+    autoresize
     trailing
     variant="none"
     size="xl"
-    :ui="{ base: 'p-0 md:text-xl font-semibold' }"
+    :ui="{ base: 'p-0 md:text-xl font-semibold resize-none' }"
     @blur="saveTitle"
+    @keydown="handleTitleKeydown"
   />
 </template>
