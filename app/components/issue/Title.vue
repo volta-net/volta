@@ -38,6 +38,15 @@ async function saveTitle() {
     isSaving.value = false
   }
 }
+
+function handleTitleKeydown(event: KeyboardEvent) {
+  if (event.key !== 'Enter' || event.isComposing) {
+    return
+  }
+
+  event.preventDefault()
+  ;(event.currentTarget as HTMLTextAreaElement).blur()
+}
 </script>
 
 <template>
@@ -52,6 +61,6 @@ async function saveTitle() {
     size="xl"
     :ui="{ base: 'p-0 md:text-xl font-semibold resize-none' }"
     @blur="saveTitle"
-    @keydown.enter.prevent="($event.target as HTMLTextAreaElement).blur()"
+    @keydown="handleTitleKeydown"
   />
 </template>
