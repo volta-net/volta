@@ -35,7 +35,7 @@
     "@vite-pwa/nuxt": "1.1.1",
     "@vueuse/core": "^14.3.0",
     "@vueuse/nuxt": "^14.3.0",
-    "ai": "^6.0.228",
+    "ai": "^7.0.35",
     "drizzle-kit": "^0.31.10",
     "drizzle-orm": "^0.45.2",
     "nuxt": "^4.4.8",
