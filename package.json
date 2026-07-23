@@ -13,12 +13,12 @@
     "db:migrate": "nuxt db migrate"
   },
   "dependencies": {
-    "@ai-sdk/gateway": "^3.0.151",
-    "@ai-sdk/vue": "^3.0.228",
+    "@ai-sdk/gateway": "^3.0.156",
+    "@ai-sdk/vue": "^3.0.234",
     "@comark/nuxt": "^0.5.1",
     "@electric-sql/pglite": "^0.5.4",
-    "@iconify-json/lucide": "^1.2.117",
-    "@iconify-json/simple-icons": "^1.2.90",
+    "@iconify-json/lucide": "^1.2.118",
+    "@iconify-json/simple-icons": "^1.2.91",
     "@nuxt/ui": "^4.10.0",
     "@nuxthub/core": "^0.10.8",
     "@octokit/auth-app": "^8.2.0",
@@ -35,18 +35,18 @@
     "@vite-pwa/nuxt": "1.1.1",
     "@vueuse/core": "^14.3.0",
     "@vueuse/nuxt": "^14.3.0",
-    "ai": "^6.0.228",
+    "ai": "^6.0.234",
     "drizzle-kit": "^0.31.10",
     "drizzle-orm": "^0.45.2",
     "nuxt": "^4.4.8",
     "nuxt-auth-utils": "^0.5.29",
-    "nuxt-charts": "^2.1.4",
+    "nuxt-charts": "^2.2.0",
     "octokit": "^5.0.5",
     "postgres": "^3.4.9",
     "shiki": "^4.3.1",
-    "tailwindcss": "^4.3.2",
+    "tailwindcss": "^4.3.3",
     "tiptap-extension-code-block-shiki": "^1.2.0",
-    "workflow": "4.6.0",
+    "workflow": "4.6.1",
     "zod": "^4.4.3"
   },
   "devDependencies": {
@@ -54,7 +54,7 @@
     "@types/node": "^25.9.5",
     "eslint": "^10.7.0",
     "typescript": "^6.0.3",
-    "vue-tsc": "^3.3.7"
+    "vue-tsc": "^3.3.8"
   },
-  "packageManager": "pnpm@11.13.1"
+  "packageManager": "pnpm@11.16.0"
 }
