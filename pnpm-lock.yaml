@@ -12,8 +12,8 @@ importers:
         specifier: ^3.0.151
         version: 3.0.151(zod@4.4.3)
       '@ai-sdk/vue':
-        specifier: ^3.0.228
-        version: 3.0.228(vue@3.5.35(typescript@6.0.3))(zod@4.4.3)
+        specifier: ^4.0.35
+        version: 4.0.35(vue@3.5.35(typescript@6.0.3))(zod@4.4.3)
       '@comark/nuxt':
         specifier: ^0.5.1
         version: 0.5.1(magicast@0.5.2)(nuxt@4.4.8(8866b2a954b3ce3621b51775772c273e))(shiki@4.3.1)(vue@3.5.35(typescript@6.0.3))
@@ -150,9 +150,21 @@ packages:
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
 
+  '@ai-sdk/gateway@4.0.27':
+    resolution: {integrity: sha512-gqTMvV0N8/JirIZ3OzwjSZRYxzwZu/PeOFCKb8NB9fstWH39tI+L6CkeMNVou5/HCKEYAw6RCOHW59Vhquv8vA==}
+    engines: {node: '>=22'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
+
   '@ai-sdk/provider-utils@4.0.39':
     resolution: {integrity: sha512-XPR6o7561RYUkfYlLYouWsvm6Gv2tYIQy5pttGRkvML98u138ClPThn5yiQg5rMQutTtZLB+GUC8qFFCzDKQQQ==}
     engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
+
+  '@ai-sdk/provider-utils@5.0.12':
+    resolution: {integrity: sha512-bbhlOgHeYwrIGheLkM6fhS8hVger8uFPmcOLg+kxc9EFh7y30XYorWhthlYAgpadO3SJhFZrIcEknN7qEqEVvA==}
+    engines: {node: '>=22'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
 
@@ -160,9 +172,13 @@ packages:
     resolution: {integrity: sha512-5X1k57JBJ4H7H1QjX7CnJYAB1I19r/trVZTMcSms7/kLNZ8RaU4Nt2agcwZzv82Hfx6Q7/TOLU7agAKeFfc8cA==}
     engines: {node: '>=18'}
 
-  '@ai-sdk/vue@3.0.228':
-    resolution: {integrity: sha512-8+t7DEJt97r7ZmYR641oxr0KLes27tnx3TybYhi/KQm/UUtuq66nhMKealZY6y6Tq3Yg9+gsOgcoCAu13YWtWA==}
-    engines: {node: '>=18'}
+  '@ai-sdk/provider@4.0.3':
+    resolution: {integrity: sha512-e0CpNWJUY7OxAFAnCZkw+ri9QOHWwTs1tXP42782KFGCU07qt8NiXCrCVowyCB5dP2r5/Uls+g2oPd8kOJn9dw==}
+    engines: {node: '>=22'}
+
+  '@ai-sdk/vue@4.0.35':
+    resolution: {integrity: sha512-9XwcDqaS05EXxMEnW+uVRRoGB4ILdUmIxIO3/F1fHXFbKciIMrfQd7B1ZGUc5hHiEN1ByZvgds7xDBwU7XOqqg==}
+    engines: {node: '>=22'}
     peerDependencies:
       vue: ^3.3.4
 
@@ -4554,6 +4570,9 @@ packages:
   '@workflow/rollup@4.0.11':
     resolution: {integrity: sha512-x8/z7+jGZhNSdC1aIroXXeqTyDhcjZSnvK4iZ/hQNonkUaRt0/sLTliACARQKNEK3FKh4G9oKyASj/TH5PQ1cg==}
 
+  '@workflow/serde@4.1.0':
+    resolution: {integrity: sha512-pav4F2BoirECWR7Nf1TKt+2eETcBj7jj4cBefQ8VXQCA6NPkaKeLfj/zMgi+3zYV5ZIBT4GuUiphsj0/b9hPQQ==}
+
   '@workflow/serde@4.1.2':
     resolution: {integrity: sha512-KkkSUddEcaIvW7/QfVUk2PR93117HkDum45cXQEGkoxEmHOmqfOLJ4T1m4a1QABVC7O9TIqPxsBtDPgKIO+LOw==}
 
@@ -4672,6 +4691,12 @@ packages:
   ai@6.0.228:
     resolution: {integrity: sha512-3TXPF+meV/B0ObVWqLZDfTo0UjT9eKQX+QO5B8n7TSyLxnU3U9FHKxRp7U9mGuTVh7fdo2OtU0J8uGFR4EStsg==}
     engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
+
+  ai@7.0.35:
+    resolution: {integrity: sha512-en8xnTNoVJVWk/Y7TsXuTkc463ehuQUqrofjPs/TAd4O3h14QKmq4rWWG3/Eb05r3f2MvvxfCuXNnvhTdzyoTg==}
+    engines: {node: '>=22'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
 
@@ -9607,6 +9632,13 @@ snapshots:
       '@vercel/oidc': 3.2.0
       zod: 4.4.3
 
+  '@ai-sdk/gateway@4.0.27(zod@4.4.3)':
+    dependencies:
+      '@ai-sdk/provider': 4.0.3
+      '@ai-sdk/provider-utils': 5.0.12(zod@4.4.3)
+      '@vercel/oidc': 3.2.0
+      zod: 4.4.3
+
   '@ai-sdk/provider-utils@4.0.39(zod@4.4.3)':
     dependencies:
       '@ai-sdk/provider': 3.0.14
@@ -9614,14 +9646,26 @@ snapshots:
       eventsource-parser: 3.0.8
       zod: 4.4.3
 
+  '@ai-sdk/provider-utils@5.0.12(zod@4.4.3)':
+    dependencies:
+      '@ai-sdk/provider': 4.0.3
+      '@standard-schema/spec': 1.1.0
+      '@workflow/serde': 4.1.0
+      eventsource-parser: 3.0.8
+      zod: 4.4.3
+
   '@ai-sdk/provider@3.0.14':
     dependencies:
       json-schema: 0.4.0
 
-  '@ai-sdk/vue@3.0.228(vue@3.5.35(typescript@6.0.3))(zod@4.4.3)':
+  '@ai-sdk/provider@4.0.3':
     dependencies:
-      '@ai-sdk/provider-utils': 4.0.39(zod@4.4.3)
-      ai: 6.0.228(zod@4.4.3)
+      json-schema: 0.4.0
+
+  '@ai-sdk/vue@4.0.35(vue@3.5.35(typescript@6.0.3))(zod@4.4.3)':
+    dependencies:
+      '@ai-sdk/provider-utils': 5.0.12(zod@4.4.3)
+      ai: 7.0.35(zod@4.4.3)
       swrv: 1.2.0(vue@3.5.35(typescript@6.0.3))
       vue: 3.5.35(typescript@6.0.3)
     transitivePeerDependencies:
@@ -14242,6 +14286,8 @@ snapshots:
       - '@swc/helpers'
       - supports-color
 
+  '@workflow/serde@4.1.0': {}
+
   '@workflow/serde@4.1.2': {}
 
   '@workflow/sveltekit@4.0.11(@opentelemetry/api@1.9.0)(@swc/helpers@0.5.21)':
@@ -14438,6 +14484,13 @@ snapshots:
       '@ai-sdk/provider': 3.0.14
       '@ai-sdk/provider-utils': 4.0.39(zod@4.4.3)
       '@opentelemetry/api': 1.9.0
+      zod: 4.4.3
+
+  ai@7.0.35(zod@4.4.3):
+    dependencies:
+      '@ai-sdk/gateway': 4.0.27(zod@4.4.3)
+      '@ai-sdk/provider': 4.0.3
+      '@ai-sdk/provider-utils': 5.0.12(zod@4.4.3)
       zod: 4.4.3
 
   ajv@6.15.0:
