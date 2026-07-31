@@ -175,10 +175,10 @@ const extensions = computed(() => {
 const isParsing = ref(false)
 
 // Parse existing mentions when editor becomes available
-watch(editorRef, (ref) => {
+watch(editorRef, (instance) => {
   if (!props.parseMentions) return
 
-  const editor = ref?.editor
+  const editor = instance?.editor
   if (editor) {
     isParsing.value = true
     emit('parsing', true)
