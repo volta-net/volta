@@ -1,7 +1,7 @@
 import highlight from '@comark/nuxt/plugins/highlight'
 import ChatIssue from './ChatIssue.vue'
 
-export default defineComarkComponent({
+export default defineMarkdownComponent({
   name: 'ChatComark',
   plugins: [
     highlight()

@@ -246,7 +246,7 @@ function getToolIcon(part: { state: string, toolName?: string, toolCallId?: stri
                   icon="i-lucide-brain"
                 >
                   <ChatComark
-                    :markdown="part.text"
+                    :value="part.text"
                     :streaming="isPartStreaming(part)"
                   />
                 </UChatReasoning>
@@ -254,7 +254,7 @@ function getToolIcon(part: { state: string, toolName?: string, toolCallId?: stri
                 <template v-else-if="isTextUIPart(part)">
                   <ChatComark
                     v-if="message.role === 'assistant'"
-                    :markdown="part.text"
+                    :value="part.text"
                     :streaming="isPartStreaming(part)"
                   />
                   <p v-else-if="message.role === 'user'" class="whitespace-pre-wrap text-sm/6">
