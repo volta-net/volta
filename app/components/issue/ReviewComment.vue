@@ -130,7 +130,7 @@ const diffHunkWithoutHeader = computed(() => {
     <!-- Code diff -->
     <IssueComark
       v-if="diffHunkWithoutHeader"
-      :markdown="`\`\`\`diff\n${diffHunkWithoutHeader}\n\`\`\``"
+      :value="`\`\`\`diff\n${diffHunkWithoutHeader}\n\`\`\``"
       class="[&>div]:my-0! [&_pre]:rounded-none! [&_pre]:border-0! [&_pre]:bg-muted/50!"
     />
 
@@ -153,7 +153,7 @@ const diffHunkWithoutHeader = computed(() => {
       <!-- Suggested change block (inside body) -->
       <IssueComark
         v-if="hasSuggestion && suggestionDiff"
-        :markdown="suggestionDiff"
+        :value="suggestionDiff"
         class="[&>div]:my-0!"
       />
 
