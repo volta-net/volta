@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@ai-sdk/gateway':
-        specifier: ^3.0.174
-        version: 3.0.174(zod@4.4.3)
+        specifier: ^4.0.60
+        version: 4.0.60(zod@4.4.3)
       '@ai-sdk/vue':
         specifier: ^3.0.256
         version: 3.0.256(vue@3.5.40(typescript@6.0.3))(zod@4.4.3)
@@ -150,15 +150,31 @@ packages:
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
 
+  '@ai-sdk/gateway@4.0.60':
+    resolution: {integrity: sha512-t6nc44aG2LsGGia0Udxf3p/S5SkIQqK4bFo8ruqvD3C75Mpt0+hzbGNItrD2BIiOKjr2r15ymYTRHZBVCusQeQ==}
+    engines: {node: '>=22'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
+
   '@ai-sdk/provider-utils@4.0.46':
     resolution: {integrity: sha512-tEtld97plCFiYevsJuOkGkeuhQndeMWFBVrJS4AjnbD5AqrNSXRCe0p+BZ3Cju/sxDeeZ9ym3q9YUV8fASA7aQ==}
     engines: {node: '>=18.17'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
 
+  '@ai-sdk/provider-utils@5.0.28':
+    resolution: {integrity: sha512-TnHUyd/rCYQqHg5RuiOaz/hUql6U+kbUaBW0Rp+0N5UhnAInA9CzzV0HXvuAAPwppDsK6fAx9Rd+tRawpJ/3pg==}
+    engines: {node: '>=22'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
+
   '@ai-sdk/provider@3.0.15':
     resolution: {integrity: sha512-XeZW1CcDF2GMbH4wejW6xBRI2QCOgnkVYUnxoeDadB1mf85riL2bMUeDoh+6gJ/r4mjNfzUPW8OjLjvwTP0u1Q==}
     engines: {node: '>=18'}
+
+  '@ai-sdk/provider@4.0.7':
+    resolution: {integrity: sha512-6or44XprPzKbr8zkmzosowSE0pxkvJcoojBL+mCZvPUt3kvXp3XSNqeVun9golb1acEfSo6yaEBRT18h2VU+1Q==}
+    engines: {node: '>=22'}
 
   '@ai-sdk/vue@3.0.256':
     resolution: {integrity: sha512-YV8765q8thsM9uyQLHCjkdhpPVii0AGVXXLj4TSXyzABLOM89G9bunJy3nCwexdEXGy6+F0e4f8NuqcFxykMIA==}
@@ -4376,6 +4392,9 @@ packages:
 
   '@workflow/rollup@4.0.18':
     resolution: {integrity: sha512-UExirEIuZs6hBTzPRqqba2huI918wC/sMRUtnh+Ct9tQVI8xhGfi5/uYbq+uGDffq0qH+eVy/QHlLp3ENUCnZg==}
+
+  '@workflow/serde@4.1.0':
+    resolution: {integrity: sha512-pav4F2BoirECWR7Nf1TKt+2eETcBj7jj4cBefQ8VXQCA6NPkaKeLfj/zMgi+3zYV5ZIBT4GuUiphsj0/b9hPQQ==}
 
   '@workflow/serde@4.1.2':
     resolution: {integrity: sha512-KkkSUddEcaIvW7/QfVUk2PR93117HkDum45cXQEGkoxEmHOmqfOLJ4T1m4a1QABVC7O9TIqPxsBtDPgKIO+LOw==}
@@ -9656,6 +9675,13 @@ snapshots:
       '@vercel/oidc': 3.2.0
       zod: 4.4.3
 
+  '@ai-sdk/gateway@4.0.60(zod@4.4.3)':
+    dependencies:
+      '@ai-sdk/provider': 4.0.7
+      '@ai-sdk/provider-utils': 5.0.28(zod@4.4.3)
+      '@vercel/oidc': 3.2.0
+      zod: 4.4.3
+
   '@ai-sdk/provider-utils@4.0.46(zod@4.4.3)':
     dependencies:
       '@ai-sdk/provider': 3.0.15
@@ -9664,7 +9690,20 @@ snapshots:
       undici: 6.28.0
       zod: 4.4.3
 
+  '@ai-sdk/provider-utils@5.0.28(zod@4.4.3)':
+    dependencies:
+      '@ai-sdk/provider': 4.0.7
+      '@standard-schema/spec': 1.1.0
+      '@workflow/serde': 4.1.0
+      eventsource-parser: 3.0.8
+      undici: 7.28.0
+      zod: 4.4.3
+
   '@ai-sdk/provider@3.0.15':
+    dependencies:
+      json-schema: 0.4.0
+
+  '@ai-sdk/provider@4.0.7':
     dependencies:
       json-schema: 0.4.0
 
@@ -14435,6 +14474,8 @@ snapshots:
       - '@opentelemetry/api'
       - '@swc/helpers'
       - supports-color
+
+  '@workflow/serde@4.1.0': {}
 
   '@workflow/serde@4.1.2': {}
 
