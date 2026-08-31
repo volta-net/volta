@@ -9,29 +9,29 @@ importers:
   .:
     dependencies:
       '@ai-sdk/gateway':
-        specifier: ^3.0.179
-        version: 3.0.179(zod@4.4.3)
+        specifier: ^3.0.184
+        version: 3.0.184(zod@4.5.4)
       '@ai-sdk/vue':
-        specifier: ^3.0.264
-        version: 3.0.264(vue@3.5.40(typescript@6.0.3))(zod@4.4.3)
+        specifier: ^3.0.271
+        version: 3.0.271(vue@3.5.40(typescript@6.0.3))(zod@4.5.4)
       '@comark/nuxt':
         specifier: ^0.6.2
-        version: 0.6.2(magic-string@1.2.2)(magicast@0.5.4)(nuxt@4.5.2(e6f135e59161a1b0c331aaeb60eb77d8))(oxc-parser@0.140.0)(rolldown@1.2.1)(shiki@4.4.3)(unplugin@3.3.0(esbuild@0.28.1)(rolldown@1.2.1)(rollup@4.60.2)(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0)))(vue@3.5.40(typescript@6.0.3))
+        version: 0.6.2(magic-string@1.2.2)(magicast@0.5.4)(nuxt@4.5.2(96ab177cdc02d820ca09f0417ddac4a3))(oxc-parser@0.140.0)(rolldown@1.2.1)(shiki@4.4.3)(unplugin@3.3.0(esbuild@0.28.1)(rolldown@1.2.1)(rollup@4.60.2)(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0)))(vue@3.5.40(typescript@6.0.3))
       '@electric-sql/pglite':
-        specifier: ^0.5.6
-        version: 0.5.6
+        specifier: ^0.5.8
+        version: 0.5.8
       '@iconify-json/lucide':
-        specifier: ^1.2.125
-        version: 1.2.125
+        specifier: ^1.2.127
+        version: 1.2.127
       '@iconify-json/simple-icons':
-        specifier: ^1.2.93
-        version: 1.2.93
+        specifier: ^1.2.94
+        version: 1.2.94
       '@nuxt/ui':
         specifier: ^4.11.0
-        version: 4.11.0(39e76e1a6cdd96ea85cf8a9b43e26091)
+        version: 4.11.0(42324ef66725a2bbc123476f9ec4adb4)
       '@nuxthub/core':
         specifier: ^0.10.8
-        version: 0.10.8(@emnapi/core@2.0.0-alpha.3)(@emnapi/runtime@2.0.0-alpha.3)(@vercel/functions@3.4.4(@aws-sdk/credential-provider-web-identity@3.972.49))(db0@0.3.4(@electric-sql/pglite@0.5.6)(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260426.1)(@electric-sql/pglite@0.5.6)(@opentelemetry/api@1.9.0)(postgres@3.4.9)))(ioredis@5.10.1(supports-color@8.1.1))(magic-string@1.2.2)(magicast@0.5.4)(oxc-parser@0.140.0)(rolldown@1.2.1)(typescript@6.0.3)(unplugin@3.3.0(esbuild@0.28.1)(rolldown@1.2.1)(rollup@4.60.2)(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0)))(vue-tsc@3.3.11(typescript@6.0.3))
+        version: 0.10.8(@emnapi/core@2.0.0-alpha.3)(@emnapi/runtime@2.0.0-alpha.3)(@vercel/functions@3.4.4(@aws-sdk/credential-provider-web-identity@3.972.49))(db0@0.3.4(@electric-sql/pglite@0.5.8)(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260426.1)(@electric-sql/pglite@0.5.8)(@opentelemetry/api@1.9.0)(postgres@3.4.9)))(ioredis@5.10.1(supports-color@8.1.1))(magic-string@1.2.2)(magicast@0.5.4)(oxc-parser@0.140.0)(rolldown@1.2.1)(typescript@6.0.3)(unplugin@3.3.0(esbuild@0.28.1)(rolldown@1.2.1)(rollup@4.60.2)(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0)))(vue-tsc@3.3.11(typescript@6.0.3))
       '@octokit/auth-app':
         specifier: ^8.3.0
         version: 8.3.0
@@ -39,32 +39,32 @@ importers:
         specifier: ^4.4.3
         version: 4.4.3
       '@tiptap/core':
-        specifier: ^3.30.2
-        version: 3.30.2(@tiptap/pm@3.30.2)
+        specifier: ^3.30.5
+        version: 3.30.5(@tiptap/pm@3.30.5)
       '@tiptap/extension-details':
-        specifier: ^3.30.2
-        version: 3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/extension-text-style@3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2)))(@tiptap/pm@3.30.2)
+        specifier: ^3.30.5
+        version: 3.30.5(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/extension-text-style@3.30.5(@tiptap/core@3.30.5(@tiptap/pm@3.30.5)))(@tiptap/pm@3.30.5)
       '@tiptap/extension-emoji':
-        specifier: ^3.30.2
-        version: 3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)(@tiptap/suggestion@3.30.2(@floating-ui/dom@1.8.0)(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2))(emojibase@17.0.0)
+        specifier: ^3.30.5
+        version: 3.30.5(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)(@tiptap/suggestion@3.30.5(@floating-ui/dom@1.8.0)(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5))(emojibase@17.0.0)
       '@tiptap/extension-list':
-        specifier: ^3.30.2
-        version: 3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)
+        specifier: ^3.30.5
+        version: 3.30.5(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)
       '@tiptap/extension-mention':
-        specifier: ^3.30.2
-        version: 3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)(@tiptap/suggestion@3.30.2(@floating-ui/dom@1.8.0)(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2))
+        specifier: ^3.30.5
+        version: 3.30.5(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)(@tiptap/suggestion@3.30.5(@floating-ui/dom@1.8.0)(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5))
       '@tiptap/extension-table':
-        specifier: ^3.30.2
-        version: 3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)
+        specifier: ^3.30.5
+        version: 3.30.5(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)
       '@tiptap/pm':
-        specifier: ^3.30.2
-        version: 3.30.2
+        specifier: ^3.30.5
+        version: 3.30.5
       '@tiptap/vue-3':
-        specifier: ^3.30.2
-        version: 3.30.2(@floating-ui/dom@1.8.0)(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)(vue@3.5.40(typescript@6.0.3))
+        specifier: ^3.30.5
+        version: 3.30.5(@floating-ui/dom@1.8.0)(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)(vue@3.5.40(typescript@6.0.3))
       '@vercel/analytics':
         specifier: ^2.0.1
-        version: 2.0.1(nuxt@4.5.2(e6f135e59161a1b0c331aaeb60eb77d8))(vue@3.5.40(typescript@6.0.3))
+        version: 2.0.1(nuxt@4.5.2(96ab177cdc02d820ca09f0417ddac4a3))(vue@3.5.40(typescript@6.0.3))
       '@vite-pwa/nuxt':
         specifier: 1.1.1
         version: 1.1.1(magicast@0.5.4)(supports-color@8.1.1)(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0))(workbox-build@7.4.0(supports-color@8.1.1))(workbox-window@7.4.0)
@@ -73,19 +73,19 @@ importers:
         version: 14.4.0(vue@3.5.40(typescript@6.0.3))
       '@vueuse/nuxt':
         specifier: ^14.4.0
-        version: 14.4.0(magic-string@1.2.2)(magicast@0.5.4)(nuxt@4.5.2(e6f135e59161a1b0c331aaeb60eb77d8))(oxc-parser@0.140.0)(rolldown@1.2.1)(unplugin@3.3.0(esbuild@0.28.1)(rolldown@1.2.1)(rollup@4.60.2)(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0)))(vue@3.5.40(typescript@6.0.3))
+        version: 14.4.0(magic-string@1.2.2)(magicast@0.5.4)(nuxt@4.5.2(96ab177cdc02d820ca09f0417ddac4a3))(oxc-parser@0.140.0)(rolldown@1.2.1)(unplugin@3.3.0(esbuild@0.28.1)(rolldown@1.2.1)(rollup@4.60.2)(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0)))(vue@3.5.40(typescript@6.0.3))
       ai:
-        specifier: ^6.0.264
-        version: 6.0.264(zod@4.4.3)
+        specifier: ^6.0.271
+        version: 6.0.271(zod@4.5.4)
       drizzle-kit:
         specifier: ^0.31.10
         version: 0.31.10
       drizzle-orm:
         specifier: ^0.45.2
-        version: 0.45.2(@cloudflare/workers-types@4.20260426.1)(@electric-sql/pglite@0.5.6)(@opentelemetry/api@1.9.0)(postgres@3.4.9)
+        version: 0.45.2(@cloudflare/workers-types@4.20260426.1)(@electric-sql/pglite@0.5.8)(@opentelemetry/api@1.9.0)(postgres@3.4.9)
       nuxt:
         specifier: ^4.5.2
-        version: 4.5.2(e6f135e59161a1b0c331aaeb60eb77d8)
+        version: 4.5.2(96ab177cdc02d820ca09f0417ddac4a3)
       nuxt-auth-utils:
         specifier: ^0.5.30
         version: 0.5.30(magic-string@1.2.2)(magicast@0.5.4)(oxc-parser@0.140.0)(rolldown@1.2.1)(unplugin@3.3.0(esbuild@0.28.1)(rolldown@1.2.1)(rollup@4.60.2)(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0)))
@@ -106,23 +106,23 @@ importers:
         version: 4.3.3
       tiptap-extension-code-block-shiki:
         specifier: ^1.2.0
-        version: 1.2.0(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)(shiki@4.4.3)
+        version: 1.2.0(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)(shiki@4.4.3)
       workflow:
-        specifier: 4.8.4
-        version: 4.8.4(@nestjs/common@11.1.19(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@8.1.1))(@nestjs/core@11.1.19(@nestjs/common@11.1.19(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@8.1.1))(reflect-metadata@0.2.2)(rxjs@7.8.2))(@opentelemetry/api@1.9.0)(@swc/cli@0.8.1(@swc/core@1.15.3(@swc/helpers@0.5.21))(chokidar@5.0.0)(supports-color@8.1.1))(@swc/core@1.15.3(@swc/helpers@0.5.21))(@swc/helpers@0.5.21)(magicast@0.5.4)(supports-color@8.1.1)(typescript@6.0.3)
+        specifier: 4.8.5
+        version: 4.8.5(@nestjs/common@11.1.19(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@8.1.1))(@nestjs/core@11.1.19(@nestjs/common@11.1.19(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@8.1.1))(reflect-metadata@0.2.2)(rxjs@7.8.2))(@opentelemetry/api@1.9.0)(@swc/cli@0.8.1(@swc/core@1.15.3(@swc/helpers@0.5.21))(chokidar@5.0.0)(supports-color@8.1.1))(@swc/core@1.15.3(@swc/helpers@0.5.21))(@swc/helpers@0.5.21)(magicast@0.5.4)(supports-color@8.1.1)(typescript@6.0.3)
       zod:
-        specifier: ^4.4.3
-        version: 4.4.3
+        specifier: ^4.5.4
+        version: 4.5.4
     devDependencies:
       '@nuxt/eslint':
         specifier: ^1.17.0
-        version: 1.17.0(@typescript-eslint/utils@8.66.0(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3))(@vue/compiler-sfc@3.5.40)(esbuild@0.28.1)(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1))(magic-string@1.2.2)(magicast@0.5.4)(oxc-parser@0.140.0)(rolldown@1.2.1)(rollup@4.60.2)(srvx@0.11.22)(supports-color@8.1.1)(typescript@6.0.3)(unplugin@3.3.0(esbuild@0.28.1)(rolldown@1.2.1)(rollup@4.60.2)(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0)))(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0))
+        version: 1.17.0(@typescript-eslint/utils@8.66.0(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3))(@vue/compiler-sfc@3.5.40)(esbuild@0.28.1)(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1))(magic-string@1.2.2)(magicast@0.5.4)(oxc-parser@0.140.0)(rolldown@1.2.1)(rollup@4.60.2)(srvx@0.11.22)(supports-color@8.1.1)(typescript@6.0.3)(unplugin@3.3.0(esbuild@0.28.1)(rolldown@1.2.1)(rollup@4.60.2)(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0)))(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0))
       '@types/node':
         specifier: ^25.9.5
         version: 25.9.5
       eslint:
-        specifier: ^10.9.0
-        version: 10.9.0(jiti@2.7.0)(supports-color@8.1.1)
+        specifier: ^10.9.1
+        version: 10.9.1(jiti@2.7.0)(supports-color@8.1.1)
       typescript:
         specifier: ^6.0.3
         version: 6.0.3
@@ -144,14 +144,14 @@ packages:
       bcrypt:
         optional: true
 
-  '@ai-sdk/gateway@3.0.179':
-    resolution: {integrity: sha512-UauCMcauBgcYNljb7RP4HEuUZj3dlk/yz0oOHdhGr3cXoe+uwwN9qwQlLlB2hnajXudSatI2xpPG8LiHPRgwLQ==}
+  '@ai-sdk/gateway@3.0.184':
+    resolution: {integrity: sha512-7SuKsT4RS9lm6ShODj0vzS+S1ZKw5GukA7x3gg3t/gVwk0bu7l3XXC3sdEdBsBlTP97KklMYdZHmjcJoOVt67Q==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
 
-  '@ai-sdk/provider-utils@4.0.46':
-    resolution: {integrity: sha512-tEtld97plCFiYevsJuOkGkeuhQndeMWFBVrJS4AjnbD5AqrNSXRCe0p+BZ3Cju/sxDeeZ9ym3q9YUV8fASA7aQ==}
+  '@ai-sdk/provider-utils@4.0.49':
+    resolution: {integrity: sha512-8e7pd+82bobqrFOaD5dG/PiEuvLYr5olaE3I56ch0jipR0H7sGD6ohwTUynv6k8O8QidWiyIbEsZCtr/2dyXIA==}
     engines: {node: '>=18.17'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
@@ -160,8 +160,8 @@ packages:
     resolution: {integrity: sha512-XeZW1CcDF2GMbH4wejW6xBRI2QCOgnkVYUnxoeDadB1mf85riL2bMUeDoh+6gJ/r4mjNfzUPW8OjLjvwTP0u1Q==}
     engines: {node: '>=18'}
 
-  '@ai-sdk/vue@3.0.264':
-    resolution: {integrity: sha512-VeqHdwbIdjEFHaKqhA7Z8o3vLTsIkKZUy+/oEf4thg5YIQYIlNPUb9vFbncZ+VLR49/Z1NdE6RgmYi6l5P2NeA==}
+  '@ai-sdk/vue@3.0.271':
+    resolution: {integrity: sha512-1j7eC/JZ4FmQ7djr0HfOwOsLR9BiRJdoIMcMyQfkrLxVSNeg9MFKpCuDmXJ3rs9/WK0cL/IZ1frzSodeC1xJHA==}
     engines: {node: '>=18'}
     peerDependencies:
       vue: ^3.3.4
@@ -884,8 +884,8 @@ packages:
   '@dxup/unimport@0.1.2':
     resolution: {integrity: sha512-/B8YJGPzaYq1NbsQmwgP8EZqg40NpTw4ZB3suuI0TplbxKHeK94jeaawLmVhCv+YwUnOpiWEz9U6SeThku/8JQ==}
 
-  '@electric-sql/pglite@0.5.6':
-    resolution: {integrity: sha512-ipn6AOHouIRwNSVL+0hIRuM3yDwAWgRmvZuj+45sudzKpmdPbG8hQuQDZ4A8l7U8E0l7u6pJ/VtMEW42w+vEKQ==}
+  '@electric-sql/pglite@0.5.8':
+    resolution: {integrity: sha512-n9tsbUOhwx2epK1V0ZG9Ar4SHWUju04dhmzZXiSBXwBoleOvIfals33NAaWgagQVAL4Rbvx/Ptsu3P+pA09f6Q==}
 
   '@emnapi/core@1.10.0':
     resolution: {integrity: sha512-yq6OkJ4p82CAfPl0u9mQebQHKPJkY7WrIuk205cTYnYe+k2Z8YBh11FrbRG/H6ihirqcacOgl2BIO8oyMQLeXw==}
@@ -1655,11 +1655,11 @@ packages:
     resolution: {integrity: sha512-bV0Tgo9K4hfPCek+aMAn81RppFKv2ySDQeMoSZuvTASywNTnVJCArCZE2FWqpvIatKu7VMRLWlR1EazvVhDyhQ==}
     engines: {node: '>=18.18'}
 
-  '@iconify-json/lucide@1.2.125':
-    resolution: {integrity: sha512-tOCk1QKMtKnCfPAgZRHgjRkQTP7wF5IO+iPKvvp8vxGZYPkSLhx4HTV3Ng0pIZ3wNWrS6kVpHkunJ1dc19L1og==}
+  '@iconify-json/lucide@1.2.127':
+    resolution: {integrity: sha512-7KuCCpkly00kefna4wEnCr8l2HFRkbn4mD4zRib8wCSbrBmnR/l57ExpU6j5jv/Bo+qHpWuHpDtcqceQ0ptArw==}
 
-  '@iconify-json/simple-icons@1.2.93':
-    resolution: {integrity: sha512-/XhANjfGYOuqvSR3TmUnkQkINvQ4GVjVuukvymRbxtVFBvIq/yiXJqCDycKcQPT401OYT9H2vIY6ihAlz1QIAw==}
+  '@iconify-json/simple-icons@1.2.94':
+    resolution: {integrity: sha512-l8UWzVxKaqZd9ABsE/M/9p6NyGkQnmCnOoZyhQmjlXCtY5PuL2rcWxOFk2l9pk7ux3ERMPkTLE4jl6kQpTkwxA==}
 
   '@iconify/collections@1.0.727':
     resolution: {integrity: sha512-n+ipAqz5A6TWExnndwdT6qVX7KfXiw5GNDSxO2otXs6rxFWdHqizHTW1WvmWmT6m2BqQ8lhzUyWSJvm4M3nMAg==}
@@ -3371,10 +3371,10 @@ packages:
     peerDependencies:
       vue: ^2.7.0 || ^3.0.0
 
-  '@tiptap/core@3.30.2':
-    resolution: {integrity: sha512-QbZC/s1OOqcoUdkhIY16TjR/gCtR0qAk9e4bJwUqOJqZuv5ozqCL5hzWm22jjTPp6c6Ei2tPd6t30VwfIKW4lQ==}
+  '@tiptap/core@3.30.5':
+    resolution: {integrity: sha512-3O7N0FyKIfuLV+xrdWyDM3V5eUY/q2CgLjhhMwOAbM1Pu7VPp9VP+TpEYOdH8aRyB+h1vj5hX5A747D8ZrPfHA==}
     peerDependencies:
-      '@tiptap/pm': 3.30.2
+      '@tiptap/pm': 3.30.5
 
   '@tiptap/extension-blockquote@3.24.0':
     resolution: {integrity: sha512-DgwEEJ1GbDQcT054ynxoaZGmB9apGeUklPrinq9o6xdLHpdg+bO9HCQzggdB8n21VLLglb8jfAEWsVNwh3eASQ==}
@@ -3386,11 +3386,11 @@ packages:
     peerDependencies:
       '@tiptap/core': 3.24.0
 
-  '@tiptap/extension-bubble-menu@3.30.2':
-    resolution: {integrity: sha512-oS0WiWNXHKpiPYMkcnHm1j7iEvufTGGtLFtcJJd3olb5OS6V2acoXVDL0nNJDmRQ32K3QXut3fbRcMseMxT+lw==}
+  '@tiptap/extension-bubble-menu@3.30.5':
+    resolution: {integrity: sha512-redcmBInVwmipjF/WEVcNwCUJgJygUv8leidfRb/jBSAwx7GgnQWPr2HVQDk9zeTt3ykWld2NRdrk94Crjymow==}
     peerDependencies:
-      '@tiptap/core': 3.30.2
-      '@tiptap/pm': 3.30.2
+      '@tiptap/core': 3.30.5
+      '@tiptap/pm': 3.30.5
 
   '@tiptap/extension-bullet-list@3.24.0':
     resolution: {integrity: sha512-IOpAm5c4XVVVvkOef+V9XYMVpea+3MgBpCQgn83UQRlwO9eIMwmcyxOznu7gQPQVShTEpkt4T6uK+ZN9o8meIA==}
@@ -3416,12 +3416,12 @@ packages:
       '@tiptap/y-tiptap': ^3.0.4
       yjs: ^13
 
-  '@tiptap/extension-details@3.30.2':
-    resolution: {integrity: sha512-TItNBcvwycW5Bpe+SH7bCYeBvMDmLvzsoY8uOn8PoJ/Chls6Wl+t89QWKo0bU5i7Tt1gdgMoTngb+WXpjP0fhQ==}
+  '@tiptap/extension-details@3.30.5':
+    resolution: {integrity: sha512-HV4k40xsLLxu30yZ+A9I9ybt+IBkYgOyrOKQUFCuCxR//O/b4ejMTTxwMPd3TPi4+3arDF0xuPp5u37ouJXGEw==}
     peerDependencies:
-      '@tiptap/core': 3.30.2
-      '@tiptap/extension-text-style': 3.30.2
-      '@tiptap/pm': 3.30.2
+      '@tiptap/core': 3.30.5
+      '@tiptap/extension-text-style': 3.30.5
+      '@tiptap/pm': 3.30.5
 
   '@tiptap/extension-document@3.24.0':
     resolution: {integrity: sha512-yxgM3+yXy2XZzEwH43y2Kp8D1BkblxEWLXqo0YCoAKtxyKCcEaT8kdlf70kS7D0+VSzYU4D0iN7VdQIYHcL2mA==}
@@ -3450,19 +3450,19 @@ packages:
     peerDependencies:
       '@tiptap/extensions': 3.24.0
 
-  '@tiptap/extension-emoji@3.30.2':
-    resolution: {integrity: sha512-rNjhWk/Xaz1+GQ6+k9KhoBDAHA4420o7fjTE9prnCDeml+OISH//LD+Loz38y3AaYy+gXaZjgHa4y/E5W7NMiw==}
+  '@tiptap/extension-emoji@3.30.5':
+    resolution: {integrity: sha512-zvxlczHm/OQTSo7+xNZSRdxCg5C82pJ1O0MGvE2j0jhF2L3BkzVH3TqRm8mHO7W6vLVha8Ym/Ep4Mll0bR4etg==}
     peerDependencies:
-      '@tiptap/core': 3.30.2
-      '@tiptap/pm': 3.30.2
-      '@tiptap/suggestion': 3.30.2
+      '@tiptap/core': 3.30.5
+      '@tiptap/pm': 3.30.5
+      '@tiptap/suggestion': 3.30.5
 
-  '@tiptap/extension-floating-menu@3.30.2':
-    resolution: {integrity: sha512-A8PLvvh8W6PUMrqh+EpBerxm+Ucr0irGxJvwAnzYQmNGNIJ9U4OVgw4OcEU+9JH0gMmEzDcHzMPP2s/s1lIcyw==}
+  '@tiptap/extension-floating-menu@3.30.5':
+    resolution: {integrity: sha512-gTjGPWUpGn8IoW533TciZJZC/81LmBgU7zee+aRMRF3ix3K2z1pJjl6knDvrRQA6Kom+yWFaiueqGNXkrk38XQ==}
     peerDependencies:
       '@floating-ui/dom': ^1.0.0
-      '@tiptap/core': 3.30.2
-      '@tiptap/pm': 3.30.2
+      '@tiptap/core': 3.30.5
+      '@tiptap/pm': 3.30.5
 
   '@tiptap/extension-gapcursor@3.24.0':
     resolution: {integrity: sha512-CzCP5/jni5RFwW9jCfBO6auh83GbaioMTpSk6tyR3sd+CbwlBcUdsJFGJkbaRdiSS9dgIyi+6hRbhjpYdHcp+w==}
@@ -3511,18 +3511,18 @@ packages:
     peerDependencies:
       '@tiptap/extension-list': 3.24.0
 
-  '@tiptap/extension-list@3.30.2':
-    resolution: {integrity: sha512-MIUpo1Bd9Rf1Qg+TNYNwDZ4xsfFeQahjU9Xhy6UcaszKQzbAM7KCzn5BObNytK1NdcqNHsC8Wj5vFvMKEzrXdw==}
+  '@tiptap/extension-list@3.30.5':
+    resolution: {integrity: sha512-CHThihH+7TA0TfwtmA+eTXP1MAsA/+p011olJHg8Rilj5xA+L+0IFkjhN16JnZkBgSA4MnfEv15UMNfRaNpuVg==}
     peerDependencies:
-      '@tiptap/core': 3.30.2
-      '@tiptap/pm': 3.30.2
+      '@tiptap/core': 3.30.5
+      '@tiptap/pm': 3.30.5
 
-  '@tiptap/extension-mention@3.30.2':
-    resolution: {integrity: sha512-x3W9+p5G0Ex/QrQPgfC8Cy+rwr6wrXmizdrwMpslfvpEJZmlgHEBd5LntqKGztI21X9QldIge2by0005D7A6iA==}
+  '@tiptap/extension-mention@3.30.5':
+    resolution: {integrity: sha512-UFLZbue+GanPQgdDFbLWKnzd+ivWSSsfaFQGI2jj5jS6SNaMk0yAr5djiAmZEDMVfP3HmHpDwim9ZGzShYQPiQ==}
     peerDependencies:
-      '@tiptap/core': 3.30.2
-      '@tiptap/pm': 3.30.2
-      '@tiptap/suggestion': 3.30.2
+      '@tiptap/core': 3.30.5
+      '@tiptap/pm': 3.30.5
+      '@tiptap/suggestion': 3.30.5
 
   '@tiptap/extension-node-range@3.24.0':
     resolution: {integrity: sha512-JUrhuKD5raii6IsARETNq3seAXUB9UpQGjeSJKBKBOv10PBAq0RLKlI0lbv7t9FR4vfZE7is/XpvoZ0v2Vr9kw==}
@@ -3550,16 +3550,16 @@ packages:
     peerDependencies:
       '@tiptap/core': 3.24.0
 
-  '@tiptap/extension-table@3.30.2':
-    resolution: {integrity: sha512-zWp0ehZnx6N5lwRa8anSTn17GBEF3wxHXfOJGbBugf4Vwmp5keUEAXrgeIS4j7gIdxjN3XawdwjuMImG93N+Fg==}
+  '@tiptap/extension-table@3.30.5':
+    resolution: {integrity: sha512-CToc47md2H3ioKhlcfX8eo/6+75Y/d5IK1P+szxOcjm8z8cDoalaYp0zlrZiE5tVhwZxHJ1Luq9OZVOBVW9j7g==}
     peerDependencies:
-      '@tiptap/core': 3.30.2
-      '@tiptap/pm': 3.30.2
+      '@tiptap/core': 3.30.5
+      '@tiptap/pm': 3.30.5
 
-  '@tiptap/extension-text-style@3.30.2':
-    resolution: {integrity: sha512-o3YMN3JNHg/rCCLZB3PUcAfl4bkrsXDoYoHRXvrbE9cl/RT+qAEFAAssI8kBC1fp9en9V2F4Z7Uy2uuzkbecKw==}
+  '@tiptap/extension-text-style@3.30.5':
+    resolution: {integrity: sha512-libXk+nSBOQmUiKneMegnipSVz7n/YfCuSVUxXn4LjAdD9zdpWgH2uBXbxo2q211dA7KxJyUhkPGoCpG0RmPQA==}
     peerDependencies:
-      '@tiptap/core': 3.30.2
+      '@tiptap/core': 3.30.5
 
   '@tiptap/extension-text@3.24.0':
     resolution: {integrity: sha512-Im7keLPEihxm3+LyF+drYCoaOY5hlq35lvHAp/el6M8pJ/scts88HrYpdR1Yc4BtpZBIhfHSyWgPaupI4qwdeg==}
@@ -3583,25 +3583,25 @@ packages:
       '@tiptap/core': 3.24.0
       '@tiptap/pm': 3.24.0
 
-  '@tiptap/pm@3.30.2':
-    resolution: {integrity: sha512-BJN8tUx4ppFN3R3cV/FJfrJbJkvo1lj4uciq+nwpjwzdRvFzqIuglWf+HLcJ6CwlYpLOHp7ArgkBg4Q5e60Gog==}
+  '@tiptap/pm@3.30.5':
+    resolution: {integrity: sha512-gufkLkW2tA6PZPjivYxDiGzTIIftwqhmYI6lvvKu2S4FbhcysJgMAe/GXVSywzCRVVex9SrvCe6RFYrqnwRitQ==}
 
   '@tiptap/starter-kit@3.24.0':
     resolution: {integrity: sha512-Ef4PCP96vcY2GonXN9J0M8iC6zvxPTmQlL/QZiCwuYqqnH/hNpYIjNSQdTndiDpxRKofa32Sr2HWktgEnL32Bg==}
 
-  '@tiptap/suggestion@3.30.2':
-    resolution: {integrity: sha512-qsQv+rlh5ik9G1n+SGLak69JoLQAFwdtQRjGpABYxx5USc14J7hrR1K8sj9tnWymX1fKXfJOlz+Dimcb1kDhWA==}
+  '@tiptap/suggestion@3.30.5':
+    resolution: {integrity: sha512-kXlsY2GyXlVpYKp6uSedvvfACC4Phd0I8/Gp1/7ts8fYLlkVfGco6kgqOKHxT6HcUF1pGshxkDh9lfRCakkQEA==}
     peerDependencies:
       '@floating-ui/dom': ^1.0.0
-      '@tiptap/core': 3.30.2
-      '@tiptap/pm': 3.30.2
+      '@tiptap/core': 3.30.5
+      '@tiptap/pm': 3.30.5
 
-  '@tiptap/vue-3@3.30.2':
-    resolution: {integrity: sha512-7TCahsK19ChY60FvgseTuzaz67yR1tkzTbKW6s3iXx9NTiU411C6WEQAS/EtPt4dsGDv/esFjSc9EMKilRhY5g==}
+  '@tiptap/vue-3@3.30.5':
+    resolution: {integrity: sha512-YRHacQy09nFcokAScICxJ6pWr5daWbsLJuBiMo+DJQlr1XLi6o/zFhh3eR9+DKluL4OY3IZDYBYZfDs7YZtJNg==}
     peerDependencies:
       '@floating-ui/dom': ^1.0.0
-      '@tiptap/core': 3.30.2
-      '@tiptap/pm': 3.30.2
+      '@tiptap/core': 3.30.5
+      '@tiptap/pm': 3.30.5
       vue: ^3.0.0
 
   '@tiptap/y-tiptap@3.0.7':
@@ -4312,18 +4312,18 @@ packages:
     peerDependencies:
       vue: ^3.5.0
 
-  '@workflow/astro@4.0.19':
-    resolution: {integrity: sha512-Ep1jLR061wOFfTHHP+LvrWR9XQHpi7coXjIDw+161fFBd4SVpc/UXXNdqdlBdhI5EJgy7WtcHE4QytvvXJjzQA==}
+  '@workflow/astro@4.0.20':
+    resolution: {integrity: sha512-62xI6J7Nkipk+Xean85DO4KrDxvF8rQT7Zd/oQhAnjhaTJrGnuqK2NrWhDFyCPRfTkTn4t2YjBo9mYn+QpW6qw==}
 
-  '@workflow/builders@4.1.9':
-    resolution: {integrity: sha512-1i/CJMINcHm98WOrHt3O2R/mClNRXW9UPz79d3xpnHtCl6cKkb7wuS7DlK6YietuTupd0DxrDL/smPt6ONZQeg==}
+  '@workflow/builders@4.1.10':
+    resolution: {integrity: sha512-KxzCqO/P2GdF1KUI5E0S1bebEiIBOIGofnB0s1lqL40DNeuVUcb3RmzNrT1DWIduWD+5RldcBzMx9uHYpk/MeQ==}
 
-  '@workflow/cli@4.3.8':
-    resolution: {integrity: sha512-YF68vDAuVwDrJtjNgjvn08a8JDp1CcnFS0weRj097AZSpCx38MzXev1nOYuVhP+emmB14YhYv83+9CBemm5gSg==}
+  '@workflow/cli@4.3.9':
+    resolution: {integrity: sha512-GP9OvJ/xmUun3kXDeNBRGCDIfJpDXqJDesvPvNkEW5lA69JyJkFsixJC6HzcCOlR7RaF7dahzqp33gjb1iaE6Q==}
     hasBin: true
 
-  '@workflow/core@4.8.4':
-    resolution: {integrity: sha512-9Hz/klReyHETyENHQ9EBIbRqGhAaQHovOmvE3O091QuO3RBzwaVQzOwhv50335/WVEKgfGJkUFd+ZUn1D6nB1A==}
+  '@workflow/core@4.8.5':
+    resolution: {integrity: sha512-dzlYb4twXJo+wSBzFGJqWPcAl5pi+LFfrDQL9njp0ktQgr1pN+ZYEEXKYj91/7iMcMQekPmwdu3m8J8QOSZ9Gw==}
     peerDependencies:
       '@opentelemetry/api': '1'
     peerDependenciesMeta:
@@ -4333,8 +4333,8 @@ packages:
   '@workflow/errors@4.2.1':
     resolution: {integrity: sha512-gIe3vf2POUw2DV4Mi6BGiYGQdUZ4YMcWhDahVT9xI1W1NSsqifX73Hvk/68x/haPnDOr7/VnWN8/YAgeEVYE4A==}
 
-  '@workflow/nest@4.0.20':
-    resolution: {integrity: sha512-nz9+8q6FnZm2Ym3NGY8gIB1jfC3hJU9iGoso1HnUuUsAPSYFr6a8mMG/6RjzJm2MeSe/X6suYW2NTyqbZ2UkgA==}
+  '@workflow/nest@4.0.21':
+    resolution: {integrity: sha512-RV09im0C2DRpITU93mxiV7cXcC/gvB4n87M7UNk1WYwvVFax6XYSV/yytv+pr0SAq/618lvp9XfZbB87eZzBqA==}
     hasBin: true
     peerDependencies:
       '@nestjs/common': '>=10.0.0'
@@ -4342,28 +4342,28 @@ packages:
       '@swc/cli': '>=0.4.0'
       '@swc/core': '>=1.5.0'
 
-  '@workflow/next@4.1.8':
-    resolution: {integrity: sha512-Ku7n+B4fc0S7gS0E5xLncyJ5oxYqouLR2ec1heZX6QZec7M+VU78IVSpHyzh2YJoNrkqqKqKNkkDTavSLLqqsA==}
+  '@workflow/next@4.1.9':
+    resolution: {integrity: sha512-YYOzQS80XQ0HkJ/lbWaNKoWnauutXxl6b2ZLIAdQGwzyyqBa2uFow56+j6BPgbXzoQGfj5jjIFvbyezPtYmbZw==}
     peerDependencies:
       next: '>13'
     peerDependenciesMeta:
       next:
         optional: true
 
-  '@workflow/nitro@4.1.10':
-    resolution: {integrity: sha512-s5Fhn3SPluCNXif+lzuvRKnNrYBkKT8cSRfr2PzhSaa/PBu8dGJ+zVMnoSKDlD5UkhJKVh8ALLbH6sPY5wo4JA==}
+  '@workflow/nitro@4.1.11':
+    resolution: {integrity: sha512-dqW7wpmmKV0C+mriqpG3QIXdWLilxlcqW29fnrVXgtrQdrtUuoVwFC9X1mz120vCX+ieVQshiolTF7q1SIOI3w==}
 
-  '@workflow/nuxt@4.0.20':
-    resolution: {integrity: sha512-fVXLkhmlcazZV/IJI1Hn0hfokIfgqZOwqRuChZFE3kS8Zqrb2kQzEmpDqigzI0bH6a+WXzgx9+g4tUAWFNFDWw==}
+  '@workflow/nuxt@4.0.21':
+    resolution: {integrity: sha512-V9WwPYDlVgoNvtI1ERqzEHKA6bxrShntO6f9WNKCFVsYMAfOHyU3kn/tscMj9GDx9PJ2OuI0Q42wJtexeHkwpA==}
 
-  '@workflow/rollup@4.0.19':
-    resolution: {integrity: sha512-2UJ4tWoL4WkNEmfECPoeeKYV27NiHMTI7awi0Ty8GQOyvOrklRcTh+kJhkaOIGdE1HJmmFIQgzbmHOCP7lLKDg==}
+  '@workflow/rollup@4.0.20':
+    resolution: {integrity: sha512-Ph9hgxhEkEl1e/LI8jhu/OvbUjlrFy7C7E9gqwKfK2jN7hNNRN6l2dKQGFsn7dQY7Yx7GvFKV/asNVejJ6g5pw==}
 
   '@workflow/serde@4.1.2':
     resolution: {integrity: sha512-KkkSUddEcaIvW7/QfVUk2PR93117HkDum45cXQEGkoxEmHOmqfOLJ4T1m4a1QABVC7O9TIqPxsBtDPgKIO+LOw==}
 
-  '@workflow/sveltekit@4.0.19':
-    resolution: {integrity: sha512-llt1kqfrHoy/ADmjDVUVoH/IaYkS3wlfwoNOl982Vzt8H5iWQPdkzJM1wGTyVmTl8VoIoh14sHozvIqtlWoj5Q==}
+  '@workflow/sveltekit@4.0.20':
+    resolution: {integrity: sha512-StHhsl2FOkLKN866R8uGcFb5Hq+tJiMECXaenjwJnoTKWm1IcI48C0KflOzhRtktL4/zUcZG28JoBJ+o0okPvA==}
 
   '@workflow/swc-plugin@4.1.2':
     resolution: {integrity: sha512-oSd+fSXtcrHMJ82OwEqyfhYpqr1EsSQY5IEpntkKSlzzkdTFV4hcAj0vlafgIfI3WfhqxrXUoHfp/S1XE49jcA==}
@@ -4378,30 +4378,30 @@ packages:
   '@workflow/utils@4.1.4':
     resolution: {integrity: sha512-2zGTa0vCJJczErE8oI7JPKpGmXNbhgnGW7JWcz3qTTs5TKibtaAxha5DLq3WTTbwsgvuuxcnvtWqQ5hFxhWATg==}
 
-  '@workflow/vite@4.0.19':
-    resolution: {integrity: sha512-2CB7frgRlAA+ThN5FBrevIAiWy58z9NEIudj/yD5nwh6nJpsSpEPIs+TFLj6Q0VQDvNSWVHv9K8ujWIUOpGBsA==}
+  '@workflow/vite@4.0.20':
+    resolution: {integrity: sha512-vZSrH5jA4lOXywy9bBFw7t3/h2zjcMgQDImgZAWs0Fk11D5slx2LAVnO//QJkAfCVYqplxToJ1TRp67FdNsofA==}
 
-  '@workflow/web@4.1.20':
-    resolution: {integrity: sha512-HE1pMgczwnSau2kWChnizovieihmihpnJJfVg/vStnMMz3qfawRMhRMj6HzfiLN9G6AnKp1mgCfrhO1va9gMjw==}
+  '@workflow/web@4.1.21':
+    resolution: {integrity: sha512-kkCL09AC5DDA9MJyxF+Rt0LddxrrunQNn36jDb4xJyb3xtOu//0+HDDdRvhgvygZd2RZXMqNerBOJE3xLgxf4g==}
 
-  '@workflow/world-local@4.3.0':
-    resolution: {integrity: sha512-L5FGVcGUxMKiH2KhXnmyPHqjHc4kucVs737hXzBzXDZ49H+/9ccD/Phq9gl8w2C1OtpEW3h2sjuv/Ef8CZBMZA==}
+  '@workflow/world-local@4.4.0':
+    resolution: {integrity: sha512-9sLEXU0Eom2TJQMPtrGAyjvv/7M3QGxmTIRXUmZwBhHSOrS+a1IfjoY41X8FE+gW1KRJJV7eoZ7IxY7VXZLcig==}
     peerDependencies:
       '@opentelemetry/api': '1'
     peerDependenciesMeta:
       '@opentelemetry/api':
         optional: true
 
-  '@workflow/world-vercel@4.7.0':
-    resolution: {integrity: sha512-+XP4J0e0YsDhHCRV+BwXv5Wn52LLtuuOF4wCf7GmB3dy0S5VQBg6csSmRBoL5iRCEXbdLlCYcCXjD/SXcIuBsw==}
+  '@workflow/world-vercel@4.7.1':
+    resolution: {integrity: sha512-zOcs64pIbUExUSJqdSUUZQOFTNhwX0UCGoUsgbmYY/YzSe99r3yxnMO3Tlh19LRwa/PMAkXTzOzAEYhCoWYaOg==}
     peerDependencies:
       '@opentelemetry/api': '1'
     peerDependenciesMeta:
       '@opentelemetry/api':
         optional: true
 
-  '@workflow/world@4.4.0':
-    resolution: {integrity: sha512-rlq2qr0VFWG3YYqMpD9k95Tz5h5zqr24Bg8PheZ+rJgkgWZBXWLHS5BkiTA7K3l58NC8M78qkMGakU2/gb3Aag==}
+  '@workflow/world@4.5.0':
+    resolution: {integrity: sha512-ubKnoyxEL9s9GbnUZAeoLFEPQ/GnsFU91GMeUlOMs9q/HEEQQiFUpNhff0Jv0OrrVLFBMkM4L1Xf6qLSOvFcfw==}
 
   '@xhmikosr/archive-type@8.0.1':
     resolution: {integrity: sha512-toXuiWChyfOpEiCPsIw6HGHaNji5LVkvB6EREL548vGWr+hGaehwxG4LzN20vm9aGFXwnA/Jty8yW2/SmV+1zQ==}
@@ -4474,8 +4474,8 @@ packages:
     resolution: {integrity: sha512-MnA+YT8fwfJPgBx3m60MNqakm30XOkyIoH1y6huTQvC0PwZG7ki8NacLBcrPbNoo8vEZy7Jpuk7+jMO+CUovTQ==}
     engines: {node: '>= 14'}
 
-  ai@6.0.264:
-    resolution: {integrity: sha512-te59gArDNXoQYWuOkZNdM7n3McETAPWFuwT/iKWRJXySV/doIuKm8Az4X6IOalaGp3K8zqGT/ICn08z5ZZNDuw==}
+  ai@6.0.271:
+    resolution: {integrity: sha512-8eS5Lhf5JT/ncw8+puVOa2cH+H6uKnHoORLqm6Ei3elwcoGIROrIh0VWhrKgbYLGpuz2pOTXW54nAJzPssQzAw==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
@@ -5843,8 +5843,8 @@ packages:
     resolution: {integrity: sha512-tD40eHxA35h0PEIZNeIjkHoDR4YjjJp34biM0mDvplBe//mB+IHCqHDGV7pxF+7MklTvighcCPPZC7ynWyjdTA==}
     engines: {node: ^20.19.0 || ^22.13.0 || >=24}
 
-  eslint@10.9.0:
-    resolution: {integrity: sha512-5KeEOJZBfEVA47boFiBsf+6MmmJpffM7qEBg4pLla2e4nlKgdKlqCW0oSLOGsT8Wl5uCGJptLV1bkaiShj90Gw==}
+  eslint@10.9.1:
+    resolution: {integrity: sha512-9VaAkDURekixUQJy0oJYl2DcN6oKMfxay7XzaGYAWQwsb6qfKf+x76R2k1L8kb1boc+FyCAaTA9GmiKaaiaF+A==}
     engines: {node: ^20.19.0 || ^22.13.0 || >=24}
     hasBin: true
     peerDependencies:
@@ -9466,8 +9466,8 @@ packages:
   workbox-window@7.4.0:
     resolution: {integrity: sha512-/bIYdBLAVsNR3v7gYGaV4pQW3M3kEPx5E8vDxGvxo6khTrGtSSCS7QiFKv9ogzBgZiy0OXLP9zO28U/1nF1mfw==}
 
-  workflow@4.8.4:
-    resolution: {integrity: sha512-WYX9I+Qwqs4PGD4psPWLJ5Ne7+AuFCokPtg+PKW9GKXvpYo3PtCHTa4r4GBCDFaoZLEDLI80MeYXe8GmzTIm8g==}
+  workflow@4.8.5:
+    resolution: {integrity: sha512-EuXVZXa0ZbPgzJdtQZ3Ut/3LcH+SkUsgn0yVIgezVtVyJyX7iJN/HKXdooOCmfNgzQ781MaAm/ucNZaunY4ZMg==}
     hasBin: true
     peerDependencies:
       '@opentelemetry/api': '1'
@@ -9599,8 +9599,8 @@ packages:
   zod@4.3.6:
     resolution: {integrity: sha512-rftlrkhHZOcjDwkGlnUtZZkvaPHCsDATp4pGpuOOMDaTdDDXF91wuVDJoWoPsKX/3YPQ5fHuF3STjcYyKr+Qhg==}
 
-  zod@4.4.3:
-    resolution: {integrity: sha512-ytENFjIJFl2UwYglde2jchW2Hwm4GJFLDiSXWdTrJQBIN9Fcyp7n4DhxJEiWNAJMV1/BqWfW/kkg71UDcHJyTQ==}
+  zod@4.5.4:
+    resolution: {integrity: sha512-sC95tT5iHHH9gtpj6A81kh+NEaRAUFN+qlUPDUbRfOMvNf5QCBqsb3WgvnpVtK5Y+4UfA6KqufotuTvMGiTlsA==}
 
   zwitch@2.0.4:
     resolution: {integrity: sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A==}
@@ -9612,29 +9612,29 @@ snapshots:
       '@phc/format': 1.0.0
       '@poppinss/utils': 6.10.1
 
-  '@ai-sdk/gateway@3.0.179(zod@4.4.3)':
+  '@ai-sdk/gateway@3.0.184(zod@4.5.4)':
     dependencies:
       '@ai-sdk/provider': 3.0.15
-      '@ai-sdk/provider-utils': 4.0.46(zod@4.4.3)
+      '@ai-sdk/provider-utils': 4.0.49(zod@4.5.4)
       '@vercel/oidc': 3.2.0
-      zod: 4.4.3
+      zod: 4.5.4
 
-  '@ai-sdk/provider-utils@4.0.46(zod@4.4.3)':
+  '@ai-sdk/provider-utils@4.0.49(zod@4.5.4)':
     dependencies:
       '@ai-sdk/provider': 3.0.15
       '@standard-schema/spec': 1.1.0
       eventsource-parser: 3.0.8
       undici: 6.28.0
-      zod: 4.4.3
+      zod: 4.5.4
 
   '@ai-sdk/provider@3.0.15':
     dependencies:
       json-schema: 0.4.0
 
-  '@ai-sdk/vue@3.0.264(vue@3.5.40(typescript@6.0.3))(zod@4.4.3)':
+  '@ai-sdk/vue@3.0.271(vue@3.5.40(typescript@6.0.3))(zod@4.5.4)':
     dependencies:
-      '@ai-sdk/provider-utils': 4.0.46(zod@4.4.3)
-      ai: 6.0.264(zod@4.4.3)
+      '@ai-sdk/provider-utils': 4.0.49(zod@4.5.4)
+      ai: 6.0.271(zod@4.5.4)
       swrv: 1.2.0(vue@3.5.40(typescript@6.0.3))
       vue: 3.5.40(typescript@6.0.3)
     transitivePeerDependencies:
@@ -10496,12 +10496,12 @@ snapshots:
 
   '@colordx/core@5.4.3': {}
 
-  '@comark/nuxt@0.6.2(magic-string@1.2.2)(magicast@0.5.4)(nuxt@4.5.2(e6f135e59161a1b0c331aaeb60eb77d8))(oxc-parser@0.140.0)(rolldown@1.2.1)(shiki@4.4.3)(unplugin@3.3.0(esbuild@0.28.1)(rolldown@1.2.1)(rollup@4.60.2)(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0)))(vue@3.5.40(typescript@6.0.3))':
+  '@comark/nuxt@0.6.2(magic-string@1.2.2)(magicast@0.5.4)(nuxt@4.5.2(96ab177cdc02d820ca09f0417ddac4a3))(oxc-parser@0.140.0)(rolldown@1.2.1)(shiki@4.4.3)(unplugin@3.3.0(esbuild@0.28.1)(rolldown@1.2.1)(rollup@4.60.2)(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0)))(vue@3.5.40(typescript@6.0.3))':
     dependencies:
       '@comark/vue': 0.6.2(shiki@4.4.3)(vue@3.5.40(typescript@6.0.3))
       '@nuxt/kit': 4.5.2(magic-string@1.2.2)(magicast@0.5.4)(oxc-parser@0.140.0)(rolldown@1.2.1)(unplugin@3.3.0(esbuild@0.28.1)(rolldown@1.2.1)(rollup@4.60.2)(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0)))
       comark: 0.6.2(shiki@4.4.3)
-      nuxt: 4.5.2(e6f135e59161a1b0c331aaeb60eb77d8)
+      nuxt: 4.5.2(96ab177cdc02d820ca09f0417ddac4a3)
     transitivePeerDependencies:
       - beautiful-mermaid
       - katex
@@ -10537,10 +10537,10 @@ snapshots:
 
   '@devframes/json-render@0.7.15(@devframes/hub@0.7.15(devframe@0.7.15(cac@7.0.0)(srvx@0.11.22)(typescript@6.0.3)))(devframe@0.7.15(cac@7.0.0)(srvx@0.11.22)(typescript@6.0.3))':
     dependencies:
-      '@json-render/core': 0.19.0(zod@4.4.3)
+      '@json-render/core': 0.19.0(zod@4.5.4)
       devframe: 0.7.15(cac@7.0.0)(srvx@0.11.22)(typescript@6.0.3)
       nostics: 1.2.0
-      zod: 4.4.3
+      zod: 4.5.4
     optionalDependencies:
       '@devframes/hub': 0.7.15(devframe@0.7.15(cac@7.0.0)(srvx@0.11.22)(typescript@6.0.3))
     optional: true
@@ -10573,7 +10573,7 @@ snapshots:
 
   '@dxup/unimport@0.1.2': {}
 
-  '@electric-sql/pglite@0.5.6': {}
+  '@electric-sql/pglite@0.5.8': {}
 
   '@emnapi/core@1.10.0':
     dependencies:
@@ -10997,18 +10997,18 @@ snapshots:
   '@esbuild/win32-x64@0.28.1':
     optional: true
 
-  '@eslint-community/eslint-utils@4.9.1(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1))':
+  '@eslint-community/eslint-utils@4.9.1(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1))':
     dependencies:
-      eslint: 10.9.0(jiti@2.7.0)(supports-color@8.1.1)
+      eslint: 10.9.1(jiti@2.7.0)(supports-color@8.1.1)
       eslint-visitor-keys: 3.4.3
 
   '@eslint-community/regexpp@4.12.2': {}
 
-  '@eslint/compat@2.0.5(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1))':
+  '@eslint/compat@2.0.5(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1))':
     dependencies:
       '@eslint/core': 1.2.1
     optionalDependencies:
-      eslint: 10.9.0(jiti@2.7.0)(supports-color@8.1.1)
+      eslint: 10.9.1(jiti@2.7.0)(supports-color@8.1.1)
 
   '@eslint/config-array@0.23.5(supports-color@8.1.1)':
     dependencies:
@@ -11026,13 +11026,13 @@ snapshots:
     dependencies:
       '@eslint/core': 1.2.1
 
-  '@eslint/config-inspector@3.2.0(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1))(srvx@0.11.22)':
+  '@eslint/config-inspector@3.2.0(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1))(srvx@0.11.22)':
     dependencies:
       ansis: 4.3.1
       cac: 7.0.0
       chokidar: 5.0.0
       devframe: 0.8.2(cac@7.0.0)(srvx@0.11.22)
-      eslint: 10.9.0(jiti@2.7.0)(supports-color@8.1.1)
+      eslint: 10.9.1(jiti@2.7.0)(supports-color@8.1.1)
       jiti: 2.7.0
       tinyglobby: 0.2.17
     transitivePeerDependencies:
@@ -11049,9 +11049,9 @@ snapshots:
       mdn-data: 2.29.0
       source-map-js: 1.2.1
 
-  '@eslint/js@10.0.1(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1))':
+  '@eslint/js@10.0.1(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1))':
     optionalDependencies:
-      eslint: 10.9.0(jiti@2.7.0)(supports-color@8.1.1)
+      eslint: 10.9.1(jiti@2.7.0)(supports-color@8.1.1)
 
   '@eslint/object-schema@3.0.5': {}
 
@@ -11096,11 +11096,11 @@ snapshots:
 
   '@humanwhocodes/retry@0.4.3': {}
 
-  '@iconify-json/lucide@1.2.125':
+  '@iconify-json/lucide@1.2.127':
     dependencies:
       '@iconify/types': 2.0.0
 
-  '@iconify-json/simple-icons@1.2.93':
+  '@iconify-json/simple-icons@1.2.94':
     dependencies:
       '@iconify/types': 2.0.0
 
@@ -11170,9 +11170,9 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
 
-  '@json-render/core@0.19.0(zod@4.4.3)':
+  '@json-render/core@0.19.0(zod@4.5.4)':
     dependencies:
-      zod: 4.4.3
+      zod: 4.5.4
     optional: true
 
   '@juggle/resize-observer@3.4.0': {}
@@ -11424,7 +11424,7 @@ snapshots:
       pkg-types: 2.3.1
       semver: 7.8.5
 
-  '@nuxt/devtools@3.4.1(@vercel/functions@3.4.4(@aws-sdk/credential-provider-web-identity@3.972.49))(db0@0.3.4(@electric-sql/pglite@0.5.6)(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260426.1)(@electric-sql/pglite@0.5.6)(@opentelemetry/api@1.9.0)(postgres@3.4.9)))(ioredis@5.10.1(supports-color@8.1.1))(magic-string@1.2.2)(oxc-parser@0.140.0)(rolldown@1.2.1)(supports-color@8.1.1)(unplugin@3.3.0(esbuild@0.28.1)(rolldown@1.2.1)(rollup@4.60.2)(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0)))(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0))(vue@3.5.40(typescript@6.0.3))':
+  '@nuxt/devtools@3.4.1(@vercel/functions@3.4.4(@aws-sdk/credential-provider-web-identity@3.972.49))(db0@0.3.4(@electric-sql/pglite@0.5.8)(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260426.1)(@electric-sql/pglite@0.5.8)(@opentelemetry/api@1.9.0)(postgres@3.4.9)))(ioredis@5.10.1(supports-color@8.1.1))(magic-string@1.2.2)(oxc-parser@0.140.0)(rolldown@1.2.1)(supports-color@8.1.1)(unplugin@3.3.0(esbuild@0.28.1)(rolldown@1.2.1)(rollup@4.60.2)(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0)))(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0))(vue@3.5.40(typescript@6.0.3))':
     dependencies:
       '@nuxt/devtools-kit': 3.4.1(magic-string@1.2.2)(magicast@0.5.4)(oxc-parser@0.140.0)(rolldown@1.2.1)(unplugin@3.3.0(esbuild@0.28.1)(rolldown@1.2.1)(rollup@4.60.2)(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0)))(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0))
       '@nuxt/devtools-wizard': 3.4.1
@@ -11454,7 +11454,7 @@ snapshots:
       sirv: 3.0.2
       structured-clone-es: 2.0.1
       tinyglobby: 0.2.17
-      unstorage: 1.17.5(@vercel/functions@3.4.4(@aws-sdk/credential-provider-web-identity@3.972.49))(db0@0.3.4(@electric-sql/pglite@0.5.6)(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260426.1)(@electric-sql/pglite@0.5.6)(@opentelemetry/api@1.9.0)(postgres@3.4.9)))(ioredis@5.10.1(supports-color@8.1.1))
+      unstorage: 1.17.5(@vercel/functions@3.4.4(@aws-sdk/credential-provider-web-identity@3.972.49))(db0@0.3.4(@electric-sql/pglite@0.5.8)(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260426.1)(@electric-sql/pglite@0.5.8)(@opentelemetry/api@1.9.0)(postgres@3.4.9)))(ioredis@5.10.1(supports-color@8.1.1))
       vite: 7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0)
       vite-plugin-inspect: 11.4.1(@nuxt/kit@4.5.2(magic-string@1.2.2)(magicast@0.5.4)(oxc-parser@0.140.0)(rolldown@1.2.1)(unplugin@3.3.0(esbuild@0.28.1)(rolldown@1.2.1)(rollup@4.60.2)(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0))))(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0))
       vite-plugin-vue-tracer: 1.5.0(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0))(vue@3.5.40(typescript@6.0.3))
@@ -11489,30 +11489,30 @@ snapshots:
       - utf-8-validate
       - vue
 
-  '@nuxt/eslint-config@1.17.0(@typescript-eslint/utils@8.66.0(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3))(@vue/compiler-sfc@3.5.40)(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3)':
+  '@nuxt/eslint-config@1.17.0(@typescript-eslint/utils@8.66.0(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3))(@vue/compiler-sfc@3.5.40)(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3)':
     dependencies:
       '@antfu/install-pkg': 2.0.1
       '@clack/prompts': 1.7.0
-      '@eslint/js': 10.0.1(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1))
-      '@nuxt/eslint-plugin': 1.17.0(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3)
-      '@stylistic/eslint-plugin': 5.10.0(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1))
-      '@typescript-eslint/eslint-plugin': 8.66.0(@typescript-eslint/parser@8.66.0(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3))(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3)
-      '@typescript-eslint/parser': 8.66.0(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3)
-      eslint: 10.9.0(jiti@2.7.0)(supports-color@8.1.1)
-      eslint-config-flat-gitignore: 2.3.0(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1))
+      '@eslint/js': 10.0.1(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1))
+      '@nuxt/eslint-plugin': 1.17.0(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3)
+      '@stylistic/eslint-plugin': 5.10.0(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1))
+      '@typescript-eslint/eslint-plugin': 8.66.0(@typescript-eslint/parser@8.66.0(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3))(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3)
+      '@typescript-eslint/parser': 8.66.0(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3)
+      eslint: 10.9.1(jiti@2.7.0)(supports-color@8.1.1)
+      eslint-config-flat-gitignore: 2.3.0(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1))
       eslint-flat-config-utils: 3.2.0
-      eslint-merge-processors: 2.0.0(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1))
-      eslint-plugin-import-lite: 0.6.0(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1))
-      eslint-plugin-import-x: 4.17.1(@typescript-eslint/utils@8.66.0(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3))(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)
-      eslint-plugin-jsdoc: 63.3.3(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)
-      eslint-plugin-regexp: 3.1.1(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1))
-      eslint-plugin-unicorn: 73.0.0(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1))
-      eslint-plugin-vue: 10.10.0(@stylistic/eslint-plugin@5.10.0(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1)))(@typescript-eslint/parser@8.66.0(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3))(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1))(vue-eslint-parser@10.4.1(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1))
-      eslint-processor-vue-blocks: 2.0.0(@vue/compiler-sfc@3.5.40)(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1))
+      eslint-merge-processors: 2.0.0(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1))
+      eslint-plugin-import-lite: 0.6.0(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1))
+      eslint-plugin-import-x: 4.17.1(@typescript-eslint/utils@8.66.0(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3))(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)
+      eslint-plugin-jsdoc: 63.3.3(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)
+      eslint-plugin-regexp: 3.1.1(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1))
+      eslint-plugin-unicorn: 73.0.0(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1))
+      eslint-plugin-vue: 10.10.0(@stylistic/eslint-plugin@5.10.0(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1)))(@typescript-eslint/parser@8.66.0(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3))(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1))(vue-eslint-parser@10.4.1(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1))
+      eslint-processor-vue-blocks: 2.0.0(@vue/compiler-sfc@3.5.40)(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1))
       globals: 17.9.0
       local-pkg: 1.2.1
       pathe: 2.0.3
-      vue-eslint-parser: 10.4.1(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)
+      vue-eslint-parser: 10.4.1(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)
     transitivePeerDependencies:
       - '@typescript-eslint/utils'
       - '@vue/compiler-sfc'
@@ -11520,26 +11520,26 @@ snapshots:
       - supports-color
       - typescript
 
-  '@nuxt/eslint-plugin@1.17.0(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3)':
+  '@nuxt/eslint-plugin@1.17.0(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3)':
     dependencies:
       '@typescript-eslint/types': 8.66.0
-      '@typescript-eslint/utils': 8.66.0(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3)
-      eslint: 10.9.0(jiti@2.7.0)(supports-color@8.1.1)
+      '@typescript-eslint/utils': 8.66.0(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3)
+      eslint: 10.9.1(jiti@2.7.0)(supports-color@8.1.1)
     transitivePeerDependencies:
       - supports-color
       - typescript
 
-  '@nuxt/eslint@1.17.0(@typescript-eslint/utils@8.66.0(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3))(@vue/compiler-sfc@3.5.40)(esbuild@0.28.1)(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1))(magic-string@1.2.2)(magicast@0.5.4)(oxc-parser@0.140.0)(rolldown@1.2.1)(rollup@4.60.2)(srvx@0.11.22)(supports-color@8.1.1)(typescript@6.0.3)(unplugin@3.3.0(esbuild@0.28.1)(rolldown@1.2.1)(rollup@4.60.2)(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0)))(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0))':
+  '@nuxt/eslint@1.17.0(@typescript-eslint/utils@8.66.0(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3))(@vue/compiler-sfc@3.5.40)(esbuild@0.28.1)(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1))(magic-string@1.2.2)(magicast@0.5.4)(oxc-parser@0.140.0)(rolldown@1.2.1)(rollup@4.60.2)(srvx@0.11.22)(supports-color@8.1.1)(typescript@6.0.3)(unplugin@3.3.0(esbuild@0.28.1)(rolldown@1.2.1)(rollup@4.60.2)(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0)))(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0))':
     dependencies:
-      '@eslint/config-inspector': 3.2.0(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1))(srvx@0.11.22)
+      '@eslint/config-inspector': 3.2.0(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1))(srvx@0.11.22)
       '@nuxt/devtools-kit': 3.4.1(magic-string@1.2.2)(magicast@0.5.4)(oxc-parser@0.140.0)(rolldown@1.2.1)(unplugin@3.3.0(esbuild@0.28.1)(rolldown@1.2.1)(rollup@4.60.2)(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0)))(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0))
-      '@nuxt/eslint-config': 1.17.0(@typescript-eslint/utils@8.66.0(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3))(@vue/compiler-sfc@3.5.40)(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3)
-      '@nuxt/eslint-plugin': 1.17.0(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3)
+      '@nuxt/eslint-config': 1.17.0(@typescript-eslint/utils@8.66.0(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3))(@vue/compiler-sfc@3.5.40)(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3)
+      '@nuxt/eslint-plugin': 1.17.0(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3)
       '@nuxt/kit': 4.5.2(magic-string@1.2.2)(magicast@0.5.4)(oxc-parser@0.140.0)(rolldown@1.2.1)(unplugin@3.3.0(esbuild@0.28.1)(rolldown@1.2.1)(rollup@4.60.2)(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0)))
       chokidar: 5.0.0
-      eslint: 10.9.0(jiti@2.7.0)(supports-color@8.1.1)
+      eslint: 10.9.1(jiti@2.7.0)(supports-color@8.1.1)
       eslint-flat-config-utils: 3.2.0
-      eslint-typegen: 2.3.1(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1))
+      eslint-typegen: 2.3.1(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1))
       find-up: 8.0.0
       get-port-please: 3.2.0
       mlly: 1.8.2
@@ -11569,13 +11569,13 @@ snapshots:
       - vite
       - webpack
 
-  '@nuxt/fonts@0.14.0(@vercel/functions@3.4.4(@aws-sdk/credential-provider-web-identity@3.972.49))(db0@0.3.4(@electric-sql/pglite@0.5.6)(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260426.1)(@electric-sql/pglite@0.5.6)(@opentelemetry/api@1.9.0)(postgres@3.4.9)))(esbuild@0.28.1)(ioredis@5.10.1(supports-color@8.1.1))(magic-string@1.2.2)(magicast@0.5.4)(oxc-parser@0.140.0)(rolldown@1.2.1)(rollup@4.60.2)(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0))':
+  '@nuxt/fonts@0.14.0(@vercel/functions@3.4.4(@aws-sdk/credential-provider-web-identity@3.972.49))(db0@0.3.4(@electric-sql/pglite@0.5.8)(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260426.1)(@electric-sql/pglite@0.5.8)(@opentelemetry/api@1.9.0)(postgres@3.4.9)))(esbuild@0.28.1)(ioredis@5.10.1(supports-color@8.1.1))(magic-string@1.2.2)(magicast@0.5.4)(oxc-parser@0.140.0)(rolldown@1.2.1)(rollup@4.60.2)(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0))':
     dependencies:
       '@nuxt/devtools-kit': 3.4.1(magic-string@1.2.2)(magicast@0.5.4)(oxc-parser@0.140.0)(rolldown@1.2.1)(unplugin@3.3.0(esbuild@0.28.1)(rolldown@1.2.1)(rollup@4.60.2)(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0)))(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0))
       '@nuxt/kit': 4.5.2(magic-string@1.2.2)(magicast@0.5.4)(oxc-parser@0.140.0)(rolldown@1.2.1)(unplugin@3.3.0(esbuild@0.28.1)(rolldown@1.2.1)(rollup@4.60.2)(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0)))
       consola: 3.4.2
       defu: 6.1.7
-      fontless: 0.2.1(@vercel/functions@3.4.4(@aws-sdk/credential-provider-web-identity@3.972.49))(db0@0.3.4(@electric-sql/pglite@0.5.6)(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260426.1)(@electric-sql/pglite@0.5.6)(@opentelemetry/api@1.9.0)(postgres@3.4.9)))(ioredis@5.10.1(supports-color@8.1.1))(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0))
+      fontless: 0.2.1(@vercel/functions@3.4.4(@aws-sdk/credential-provider-web-identity@3.972.49))(db0@0.3.4(@electric-sql/pglite@0.5.8)(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260426.1)(@electric-sql/pglite@0.5.8)(@opentelemetry/api@1.9.0)(postgres@3.4.9)))(ioredis@5.10.1(supports-color@8.1.1))(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0))
       h3: 1.15.11
       magic-regexp: 0.10.0
       ofetch: 1.5.1
@@ -11585,7 +11585,7 @@ snapshots:
       ufo: 1.6.4
       unifont: 0.7.4
       unplugin: 3.3.0(esbuild@0.28.1)(rolldown@1.2.1)(rollup@4.60.2)(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0))
-      unstorage: 1.17.5(@vercel/functions@3.4.4(@aws-sdk/credential-provider-web-identity@3.972.49))(db0@0.3.4(@electric-sql/pglite@0.5.6)(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260426.1)(@electric-sql/pglite@0.5.6)(@opentelemetry/api@1.9.0)(postgres@3.4.9)))(ioredis@5.10.1(supports-color@8.1.1))
+      unstorage: 1.17.5(@vercel/functions@3.4.4(@aws-sdk/credential-provider-web-identity@3.972.49))(db0@0.3.4(@electric-sql/pglite@0.5.8)(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260426.1)(@electric-sql/pglite@0.5.8)(@opentelemetry/api@1.9.0)(postgres@3.4.9)))(ioredis@5.10.1(supports-color@8.1.1))
     transitivePeerDependencies:
       - '@azure/app-configuration'
       - '@azure/cosmos'
@@ -11725,7 +11725,7 @@ snapshots:
       - rolldown
       - unplugin
 
-  '@nuxt/nitro-server@4.5.2(600aaa873d5aad2441b722cb9b5a5ab9)':
+  '@nuxt/nitro-server@4.5.2(55d8b7d85abf87b271c3b9aa514ba1a1)':
     dependencies:
       '@nuxt/devalue': 2.0.2
       '@nuxt/kit': 4.5.2(magic-string@1.2.2)(magicast@0.5.4)(oxc-parser@0.140.0)(rolldown@1.2.1)(unplugin@3.3.0(esbuild@0.28.1)(rolldown@1.2.1)(rollup@4.60.2)(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0)))
@@ -11742,9 +11742,9 @@ snapshots:
       impound: 1.1.6(esbuild@0.28.1)(rolldown@1.2.1)(rollup@4.60.2)(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0))
       klona: 2.0.6
       mocked-exports: 0.1.1
-      nitropack: 2.13.4(@electric-sql/pglite@0.5.6)(@vercel/functions@3.4.4(@aws-sdk/credential-provider-web-identity@3.972.49))(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260426.1)(@electric-sql/pglite@0.5.6)(@opentelemetry/api@1.9.0)(postgres@3.4.9))(oxc-parser@0.140.0)(rolldown@1.2.1)(srvx@0.11.22)(supports-color@8.1.1)(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0))
+      nitropack: 2.13.4(@electric-sql/pglite@0.5.8)(@vercel/functions@3.4.4(@aws-sdk/credential-provider-web-identity@3.972.49))(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260426.1)(@electric-sql/pglite@0.5.8)(@opentelemetry/api@1.9.0)(postgres@3.4.9))(oxc-parser@0.140.0)(rolldown@1.2.1)(srvx@0.11.22)(supports-color@8.1.1)(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0))
       nostics: 1.2.0
-      nuxt: 4.5.2(e6f135e59161a1b0c331aaeb60eb77d8)
+      nuxt: 4.5.2(96ab177cdc02d820ca09f0417ddac4a3)
       nypm: 0.6.9
       ohash: 2.0.12
       pathe: 2.0.3
@@ -11752,7 +11752,7 @@ snapshots:
       std-env: 4.2.0
       ufo: 1.6.4
       unctx: 3.0.0(magic-string@1.2.2)(oxc-parser@0.140.0)(rolldown@1.2.1)(unplugin@3.3.0(esbuild@0.28.1)(rolldown@1.2.1)(rollup@4.60.2)(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0)))
-      unstorage: 1.17.5(@vercel/functions@3.4.4(@aws-sdk/credential-provider-web-identity@3.972.49))(db0@0.3.4(@electric-sql/pglite@0.5.6)(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260426.1)(@electric-sql/pglite@0.5.6)(@opentelemetry/api@1.9.0)(postgres@3.4.9)))(ioredis@5.10.1(supports-color@8.1.1))
+      unstorage: 1.17.5(@vercel/functions@3.4.4(@aws-sdk/credential-provider-web-identity@3.972.49))(db0@0.3.4(@electric-sql/pglite@0.5.8)(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260426.1)(@electric-sql/pglite@0.5.8)(@opentelemetry/api@1.9.0)(postgres@3.4.9)))(ioredis@5.10.1(supports-color@8.1.1))
       vue: 3.5.40(typescript@6.0.3)
       vue-bundle-renderer: 2.3.1
       vue-devtools-stub: 0.1.0
@@ -11832,11 +11832,11 @@ snapshots:
       rc9: 3.0.1
       std-env: 4.2.0
 
-  '@nuxt/ui@4.11.0(39e76e1a6cdd96ea85cf8a9b43e26091)':
+  '@nuxt/ui@4.11.0(42324ef66725a2bbc123476f9ec4adb4)':
     dependencies:
       '@floating-ui/dom': 1.8.0
       '@iconify/vue': 5.0.1(vue@3.5.40(typescript@6.0.3))
-      '@nuxt/fonts': 0.14.0(@vercel/functions@3.4.4(@aws-sdk/credential-provider-web-identity@3.972.49))(db0@0.3.4(@electric-sql/pglite@0.5.6)(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260426.1)(@electric-sql/pglite@0.5.6)(@opentelemetry/api@1.9.0)(postgres@3.4.9)))(esbuild@0.28.1)(ioredis@5.10.1(supports-color@8.1.1))(magic-string@1.2.2)(magicast@0.5.4)(oxc-parser@0.140.0)(rolldown@1.2.1)(rollup@4.60.2)(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0))
+      '@nuxt/fonts': 0.14.0(@vercel/functions@3.4.4(@aws-sdk/credential-provider-web-identity@3.972.49))(db0@0.3.4(@electric-sql/pglite@0.5.8)(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260426.1)(@electric-sql/pglite@0.5.8)(@opentelemetry/api@1.9.0)(postgres@3.4.9)))(esbuild@0.28.1)(ioredis@5.10.1(supports-color@8.1.1))(magic-string@1.2.2)(magicast@0.5.4)(oxc-parser@0.140.0)(rolldown@1.2.1)(rollup@4.60.2)(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0))
       '@nuxt/icon': 2.5.0(magic-string@1.2.2)(magicast@0.5.4)(oxc-parser@0.140.0)(rolldown@1.2.1)(unplugin@3.3.0(esbuild@0.28.1)(rolldown@1.2.1)(rollup@4.60.2)(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0)))(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0))(vue@3.5.40(typescript@6.0.3))
       '@nuxt/kit': 4.5.2(magic-string@1.2.2)(magicast@0.5.4)(oxc-parser@0.140.0)(rolldown@1.2.1)(unplugin@3.3.0(esbuild@0.28.1)(rolldown@1.2.1)(rollup@4.60.2)(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0)))
       '@nuxt/schema': 4.5.2
@@ -11846,23 +11846,23 @@ snapshots:
       '@tailwindcss/vite': 4.3.3(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0))
       '@tanstack/vue-table': 8.21.3(vue@3.5.40(typescript@6.0.3))
       '@tanstack/vue-virtual': 3.13.36(vue@3.5.40(typescript@6.0.3))
-      '@tiptap/core': 3.30.2(@tiptap/pm@3.30.2)
-      '@tiptap/extension-bubble-menu': 3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)
-      '@tiptap/extension-code': 3.24.0(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))
-      '@tiptap/extension-collaboration': 3.24.0(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)(@tiptap/y-tiptap@3.0.7(prosemirror-model@1.25.11)(prosemirror-state@1.4.4)(prosemirror-view@1.42.1)(y-protocols@1.0.7(yjs@13.6.30))(yjs@13.6.30))(yjs@13.6.30)
-      '@tiptap/extension-drag-handle': 3.24.0(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/extension-collaboration@3.24.0(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)(@tiptap/y-tiptap@3.0.7(prosemirror-model@1.25.11)(prosemirror-state@1.4.4)(prosemirror-view@1.42.1)(y-protocols@1.0.7(yjs@13.6.30))(yjs@13.6.30))(yjs@13.6.30))(@tiptap/extension-node-range@3.24.0(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)(@tiptap/y-tiptap@3.0.7(prosemirror-model@1.25.11)(prosemirror-state@1.4.4)(prosemirror-view@1.42.1)(y-protocols@1.0.7(yjs@13.6.30))(yjs@13.6.30))
-      '@tiptap/extension-drag-handle-vue-3': 3.24.0(@tiptap/extension-drag-handle@3.24.0(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/extension-collaboration@3.24.0(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)(@tiptap/y-tiptap@3.0.7(prosemirror-model@1.25.11)(prosemirror-state@1.4.4)(prosemirror-view@1.42.1)(y-protocols@1.0.7(yjs@13.6.30))(yjs@13.6.30))(yjs@13.6.30))(@tiptap/extension-node-range@3.24.0(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)(@tiptap/y-tiptap@3.0.7(prosemirror-model@1.25.11)(prosemirror-state@1.4.4)(prosemirror-view@1.42.1)(y-protocols@1.0.7(yjs@13.6.30))(yjs@13.6.30)))(@tiptap/pm@3.30.2)(@tiptap/vue-3@3.30.2(@floating-ui/dom@1.8.0)(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)(vue@3.5.40(typescript@6.0.3)))(vue@3.5.40(typescript@6.0.3))
-      '@tiptap/extension-floating-menu': 3.30.2(@floating-ui/dom@1.8.0)(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)
-      '@tiptap/extension-horizontal-rule': 3.24.0(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)
-      '@tiptap/extension-image': 3.24.0(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))
-      '@tiptap/extension-mention': 3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)(@tiptap/suggestion@3.30.2(@floating-ui/dom@1.8.0)(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2))
-      '@tiptap/extension-node-range': 3.24.0(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)
-      '@tiptap/extension-placeholder': 3.24.0(@tiptap/extensions@3.24.0(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2))
-      '@tiptap/markdown': 3.24.0(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)
-      '@tiptap/pm': 3.30.2
+      '@tiptap/core': 3.30.5(@tiptap/pm@3.30.5)
+      '@tiptap/extension-bubble-menu': 3.30.5(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)
+      '@tiptap/extension-code': 3.24.0(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))
+      '@tiptap/extension-collaboration': 3.24.0(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)(@tiptap/y-tiptap@3.0.7(prosemirror-model@1.25.11)(prosemirror-state@1.4.4)(prosemirror-view@1.42.1)(y-protocols@1.0.7(yjs@13.6.30))(yjs@13.6.30))(yjs@13.6.30)
+      '@tiptap/extension-drag-handle': 3.24.0(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/extension-collaboration@3.24.0(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)(@tiptap/y-tiptap@3.0.7(prosemirror-model@1.25.11)(prosemirror-state@1.4.4)(prosemirror-view@1.42.1)(y-protocols@1.0.7(yjs@13.6.30))(yjs@13.6.30))(yjs@13.6.30))(@tiptap/extension-node-range@3.24.0(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)(@tiptap/y-tiptap@3.0.7(prosemirror-model@1.25.11)(prosemirror-state@1.4.4)(prosemirror-view@1.42.1)(y-protocols@1.0.7(yjs@13.6.30))(yjs@13.6.30))
+      '@tiptap/extension-drag-handle-vue-3': 3.24.0(@tiptap/extension-drag-handle@3.24.0(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/extension-collaboration@3.24.0(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)(@tiptap/y-tiptap@3.0.7(prosemirror-model@1.25.11)(prosemirror-state@1.4.4)(prosemirror-view@1.42.1)(y-protocols@1.0.7(yjs@13.6.30))(yjs@13.6.30))(yjs@13.6.30))(@tiptap/extension-node-range@3.24.0(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)(@tiptap/y-tiptap@3.0.7(prosemirror-model@1.25.11)(prosemirror-state@1.4.4)(prosemirror-view@1.42.1)(y-protocols@1.0.7(yjs@13.6.30))(yjs@13.6.30)))(@tiptap/pm@3.30.5)(@tiptap/vue-3@3.30.5(@floating-ui/dom@1.8.0)(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)(vue@3.5.40(typescript@6.0.3)))(vue@3.5.40(typescript@6.0.3))
+      '@tiptap/extension-floating-menu': 3.30.5(@floating-ui/dom@1.8.0)(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)
+      '@tiptap/extension-horizontal-rule': 3.24.0(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)
+      '@tiptap/extension-image': 3.24.0(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))
+      '@tiptap/extension-mention': 3.30.5(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)(@tiptap/suggestion@3.30.5(@floating-ui/dom@1.8.0)(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5))
+      '@tiptap/extension-node-range': 3.24.0(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)
+      '@tiptap/extension-placeholder': 3.24.0(@tiptap/extensions@3.24.0(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5))
+      '@tiptap/markdown': 3.24.0(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)
+      '@tiptap/pm': 3.30.5
       '@tiptap/starter-kit': 3.24.0
-      '@tiptap/suggestion': 3.30.2(@floating-ui/dom@1.8.0)(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)
-      '@tiptap/vue-3': 3.30.2(@floating-ui/dom@1.8.0)(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)(vue@3.5.40(typescript@6.0.3))
+      '@tiptap/suggestion': 3.30.5(@floating-ui/dom@1.8.0)(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)
+      '@tiptap/vue-3': 3.30.5(@floating-ui/dom@1.8.0)(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)(vue@3.5.40(typescript@6.0.3))
       '@unhead/vue': 3.4.0(@oxc-project/types@0.142.0)(@vitejs/devtools-kit@0.4.10(cac@7.0.0)(srvx@0.11.22)(typescript@6.0.3)(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0)))(esbuild@0.28.1)(lightningcss@1.33.0)(oxc-parser@0.140.0)(rolldown@1.2.1)(rollup@4.60.2)(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0))(vue@3.5.40(typescript@6.0.3))
       '@vueuse/core': 14.4.0(vue@3.5.40(typescript@6.0.3))
       '@vueuse/integrations': 14.4.0(change-case@5.4.4)(fuse.js@7.5.0)(vue@3.5.40(typescript@6.0.3))
@@ -11901,9 +11901,9 @@ snapshots:
     optionalDependencies:
       '@internationalized/date': 3.12.1
       '@internationalized/number': 3.6.6
-      ai: 6.0.264(zod@4.4.3)
+      ai: 6.0.271(zod@4.5.4)
       valibot: 1.4.2(typescript@6.0.3)
-      zod: 4.4.3
+      zod: 4.5.4
     transitivePeerDependencies:
       - '@azure/app-configuration'
       - '@azure/cosmos'
@@ -11955,7 +11955,7 @@ snapshots:
       - vue
       - webpack
 
-  '@nuxt/vite-builder@4.5.2(@babel/plugin-syntax-jsx@7.28.6(@babel/core@7.29.0(supports-color@8.1.1)))(@types/node@25.9.5)(esbuild@0.28.1)(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1))(magic-string@1.2.2)(magicast@0.5.4)(nuxt@4.5.2(e6f135e59161a1b0c331aaeb60eb77d8))(optionator@0.9.4)(oxc-parser@0.140.0)(rolldown@1.2.1)(rollup-plugin-visualizer@7.0.1(rolldown@1.2.1)(rollup@4.60.2))(rollup@4.60.2)(supports-color@8.1.1)(terser@5.46.2)(tsx@4.21.0)(typescript@6.0.3)(vue-tsc@3.3.11(typescript@6.0.3))(vue@3.5.40(typescript@6.0.3))(yaml@2.9.0)':
+  '@nuxt/vite-builder@4.5.2(@babel/plugin-syntax-jsx@7.28.6(@babel/core@7.29.0(supports-color@8.1.1)))(@types/node@25.9.5)(esbuild@0.28.1)(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1))(magic-string@1.2.2)(magicast@0.5.4)(nuxt@4.5.2(96ab177cdc02d820ca09f0417ddac4a3))(optionator@0.9.4)(oxc-parser@0.140.0)(rolldown@1.2.1)(rollup-plugin-visualizer@7.0.1(rolldown@1.2.1)(rollup@4.60.2))(rollup@4.60.2)(supports-color@8.1.1)(terser@5.46.2)(tsx@4.21.0)(typescript@6.0.3)(vue-tsc@3.3.11(typescript@6.0.3))(vue@3.5.40(typescript@6.0.3))(yaml@2.9.0)':
     dependencies:
       '@nuxt/kit': 4.5.2(magic-string@1.2.2)(magicast@0.5.4)(oxc-parser@0.140.0)(rolldown@1.2.1)(unplugin@3.3.0(esbuild@0.28.1)(rolldown@1.2.1)(rollup@4.60.2)(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0)))
       '@vitejs/plugin-vue': 6.0.8(vite@8.2.1(@types/node@25.9.5)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0))(vue@3.5.40(typescript@6.0.3))
@@ -11973,7 +11973,7 @@ snapshots:
       knitwork: 1.3.0
       mlly: 1.8.2
       mocked-exports: 0.1.1
-      nuxt: 4.5.2(e6f135e59161a1b0c331aaeb60eb77d8)
+      nuxt: 4.5.2(96ab177cdc02d820ca09f0417ddac4a3)
       nypm: 0.6.9
       pathe: 2.0.3
       pkg-types: 2.3.1
@@ -11986,7 +11986,7 @@ snapshots:
       unplugin: 3.3.0(esbuild@0.28.1)(rolldown@1.2.1)(rollup@4.60.2)(vite@8.2.1(@types/node@25.9.5)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0))
       vite: 8.2.1(@types/node@25.9.5)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0)
       vite-node: 6.0.0(@types/node@25.9.5)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0)
-      vite-plugin-checker: 0.14.5(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1))(optionator@0.9.4)(typescript@6.0.3)(vite@8.2.1(@types/node@25.9.5)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0))(vue-tsc@3.3.11(typescript@6.0.3))
+      vite-plugin-checker: 0.14.5(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1))(optionator@0.9.4)(typescript@6.0.3)(vite@8.2.1(@types/node@25.9.5)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0))(vue-tsc@3.3.11(typescript@6.0.3))
       vue: 3.5.40(typescript@6.0.3)
       vue-bundle-renderer: 2.3.1
     optionalDependencies:
@@ -12024,7 +12024,7 @@ snapshots:
       - webpack
       - yaml
 
-  '@nuxthub/core@0.10.8(@emnapi/core@2.0.0-alpha.3)(@emnapi/runtime@2.0.0-alpha.3)(@vercel/functions@3.4.4(@aws-sdk/credential-provider-web-identity@3.972.49))(db0@0.3.4(@electric-sql/pglite@0.5.6)(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260426.1)(@electric-sql/pglite@0.5.6)(@opentelemetry/api@1.9.0)(postgres@3.4.9)))(ioredis@5.10.1(supports-color@8.1.1))(magic-string@1.2.2)(magicast@0.5.4)(oxc-parser@0.140.0)(rolldown@1.2.1)(typescript@6.0.3)(unplugin@3.3.0(esbuild@0.28.1)(rolldown@1.2.1)(rollup@4.60.2)(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0)))(vue-tsc@3.3.11(typescript@6.0.3))':
+  '@nuxthub/core@0.10.8(@emnapi/core@2.0.0-alpha.3)(@emnapi/runtime@2.0.0-alpha.3)(@vercel/functions@3.4.4(@aws-sdk/credential-provider-web-identity@3.972.49))(db0@0.3.4(@electric-sql/pglite@0.5.8)(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260426.1)(@electric-sql/pglite@0.5.8)(@opentelemetry/api@1.9.0)(postgres@3.4.9)))(ioredis@5.10.1(supports-color@8.1.1))(magic-string@1.2.2)(magicast@0.5.4)(oxc-parser@0.140.0)(rolldown@1.2.1)(typescript@6.0.3)(unplugin@3.3.0(esbuild@0.28.1)(rolldown@1.2.1)(rollup@4.60.2)(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0)))(vue-tsc@3.3.11(typescript@6.0.3))':
     dependencies:
       '@cloudflare/workers-types': 4.20260426.1
       '@nuxt/kit': 4.5.2(magic-string@1.2.2)(magicast@0.5.4)(oxc-parser@0.140.0)(rolldown@1.2.1)(unplugin@3.3.0(esbuild@0.28.1)(rolldown@1.2.1)(rollup@4.60.2)(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0)))
@@ -12049,8 +12049,8 @@ snapshots:
       tsdown: 0.18.4(@emnapi/core@2.0.0-alpha.3)(@emnapi/runtime@2.0.0-alpha.3)(typescript@6.0.3)(vue-tsc@3.3.11(typescript@6.0.3))
       ufo: 1.6.4
       uncrypto: 0.1.3
-      unstorage: 1.17.5(@vercel/functions@3.4.4(@aws-sdk/credential-provider-web-identity@3.972.49))(db0@0.3.4(@electric-sql/pglite@0.5.6)(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260426.1)(@electric-sql/pglite@0.5.6)(@opentelemetry/api@1.9.0)(postgres@3.4.9)))(ioredis@5.10.1(supports-color@8.1.1))
-      zod: 4.4.3
+      unstorage: 1.17.5(@vercel/functions@3.4.4(@aws-sdk/credential-provider-web-identity@3.972.49))(db0@0.3.4(@electric-sql/pglite@0.5.8)(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260426.1)(@electric-sql/pglite@0.5.8)(@opentelemetry/api@1.9.0)(postgres@3.4.9)))(ioredis@5.10.1(supports-color@8.1.1))
+      zod: 4.5.4
     transitivePeerDependencies:
       - '@arethetypeswrong/core'
       - '@azure/app-configuration'
@@ -12899,11 +12899,11 @@ snapshots:
 
   '@standard-schema/spec@1.1.0': {}
 
-  '@stylistic/eslint-plugin@5.10.0(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1))':
+  '@stylistic/eslint-plugin@5.10.0(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1))':
     dependencies:
-      '@eslint-community/eslint-utils': 4.9.1(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1))
+      '@eslint-community/eslint-utils': 4.9.1(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1))
       '@typescript-eslint/types': 8.66.0
-      eslint: 10.9.0(jiti@2.7.0)(supports-color@8.1.1)
+      eslint: 10.9.1(jiti@2.7.0)(supports-color@8.1.1)
       eslint-visitor-keys: 4.2.1
       espree: 10.4.0
       estraverse: 5.3.0
@@ -13084,191 +13084,191 @@ snapshots:
       '@tanstack/virtual-core': 3.17.8
       vue: 3.5.40(typescript@6.0.3)
 
-  '@tiptap/core@3.30.2(@tiptap/pm@3.30.2)':
+  '@tiptap/core@3.30.5(@tiptap/pm@3.30.5)':
     dependencies:
-      '@tiptap/pm': 3.30.2
+      '@tiptap/pm': 3.30.5
 
-  '@tiptap/extension-blockquote@3.24.0(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))':
+  '@tiptap/extension-blockquote@3.24.0(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))':
     dependencies:
-      '@tiptap/core': 3.30.2(@tiptap/pm@3.30.2)
+      '@tiptap/core': 3.30.5(@tiptap/pm@3.30.5)
 
-  '@tiptap/extension-bold@3.24.0(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))':
+  '@tiptap/extension-bold@3.24.0(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))':
     dependencies:
-      '@tiptap/core': 3.30.2(@tiptap/pm@3.30.2)
+      '@tiptap/core': 3.30.5(@tiptap/pm@3.30.5)
 
-  '@tiptap/extension-bubble-menu@3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)':
+  '@tiptap/extension-bubble-menu@3.30.5(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)':
     dependencies:
       '@floating-ui/dom': 1.8.0
-      '@tiptap/core': 3.30.2(@tiptap/pm@3.30.2)
-      '@tiptap/pm': 3.30.2
+      '@tiptap/core': 3.30.5(@tiptap/pm@3.30.5)
+      '@tiptap/pm': 3.30.5
 
-  '@tiptap/extension-bullet-list@3.24.0(@tiptap/extension-list@3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2))':
+  '@tiptap/extension-bullet-list@3.24.0(@tiptap/extension-list@3.30.5(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5))':
     dependencies:
-      '@tiptap/extension-list': 3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)
+      '@tiptap/extension-list': 3.30.5(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)
 
-  '@tiptap/extension-code-block@3.24.0(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)':
+  '@tiptap/extension-code-block@3.24.0(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)':
     dependencies:
-      '@tiptap/core': 3.30.2(@tiptap/pm@3.30.2)
-      '@tiptap/pm': 3.30.2
+      '@tiptap/core': 3.30.5(@tiptap/pm@3.30.5)
+      '@tiptap/pm': 3.30.5
 
-  '@tiptap/extension-code@3.24.0(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))':
+  '@tiptap/extension-code@3.24.0(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))':
     dependencies:
-      '@tiptap/core': 3.30.2(@tiptap/pm@3.30.2)
+      '@tiptap/core': 3.30.5(@tiptap/pm@3.30.5)
 
-  '@tiptap/extension-collaboration@3.24.0(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)(@tiptap/y-tiptap@3.0.7(prosemirror-model@1.25.11)(prosemirror-state@1.4.4)(prosemirror-view@1.42.1)(y-protocols@1.0.7(yjs@13.6.30))(yjs@13.6.30))(yjs@13.6.30)':
+  '@tiptap/extension-collaboration@3.24.0(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)(@tiptap/y-tiptap@3.0.7(prosemirror-model@1.25.11)(prosemirror-state@1.4.4)(prosemirror-view@1.42.1)(y-protocols@1.0.7(yjs@13.6.30))(yjs@13.6.30))(yjs@13.6.30)':
     dependencies:
-      '@tiptap/core': 3.30.2(@tiptap/pm@3.30.2)
-      '@tiptap/pm': 3.30.2
+      '@tiptap/core': 3.30.5(@tiptap/pm@3.30.5)
+      '@tiptap/pm': 3.30.5
       '@tiptap/y-tiptap': 3.0.7(prosemirror-model@1.25.11)(prosemirror-state@1.4.4)(prosemirror-view@1.42.1)(y-protocols@1.0.7(yjs@13.6.30))(yjs@13.6.30)
       yjs: 13.6.30
 
-  '@tiptap/extension-details@3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/extension-text-style@3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2)))(@tiptap/pm@3.30.2)':
+  '@tiptap/extension-details@3.30.5(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/extension-text-style@3.30.5(@tiptap/core@3.30.5(@tiptap/pm@3.30.5)))(@tiptap/pm@3.30.5)':
     dependencies:
-      '@tiptap/core': 3.30.2(@tiptap/pm@3.30.2)
-      '@tiptap/extension-text-style': 3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))
-      '@tiptap/pm': 3.30.2
+      '@tiptap/core': 3.30.5(@tiptap/pm@3.30.5)
+      '@tiptap/extension-text-style': 3.30.5(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))
+      '@tiptap/pm': 3.30.5
 
-  '@tiptap/extension-document@3.24.0(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))':
+  '@tiptap/extension-document@3.24.0(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))':
     dependencies:
-      '@tiptap/core': 3.30.2(@tiptap/pm@3.30.2)
+      '@tiptap/core': 3.30.5(@tiptap/pm@3.30.5)
 
-  '@tiptap/extension-drag-handle-vue-3@3.24.0(@tiptap/extension-drag-handle@3.24.0(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/extension-collaboration@3.24.0(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)(@tiptap/y-tiptap@3.0.7(prosemirror-model@1.25.11)(prosemirror-state@1.4.4)(prosemirror-view@1.42.1)(y-protocols@1.0.7(yjs@13.6.30))(yjs@13.6.30))(yjs@13.6.30))(@tiptap/extension-node-range@3.24.0(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)(@tiptap/y-tiptap@3.0.7(prosemirror-model@1.25.11)(prosemirror-state@1.4.4)(prosemirror-view@1.42.1)(y-protocols@1.0.7(yjs@13.6.30))(yjs@13.6.30)))(@tiptap/pm@3.30.2)(@tiptap/vue-3@3.30.2(@floating-ui/dom@1.8.0)(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)(vue@3.5.40(typescript@6.0.3)))(vue@3.5.40(typescript@6.0.3))':
+  '@tiptap/extension-drag-handle-vue-3@3.24.0(@tiptap/extension-drag-handle@3.24.0(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/extension-collaboration@3.24.0(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)(@tiptap/y-tiptap@3.0.7(prosemirror-model@1.25.11)(prosemirror-state@1.4.4)(prosemirror-view@1.42.1)(y-protocols@1.0.7(yjs@13.6.30))(yjs@13.6.30))(yjs@13.6.30))(@tiptap/extension-node-range@3.24.0(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)(@tiptap/y-tiptap@3.0.7(prosemirror-model@1.25.11)(prosemirror-state@1.4.4)(prosemirror-view@1.42.1)(y-protocols@1.0.7(yjs@13.6.30))(yjs@13.6.30)))(@tiptap/pm@3.30.5)(@tiptap/vue-3@3.30.5(@floating-ui/dom@1.8.0)(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)(vue@3.5.40(typescript@6.0.3)))(vue@3.5.40(typescript@6.0.3))':
     dependencies:
-      '@tiptap/extension-drag-handle': 3.24.0(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/extension-collaboration@3.24.0(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)(@tiptap/y-tiptap@3.0.7(prosemirror-model@1.25.11)(prosemirror-state@1.4.4)(prosemirror-view@1.42.1)(y-protocols@1.0.7(yjs@13.6.30))(yjs@13.6.30))(yjs@13.6.30))(@tiptap/extension-node-range@3.24.0(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)(@tiptap/y-tiptap@3.0.7(prosemirror-model@1.25.11)(prosemirror-state@1.4.4)(prosemirror-view@1.42.1)(y-protocols@1.0.7(yjs@13.6.30))(yjs@13.6.30))
-      '@tiptap/pm': 3.30.2
-      '@tiptap/vue-3': 3.30.2(@floating-ui/dom@1.8.0)(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)(vue@3.5.40(typescript@6.0.3))
+      '@tiptap/extension-drag-handle': 3.24.0(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/extension-collaboration@3.24.0(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)(@tiptap/y-tiptap@3.0.7(prosemirror-model@1.25.11)(prosemirror-state@1.4.4)(prosemirror-view@1.42.1)(y-protocols@1.0.7(yjs@13.6.30))(yjs@13.6.30))(yjs@13.6.30))(@tiptap/extension-node-range@3.24.0(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)(@tiptap/y-tiptap@3.0.7(prosemirror-model@1.25.11)(prosemirror-state@1.4.4)(prosemirror-view@1.42.1)(y-protocols@1.0.7(yjs@13.6.30))(yjs@13.6.30))
+      '@tiptap/pm': 3.30.5
+      '@tiptap/vue-3': 3.30.5(@floating-ui/dom@1.8.0)(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)(vue@3.5.40(typescript@6.0.3))
       vue: 3.5.40(typescript@6.0.3)
 
-  '@tiptap/extension-drag-handle@3.24.0(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/extension-collaboration@3.24.0(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)(@tiptap/y-tiptap@3.0.7(prosemirror-model@1.25.11)(prosemirror-state@1.4.4)(prosemirror-view@1.42.1)(y-protocols@1.0.7(yjs@13.6.30))(yjs@13.6.30))(yjs@13.6.30))(@tiptap/extension-node-range@3.24.0(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)(@tiptap/y-tiptap@3.0.7(prosemirror-model@1.25.11)(prosemirror-state@1.4.4)(prosemirror-view@1.42.1)(y-protocols@1.0.7(yjs@13.6.30))(yjs@13.6.30))':
+  '@tiptap/extension-drag-handle@3.24.0(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/extension-collaboration@3.24.0(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)(@tiptap/y-tiptap@3.0.7(prosemirror-model@1.25.11)(prosemirror-state@1.4.4)(prosemirror-view@1.42.1)(y-protocols@1.0.7(yjs@13.6.30))(yjs@13.6.30))(yjs@13.6.30))(@tiptap/extension-node-range@3.24.0(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)(@tiptap/y-tiptap@3.0.7(prosemirror-model@1.25.11)(prosemirror-state@1.4.4)(prosemirror-view@1.42.1)(y-protocols@1.0.7(yjs@13.6.30))(yjs@13.6.30))':
     dependencies:
       '@floating-ui/dom': 1.8.0
-      '@tiptap/core': 3.30.2(@tiptap/pm@3.30.2)
-      '@tiptap/extension-collaboration': 3.24.0(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)(@tiptap/y-tiptap@3.0.7(prosemirror-model@1.25.11)(prosemirror-state@1.4.4)(prosemirror-view@1.42.1)(y-protocols@1.0.7(yjs@13.6.30))(yjs@13.6.30))(yjs@13.6.30)
-      '@tiptap/extension-node-range': 3.24.0(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)
-      '@tiptap/pm': 3.30.2
+      '@tiptap/core': 3.30.5(@tiptap/pm@3.30.5)
+      '@tiptap/extension-collaboration': 3.24.0(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)(@tiptap/y-tiptap@3.0.7(prosemirror-model@1.25.11)(prosemirror-state@1.4.4)(prosemirror-view@1.42.1)(y-protocols@1.0.7(yjs@13.6.30))(yjs@13.6.30))(yjs@13.6.30)
+      '@tiptap/extension-node-range': 3.24.0(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)
+      '@tiptap/pm': 3.30.5
       '@tiptap/y-tiptap': 3.0.7(prosemirror-model@1.25.11)(prosemirror-state@1.4.4)(prosemirror-view@1.42.1)(y-protocols@1.0.7(yjs@13.6.30))(yjs@13.6.30)
 
-  '@tiptap/extension-dropcursor@3.24.0(@tiptap/extensions@3.24.0(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2))':
+  '@tiptap/extension-dropcursor@3.24.0(@tiptap/extensions@3.24.0(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5))':
     dependencies:
-      '@tiptap/extensions': 3.24.0(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)
+      '@tiptap/extensions': 3.24.0(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)
 
-  '@tiptap/extension-emoji@3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)(@tiptap/suggestion@3.30.2(@floating-ui/dom@1.8.0)(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2))(emojibase@17.0.0)':
+  '@tiptap/extension-emoji@3.30.5(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)(@tiptap/suggestion@3.30.5(@floating-ui/dom@1.8.0)(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5))(emojibase@17.0.0)':
     dependencies:
-      '@tiptap/core': 3.30.2(@tiptap/pm@3.30.2)
-      '@tiptap/pm': 3.30.2
-      '@tiptap/suggestion': 3.30.2(@floating-ui/dom@1.8.0)(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)
+      '@tiptap/core': 3.30.5(@tiptap/pm@3.30.5)
+      '@tiptap/pm': 3.30.5
+      '@tiptap/suggestion': 3.30.5(@floating-ui/dom@1.8.0)(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)
       emoji-regex: 10.6.0
       emojibase-data: 17.0.0(emojibase@17.0.0)
       is-emoji-supported: 0.0.5
     transitivePeerDependencies:
       - emojibase
 
-  '@tiptap/extension-floating-menu@3.30.2(@floating-ui/dom@1.8.0)(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)':
+  '@tiptap/extension-floating-menu@3.30.5(@floating-ui/dom@1.8.0)(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)':
     dependencies:
       '@floating-ui/dom': 1.8.0
-      '@tiptap/core': 3.30.2(@tiptap/pm@3.30.2)
-      '@tiptap/pm': 3.30.2
+      '@tiptap/core': 3.30.5(@tiptap/pm@3.30.5)
+      '@tiptap/pm': 3.30.5
 
-  '@tiptap/extension-gapcursor@3.24.0(@tiptap/extensions@3.24.0(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2))':
+  '@tiptap/extension-gapcursor@3.24.0(@tiptap/extensions@3.24.0(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5))':
     dependencies:
-      '@tiptap/extensions': 3.24.0(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)
+      '@tiptap/extensions': 3.24.0(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)
 
-  '@tiptap/extension-hard-break@3.24.0(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))':
+  '@tiptap/extension-hard-break@3.24.0(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))':
     dependencies:
-      '@tiptap/core': 3.30.2(@tiptap/pm@3.30.2)
+      '@tiptap/core': 3.30.5(@tiptap/pm@3.30.5)
 
-  '@tiptap/extension-heading@3.24.0(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))':
+  '@tiptap/extension-heading@3.24.0(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))':
     dependencies:
-      '@tiptap/core': 3.30.2(@tiptap/pm@3.30.2)
+      '@tiptap/core': 3.30.5(@tiptap/pm@3.30.5)
 
-  '@tiptap/extension-horizontal-rule@3.24.0(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)':
+  '@tiptap/extension-horizontal-rule@3.24.0(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)':
     dependencies:
-      '@tiptap/core': 3.30.2(@tiptap/pm@3.30.2)
-      '@tiptap/pm': 3.30.2
+      '@tiptap/core': 3.30.5(@tiptap/pm@3.30.5)
+      '@tiptap/pm': 3.30.5
 
-  '@tiptap/extension-image@3.24.0(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))':
+  '@tiptap/extension-image@3.24.0(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))':
     dependencies:
-      '@tiptap/core': 3.30.2(@tiptap/pm@3.30.2)
+      '@tiptap/core': 3.30.5(@tiptap/pm@3.30.5)
 
-  '@tiptap/extension-italic@3.24.0(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))':
+  '@tiptap/extension-italic@3.24.0(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))':
     dependencies:
-      '@tiptap/core': 3.30.2(@tiptap/pm@3.30.2)
+      '@tiptap/core': 3.30.5(@tiptap/pm@3.30.5)
 
-  '@tiptap/extension-link@3.24.0(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)':
+  '@tiptap/extension-link@3.24.0(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)':
     dependencies:
-      '@tiptap/core': 3.30.2(@tiptap/pm@3.30.2)
-      '@tiptap/pm': 3.30.2
+      '@tiptap/core': 3.30.5(@tiptap/pm@3.30.5)
+      '@tiptap/pm': 3.30.5
       linkifyjs: 4.3.3
 
-  '@tiptap/extension-list-item@3.24.0(@tiptap/extension-list@3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2))':
+  '@tiptap/extension-list-item@3.24.0(@tiptap/extension-list@3.30.5(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5))':
     dependencies:
-      '@tiptap/extension-list': 3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)
+      '@tiptap/extension-list': 3.30.5(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)
 
-  '@tiptap/extension-list-keymap@3.24.0(@tiptap/extension-list@3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2))':
+  '@tiptap/extension-list-keymap@3.24.0(@tiptap/extension-list@3.30.5(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5))':
     dependencies:
-      '@tiptap/extension-list': 3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)
+      '@tiptap/extension-list': 3.30.5(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)
 
-  '@tiptap/extension-list@3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)':
+  '@tiptap/extension-list@3.30.5(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)':
     dependencies:
-      '@tiptap/core': 3.30.2(@tiptap/pm@3.30.2)
-      '@tiptap/pm': 3.30.2
+      '@tiptap/core': 3.30.5(@tiptap/pm@3.30.5)
+      '@tiptap/pm': 3.30.5
 
-  '@tiptap/extension-mention@3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)(@tiptap/suggestion@3.30.2(@floating-ui/dom@1.8.0)(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2))':
+  '@tiptap/extension-mention@3.30.5(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)(@tiptap/suggestion@3.30.5(@floating-ui/dom@1.8.0)(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5))':
     dependencies:
-      '@tiptap/core': 3.30.2(@tiptap/pm@3.30.2)
-      '@tiptap/pm': 3.30.2
-      '@tiptap/suggestion': 3.30.2(@floating-ui/dom@1.8.0)(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)
+      '@tiptap/core': 3.30.5(@tiptap/pm@3.30.5)
+      '@tiptap/pm': 3.30.5
+      '@tiptap/suggestion': 3.30.5(@floating-ui/dom@1.8.0)(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)
 
-  '@tiptap/extension-node-range@3.24.0(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)':
+  '@tiptap/extension-node-range@3.24.0(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)':
     dependencies:
-      '@tiptap/core': 3.30.2(@tiptap/pm@3.30.2)
-      '@tiptap/pm': 3.30.2
+      '@tiptap/core': 3.30.5(@tiptap/pm@3.30.5)
+      '@tiptap/pm': 3.30.5
 
-  '@tiptap/extension-ordered-list@3.24.0(@tiptap/extension-list@3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2))':
+  '@tiptap/extension-ordered-list@3.24.0(@tiptap/extension-list@3.30.5(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5))':
     dependencies:
-      '@tiptap/extension-list': 3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)
+      '@tiptap/extension-list': 3.30.5(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)
 
-  '@tiptap/extension-paragraph@3.24.0(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))':
+  '@tiptap/extension-paragraph@3.24.0(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))':
     dependencies:
-      '@tiptap/core': 3.30.2(@tiptap/pm@3.30.2)
+      '@tiptap/core': 3.30.5(@tiptap/pm@3.30.5)
 
-  '@tiptap/extension-placeholder@3.24.0(@tiptap/extensions@3.24.0(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2))':
+  '@tiptap/extension-placeholder@3.24.0(@tiptap/extensions@3.24.0(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5))':
     dependencies:
-      '@tiptap/extensions': 3.24.0(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)
+      '@tiptap/extensions': 3.24.0(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)
 
-  '@tiptap/extension-strike@3.24.0(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))':
+  '@tiptap/extension-strike@3.24.0(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))':
     dependencies:
-      '@tiptap/core': 3.30.2(@tiptap/pm@3.30.2)
+      '@tiptap/core': 3.30.5(@tiptap/pm@3.30.5)
 
-  '@tiptap/extension-table@3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)':
+  '@tiptap/extension-table@3.30.5(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)':
     dependencies:
-      '@tiptap/core': 3.30.2(@tiptap/pm@3.30.2)
-      '@tiptap/pm': 3.30.2
+      '@tiptap/core': 3.30.5(@tiptap/pm@3.30.5)
+      '@tiptap/pm': 3.30.5
 
-  '@tiptap/extension-text-style@3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))':
+  '@tiptap/extension-text-style@3.30.5(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))':
     dependencies:
-      '@tiptap/core': 3.30.2(@tiptap/pm@3.30.2)
+      '@tiptap/core': 3.30.5(@tiptap/pm@3.30.5)
 
-  '@tiptap/extension-text@3.24.0(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))':
+  '@tiptap/extension-text@3.24.0(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))':
     dependencies:
-      '@tiptap/core': 3.30.2(@tiptap/pm@3.30.2)
+      '@tiptap/core': 3.30.5(@tiptap/pm@3.30.5)
 
-  '@tiptap/extension-underline@3.24.0(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))':
+  '@tiptap/extension-underline@3.24.0(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))':
     dependencies:
-      '@tiptap/core': 3.30.2(@tiptap/pm@3.30.2)
+      '@tiptap/core': 3.30.5(@tiptap/pm@3.30.5)
 
-  '@tiptap/extensions@3.24.0(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)':
+  '@tiptap/extensions@3.24.0(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)':
     dependencies:
-      '@tiptap/core': 3.30.2(@tiptap/pm@3.30.2)
-      '@tiptap/pm': 3.30.2
+      '@tiptap/core': 3.30.5(@tiptap/pm@3.30.5)
+      '@tiptap/pm': 3.30.5
 
-  '@tiptap/markdown@3.24.0(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)':
+  '@tiptap/markdown@3.24.0(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)':
     dependencies:
-      '@tiptap/core': 3.30.2(@tiptap/pm@3.30.2)
-      '@tiptap/pm': 3.30.2
+      '@tiptap/core': 3.30.5(@tiptap/pm@3.30.5)
+      '@tiptap/pm': 3.30.5
       marked: 17.0.6
 
-  '@tiptap/pm@3.30.2':
+  '@tiptap/pm@3.30.5':
     dependencies:
       prosemirror-changeset: 2.4.1
       prosemirror-commands: 1.7.1
@@ -13286,46 +13286,46 @@ snapshots:
 
   '@tiptap/starter-kit@3.24.0':
     dependencies:
-      '@tiptap/core': 3.30.2(@tiptap/pm@3.30.2)
-      '@tiptap/extension-blockquote': 3.24.0(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))
-      '@tiptap/extension-bold': 3.24.0(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))
-      '@tiptap/extension-bullet-list': 3.24.0(@tiptap/extension-list@3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2))
-      '@tiptap/extension-code': 3.24.0(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))
-      '@tiptap/extension-code-block': 3.24.0(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)
-      '@tiptap/extension-document': 3.24.0(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))
-      '@tiptap/extension-dropcursor': 3.24.0(@tiptap/extensions@3.24.0(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2))
-      '@tiptap/extension-gapcursor': 3.24.0(@tiptap/extensions@3.24.0(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2))
-      '@tiptap/extension-hard-break': 3.24.0(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))
-      '@tiptap/extension-heading': 3.24.0(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))
-      '@tiptap/extension-horizontal-rule': 3.24.0(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)
-      '@tiptap/extension-italic': 3.24.0(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))
-      '@tiptap/extension-link': 3.24.0(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)
-      '@tiptap/extension-list': 3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)
-      '@tiptap/extension-list-item': 3.24.0(@tiptap/extension-list@3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2))
-      '@tiptap/extension-list-keymap': 3.24.0(@tiptap/extension-list@3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2))
-      '@tiptap/extension-ordered-list': 3.24.0(@tiptap/extension-list@3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2))
-      '@tiptap/extension-paragraph': 3.24.0(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))
-      '@tiptap/extension-strike': 3.24.0(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))
-      '@tiptap/extension-text': 3.24.0(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))
-      '@tiptap/extension-underline': 3.24.0(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))
-      '@tiptap/extensions': 3.24.0(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)
-      '@tiptap/pm': 3.30.2
+      '@tiptap/core': 3.30.5(@tiptap/pm@3.30.5)
+      '@tiptap/extension-blockquote': 3.24.0(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))
+      '@tiptap/extension-bold': 3.24.0(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))
+      '@tiptap/extension-bullet-list': 3.24.0(@tiptap/extension-list@3.30.5(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5))
+      '@tiptap/extension-code': 3.24.0(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))
+      '@tiptap/extension-code-block': 3.24.0(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)
+      '@tiptap/extension-document': 3.24.0(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))
+      '@tiptap/extension-dropcursor': 3.24.0(@tiptap/extensions@3.24.0(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5))
+      '@tiptap/extension-gapcursor': 3.24.0(@tiptap/extensions@3.24.0(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5))
+      '@tiptap/extension-hard-break': 3.24.0(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))
+      '@tiptap/extension-heading': 3.24.0(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))
+      '@tiptap/extension-horizontal-rule': 3.24.0(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)
+      '@tiptap/extension-italic': 3.24.0(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))
+      '@tiptap/extension-link': 3.24.0(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)
+      '@tiptap/extension-list': 3.30.5(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)
+      '@tiptap/extension-list-item': 3.24.0(@tiptap/extension-list@3.30.5(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5))
+      '@tiptap/extension-list-keymap': 3.24.0(@tiptap/extension-list@3.30.5(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5))
+      '@tiptap/extension-ordered-list': 3.24.0(@tiptap/extension-list@3.30.5(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5))
+      '@tiptap/extension-paragraph': 3.24.0(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))
+      '@tiptap/extension-strike': 3.24.0(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))
+      '@tiptap/extension-text': 3.24.0(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))
+      '@tiptap/extension-underline': 3.24.0(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))
+      '@tiptap/extensions': 3.24.0(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)
+      '@tiptap/pm': 3.30.5
 
-  '@tiptap/suggestion@3.30.2(@floating-ui/dom@1.8.0)(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)':
+  '@tiptap/suggestion@3.30.5(@floating-ui/dom@1.8.0)(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)':
     dependencies:
       '@floating-ui/dom': 1.8.0
-      '@tiptap/core': 3.30.2(@tiptap/pm@3.30.2)
-      '@tiptap/pm': 3.30.2
+      '@tiptap/core': 3.30.5(@tiptap/pm@3.30.5)
+      '@tiptap/pm': 3.30.5
 
-  '@tiptap/vue-3@3.30.2(@floating-ui/dom@1.8.0)(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)(vue@3.5.40(typescript@6.0.3))':
+  '@tiptap/vue-3@3.30.5(@floating-ui/dom@1.8.0)(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)(vue@3.5.40(typescript@6.0.3))':
     dependencies:
       '@floating-ui/dom': 1.8.0
-      '@tiptap/core': 3.30.2(@tiptap/pm@3.30.2)
-      '@tiptap/pm': 3.30.2
+      '@tiptap/core': 3.30.5(@tiptap/pm@3.30.5)
+      '@tiptap/pm': 3.30.5
       vue: 3.5.40(typescript@6.0.3)
     optionalDependencies:
-      '@tiptap/extension-bubble-menu': 3.30.2(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)
-      '@tiptap/extension-floating-menu': 3.30.2(@floating-ui/dom@1.8.0)(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)
+      '@tiptap/extension-bubble-menu': 3.30.5(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)
+      '@tiptap/extension-floating-menu': 3.30.5(@floating-ui/dom@1.8.0)(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)
 
   '@tiptap/y-tiptap@3.0.7(prosemirror-model@1.25.11)(prosemirror-state@1.4.4)(prosemirror-view@1.42.1)(y-protocols@1.0.7(yjs@13.6.30))(yjs@13.6.30)':
     dependencies:
@@ -13599,15 +13599,15 @@ snapshots:
 
   '@types/web-bluetooth@0.0.21': {}
 
-  '@typescript-eslint/eslint-plugin@8.66.0(@typescript-eslint/parser@8.66.0(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3))(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3)':
+  '@typescript-eslint/eslint-plugin@8.66.0(@typescript-eslint/parser@8.66.0(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3))(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3)':
     dependencies:
       '@eslint-community/regexpp': 4.12.2
-      '@typescript-eslint/parser': 8.66.0(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3)
+      '@typescript-eslint/parser': 8.66.0(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3)
       '@typescript-eslint/scope-manager': 8.66.0
-      '@typescript-eslint/type-utils': 8.66.0(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3)
-      '@typescript-eslint/utils': 8.66.0(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3)
+      '@typescript-eslint/type-utils': 8.66.0(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3)
+      '@typescript-eslint/utils': 8.66.0(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3)
       '@typescript-eslint/visitor-keys': 8.66.0
-      eslint: 10.9.0(jiti@2.7.0)(supports-color@8.1.1)
+      eslint: 10.9.1(jiti@2.7.0)(supports-color@8.1.1)
       ignore: 7.0.6
       natural-compare: 1.4.0
       ts-api-utils: 2.5.0(typescript@6.0.3)
@@ -13615,14 +13615,14 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@typescript-eslint/parser@8.66.0(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3)':
+  '@typescript-eslint/parser@8.66.0(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3)':
     dependencies:
       '@typescript-eslint/scope-manager': 8.66.0
       '@typescript-eslint/types': 8.66.0
       '@typescript-eslint/typescript-estree': 8.66.0(supports-color@8.1.1)(typescript@6.0.3)
       '@typescript-eslint/visitor-keys': 8.66.0
       debug: 4.4.3(supports-color@8.1.1)
-      eslint: 10.9.0(jiti@2.7.0)(supports-color@8.1.1)
+      eslint: 10.9.1(jiti@2.7.0)(supports-color@8.1.1)
       typescript: 6.0.3
     transitivePeerDependencies:
       - supports-color
@@ -13645,13 +13645,13 @@ snapshots:
     dependencies:
       typescript: 6.0.3
 
-  '@typescript-eslint/type-utils@8.66.0(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3)':
+  '@typescript-eslint/type-utils@8.66.0(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3)':
     dependencies:
       '@typescript-eslint/types': 8.66.0
       '@typescript-eslint/typescript-estree': 8.66.0(supports-color@8.1.1)(typescript@6.0.3)
-      '@typescript-eslint/utils': 8.66.0(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3)
+      '@typescript-eslint/utils': 8.66.0(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3)
       debug: 4.4.3(supports-color@8.1.1)
-      eslint: 10.9.0(jiti@2.7.0)(supports-color@8.1.1)
+      eslint: 10.9.1(jiti@2.7.0)(supports-color@8.1.1)
       ts-api-utils: 2.5.0(typescript@6.0.3)
       typescript: 6.0.3
     transitivePeerDependencies:
@@ -13674,13 +13674,13 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@typescript-eslint/utils@8.66.0(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3)':
+  '@typescript-eslint/utils@8.66.0(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3)':
     dependencies:
-      '@eslint-community/eslint-utils': 4.9.1(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1))
+      '@eslint-community/eslint-utils': 4.9.1(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1))
       '@typescript-eslint/scope-manager': 8.66.0
       '@typescript-eslint/types': 8.66.0
       '@typescript-eslint/typescript-estree': 8.66.0(supports-color@8.1.1)(typescript@6.0.3)
-      eslint: 10.9.0(jiti@2.7.0)(supports-color@8.1.1)
+      eslint: 10.9.1(jiti@2.7.0)(supports-color@8.1.1)
       typescript: 6.0.3
     transitivePeerDependencies:
       - supports-color
@@ -13888,9 +13888,9 @@ snapshots:
       valibot: 1.4.2(typescript@6.0.3)
     optional: true
 
-  '@vercel/analytics@2.0.1(nuxt@4.5.2(e6f135e59161a1b0c331aaeb60eb77d8))(vue@3.5.40(typescript@6.0.3))':
+  '@vercel/analytics@2.0.1(nuxt@4.5.2(96ab177cdc02d820ca09f0417ddac4a3))(vue@3.5.40(typescript@6.0.3))':
     optionalDependencies:
-      nuxt: 4.5.2(e6f135e59161a1b0c331aaeb60eb77d8)
+      nuxt: 4.5.2(96ab177cdc02d820ca09f0417ddac4a3)
       vue: 3.5.40(typescript@6.0.3)
 
   '@vercel/cli-auth@0.0.1':
@@ -14150,13 +14150,13 @@ snapshots:
 
   '@vueuse/metadata@14.4.0': {}
 
-  '@vueuse/nuxt@14.4.0(magic-string@1.2.2)(magicast@0.5.4)(nuxt@4.5.2(e6f135e59161a1b0c331aaeb60eb77d8))(oxc-parser@0.140.0)(rolldown@1.2.1)(unplugin@3.3.0(esbuild@0.28.1)(rolldown@1.2.1)(rollup@4.60.2)(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0)))(vue@3.5.40(typescript@6.0.3))':
+  '@vueuse/nuxt@14.4.0(magic-string@1.2.2)(magicast@0.5.4)(nuxt@4.5.2(96ab177cdc02d820ca09f0417ddac4a3))(oxc-parser@0.140.0)(rolldown@1.2.1)(unplugin@3.3.0(esbuild@0.28.1)(rolldown@1.2.1)(rollup@4.60.2)(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0)))(vue@3.5.40(typescript@6.0.3))':
     dependencies:
       '@nuxt/kit': 4.5.2(magic-string@1.2.2)(magicast@0.5.4)(oxc-parser@0.140.0)(rolldown@1.2.1)(unplugin@3.3.0(esbuild@0.28.1)(rolldown@1.2.1)(rollup@4.60.2)(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0)))
       '@vueuse/core': 14.4.0(vue@3.5.40(typescript@6.0.3))
       '@vueuse/metadata': 14.4.0
       local-pkg: 1.2.1
-      nuxt: 4.5.2(e6f135e59161a1b0c331aaeb60eb77d8)
+      nuxt: 4.5.2(96ab177cdc02d820ca09f0417ddac4a3)
       vue: 3.5.40(typescript@6.0.3)
     transitivePeerDependencies:
       - magic-string
@@ -14176,13 +14176,13 @@ snapshots:
     dependencies:
       vue: 3.5.40(typescript@6.0.3)
 
-  '@workflow/astro@4.0.19(@opentelemetry/api@1.9.0)(@swc/helpers@0.5.21)(supports-color@8.1.1)':
+  '@workflow/astro@4.0.20(@opentelemetry/api@1.9.0)(@swc/helpers@0.5.21)(supports-color@8.1.1)':
     dependencies:
       '@swc/core': 1.15.3(@swc/helpers@0.5.21)
-      '@workflow/builders': 4.1.9(@opentelemetry/api@1.9.0)(@swc/helpers@0.5.21)(supports-color@8.1.1)
-      '@workflow/rollup': 4.0.19(@opentelemetry/api@1.9.0)(@swc/helpers@0.5.21)(supports-color@8.1.1)
+      '@workflow/builders': 4.1.10(@opentelemetry/api@1.9.0)(@swc/helpers@0.5.21)(supports-color@8.1.1)
+      '@workflow/rollup': 4.0.20(@opentelemetry/api@1.9.0)(@swc/helpers@0.5.21)(supports-color@8.1.1)
       '@workflow/swc-plugin': 4.1.2(@swc/core@1.15.3(@swc/helpers@0.5.21))
-      '@workflow/vite': 4.0.19(@opentelemetry/api@1.9.0)(@swc/helpers@0.5.21)(supports-color@8.1.1)
+      '@workflow/vite': 4.0.20(@opentelemetry/api@1.9.0)(@swc/helpers@0.5.21)(supports-color@8.1.1)
       exsolve: 1.1.1
       pathe: 2.0.3
     transitivePeerDependencies:
@@ -14190,10 +14190,10 @@ snapshots:
       - '@swc/helpers'
       - supports-color
 
-  '@workflow/builders@4.1.9(@opentelemetry/api@1.9.0)(@swc/helpers@0.5.21)(supports-color@8.1.1)':
+  '@workflow/builders@4.1.10(@opentelemetry/api@1.9.0)(@swc/helpers@0.5.21)(supports-color@8.1.1)':
     dependencies:
       '@swc/core': 1.15.3(@swc/helpers@0.5.21)
-      '@workflow/core': 4.8.4(@opentelemetry/api@1.9.0)(supports-color@8.1.1)
+      '@workflow/core': 4.8.5(@opentelemetry/api@1.9.0)(supports-color@8.1.1)
       '@workflow/errors': 4.2.1
       '@workflow/swc-plugin': 4.1.2(@swc/core@1.15.3(@swc/helpers@0.5.21))
       '@workflow/utils': 4.1.4
@@ -14209,21 +14209,21 @@ snapshots:
       - '@swc/helpers'
       - supports-color
 
-  '@workflow/cli@4.3.8(@opentelemetry/api@1.9.0)(@swc/helpers@0.5.21)(supports-color@8.1.1)':
+  '@workflow/cli@4.3.9(@opentelemetry/api@1.9.0)(@swc/helpers@0.5.21)(supports-color@8.1.1)':
     dependencies:
       '@oclif/core': 4.11.4
       '@oclif/plugin-help': 6.2.37
       '@swc/core': 1.15.3(@swc/helpers@0.5.21)
       '@vercel/cli-auth': 0.0.1
-      '@workflow/builders': 4.1.9(@opentelemetry/api@1.9.0)(@swc/helpers@0.5.21)(supports-color@8.1.1)
-      '@workflow/core': 4.8.4(@opentelemetry/api@1.9.0)(supports-color@8.1.1)
+      '@workflow/builders': 4.1.10(@opentelemetry/api@1.9.0)(@swc/helpers@0.5.21)(supports-color@8.1.1)
+      '@workflow/core': 4.8.5(@opentelemetry/api@1.9.0)(supports-color@8.1.1)
       '@workflow/errors': 4.2.1
       '@workflow/swc-plugin': 4.1.2(@swc/core@1.15.3(@swc/helpers@0.5.21))
       '@workflow/utils': 4.1.4
-      '@workflow/web': 4.1.20(supports-color@8.1.1)
-      '@workflow/world': 4.4.0
-      '@workflow/world-local': 4.3.0(@opentelemetry/api@1.9.0)
-      '@workflow/world-vercel': 4.7.0(@opentelemetry/api@1.9.0)
+      '@workflow/web': 4.1.21(supports-color@8.1.1)
+      '@workflow/world': 4.5.0
+      '@workflow/world-local': 4.4.0(@opentelemetry/api@1.9.0)
+      '@workflow/world-vercel': 4.7.1(@opentelemetry/api@1.9.0)
       boxen: 8.0.1
       builtin-modules: 5.0.0
       chalk: 5.6.2
@@ -14246,7 +14246,7 @@ snapshots:
       - '@swc/helpers'
       - supports-color
 
-  '@workflow/core@4.8.4(@opentelemetry/api@1.9.0)(supports-color@8.1.1)':
+  '@workflow/core@4.8.5(@opentelemetry/api@1.9.0)(supports-color@8.1.1)':
     dependencies:
       '@aws-sdk/credential-provider-web-identity': 3.972.49
       '@jridgewell/trace-mapping': 0.3.31
@@ -14256,9 +14256,9 @@ snapshots:
       '@workflow/errors': 4.2.1
       '@workflow/serde': 4.1.2
       '@workflow/utils': 4.1.4
-      '@workflow/world': 4.4.0
-      '@workflow/world-local': 4.3.0(@opentelemetry/api@1.9.0)
-      '@workflow/world-vercel': 4.7.0(@opentelemetry/api@1.9.0)
+      '@workflow/world': 4.5.0
+      '@workflow/world-local': 4.4.0(@opentelemetry/api@1.9.0)
+      '@workflow/world-vercel': 4.7.1(@opentelemetry/api@1.9.0)
       debug: 4.4.3(supports-color@8.1.1)
       devalue: 5.8.1
       ms: 2.1.3
@@ -14277,13 +14277,13 @@ snapshots:
       '@workflow/utils': 4.1.4
       ms: 2.1.3
 
-  '@workflow/nest@4.0.20(@nestjs/common@11.1.19(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@8.1.1))(@nestjs/core@11.1.19(@nestjs/common@11.1.19(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@8.1.1))(reflect-metadata@0.2.2)(rxjs@7.8.2))(@opentelemetry/api@1.9.0)(@swc/cli@0.8.1(@swc/core@1.15.3(@swc/helpers@0.5.21))(chokidar@5.0.0)(supports-color@8.1.1))(@swc/core@1.15.3(@swc/helpers@0.5.21))(@swc/helpers@0.5.21)(supports-color@8.1.1)':
+  '@workflow/nest@4.0.21(@nestjs/common@11.1.19(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@8.1.1))(@nestjs/core@11.1.19(@nestjs/common@11.1.19(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@8.1.1))(reflect-metadata@0.2.2)(rxjs@7.8.2))(@opentelemetry/api@1.9.0)(@swc/cli@0.8.1(@swc/core@1.15.3(@swc/helpers@0.5.21))(chokidar@5.0.0)(supports-color@8.1.1))(@swc/core@1.15.3(@swc/helpers@0.5.21))(@swc/helpers@0.5.21)(supports-color@8.1.1)':
     dependencies:
       '@nestjs/common': 11.1.19(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@8.1.1)
       '@nestjs/core': 11.1.19(@nestjs/common@11.1.19(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@8.1.1))(reflect-metadata@0.2.2)(rxjs@7.8.2)
       '@swc/cli': 0.8.1(@swc/core@1.15.3(@swc/helpers@0.5.21))(chokidar@5.0.0)(supports-color@8.1.1)
       '@swc/core': 1.15.3(@swc/helpers@0.5.21)
-      '@workflow/builders': 4.1.9(@opentelemetry/api@1.9.0)(@swc/helpers@0.5.21)(supports-color@8.1.1)
+      '@workflow/builders': 4.1.10(@opentelemetry/api@1.9.0)(@swc/helpers@0.5.21)(supports-color@8.1.1)
       '@workflow/swc-plugin': 4.1.2(@swc/core@1.15.3(@swc/helpers@0.5.21))
       pathe: 2.0.3
     transitivePeerDependencies:
@@ -14291,11 +14291,11 @@ snapshots:
       - '@swc/helpers'
       - supports-color
 
-  '@workflow/next@4.1.8(@opentelemetry/api@1.9.0)(@swc/helpers@0.5.21)(supports-color@8.1.1)':
+  '@workflow/next@4.1.9(@opentelemetry/api@1.9.0)(@swc/helpers@0.5.21)(supports-color@8.1.1)':
     dependencies:
       '@swc/core': 1.15.3(@swc/helpers@0.5.21)
-      '@workflow/builders': 4.1.9(@opentelemetry/api@1.9.0)(@swc/helpers@0.5.21)(supports-color@8.1.1)
-      '@workflow/core': 4.8.4(@opentelemetry/api@1.9.0)(supports-color@8.1.1)
+      '@workflow/builders': 4.1.10(@opentelemetry/api@1.9.0)(@swc/helpers@0.5.21)(supports-color@8.1.1)
+      '@workflow/core': 4.8.5(@opentelemetry/api@1.9.0)(supports-color@8.1.1)
       '@workflow/swc-plugin': 4.1.2(@swc/core@1.15.3(@swc/helpers@0.5.21))
       semver: 7.7.4
       watchpack: 2.5.1
@@ -14304,15 +14304,15 @@ snapshots:
       - '@swc/helpers'
       - supports-color
 
-  '@workflow/nitro@4.1.10(@opentelemetry/api@1.9.0)(@swc/helpers@0.5.21)(supports-color@8.1.1)':
+  '@workflow/nitro@4.1.11(@opentelemetry/api@1.9.0)(@swc/helpers@0.5.21)(supports-color@8.1.1)':
     dependencies:
       '@swc/core': 1.15.3(@swc/helpers@0.5.21)
-      '@workflow/builders': 4.1.9(@opentelemetry/api@1.9.0)(@swc/helpers@0.5.21)(supports-color@8.1.1)
-      '@workflow/core': 4.8.4(@opentelemetry/api@1.9.0)(supports-color@8.1.1)
-      '@workflow/rollup': 4.0.19(@opentelemetry/api@1.9.0)(@swc/helpers@0.5.21)(supports-color@8.1.1)
+      '@workflow/builders': 4.1.10(@opentelemetry/api@1.9.0)(@swc/helpers@0.5.21)(supports-color@8.1.1)
+      '@workflow/core': 4.8.5(@opentelemetry/api@1.9.0)(supports-color@8.1.1)
+      '@workflow/rollup': 4.0.20(@opentelemetry/api@1.9.0)(@swc/helpers@0.5.21)(supports-color@8.1.1)
       '@workflow/swc-plugin': 4.1.2(@swc/core@1.15.3(@swc/helpers@0.5.21))
-      '@workflow/vite': 4.0.19(@opentelemetry/api@1.9.0)(@swc/helpers@0.5.21)(supports-color@8.1.1)
-      '@workflow/web': 4.1.20(supports-color@8.1.1)
+      '@workflow/vite': 4.0.20(@opentelemetry/api@1.9.0)(@swc/helpers@0.5.21)(supports-color@8.1.1)
+      '@workflow/web': 4.1.21(supports-color@8.1.1)
       exsolve: 1.0.8
       pathe: 2.0.3
     transitivePeerDependencies:
@@ -14320,20 +14320,20 @@ snapshots:
       - '@swc/helpers'
       - supports-color
 
-  '@workflow/nuxt@4.0.20(@opentelemetry/api@1.9.0)(@swc/helpers@0.5.21)(magicast@0.5.4)(supports-color@8.1.1)':
+  '@workflow/nuxt@4.0.21(@opentelemetry/api@1.9.0)(@swc/helpers@0.5.21)(magicast@0.5.4)(supports-color@8.1.1)':
     dependencies:
       '@nuxt/kit': 4.4.8(magicast@0.5.4)
-      '@workflow/nitro': 4.1.10(@opentelemetry/api@1.9.0)(@swc/helpers@0.5.21)(supports-color@8.1.1)
+      '@workflow/nitro': 4.1.11(@opentelemetry/api@1.9.0)(@swc/helpers@0.5.21)(supports-color@8.1.1)
     transitivePeerDependencies:
       - '@opentelemetry/api'
       - '@swc/helpers'
       - magicast
       - supports-color
 
-  '@workflow/rollup@4.0.19(@opentelemetry/api@1.9.0)(@swc/helpers@0.5.21)(supports-color@8.1.1)':
+  '@workflow/rollup@4.0.20(@opentelemetry/api@1.9.0)(@swc/helpers@0.5.21)(supports-color@8.1.1)':
     dependencies:
       '@swc/core': 1.15.3(@swc/helpers@0.5.21)
-      '@workflow/builders': 4.1.9(@opentelemetry/api@1.9.0)(@swc/helpers@0.5.21)(supports-color@8.1.1)
+      '@workflow/builders': 4.1.10(@opentelemetry/api@1.9.0)(@swc/helpers@0.5.21)(supports-color@8.1.1)
       '@workflow/swc-plugin': 4.1.2(@swc/core@1.15.3(@swc/helpers@0.5.21))
       exsolve: 1.0.7
     transitivePeerDependencies:
@@ -14343,14 +14343,14 @@ snapshots:
 
   '@workflow/serde@4.1.2': {}
 
-  '@workflow/sveltekit@4.0.19(@opentelemetry/api@1.9.0)(@swc/helpers@0.5.21)(supports-color@8.1.1)':
+  '@workflow/sveltekit@4.0.20(@opentelemetry/api@1.9.0)(@swc/helpers@0.5.21)(supports-color@8.1.1)':
     dependencies:
       '@sveltejs/load-config': 0.2.3
       '@swc/core': 1.15.3(@swc/helpers@0.5.21)
-      '@workflow/builders': 4.1.9(@opentelemetry/api@1.9.0)(@swc/helpers@0.5.21)(supports-color@8.1.1)
-      '@workflow/rollup': 4.0.19(@opentelemetry/api@1.9.0)(@swc/helpers@0.5.21)(supports-color@8.1.1)
+      '@workflow/builders': 4.1.10(@opentelemetry/api@1.9.0)(@swc/helpers@0.5.21)(supports-color@8.1.1)
+      '@workflow/rollup': 4.0.20(@opentelemetry/api@1.9.0)(@swc/helpers@0.5.21)(supports-color@8.1.1)
       '@workflow/swc-plugin': 4.1.2(@swc/core@1.15.3(@swc/helpers@0.5.21))
-      '@workflow/vite': 4.0.19(@opentelemetry/api@1.9.0)(@swc/helpers@0.5.21)(supports-color@8.1.1)
+      '@workflow/vite': 4.0.20(@opentelemetry/api@1.9.0)(@swc/helpers@0.5.21)(supports-color@8.1.1)
       exsolve: 1.1.1
       fs-extra: 11.3.4
       pathe: 2.0.3
@@ -14371,26 +14371,26 @@ snapshots:
     dependencies:
       ms: 2.1.3
 
-  '@workflow/vite@4.0.19(@opentelemetry/api@1.9.0)(@swc/helpers@0.5.21)(supports-color@8.1.1)':
+  '@workflow/vite@4.0.20(@opentelemetry/api@1.9.0)(@swc/helpers@0.5.21)(supports-color@8.1.1)':
     dependencies:
-      '@workflow/builders': 4.1.9(@opentelemetry/api@1.9.0)(@swc/helpers@0.5.21)(supports-color@8.1.1)
+      '@workflow/builders': 4.1.10(@opentelemetry/api@1.9.0)(@swc/helpers@0.5.21)(supports-color@8.1.1)
     transitivePeerDependencies:
       - '@opentelemetry/api'
       - '@swc/helpers'
       - supports-color
 
-  '@workflow/web@4.1.20(supports-color@8.1.1)':
+  '@workflow/web@4.1.21(supports-color@8.1.1)':
     dependencies:
       express: 5.2.1(supports-color@8.1.1)
     transitivePeerDependencies:
       - supports-color
 
-  '@workflow/world-local@4.3.0(@opentelemetry/api@1.9.0)':
+  '@workflow/world-local@4.4.0(@opentelemetry/api@1.9.0)':
     dependencies:
       '@vercel/queue': 0.3.1
       '@workflow/errors': 4.2.1
       '@workflow/utils': 4.1.4
-      '@workflow/world': 4.4.0
+      '@workflow/world': 4.5.0
       async-sema: 3.1.1
       ulid: 3.0.2
       undici: 7.28.0
@@ -14398,19 +14398,19 @@ snapshots:
     optionalDependencies:
       '@opentelemetry/api': 1.9.0
 
-  '@workflow/world-vercel@4.7.0(@opentelemetry/api@1.9.0)':
+  '@workflow/world-vercel@4.7.1(@opentelemetry/api@1.9.0)':
     dependencies:
       '@vercel/oidc': 3.2.0
       '@vercel/queue': 0.3.1
       '@workflow/errors': 4.2.1
-      '@workflow/world': 4.4.0
+      '@workflow/world': 4.5.0
       cbor-x: 1.6.0
       undici: 7.28.0
       zod: 4.3.6
     optionalDependencies:
       '@opentelemetry/api': 1.9.0
 
-  '@workflow/world@4.4.0':
+  '@workflow/world@4.5.0':
     dependencies:
       ulid: 3.0.2
       zod: 4.3.6
@@ -14532,13 +14532,13 @@ snapshots:
 
   agent-base@7.1.4: {}
 
-  ai@6.0.264(zod@4.4.3):
+  ai@6.0.271(zod@4.5.4):
     dependencies:
-      '@ai-sdk/gateway': 3.0.179(zod@4.4.3)
+      '@ai-sdk/gateway': 3.0.184(zod@4.5.4)
       '@ai-sdk/provider': 3.0.15
-      '@ai-sdk/provider-utils': 4.0.46(zod@4.4.3)
+      '@ai-sdk/provider-utils': 4.0.49(zod@4.5.4)
       '@opentelemetry/api': 1.9.0
-      zod: 4.4.3
+      zod: 4.5.4
 
   ajv@6.15.0:
     dependencies:
@@ -15354,10 +15354,10 @@ snapshots:
 
   date-fns@4.1.0: {}
 
-  db0@0.3.4(@electric-sql/pglite@0.5.6)(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260426.1)(@electric-sql/pglite@0.5.6)(@opentelemetry/api@1.9.0)(postgres@3.4.9)):
+  db0@0.3.4(@electric-sql/pglite@0.5.8)(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260426.1)(@electric-sql/pglite@0.5.8)(@opentelemetry/api@1.9.0)(postgres@3.4.9)):
     optionalDependencies:
-      '@electric-sql/pglite': 0.5.6
-      drizzle-orm: 0.45.2(@cloudflare/workers-types@4.20260426.1)(@electric-sql/pglite@0.5.6)(@opentelemetry/api@1.9.0)(postgres@3.4.9)
+      '@electric-sql/pglite': 0.5.8
+      drizzle-orm: 0.45.2(@cloudflare/workers-types@4.20260426.1)(@electric-sql/pglite@0.5.8)(@opentelemetry/api@1.9.0)(postgres@3.4.9)
 
   debug@4.4.3(supports-color@8.1.1):
     dependencies:
@@ -15513,10 +15513,10 @@ snapshots:
       esbuild: 0.25.12
       tsx: 4.21.0
 
-  drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260426.1)(@electric-sql/pglite@0.5.6)(@opentelemetry/api@1.9.0)(postgres@3.4.9):
+  drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260426.1)(@electric-sql/pglite@0.5.8)(@opentelemetry/api@1.9.0)(postgres@3.4.9):
     optionalDependencies:
       '@cloudflare/workers-types': 4.20260426.1
-      '@electric-sql/pglite': 0.5.6
+      '@electric-sql/pglite': 0.5.8
       '@opentelemetry/api': 1.9.0
       postgres: 3.4.9
 
@@ -15831,10 +15831,10 @@ snapshots:
 
   escape-string-regexp@5.0.0: {}
 
-  eslint-config-flat-gitignore@2.3.0(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1)):
+  eslint-config-flat-gitignore@2.3.0(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1)):
     dependencies:
-      '@eslint/compat': 2.0.5(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1))
-      eslint: 10.9.0(jiti@2.7.0)(supports-color@8.1.1)
+      '@eslint/compat': 2.0.5(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1))
+      eslint: 10.9.1(jiti@2.7.0)(supports-color@8.1.1)
 
   eslint-flat-config-utils@3.2.0:
     dependencies:
@@ -15848,20 +15848,20 @@ snapshots:
     optionalDependencies:
       unrs-resolver: 1.11.1
 
-  eslint-merge-processors@2.0.0(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1)):
+  eslint-merge-processors@2.0.0(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1)):
     dependencies:
-      eslint: 10.9.0(jiti@2.7.0)(supports-color@8.1.1)
+      eslint: 10.9.1(jiti@2.7.0)(supports-color@8.1.1)
 
-  eslint-plugin-import-lite@0.6.0(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1)):
+  eslint-plugin-import-lite@0.6.0(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1)):
     dependencies:
-      eslint: 10.9.0(jiti@2.7.0)(supports-color@8.1.1)
+      eslint: 10.9.1(jiti@2.7.0)(supports-color@8.1.1)
 
-  eslint-plugin-import-x@4.17.1(@typescript-eslint/utils@8.66.0(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3))(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1):
+  eslint-plugin-import-x@4.17.1(@typescript-eslint/utils@8.66.0(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3))(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1):
     dependencies:
       '@typescript-eslint/types': 8.66.0
       comment-parser: 1.4.7
       debug: 4.4.3(supports-color@8.1.1)
-      eslint: 10.9.0(jiti@2.7.0)(supports-color@8.1.1)
+      eslint: 10.9.1(jiti@2.7.0)(supports-color@8.1.1)
       eslint-import-context: 0.1.9(unrs-resolver@1.11.1)
       is-glob: 4.0.3
       minimatch: 10.2.5
@@ -15869,11 +15869,11 @@ snapshots:
       stable-hash-x: 0.2.0
       unrs-resolver: 1.11.1
     optionalDependencies:
-      '@typescript-eslint/utils': 8.66.0(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3)
+      '@typescript-eslint/utils': 8.66.0(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3)
     transitivePeerDependencies:
       - supports-color
 
-  eslint-plugin-jsdoc@63.3.3(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1):
+  eslint-plugin-jsdoc@63.3.3(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1):
     dependencies:
       '@es-joy/jsdoccomment': 0.91.0
       '@es-joy/resolve.exports': 1.2.0
@@ -15881,7 +15881,7 @@ snapshots:
       comment-parser: 1.4.7
       debug: 4.4.3(supports-color@8.1.1)
       escape-string-regexp: 4.0.0
-      eslint: 10.9.0(jiti@2.7.0)(supports-color@8.1.1)
+      eslint: 10.9.1(jiti@2.7.0)(supports-color@8.1.1)
       espree: 11.2.0
       esquery: 1.7.0
       html-entities: 2.6.0
@@ -15893,20 +15893,20 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-plugin-regexp@3.1.1(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1)):
+  eslint-plugin-regexp@3.1.1(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1)):
     dependencies:
-      '@eslint-community/eslint-utils': 4.9.1(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1))
+      '@eslint-community/eslint-utils': 4.9.1(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1))
       '@eslint-community/regexpp': 4.12.2
       comment-parser: 1.4.7
-      eslint: 10.9.0(jiti@2.7.0)(supports-color@8.1.1)
+      eslint: 10.9.1(jiti@2.7.0)(supports-color@8.1.1)
       jsdoc-type-pratt-parser: 7.2.0
       refa: 0.12.1
       regexp-ast-analysis: 0.7.1
       scslre: 0.3.0
 
-  eslint-plugin-unicorn@73.0.0(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1)):
+  eslint-plugin-unicorn@73.0.0(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1)):
     dependencies:
-      '@eslint-community/eslint-utils': 4.9.1(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1))
+      '@eslint-community/eslint-utils': 4.9.1(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1))
       '@eslint/css-tree': 4.0.5
       browserslist: 4.28.7
       change-case: 5.4.4
@@ -15914,7 +15914,7 @@ snapshots:
       core-js-compat: 3.49.0
       detect-indent: 7.0.2
       entities: 4.5.0
-      eslint: 10.9.0(jiti@2.7.0)(supports-color@8.1.1)
+      eslint: 10.9.1(jiti@2.7.0)(supports-color@8.1.1)
       find-up-simple: 1.0.1
       globals: 17.9.0
       indent-string: 5.0.0
@@ -15928,24 +15928,24 @@ snapshots:
       strip-indent: 4.1.1
       yaml: 2.9.0
 
-  eslint-plugin-vue@10.10.0(@stylistic/eslint-plugin@5.10.0(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1)))(@typescript-eslint/parser@8.66.0(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3))(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1))(vue-eslint-parser@10.4.1(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)):
+  eslint-plugin-vue@10.10.0(@stylistic/eslint-plugin@5.10.0(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1)))(@typescript-eslint/parser@8.66.0(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3))(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1))(vue-eslint-parser@10.4.1(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)):
     dependencies:
-      '@eslint-community/eslint-utils': 4.9.1(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1))
-      eslint: 10.9.0(jiti@2.7.0)(supports-color@8.1.1)
+      '@eslint-community/eslint-utils': 4.9.1(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1))
+      eslint: 10.9.1(jiti@2.7.0)(supports-color@8.1.1)
       natural-compare: 1.4.0
       nth-check: 2.1.1
       postcss-selector-parser: 7.1.4
       semver: 7.8.5
-      vue-eslint-parser: 10.4.1(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)
+      vue-eslint-parser: 10.4.1(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)
       xml-name-validator: 5.0.0
     optionalDependencies:
-      '@stylistic/eslint-plugin': 5.10.0(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1))
-      '@typescript-eslint/parser': 8.66.0(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3)
+      '@stylistic/eslint-plugin': 5.10.0(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1))
+      '@typescript-eslint/parser': 8.66.0(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3)
 
-  eslint-processor-vue-blocks@2.0.0(@vue/compiler-sfc@3.5.40)(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1)):
+  eslint-processor-vue-blocks@2.0.0(@vue/compiler-sfc@3.5.40)(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1)):
     dependencies:
       '@vue/compiler-sfc': 3.5.40
-      eslint: 10.9.0(jiti@2.7.0)(supports-color@8.1.1)
+      eslint: 10.9.1(jiti@2.7.0)(supports-color@8.1.1)
 
   eslint-scope@9.1.2:
     dependencies:
@@ -15954,9 +15954,9 @@ snapshots:
       esrecurse: 4.3.0
       estraverse: 5.3.0
 
-  eslint-typegen@2.3.1(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1)):
+  eslint-typegen@2.3.1(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1)):
     dependencies:
-      eslint: 10.9.0(jiti@2.7.0)(supports-color@8.1.1)
+      eslint: 10.9.1(jiti@2.7.0)(supports-color@8.1.1)
       json-schema-to-typescript-lite: 15.0.0
       ohash: 2.0.12
 
@@ -15966,9 +15966,9 @@ snapshots:
 
   eslint-visitor-keys@5.0.1: {}
 
-  eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1):
+  eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1):
     dependencies:
-      '@eslint-community/eslint-utils': 4.9.1(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1))
+      '@eslint-community/eslint-utils': 4.9.1(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1))
       '@eslint-community/regexpp': 4.12.2
       '@eslint/config-array': 0.23.5(supports-color@8.1.1)
       '@eslint/config-helpers': 0.7.0
@@ -16272,7 +16272,7 @@ snapshots:
     dependencies:
       tiny-inflate: 1.0.3
 
-  fontless@0.2.1(@vercel/functions@3.4.4(@aws-sdk/credential-provider-web-identity@3.972.49))(db0@0.3.4(@electric-sql/pglite@0.5.6)(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260426.1)(@electric-sql/pglite@0.5.6)(@opentelemetry/api@1.9.0)(postgres@3.4.9)))(ioredis@5.10.1(supports-color@8.1.1))(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0)):
+  fontless@0.2.1(@vercel/functions@3.4.4(@aws-sdk/credential-provider-web-identity@3.972.49))(db0@0.3.4(@electric-sql/pglite@0.5.8)(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260426.1)(@electric-sql/pglite@0.5.8)(@opentelemetry/api@1.9.0)(postgres@3.4.9)))(ioredis@5.10.1(supports-color@8.1.1))(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0)):
     dependencies:
       consola: 3.4.2
       css-tree: 3.2.1
@@ -16286,7 +16286,7 @@ snapshots:
       pathe: 2.0.3
       ufo: 1.6.4
       unifont: 0.7.4
-      unstorage: 1.17.5(@vercel/functions@3.4.4(@aws-sdk/credential-provider-web-identity@3.972.49))(db0@0.3.4(@electric-sql/pglite@0.5.6)(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260426.1)(@electric-sql/pglite@0.5.6)(@opentelemetry/api@1.9.0)(postgres@3.4.9)))(ioredis@5.10.1(supports-color@8.1.1))
+      unstorage: 1.17.5(@vercel/functions@3.4.4(@aws-sdk/credential-provider-web-identity@3.972.49))(db0@0.3.4(@electric-sql/pglite@0.5.8)(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260426.1)(@electric-sql/pglite@0.5.8)(@opentelemetry/api@1.9.0)(postgres@3.4.9)))(ioredis@5.10.1(supports-color@8.1.1))
     optionalDependencies:
       vite: 7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0)
     transitivePeerDependencies:
@@ -17408,7 +17408,7 @@ snapshots:
 
   negotiator@1.0.0: {}
 
-  nitropack@2.13.4(@electric-sql/pglite@0.5.6)(@vercel/functions@3.4.4(@aws-sdk/credential-provider-web-identity@3.972.49))(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260426.1)(@electric-sql/pglite@0.5.6)(@opentelemetry/api@1.9.0)(postgres@3.4.9))(oxc-parser@0.140.0)(rolldown@1.2.1)(srvx@0.11.22)(supports-color@8.1.1)(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0)):
+  nitropack@2.13.4(@electric-sql/pglite@0.5.8)(@vercel/functions@3.4.4(@aws-sdk/credential-provider-web-identity@3.972.49))(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260426.1)(@electric-sql/pglite@0.5.8)(@opentelemetry/api@1.9.0)(postgres@3.4.9))(oxc-parser@0.140.0)(rolldown@1.2.1)(srvx@0.11.22)(supports-color@8.1.1)(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0)):
     dependencies:
       '@cloudflare/kv-asset-handler': 0.4.2
       '@rollup/plugin-alias': 6.0.0(rollup@4.60.2)
@@ -17429,7 +17429,7 @@ snapshots:
       cookie-es: 2.0.1
       croner: 10.0.1
       crossws: 0.3.5
-      db0: 0.3.4(@electric-sql/pglite@0.5.6)(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260426.1)(@electric-sql/pglite@0.5.6)(@opentelemetry/api@1.9.0)(postgres@3.4.9))
+      db0: 0.3.4(@electric-sql/pglite@0.5.8)(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260426.1)(@electric-sql/pglite@0.5.8)(@opentelemetry/api@1.9.0)(postgres@3.4.9))
       defu: 6.1.7
       destr: 2.0.5
       dot-prop: 10.1.0
@@ -17475,7 +17475,7 @@ snapshots:
       unenv: 2.0.0-rc.24
       unimport: 6.4.0(esbuild@0.28.1)(oxc-parser@0.140.0)(rolldown@1.2.1)(rollup@4.60.2)(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0))
       unplugin-utils: 0.3.2
-      unstorage: 1.17.5(@vercel/functions@3.4.4(@aws-sdk/credential-provider-web-identity@3.972.49))(db0@0.3.4(@electric-sql/pglite@0.5.6)(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260426.1)(@electric-sql/pglite@0.5.6)(@opentelemetry/api@1.9.0)(postgres@3.4.9)))(ioredis@5.10.1(supports-color@8.1.1))
+      unstorage: 1.17.5(@vercel/functions@3.4.4(@aws-sdk/credential-provider-web-identity@3.972.49))(db0@0.3.4(@electric-sql/pglite@0.5.8)(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260426.1)(@electric-sql/pglite@0.5.8)(@opentelemetry/api@1.9.0)(postgres@3.4.9)))(ioredis@5.10.1(supports-color@8.1.1))
       untyped: 2.0.0
       unwasm: 0.5.3
       youch: 4.1.1
@@ -17592,16 +17592,16 @@ snapshots:
       - supports-color
       - vue
 
-  nuxt@4.5.2(e6f135e59161a1b0c331aaeb60eb77d8):
+  nuxt@4.5.2(96ab177cdc02d820ca09f0417ddac4a3):
     dependencies:
       '@dxup/nuxt': 0.5.6(esbuild@0.28.1)(magicast@0.5.4)(oxc-parser@0.140.0)(rolldown@1.2.1)(rollup@4.60.2)(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0))
       '@nuxt/cli': 3.37.0(@nuxt/schema@4.5.2)(cac@7.0.0)(magicast@0.5.4)(supports-color@8.1.1)
-      '@nuxt/devtools': 3.4.1(@vercel/functions@3.4.4(@aws-sdk/credential-provider-web-identity@3.972.49))(db0@0.3.4(@electric-sql/pglite@0.5.6)(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260426.1)(@electric-sql/pglite@0.5.6)(@opentelemetry/api@1.9.0)(postgres@3.4.9)))(ioredis@5.10.1(supports-color@8.1.1))(magic-string@1.2.2)(oxc-parser@0.140.0)(rolldown@1.2.1)(supports-color@8.1.1)(unplugin@3.3.0(esbuild@0.28.1)(rolldown@1.2.1)(rollup@4.60.2)(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0)))(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0))(vue@3.5.40(typescript@6.0.3))
+      '@nuxt/devtools': 3.4.1(@vercel/functions@3.4.4(@aws-sdk/credential-provider-web-identity@3.972.49))(db0@0.3.4(@electric-sql/pglite@0.5.8)(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260426.1)(@electric-sql/pglite@0.5.8)(@opentelemetry/api@1.9.0)(postgres@3.4.9)))(ioredis@5.10.1(supports-color@8.1.1))(magic-string@1.2.2)(oxc-parser@0.140.0)(rolldown@1.2.1)(supports-color@8.1.1)(unplugin@3.3.0(esbuild@0.28.1)(rolldown@1.2.1)(rollup@4.60.2)(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0)))(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0))(vue@3.5.40(typescript@6.0.3))
       '@nuxt/kit': 4.5.2(magic-string@1.2.2)(magicast@0.5.4)(oxc-parser@0.140.0)(rolldown@1.2.1)(unplugin@3.3.0(esbuild@0.28.1)(rolldown@1.2.1)(rollup@4.60.2)(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0)))
-      '@nuxt/nitro-server': 4.5.2(600aaa873d5aad2441b722cb9b5a5ab9)
+      '@nuxt/nitro-server': 4.5.2(55d8b7d85abf87b271c3b9aa514ba1a1)
       '@nuxt/schema': 4.5.2
       '@nuxt/telemetry': 2.8.0(@nuxt/kit@4.5.2(magic-string@1.2.2)(magicast@0.5.4)(oxc-parser@0.140.0)(rolldown@1.2.1)(unplugin@3.3.0(esbuild@0.28.1)(rolldown@1.2.1)(rollup@4.60.2)(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0))))
-      '@nuxt/vite-builder': 4.5.2(@babel/plugin-syntax-jsx@7.28.6(@babel/core@7.29.0(supports-color@8.1.1)))(@types/node@25.9.5)(esbuild@0.28.1)(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1))(magic-string@1.2.2)(magicast@0.5.4)(nuxt@4.5.2(e6f135e59161a1b0c331aaeb60eb77d8))(optionator@0.9.4)(oxc-parser@0.140.0)(rolldown@1.2.1)(rollup-plugin-visualizer@7.0.1(rolldown@1.2.1)(rollup@4.60.2))(rollup@4.60.2)(supports-color@8.1.1)(terser@5.46.2)(tsx@4.21.0)(typescript@6.0.3)(vue-tsc@3.3.11(typescript@6.0.3))(vue@3.5.40(typescript@6.0.3))(yaml@2.9.0)
+      '@nuxt/vite-builder': 4.5.2(@babel/plugin-syntax-jsx@7.28.6(@babel/core@7.29.0(supports-color@8.1.1)))(@types/node@25.9.5)(esbuild@0.28.1)(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1))(magic-string@1.2.2)(magicast@0.5.4)(nuxt@4.5.2(96ab177cdc02d820ca09f0417ddac4a3))(optionator@0.9.4)(oxc-parser@0.140.0)(rolldown@1.2.1)(rollup-plugin-visualizer@7.0.1(rolldown@1.2.1)(rollup@4.60.2))(rollup@4.60.2)(supports-color@8.1.1)(terser@5.46.2)(tsx@4.21.0)(typescript@6.0.3)(vue-tsc@3.3.11(typescript@6.0.3))(vue@3.5.40(typescript@6.0.3))(yaml@2.9.0)
       '@unhead/vue': 3.4.0(@oxc-project/types@0.142.0)(@vitejs/devtools-kit@0.4.10(cac@7.0.0)(srvx@0.11.22)(typescript@6.0.3)(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0)))(esbuild@0.28.1)(lightningcss@1.33.0)(oxc-parser@0.140.0)(rolldown@1.2.1)(rollup@4.60.2)(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0))(vue@3.5.40(typescript@6.0.3))
       '@vue/shared': 3.5.40
       chokidar: 5.0.0
@@ -19169,10 +19169,10 @@ snapshots:
 
   tinyqueue@2.0.3: {}
 
-  tiptap-extension-code-block-shiki@1.2.0(@tiptap/core@3.30.2(@tiptap/pm@3.30.2))(@tiptap/pm@3.30.2)(shiki@4.4.3):
+  tiptap-extension-code-block-shiki@1.2.0(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)(shiki@4.4.3):
     dependencies:
-      '@tiptap/core': 3.30.2(@tiptap/pm@3.30.2)
-      '@tiptap/pm': 3.30.2
+      '@tiptap/core': 3.30.5(@tiptap/pm@3.30.5)
+      '@tiptap/pm': 3.30.5
       shiki: 4.4.3
 
   to-regex-range@5.0.1:
@@ -19586,7 +19586,7 @@ snapshots:
     dependencies:
       rolldown: 1.0.0-rc.17
 
-  unstorage@1.17.5(@vercel/functions@3.4.4(@aws-sdk/credential-provider-web-identity@3.972.49))(db0@0.3.4(@electric-sql/pglite@0.5.6)(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260426.1)(@electric-sql/pglite@0.5.6)(@opentelemetry/api@1.9.0)(postgres@3.4.9)))(ioredis@5.10.1(supports-color@8.1.1)):
+  unstorage@1.17.5(@vercel/functions@3.4.4(@aws-sdk/credential-provider-web-identity@3.972.49))(db0@0.3.4(@electric-sql/pglite@0.5.8)(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260426.1)(@electric-sql/pglite@0.5.8)(@opentelemetry/api@1.9.0)(postgres@3.4.9)))(ioredis@5.10.1(supports-color@8.1.1)):
     dependencies:
       anymatch: 3.1.3
       chokidar: 5.0.0
@@ -19598,7 +19598,7 @@ snapshots:
       ufo: 1.6.4
     optionalDependencies:
       '@vercel/functions': 3.4.4(@aws-sdk/credential-provider-web-identity@3.972.49)
-      db0: 0.3.4(@electric-sql/pglite@0.5.6)(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260426.1)(@electric-sql/pglite@0.5.6)(@opentelemetry/api@1.9.0)(postgres@3.4.9))
+      db0: 0.3.4(@electric-sql/pglite@0.5.8)(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260426.1)(@electric-sql/pglite@0.5.8)(@opentelemetry/api@1.9.0)(postgres@3.4.9))
       ioredis: 5.10.1(supports-color@8.1.1)
 
   untun@0.1.3:
@@ -19698,7 +19698,7 @@ snapshots:
       - tsx
       - yaml
 
-  vite-plugin-checker@0.14.5(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1))(optionator@0.9.4)(typescript@6.0.3)(vite@8.2.1(@types/node@25.9.5)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0))(vue-tsc@3.3.11(typescript@6.0.3)):
+  vite-plugin-checker@0.14.5(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1))(optionator@0.9.4)(typescript@6.0.3)(vite@8.2.1(@types/node@25.9.5)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0))(vue-tsc@3.3.11(typescript@6.0.3)):
     dependencies:
       '@babel/code-frame': 7.29.7
       chokidar: 5.0.0
@@ -19709,7 +19709,7 @@ snapshots:
       tiny-invariant: 1.3.3
       vite: 8.2.1(@types/node@25.9.5)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0)
     optionalDependencies:
-      eslint: 10.9.0(jiti@2.7.0)(supports-color@8.1.1)
+      eslint: 10.9.1(jiti@2.7.0)(supports-color@8.1.1)
       optionator: 0.9.4
       typescript: 6.0.3
       vue-tsc: 3.3.11(typescript@6.0.3)
@@ -19814,10 +19814,10 @@ snapshots:
 
   vue-devtools-stub@0.1.0: {}
 
-  vue-eslint-parser@10.4.1(eslint@10.9.0(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1):
+  vue-eslint-parser@10.4.1(eslint@10.9.1(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1):
     dependencies:
       debug: 4.4.3(supports-color@8.1.1)
-      eslint: 10.9.0(jiti@2.7.0)(supports-color@8.1.1)
+      eslint: 10.9.1(jiti@2.7.0)(supports-color@8.1.1)
       eslint-scope: 9.1.2
       eslint-visitor-keys: 5.0.1
       espree: 11.2.0
@@ -20089,18 +20089,18 @@ snapshots:
       '@types/trusted-types': 2.0.7
       workbox-core: 7.4.0
 
-  workflow@4.8.4(@nestjs/common@11.1.19(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@8.1.1))(@nestjs/core@11.1.19(@nestjs/common@11.1.19(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@8.1.1))(reflect-metadata@0.2.2)(rxjs@7.8.2))(@opentelemetry/api@1.9.0)(@swc/cli@0.8.1(@swc/core@1.15.3(@swc/helpers@0.5.21))(chokidar@5.0.0)(supports-color@8.1.1))(@swc/core@1.15.3(@swc/helpers@0.5.21))(@swc/helpers@0.5.21)(magicast@0.5.4)(supports-color@8.1.1)(typescript@6.0.3):
+  workflow@4.8.5(@nestjs/common@11.1.19(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@8.1.1))(@nestjs/core@11.1.19(@nestjs/common@11.1.19(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@8.1.1))(reflect-metadata@0.2.2)(rxjs@7.8.2))(@opentelemetry/api@1.9.0)(@swc/cli@0.8.1(@swc/core@1.15.3(@swc/helpers@0.5.21))(chokidar@5.0.0)(supports-color@8.1.1))(@swc/core@1.15.3(@swc/helpers@0.5.21))(@swc/helpers@0.5.21)(magicast@0.5.4)(supports-color@8.1.1)(typescript@6.0.3):
     dependencies:
-      '@workflow/astro': 4.0.19(@opentelemetry/api@1.9.0)(@swc/helpers@0.5.21)(supports-color@8.1.1)
-      '@workflow/cli': 4.3.8(@opentelemetry/api@1.9.0)(@swc/helpers@0.5.21)(supports-color@8.1.1)
-      '@workflow/core': 4.8.4(@opentelemetry/api@1.9.0)(supports-color@8.1.1)
+      '@workflow/astro': 4.0.20(@opentelemetry/api@1.9.0)(@swc/helpers@0.5.21)(supports-color@8.1.1)
+      '@workflow/cli': 4.3.9(@opentelemetry/api@1.9.0)(@swc/helpers@0.5.21)(supports-color@8.1.1)
+      '@workflow/core': 4.8.5(@opentelemetry/api@1.9.0)(supports-color@8.1.1)
       '@workflow/errors': 4.2.1
-      '@workflow/nest': 4.0.20(@nestjs/common@11.1.19(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@8.1.1))(@nestjs/core@11.1.19(@nestjs/common@11.1.19(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@8.1.1))(reflect-metadata@0.2.2)(rxjs@7.8.2))(@opentelemetry/api@1.9.0)(@swc/cli@0.8.1(@swc/core@1.15.3(@swc/helpers@0.5.21))(chokidar@5.0.0)(supports-color@8.1.1))(@swc/core@1.15.3(@swc/helpers@0.5.21))(@swc/helpers@0.5.21)(supports-color@8.1.1)
-      '@workflow/next': 4.1.8(@opentelemetry/api@1.9.0)(@swc/helpers@0.5.21)(supports-color@8.1.1)
-      '@workflow/nitro': 4.1.10(@opentelemetry/api@1.9.0)(@swc/helpers@0.5.21)(supports-color@8.1.1)
-      '@workflow/nuxt': 4.0.20(@opentelemetry/api@1.9.0)(@swc/helpers@0.5.21)(magicast@0.5.4)(supports-color@8.1.1)
-      '@workflow/rollup': 4.0.19(@opentelemetry/api@1.9.0)(@swc/helpers@0.5.21)(supports-color@8.1.1)
-      '@workflow/sveltekit': 4.0.19(@opentelemetry/api@1.9.0)(@swc/helpers@0.5.21)(supports-color@8.1.1)
+      '@workflow/nest': 4.0.21(@nestjs/common@11.1.19(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@8.1.1))(@nestjs/core@11.1.19(@nestjs/common@11.1.19(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@8.1.1))(reflect-metadata@0.2.2)(rxjs@7.8.2))(@opentelemetry/api@1.9.0)(@swc/cli@0.8.1(@swc/core@1.15.3(@swc/helpers@0.5.21))(chokidar@5.0.0)(supports-color@8.1.1))(@swc/core@1.15.3(@swc/helpers@0.5.21))(@swc/helpers@0.5.21)(supports-color@8.1.1)
+      '@workflow/next': 4.1.9(@opentelemetry/api@1.9.0)(@swc/helpers@0.5.21)(supports-color@8.1.1)
+      '@workflow/nitro': 4.1.11(@opentelemetry/api@1.9.0)(@swc/helpers@0.5.21)(supports-color@8.1.1)
+      '@workflow/nuxt': 4.0.21(@opentelemetry/api@1.9.0)(@swc/helpers@0.5.21)(magicast@0.5.4)(supports-color@8.1.1)
+      '@workflow/rollup': 4.0.20(@opentelemetry/api@1.9.0)(@swc/helpers@0.5.21)(supports-color@8.1.1)
+      '@workflow/sveltekit': 4.0.20(@opentelemetry/api@1.9.0)(@swc/helpers@0.5.21)(supports-color@8.1.1)
       '@workflow/typescript-plugin': 4.0.3(typescript@6.0.3)
       '@workflow/utils': 4.1.4
       ms: 2.1.3
@@ -20227,6 +20227,6 @@ snapshots:
 
   zod@4.3.6: {}
 
-  zod@4.4.3: {}
+  zod@4.5.4: {}
 
   zwitch@2.0.4: {}
