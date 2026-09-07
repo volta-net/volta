@@ -5,7 +5,51 @@ import { db, schema } from '@nuxthub/db'
 import { decrypt, isEncrypted } from './encryption'
 
 // Default AI model to use when none is configured
-export const DEFAULT_AI_MODEL = 'anthropic/claude-sonnet-4.6' as GatewayModelId
+export const DEFAULT_AI_MODEL = 'anthropic/claude-sonnet-5' as GatewayModelId
+
+type JSONValue = null | string | number | boolean | { [key: string]: JSONValue | undefined } | JSONValue[]
+type ProviderOptions = Record<string, Record<string, JSONValue | undefined>>
+
+/**
+ * Provider options for a gateway model.
+ * 'low' keeps a small reasoning budget and streams reasoning summaries (chat).
+ * 'none' turns reasoning off so short completions don't spend their output budget thinking.
+ */
+export function getAiProviderOptions(model: string, reasoning: 'low' | 'none' = 'low'): ProviderOptions | undefined {
+  const gateway = { caching: 'auto' }
+  const none = reasoning === 'none'
+
+  switch (model) {
+    case 'anthropic/claude-opus-5':
+    case 'anthropic/claude-sonnet-5':
+      return {
+        anthropic: none
+          ? { thinking: { type: 'disabled' } }
+          : { thinking: { type: 'adaptive', display: 'summarized' }, effort: 'low' },
+        gateway
+      }
+    case 'anthropic/claude-haiku-4.5':
+      return none
+        ? { gateway }
+        : { anthropic: { thinking: { type: 'enabled', budgetTokens: 2048 } }, gateway }
+    case 'openai/gpt-5.6-sol':
+    case 'openai/gpt-5.6-terra':
+    case 'openai/gpt-5.6-luna':
+      return {
+        openai: none
+          ? { reasoningEffort: 'none' }
+          : { reasoningEffort: 'low', reasoningSummary: 'detailed' },
+        gateway
+      }
+    case 'google/gemini-3.8-flash':
+      return {
+        google: { thinkingConfig: { includeThoughts: !none, thinkingLevel: 'low' } },
+        gateway
+      }
+    default:
+      return undefined
+  }
+}
 
 /**
  * Get the user's AI settings from the database

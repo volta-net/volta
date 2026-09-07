@@ -274,6 +274,7 @@ CRITICAL RULES:
     model: userGateway(userModel),
     system,
     prompt,
-    maxOutputTokens
+    maxOutputTokens,
+    providerOptions: getAiProviderOptions(userModel, 'none')
   }).toTextStreamResponse()
 })

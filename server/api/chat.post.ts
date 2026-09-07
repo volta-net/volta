@@ -3,30 +3,6 @@ import { and, inArray, eq, desc, ilike, or, sql, gte, isNull } from 'drizzle-orm
 import { db, schema } from '@nuxthub/db'
 import { analyzeAndStoreResolution } from '../utils/resolution'
 
-type JSONValue = null | string | number | boolean | { [key: string]: JSONValue | undefined } | JSONValue[]
-type ProviderOptions = Record<string, Record<string, JSONValue | undefined>>
-
-function getProviderOptions(model: string): ProviderOptions | undefined {
-  const gateway = { caching: 'auto' }
-
-  switch (model) {
-    case 'anthropic/claude-opus-4.6':
-    case 'anthropic/claude-sonnet-4.6':
-      return { anthropic: { thinking: { type: 'adaptive' }, effort: 'low' }, gateway }
-    case 'anthropic/claude-haiku-4.5':
-      return { anthropic: { thinking: { type: 'enabled', budgetTokens: 2048 } }, gateway }
-    case 'openai/gpt-5.4':
-    case 'openai/gpt-5.4-mini':
-    case 'openai/gpt-5.4-nano':
-      return { openai: { reasoningEffort: 'low', reasoningSummary: 'detailed' }, gateway }
-    case 'google/gemini-3.1-pro-preview':
-    case 'google/gemini-3-flash':
-      return { google: { thinkingConfig: { includeThoughts: true, thinkingLevel: 'low' } }, gateway }
-    default:
-      return undefined
-  }
-}
-
 export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
   const { messages } = await readBody(event)
@@ -845,7 +821,7 @@ When discussing analyzed issues, mention the suggestedAction and reasoning — t
     model: gateway(model),
     system,
     messages: await convertToModelMessages(messages),
-    providerOptions: getProviderOptions(model),
+    providerOptions: getAiProviderOptions(model),
     experimental_transform: smoothStream(),
     stopWhen: stepCountIs(8),
     tools: {
