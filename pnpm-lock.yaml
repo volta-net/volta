@@ -9,11 +9,11 @@ importers:
   .:
     dependencies:
       '@ai-sdk/gateway':
-        specifier: ^3.0.189
-        version: 3.0.189(zod@4.5.4)
+        specifier: ^4.0.75
+        version: 4.0.75(zod@4.5.4)
       '@ai-sdk/vue':
-        specifier: ^3.0.277
-        version: 3.0.277(vue@3.5.40(typescript@6.0.3))(zod@4.5.4)
+        specifier: ^4.0.93
+        version: 4.0.93(vue@3.5.40(typescript@6.0.3))(zod@4.5.4)
       '@comark/nuxt':
         specifier: ^0.6.2
         version: 0.6.2(magic-string@1.2.2)(magicast@0.5.4)(nuxt@4.5.2(d0cf0625ba9eb614ebb2a829cd6fb403))(oxc-parser@0.140.0)(rolldown@1.2.1)(shiki@4.4.3)(unplugin@3.3.0(esbuild@0.28.1)(rolldown@1.2.1)(rollup@4.60.2)(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0)))(vue@3.5.40(typescript@6.0.3))
@@ -28,7 +28,7 @@ importers:
         version: 1.2.94
       '@nuxt/ui':
         specifier: ^4.11.0
-        version: 4.11.0(7d475e5a4486fb4f8500961cd67180bf)
+        version: 4.11.0(85eb84057a6c6e4c7674212ba3410acb)
       '@nuxthub/core':
         specifier: ^0.10.8
         version: 0.10.8(@emnapi/core@2.0.0-alpha.3)(@emnapi/runtime@2.0.0-alpha.3)(@vercel/functions@3.4.4(@aws-sdk/credential-provider-web-identity@3.972.49))(db0@0.3.4(@electric-sql/pglite@0.5.8)(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260426.1)(@electric-sql/pglite@0.5.8)(@opentelemetry/api@1.9.0)(postgres@3.4.9)))(ioredis@5.10.1(supports-color@8.1.1))(magic-string@1.2.2)(magicast@0.5.4)(oxc-parser@0.140.0)(rolldown@1.2.1)(typescript@6.0.3)(unplugin@3.3.0(esbuild@0.28.1)(rolldown@1.2.1)(rollup@4.60.2)(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0)))(vue-tsc@3.3.11(typescript@6.0.3))
@@ -75,8 +75,8 @@ importers:
         specifier: ^14.4.0
         version: 14.4.0(magic-string@1.2.2)(magicast@0.5.4)(nuxt@4.5.2(d0cf0625ba9eb614ebb2a829cd6fb403))(oxc-parser@0.140.0)(rolldown@1.2.1)(unplugin@3.3.0(esbuild@0.28.1)(rolldown@1.2.1)(rollup@4.60.2)(vite@7.3.5(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.9.0)))(vue@3.5.40(typescript@6.0.3))
       ai:
-        specifier: ^6.0.277
-        version: 6.0.277(zod@4.5.4)
+        specifier: ^7.0.93
+        version: 7.0.93(zod@4.5.4)
       drizzle-kit:
         specifier: ^0.31.10
         version: 0.31.10
@@ -144,25 +144,25 @@ packages:
       bcrypt:
         optional: true
 
-  '@ai-sdk/gateway@3.0.189':
-    resolution: {integrity: sha512-roPKojHenQm7U77kNNE0w586jP2vnjxaNx/+KFSQkJRLLAxrg7yUwZQfyOEizoTxdaltu+ZIlLRTw09X3XbGvQ==}
-    engines: {node: '>=18'}
+  '@ai-sdk/gateway@4.0.75':
+    resolution: {integrity: sha512-HOnhw3oXtBnboBF7kAKipjToCN6+5w6EuukiUKiULcxBitS+vbHRRv9IUBcq+Z1wkXcJjfywKrt5r++I6OYyXg==}
+    engines: {node: '>=22'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
 
-  '@ai-sdk/provider-utils@4.0.50':
-    resolution: {integrity: sha512-YAcB+7M1JhAYsHorTrWyldCyZihjCKr/QRXH2vFrara/+lwqNE7q5KzoucKLZ7ktFiUonhnhFhRoiymsq/2K2Q==}
-    engines: {node: '>=18.17'}
+  '@ai-sdk/provider-utils@5.0.36':
+    resolution: {integrity: sha512-MFXBn6XDyf37PNQAge/HTatPJE8Vmg/g/w4WPtjSV53jq8FKAzoaN5+43hsdQa9bqgN+/13jxug9ChvsG+godQ==}
+    engines: {node: '>=22'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
 
-  '@ai-sdk/provider@3.0.15':
-    resolution: {integrity: sha512-XeZW1CcDF2GMbH4wejW6xBRI2QCOgnkVYUnxoeDadB1mf85riL2bMUeDoh+6gJ/r4mjNfzUPW8OjLjvwTP0u1Q==}
-    engines: {node: '>=18'}
+  '@ai-sdk/provider@4.0.10':
+    resolution: {integrity: sha512-fX2ENAc7iDpZ+Wp4+Rk06Usn/Ys7dI9uAkGv0jlF6XVrW13NkRWx5Ou+U6lIM2E1fTLkCs16GGrUAaVvroag7A==}
+    engines: {node: '>=22'}
 
-  '@ai-sdk/vue@3.0.277':
-    resolution: {integrity: sha512-0Uki/mG7Z6vSIjCsiF1ysTsr+vLDo47D4PtGBTpXufWCfpUv4mosq0ihrba9ngG80zYPMNita7iJobzOO+RQGw==}
-    engines: {node: '>=18'}
+  '@ai-sdk/vue@4.0.93':
+    resolution: {integrity: sha512-Q3muTnEAMHO3PnA+7A2BgldEURTo6hguPknoMgx3/OjlbsPt7vAl8zm9j4LDyxaBblnawuVTeI05MRKT6F/yrg==}
+    engines: {node: '>=22'}
     peerDependencies:
       vue: ^3.3.4
 
@@ -4371,6 +4371,9 @@ packages:
   '@workflow/rollup@4.0.20':
     resolution: {integrity: sha512-Ph9hgxhEkEl1e/LI8jhu/OvbUjlrFy7C7E9gqwKfK2jN7hNNRN6l2dKQGFsn7dQY7Yx7GvFKV/asNVejJ6g5pw==}
 
+  '@workflow/serde@4.1.0':
+    resolution: {integrity: sha512-pav4F2BoirECWR7Nf1TKt+2eETcBj7jj4cBefQ8VXQCA6NPkaKeLfj/zMgi+3zYV5ZIBT4GuUiphsj0/b9hPQQ==}
+
   '@workflow/serde@4.1.2':
     resolution: {integrity: sha512-KkkSUddEcaIvW7/QfVUk2PR93117HkDum45cXQEGkoxEmHOmqfOLJ4T1m4a1QABVC7O9TIqPxsBtDPgKIO+LOw==}
 
@@ -4486,9 +4489,9 @@ packages:
     resolution: {integrity: sha512-MnA+YT8fwfJPgBx3m60MNqakm30XOkyIoH1y6huTQvC0PwZG7ki8NacLBcrPbNoo8vEZy7Jpuk7+jMO+CUovTQ==}
     engines: {node: '>= 14'}
 
-  ai@6.0.277:
-    resolution: {integrity: sha512-fYlPj2QsisCH66SsEfWM8gV0ZR+6NLuRYSnVw3GKUKlvP+iIAUQR1bUJn1Y6lcAKeoEWQeZaann2ahXZY2HXtQ==}
-    engines: {node: '>=18'}
+  ai@7.0.93:
+    resolution: {integrity: sha512-CJss6zb9mlltk/mCr8qom20NBnqEQxVawkqwtT62tCwsxilZpXfHNRMRwcS3XRpzdP1kEluVuDBUayYWEEd95g==}
+    engines: {node: '>=22'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
 
@@ -8838,12 +8841,12 @@ packages:
   undici-types@7.24.6:
     resolution: {integrity: sha512-WRNW+sJgj5OBN4/0JpHFqtqzhpbnV0GuB+OozA9gCL7a993SmU+1JBZCzLNxYsbMfIeDL+lTsphD5jN5N+n0zg==}
 
-  undici@6.28.0:
-    resolution: {integrity: sha512-LIY910g9TI13YS95lrMFrs8Rm/u/irgHeTWoKCoteeJ04CUJ92eEfj0rVn+7VKMPBpUPiUoBKfhNyLI23EE/KA==}
-    engines: {node: '>=18.17'}
-
   undici@7.28.0:
     resolution: {integrity: sha512-cRZYrTDwWznlnRiPjggAGxZXanty6M8RV1ff8Wm4LWXBp7/IG8v5DnOm74DtUBp9OONpK75YlPnIjQqX0dBDtA==}
+    engines: {node: '>=20.18.1'}
+
+  undici@7.29.1:
+    resolution: {integrity: sha512-RYONW2MeafgYlkVOKYKkA/Ag7BmXqgIWCa8t1m0JcxrQg9pI9lEqRhAOruOBCbAohOa/gkCF+iPi9hrgvTzu6Q==}
     engines: {node: '>=20.18.1'}
 
   undici@8.10.0:
@@ -9637,29 +9640,30 @@ snapshots:
       '@phc/format': 1.0.0
       '@poppinss/utils': 6.10.1
 
-  '@ai-sdk/gateway@3.0.189(zod@4.5.4)':
+  '@ai-sdk/gateway@4.0.75(zod@4.5.4)':
     dependencies:
-      '@ai-sdk/provider': 3.0.15
-      '@ai-sdk/provider-utils': 4.0.50(zod@4.5.4)
+      '@ai-sdk/provider': 4.0.10
+      '@ai-sdk/provider-utils': 5.0.36(zod@4.5.4)
       '@vercel/oidc': 3.2.0
       zod: 4.5.4
 
-  '@ai-sdk/provider-utils@4.0.50(zod@4.5.4)':
+  '@ai-sdk/provider-utils@5.0.36(zod@4.5.4)':
     dependencies:
-      '@ai-sdk/provider': 3.0.15
+      '@ai-sdk/provider': 4.0.10
       '@standard-schema/spec': 1.1.0
+      '@workflow/serde': 4.1.0
       eventsource-parser: 3.0.8
-      undici: 6.28.0
+      undici: 7.29.1
       zod: 4.5.4
 
-  '@ai-sdk/provider@3.0.15':
+  '@ai-sdk/provider@4.0.10':
     dependencies:
       json-schema: 0.4.0
 
-  '@ai-sdk/vue@3.0.277(vue@3.5.40(typescript@6.0.3))(zod@4.5.4)':
+  '@ai-sdk/vue@4.0.93(vue@3.5.40(typescript@6.0.3))(zod@4.5.4)':
     dependencies:
-      '@ai-sdk/provider-utils': 4.0.50(zod@4.5.4)
-      ai: 6.0.277(zod@4.5.4)
+      '@ai-sdk/provider-utils': 5.0.36(zod@4.5.4)
+      ai: 7.0.93(zod@4.5.4)
       swrv: 1.2.0(vue@3.5.40(typescript@6.0.3))
       vue: 3.5.40(typescript@6.0.3)
     transitivePeerDependencies:
@@ -11875,7 +11879,7 @@ snapshots:
       rc9: 3.0.1
       std-env: 4.2.0
 
-  '@nuxt/ui@4.11.0(7d475e5a4486fb4f8500961cd67180bf)':
+  '@nuxt/ui@4.11.0(85eb84057a6c6e4c7674212ba3410acb)':
     dependencies:
       '@floating-ui/dom': 1.8.0
       '@iconify/vue': 5.0.1(vue@3.5.40(typescript@6.0.3))
@@ -11944,7 +11948,7 @@ snapshots:
     optionalDependencies:
       '@internationalized/date': 3.12.1
       '@internationalized/number': 3.6.6
-      ai: 6.0.277(zod@4.5.4)
+      ai: 7.0.93(zod@4.5.4)
       valibot: 1.4.2(typescript@6.0.3)
       zod: 4.5.4
     transitivePeerDependencies:
@@ -12325,7 +12329,8 @@ snapshots:
       '@octokit/request-error': 7.1.2
       '@octokit/webhooks-methods': 6.0.0
 
-  '@opentelemetry/api@1.9.0': {}
+  '@opentelemetry/api@1.9.0':
+    optional: true
 
   '@oxc-parser/binding-android-arm-eabi@0.140.0':
     optional: true
@@ -14384,6 +14389,8 @@ snapshots:
       - '@swc/helpers'
       - supports-color
 
+  '@workflow/serde@4.1.0': {}
+
   '@workflow/serde@4.1.2': {}
 
   '@workflow/sveltekit@4.0.20(@opentelemetry/api@1.9.0)(@swc/helpers@0.5.21)(supports-color@8.1.1)':
@@ -14575,12 +14582,11 @@ snapshots:
 
   agent-base@7.1.4: {}
 
-  ai@6.0.277(zod@4.5.4):
+  ai@7.0.93(zod@4.5.4):
     dependencies:
-      '@ai-sdk/gateway': 3.0.189(zod@4.5.4)
-      '@ai-sdk/provider': 3.0.15
-      '@ai-sdk/provider-utils': 4.0.50(zod@4.5.4)
-      '@opentelemetry/api': 1.9.0
+      '@ai-sdk/gateway': 4.0.75(zod@4.5.4)
+      '@ai-sdk/provider': 4.0.10
+      '@ai-sdk/provider-utils': 5.0.36(zod@4.5.4)
       zod: 4.5.4
 
   ajv@6.15.0:
@@ -19418,9 +19424,9 @@ snapshots:
 
   undici-types@7.24.6: {}
 
-  undici@6.28.0: {}
-
   undici@7.28.0: {}
+
+  undici@7.29.1: {}
 
   undici@8.10.0: {}
 

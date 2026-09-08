@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { UIMessage } from 'ai'
 import { DefaultChatTransport, isToolUIPart, isReasoningUIPart, isTextUIPart, getToolName } from 'ai'
-import { Chat } from '@ai-sdk/vue'
+import { useChat } from '@ai-sdk/vue'
 import { isPartStreaming, isToolStreaming } from '@nuxt/ui/utils/ai'
 
 useSeoMeta({
@@ -41,13 +41,13 @@ const input = ref('')
 const storedMessages = useLocalStorage<UIMessage[]>('volta-chat-messages', [])
 const wasStreaming = useLocalStorage('volta-chat-streaming', false)
 
-const chat = new Chat({
+const { messages, status, error, sendMessage, stop, regenerate } = useChat({
   messages: storedMessages.value,
   transport: new DefaultChatTransport({
     api: '/api/chat'
   }),
-  onError: (error) => {
-    let message = error.message
+  onError: (err) => {
+    let message = err.message
     if (typeof message === 'string' && message[0] === '{') {
       try {
         message = JSON.parse(message).message || message
@@ -70,35 +70,35 @@ const chat = new Chat({
   }
 })
 
-watch(() => chat.status, (status) => {
-  wasStreaming.value = status === 'streaming'
+watch(status, (value) => {
+  wasStreaming.value = value === 'streaming'
 })
 
 onBeforeUnmount(() => {
-  if (chat.status === 'streaming') {
-    chat.stop()
+  if (status.value === 'streaming') {
+    stop()
   }
 })
 
 onMounted(() => {
-  if (wasStreaming.value && chat.messages.length) {
+  if (wasStreaming.value && messages.value.length) {
     wasStreaming.value = false
-    chat.regenerate()
+    regenerate()
   }
 })
 
 function onSubmit() {
   if (!input.value.trim()) return
 
-  const isFirstMessage = !chat.messages.length
+  const isFirstMessage = !messages.value.length
 
   if (isFirstMessage && document.startViewTransition) {
     document.startViewTransition(() => {
-      chat.sendMessage({ text: input.value })
+      sendMessage({ text: input.value })
       input.value = ''
     })
   } else {
-    chat.sendMessage({ text: input.value })
+    sendMessage({ text: input.value })
     input.value = ''
   }
 }
@@ -108,10 +108,10 @@ function askQuestion(question: string) {
   onSubmit()
 }
 
-watch(() => chat.messages, (messages) => {
-  storedMessages.value = messages
+watch(messages, (value) => {
+  storedMessages.value = [...value]
 
-  const last = messages[messages.length - 1]
+  const last = value[value.length - 1]
   if (last?.role === 'assistant') {
     const hasCompletedFavoriteTool = last.parts.some(
       p => isToolUIPart(p) && getToolName(p as any) === 'manageFavorites' && !isToolStreaming(p)
@@ -123,10 +123,10 @@ watch(() => chat.messages, (messages) => {
 }, { deep: true })
 
 function clearMessages() {
-  if (chat.status === 'streaming') {
-    chat.stop()
+  if (status.value === 'streaming') {
+    stop()
   }
-  chat.messages = []
+  messages.value = []
 }
 
 const toolLabels: Record<string, { searching: string, searched: string, icon: string }> = {
@@ -160,7 +160,7 @@ function getToolIcon(part: { state: string, toolName?: string, toolCallId?: stri
   >
     <template #header>
       <UDashboardNavbar class="border-b-0 backdrop-blur lg:backdrop-blur-none absolute inset-x-0 z-5">
-        <template v-if="chat.messages.length" #right>
+        <template v-if="messages.length" #right>
           <UTooltip text="Clear conversation">
             <UButton
               icon="i-lucide-list-x"
@@ -175,7 +175,7 @@ function getToolIcon(part: { state: string, toolName?: string, toolCallId?: stri
 
     <template #body>
       <!-- Empty state: welcome screen -->
-      <div v-if="!chat.messages.length" class="flex-1 flex flex-col items-center justify-center gap-8 p-8">
+      <div v-if="!messages.length" class="flex-1 flex flex-col items-center justify-center gap-8 p-8">
         <div class="flex flex-col items-center gap-4">
           <AppIconAnimated :size="340" class="absolute -translate-y-1/2 top-1/2 opacity-15 text-highlighted -z-1 -mt-18" />
 
@@ -192,13 +192,13 @@ function getToolIcon(part: { state: string, toolName?: string, toolCallId?: stri
         <div class="w-full max-w-xl flex flex-col gap-6">
           <ChatPrompt
             v-model="input"
-            :status="chat.status"
+            :status="status"
             :selected-model="selectedModel"
             :disabled="!input.trim()"
             class="[view-transition-name:chat-prompt] p-2"
             @submit="onSubmit"
-            @stop="chat.stop()"
-            @reload="chat.regenerate()"
+            @stop="stop()"
+            @reload="regenerate()"
             @update:selected-model="onModelChange"
           />
 
@@ -227,8 +227,8 @@ function getToolIcon(part: { state: string, toolName?: string, toolCallId?: stri
           }"
         >
           <UChatMessages
-            :messages="chat.messages"
-            :status="chat.status"
+            :messages="messages"
+            :status="status"
             should-auto-scroll
             :spacing-offset="160"
             class="pt-(--ui-header-height) pb-4 sm:pb-6 px-2"
@@ -284,14 +284,14 @@ function getToolIcon(part: { state: string, toolName?: string, toolCallId?: stri
 
           <ChatPrompt
             v-model="input"
-            :status="chat.status"
-            :error="chat.error"
+            :status="status"
+            :error="error"
             :selected-model="selectedModel"
             :disabled="!input.trim()"
             class="sticky bottom-0 [view-transition-name:chat-prompt] rounded-b-none z-10 p-2"
             @submit="onSubmit"
-            @stop="chat.stop()"
-            @reload="chat.regenerate()"
+            @stop="stop()"
+            @reload="regenerate()"
             @update:selected-model="onModelChange"
           />
         </UTheme>

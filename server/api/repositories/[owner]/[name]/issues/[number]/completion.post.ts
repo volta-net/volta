@@ -1,4 +1,4 @@
-import { streamText } from 'ai'
+import { streamText, toTextStream, createTextStreamResponse } from 'ai'
 import { eq, and, inArray, desc, ne, isNotNull } from 'drizzle-orm'
 import { db, schema } from '@nuxthub/db'
 
@@ -148,7 +148,7 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  let system: string
+  let instructions: string
   let maxOutputTokens: number
 
   const preserveMarkdown = 'IMPORTANT: Preserve all markdown formatting (bold, italic, links, etc.) exactly as in the original.'
@@ -172,7 +172,7 @@ export default defineEventHandler(async (event) => {
 
   switch (mode) {
     case 'fix':
-      system = `You are a writing assistant for GitHub. Fix spelling and grammar errors in the given text.
+      instructions = `You are a writing assistant for GitHub. Fix spelling and grammar errors in the given text.
 
 Rules:
 - Fix typos, grammar, and punctuation
@@ -185,7 +185,7 @@ Only output the corrected text, nothing else.`
       maxOutputTokens = 500
       break
     case 'simplify':
-      system = `You are a writing assistant for GitHub ${isPR ? 'pull requests' : 'issues'}. Simplify the given text to make it easier to understand.
+      instructions = `You are a writing assistant for GitHub ${isPR ? 'pull requests' : 'issues'}. Simplify the given text to make it easier to understand.
 
 Rules:
 - Use simpler words and shorter sentences
@@ -197,7 +197,7 @@ Only output the simplified text, nothing else.`
       maxOutputTokens = 400
       break
     case 'summarize':
-      system = `You are a writing assistant for GitHub ${isPR ? 'pull requests' : 'issues'}. Summarize the given text concisely.
+      instructions = `You are a writing assistant for GitHub ${isPR ? 'pull requests' : 'issues'}. Summarize the given text concisely.
 
 Prioritize:
 - The main problem or request
@@ -208,7 +208,7 @@ Keep it brief (2-4 sentences max). Only output the summary, nothing else.`
       maxOutputTokens = 200
       break
     case 'translate':
-      system = `You are a writing assistant. Translate the given text to ${language || 'English'}.
+      instructions = `You are a writing assistant. Translate the given text to ${language || 'English'}.
 
 Rules:
 - Translate prose and explanations
@@ -231,7 +231,7 @@ ${userStyleExamples.map((ex, i) => `Example ${i + 1}: "${ex.slice(0, 300)}${ex.l
 Match the tone, length, and style of these examples.`
       }
 
-      system = `You are drafting a GitHub comment ON BEHALF of a user. The comment will be posted as if THEY wrote it - NOT as an AI assistant.
+      instructions = `You are drafting a GitHub comment ON BEHALF of a user. The comment will be posted as if THEY wrote it - NOT as an AI assistant.
 
 CRITICAL: Write as the user, not as an AI. Never say "I'm an AI" or refer to yourself. This is their voice.
 
@@ -258,7 +258,7 @@ ${contextPrompt}${styleGuidance}`
     }
     case 'continue':
     default:
-      system = `You are a writing assistant helping with GitHub ${isPR ? 'pull requests' : 'issues'}.
+      instructions = `You are a writing assistant helping with GitHub ${isPR ? 'pull requests' : 'issues'}.
 CRITICAL RULES:
 - Output ONLY the NEW text that comes AFTER the user's input
 - NEVER repeat any words from the end of the user's text
@@ -270,11 +270,15 @@ CRITICAL RULES:
       break
   }
 
-  return streamText({
+  const result = streamText({
     model: userGateway(userModel),
-    system,
+    instructions,
     prompt,
     maxOutputTokens,
     providerOptions: getAiProviderOptions(userModel, 'none')
-  }).toTextStreamResponse()
+  })
+
+  return createTextStreamResponse({
+    stream: toTextStream({ stream: result.stream })
+  })
 })
