@@ -210,7 +210,7 @@ Rules:
   const { output } = await generateText({
     model: userGateway!(modelId),
     output: Output.object({ schema: labelSuggestionSchema }),
-    system: systemPrompt,
+    instructions: systemPrompt,
     prompt: issueContext
   })
 
@@ -286,7 +286,7 @@ Current title: "${issue.title}"`
   const { output } = await generateText({
     model: userGateway!(modelId),
     output: Output.object({ schema: titleSuggestionSchema }),
-    system: systemPrompt,
+    instructions: systemPrompt,
     prompt: issueContext
   })
 
@@ -340,7 +340,7 @@ Rules:
   const { output } = await generateText({
     model: userGateway!(modelId),
     output: Output.object({ schema: duplicateSuggestionSchema }),
-    system: systemPrompt,
+    instructions: systemPrompt,
     prompt: issueContext
   })
 

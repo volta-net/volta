@@ -1,4 +1,4 @@
-import { streamText, convertToModelMessages, stepCountIs, smoothStream, jsonSchema } from 'ai'
+import { streamText, convertToModelMessages, isStepCount, smoothStream, jsonSchema, toUIMessageStream, createUIMessageStreamResponse } from 'ai'
 import { and, inArray, eq, desc, ilike, or, sql, gte, isNull } from 'drizzle-orm'
 import { db, schema } from '@nuxthub/db'
 import { analyzeAndStoreResolution } from '../utils/resolution'
@@ -749,7 +749,7 @@ For bar/line/area, provide xLabels for the x-axis and series for each data line/
     }
   }
 
-  const system = `You are Volta, an AI assistant for open-source maintainers. You help users understand and manage their GitHub issues, pull requests, and notifications.
+  const instructions = `You are Volta, an AI assistant for open-source maintainers. You help users understand and manage their GitHub issues, pull requests, and notifications.
 
 The user's GitHub username is "${user.username}".
 
@@ -817,13 +817,13 @@ When discussing analyzed issues, mention the suggestedAction and reasoning — t
 - Always pick distinct, accessible hex colors for each data point.
 - Call generateChart AFTER the data-fetching tool call, using the data you received.`
 
-  return streamText({
+  const result = streamText({
     model: gateway(model),
-    system,
+    instructions,
     messages: await convertToModelMessages(messages),
     providerOptions: getAiProviderOptions(model),
     experimental_transform: smoothStream(),
-    stopWhen: stepCountIs(8),
+    stopWhen: isStepCount(8),
     tools: {
       searchIssues,
       getNotifications,
@@ -834,5 +834,9 @@ When discussing analyzed issues, mention the suggestedAction and reasoning — t
       analyzeIssues,
       generateChart
     }
-  }).toUIMessageStreamResponse()
+  })
+
+  return createUIMessageStreamResponse({
+    stream: toUIMessageStream({ stream: result.stream })
+  })
 })

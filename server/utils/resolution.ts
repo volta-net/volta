@@ -279,7 +279,7 @@ Time context: ${daysSinceLastComment} days since last comment. If a good answer 
     const { output } = await generateText({
       model: userGateway(modelId),
       output: Output.object({ schema: resolutionAnalysisSchema }),
-      system: systemPrompt,
+      instructions: systemPrompt,
       prompt
     })
 
