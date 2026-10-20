@@ -54,7 +54,7 @@
     "@types/node": "^25.9.9",
     "eslint": "^10.13.0",
     "typescript": "^6.0.3",
-    "vue-tsc": "^3.3.13"
+    "vue-tsc": "^3.3.11"
   },
   "packageManager": "pnpm@12.14.0"
 }
