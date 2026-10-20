@@ -96,6 +96,10 @@ export default defineNuxtConfig({
   hub: {
     db: {
       dialect: 'postgresql',
+      // Supabase transaction pooler doesn't support prepared statements
+      connection: {
+        prepare: false
+      },
       replicas: [
         process.env.DATABASE_URL_REPLICA as string
       ].filter(Boolean)
