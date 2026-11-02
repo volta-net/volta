@@ -117,7 +117,7 @@ cp .env.example .env
 
 | Variable | Description |
 | --- | --- |
-| `NUXT_SESSION_PASSWORD` | A random string of at least 32 characters for session encryption |
+| `NUXT_APP_SECRET` | A random string of at least 32 characters, used to derive the session secret |
 | `NUXT_OAUTH_GITHUB_CLIENT_ID` | GitHub App → Client ID |
 | `NUXT_OAUTH_GITHUB_CLIENT_SECRET` | GitHub App → Client secrets → Generate |
 | `NUXT_GITHUB_APP_ID` | GitHub App → App ID |
