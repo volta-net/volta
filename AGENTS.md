@@ -239,7 +239,7 @@ export default defineEventHandler(async (event) => {
 ## Environment Variables
 
 ```
-NUXT_SESSION_PASSWORD        # Session encryption (32+ chars)
+NUXT_APP_SECRET              # Session secret root (32+ chars)
 NUXT_OAUTH_GITHUB_CLIENT_ID  # GitHub App Client ID
 NUXT_OAUTH_GITHUB_CLIENT_SECRET # GitHub App Client Secret
 NUXT_GITHUB_APP_ID           # GitHub App ID

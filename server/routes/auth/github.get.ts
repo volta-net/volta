@@ -1,4 +1,5 @@
 import { db, schema } from '@nuxthub/db'
+import { sendRedirect } from 'nuxt/server'
 
 // Extended GitHub tokens type (when token expiration is enabled in GitHub App)
 interface GitHubTokensWithRefresh {
