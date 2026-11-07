@@ -42,7 +42,7 @@
     "nuxt-auth-utils": "^0.6.0",
     "nuxt-charts": "^2.2.3",
     "octokit": "^5.0.5",
-    "postgres": "^3.4.9",
+    "postgres": "^4.1.0",
     "shiki": "^4.5.0",
     "tailwindcss": "^4.3.3",
     "tiptap-extension-code-block-shiki": "^1.2.0",
