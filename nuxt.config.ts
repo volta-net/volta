@@ -1,7 +1,7 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   modules: [
-    '@comark/nuxt',
+    '@comark/vue',
     '@nuxt/eslint',
     '@nuxt/ui',
     '@nuxthub/core',
