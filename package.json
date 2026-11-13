@@ -40,7 +40,7 @@
     "drizzle-orm": "^0.45.4",
     "nuxt": "^4.6.4",
     "nuxt-auth-utils": "^0.6.2",
-    "nuxt-charts": "^2.2.3",
+    "nuxt-charts": "^3.2.0",
     "octokit": "^5.0.5",
     "postgres": "^3.4.9",
     "shiki": "^4.6.0",
