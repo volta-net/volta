@@ -7,7 +7,6 @@ export default defineNuxtConfig({
     '@nuxthub/core',
     '@vueuse/nuxt',
     'nuxt-auth-utils',
-    'nuxt-charts',
     'workflow/nuxt',
     '@vercel/analytics',
     '@vite-pwa/nuxt'
