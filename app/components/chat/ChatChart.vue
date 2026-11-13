@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { ChartCategory } from '@nuxt/ui'
+
 interface ChartDataPoint {
   label: string
   value: number
@@ -23,62 +25,37 @@ const props = defineProps<{
   result: ChartResult
 }>()
 
-const defaultColors = ['#3b82f6', '#22c55e', '#f59e0b', '#ef4444', '#a855f7', '#06b6d4', '#ec4899', '#84cc16']
+const isSeriesChart = computed(() => props.result.type !== 'donut' && !!props.result.series?.length)
 
-function getColor(index: number, explicit?: string) {
-  return explicit || defaultColors[index % defaultColors.length]!
-}
+// Series are keyed by index so a series name can never collide with the `label` key
+const data = computed(() => {
+  if (!isSeriesChart.value) {
+    return (props.result.data ?? []).map(d => ({ label: d.label, value: d.value }))
+  }
 
-// Donut: simple number[] + categories
-const donutData = computed(() => props.result.data?.map(d => d.value) ?? [])
-const donutCategories = computed(() => {
-  return Object.fromEntries(
-    (props.result.data ?? []).map((d, i) => [d.label, { name: d.label, color: getColor(i, d.color) }])
-  )
-})
-
-// Bar/Line/Area with series: build data array of objects and categories record
-const seriesData = computed(() => {
-  if (!props.result.xLabels || !props.result.series) return []
-  return props.result.xLabels.map((label, i) => {
-    const point: Record<string, string | number> = { _x: label }
-    for (const s of props.result.series!) {
-      point[s.name] = s.values[i] ?? 0
-    }
-    return point
+  return (props.result.xLabels ?? []).map((label, i) => {
+    const row: Record<string, string | number> = { label }
+    props.result.series!.forEach((s, j) => {
+      row[`s${j}`] = s.values[i] ?? 0
+    })
+    return row
   })
 })
 
-const seriesCategories = computed(() => {
-  if (!props.result.series) return {}
-  return Object.fromEntries(
-    props.result.series.map(s => [s.name, { name: s.name, color: s.color }])
-  )
+const categories = computed<ChartCategory[]>(() => {
+  if (!isSeriesChart.value) {
+    return [{ key: 'value', label: props.result.title, color: props.result.data?.[0]?.color }]
+  }
+
+  return props.result.series!.map((s, j) => ({ key: `s${j}`, label: s.name, color: s.color }))
 })
 
-const seriesYAxis = computed(() => props.result.series?.map(s => s.name) ?? [])
+// Donut slices are colored in `data` order, falling back to the theme palette
+const donutColors = computed(() => {
+  if (props.result.type !== 'donut' || !props.result.data?.some(d => d.color)) return undefined
 
-const seriesXFormatter = computed(() => {
-  const labels = props.result.xLabels ?? []
-  return (i: number) => labels[i] ?? ''
+  return props.result.data.map((d, i) => d.color || `var(--ui-chart-${(i % 6) + 1})`)
 })
-
-// Single-series bar fallback (donut-style data used in a bar chart)
-const simpleBarData = computed(() => {
-  if (props.result.series) return null
-  return (props.result.data ?? []).map(d => ({ _x: d.label, value: d.value }))
-})
-
-const simpleBarCategories = computed(() => ({
-  value: { name: props.result.title, color: getColor(0, props.result.data?.[0]?.color) }
-}))
-
-const simpleBarXFormatter = computed(() => {
-  const data = props.result.data ?? []
-  return (i: number) => data[i]?.label ?? ''
-})
-
-const isSeriesChart = computed(() => !!props.result.series?.length)
 </script>
 
 <template>
@@ -87,58 +64,15 @@ const isSeriesChart = computed(() => !!props.result.series?.length)
       {{ result.title }}
     </p>
 
-    <DonutChart
-      v-if="result.type === 'donut'"
-      :data="donutData"
-      :categories="donutCategories"
+    <UChart
+      :type="result.type"
+      :data="data"
+      index="label"
+      :categories="categories"
+      :colors="donutColors"
+      :curve="result.type === 'line' || result.type === 'area' ? 'monotone' : 'linear'"
+      :thickness="32"
       :height="200"
-      :arc-width="32"
-      :radius="4"
-      :pad-angle="0.03"
-    />
-
-    <template v-else-if="result.type === 'bar'">
-      <BarChart
-        v-if="isSeriesChart"
-        :data="seriesData"
-        :categories="seriesCategories"
-        :y-axis="seriesYAxis"
-        :height="200"
-        :x-formatter="seriesXFormatter"
-        :radius="4"
-        y-grid-line
-      />
-      <BarChart
-        v-else
-        :data="simpleBarData!"
-        :categories="simpleBarCategories"
-        :y-axis="['value']"
-        :height="200"
-        :x-formatter="simpleBarXFormatter"
-        :radius="4"
-        hide-legend
-        y-grid-line
-      />
-    </template>
-
-    <LineChart
-      v-else-if="result.type === 'line'"
-      :data="seriesData"
-      :categories="seriesCategories"
-      :height="200"
-      :x-formatter="seriesXFormatter"
-      :curve-type="CurveType.MonotoneX"
-      y-grid-line
-    />
-
-    <AreaChart
-      v-else-if="result.type === 'area'"
-      :data="seriesData"
-      :categories="seriesCategories"
-      :height="200"
-      :x-formatter="seriesXFormatter"
-      :curve-type="CurveType.MonotoneX"
-      y-grid-line
     />
   </div>
 </template>
