@@ -15,7 +15,7 @@
   "dependencies": {
     "@ai-sdk/gateway": "^4.0.138",
     "@ai-sdk/vue": "^4.0.165",
-    "@comark/nuxt": "^0.9.0",
+    "@comark/vue": "^0.9.1",
     "@electric-sql/pglite": "^0.5.15",
     "@iconify-json/lucide": "^1.2.152",
     "@iconify-json/simple-icons": "^1.2.101",

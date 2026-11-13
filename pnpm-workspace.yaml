@@ -9,3 +9,6 @@ allowBuilds:
   vue-demi: false
   '@tailwindcss/oxide': false
   sharp: false
+minimumReleaseAgeExclude:
+  - '@comark/vue@0.9.1'
+  - comark@0.9.1

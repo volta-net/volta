@@ -1,4 +1,4 @@
-import highlight from '@comark/nuxt/plugins/highlight'
+import highlight from '@comark/vue/plugins/highlight'
 import ChatIssue from './ChatIssue.vue'
 
 export default defineMarkdownComponent({
