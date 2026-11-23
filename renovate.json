@@ -8,6 +8,9 @@
   "packageRules": [{
     "matchDepTypes": ["resolutions"],
     "enabled": false
+  }, {
+    "matchPackageNames": ["vue-tsc"],
+    "allowedVersions": "!/^3\\.3\\.1[234]$/"
   }],
   "postUpdateOptions": ["pnpmDedupe"]
 }
