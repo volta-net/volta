@@ -33,7 +33,7 @@
     "@tiptap/pm": "^3.35.0",
     "@tiptap/vue-3": "^3.35.0",
     "@vercel/analytics": "^2.0.1",
-    "@vite-pwa/nuxt": "1.1.1",
+    "@vite-pwa/nuxt": "2.0.4",
     "@vueuse/core": "^14.4.0",
     "@vueuse/nuxt": "^14.4.0",
     "ai": "^7.0.179",
